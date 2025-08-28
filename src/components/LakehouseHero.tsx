@@ -2,10 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, Calendar, ChevronDown } from "lucide-react";
 import lakehouseHeroImage from "@/assets/lakehouse-hero.jpg";
-
 const LakehouseHero = () => {
-  return (
-    <section className="relative h-screen bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${lakehouseHeroImage})` }}>
+  return <section className="relative h-screen bg-cover bg-center bg-no-repeat" style={{
+    backgroundImage: `url(${lakehouseHeroImage})`
+  }}>
       <div className="absolute inset-0 bg-black/40"></div>
       
       <div className="relative z-10 flex items-center justify-center h-full">
@@ -29,11 +29,11 @@ const LakehouseHero = () => {
           <div className="flex flex-wrap justify-center gap-6 mb-8 text-white/90">
             <div className="flex items-center">
               <MapPin className="w-5 h-5 mr-2" />
-              <span>Värmland, Sweden</span>
+              <span>Lerum, Sweden</span>
             </div>
             <div className="flex items-center">
               <Users className="w-5 h-5 mr-2" />
-              <span>Up to 6 guests</span>
+              <span>Up to 4 guests</span>
             </div>
             <div className="flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
@@ -57,8 +57,6 @@ const LakehouseHero = () => {
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
         <ChevronDown className="w-6 h-6" />
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default LakehouseHero;
