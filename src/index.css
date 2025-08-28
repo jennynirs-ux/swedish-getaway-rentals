@@ -2,95 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Villa Hacken Design System - Scandinavian Luxury Rental */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Brand Colors */
+    --background: 28 20% 97%;
+    --foreground: 25 25% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card & Surface Colors */
+    --card: 28 25% 95%;
+    --card-foreground: 25 25% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 28 25% 95%;
+    --popover-foreground: 25 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Villa Brand - Warm Earth Tones */
+    --primary: 25 45% 25%;
+    --primary-foreground: 28 20% 97%;
+    --primary-hover: 25 55% 20%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Accent Colors - Nordic Blues */
+    --secondary: 200 15% 88%;
+    --secondary-foreground: 25 25% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 28 15% 92%;
+    --muted-foreground: 25 15% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 200 25% 82%;
+    --accent-foreground: 25 25% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status Colors */
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 28 20% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 120 45% 45%;
+    --success-foreground: 28 20% 97%;
 
-    --radius: 0.5rem;
+    /* Interactive Elements */
+    --border: 28 20% 85%;
+    --input: 28 20% 90%;
+    --ring: 25 45% 25%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Border Radius */
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Villa Specific Design Tokens */
+    --warm-gradient: linear-gradient(135deg, hsl(25 45% 25%), hsl(35 50% 35%));
+    --hero-gradient: linear-gradient(135deg, hsl(25 45% 25%) 0%, hsl(35 50% 35%) 50%, hsl(200 25% 82%) 100%);
+    --luxury-shadow: 0 25px 50px -12px hsl(25 45% 25% / 0.25);
+    --soft-shadow: 0 10px 30px -10px hsl(25 45% 25% / 0.15);
+    --glow-shadow: 0 0 40px hsl(25 45% 25% / 0.2);
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Typography Scale */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+    
+    /* Animations */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark theme for evening/cozy ambiance */
+    --background: 25 25% 8%;
+    --foreground: 28 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 25 25% 10%;
+    --card-foreground: 28 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 25 25% 10%;
+    --popover-foreground: 28 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 35 50% 55%;
+    --primary-foreground: 25 25% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 28 20% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 25 15% 15%;
+    --muted-foreground: 28 15% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 200 25% 25%;
+    --accent-foreground: 28 20% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 28 20% 95%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 25 15% 20%;
+    --input: 25 15% 18%;
+    --ring: 35 50% 55%;
+
+    /* Dark theme gradients */
+    --warm-gradient: linear-gradient(135deg, hsl(25 45% 15%), hsl(35 50% 25%));
+    --hero-gradient: linear-gradient(135deg, hsl(25 45% 10%) 0%, hsl(35 50% 20%) 50%, hsl(200 25% 25%) 100%);
   }
 }
 
@@ -100,6 +107,34 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+    font-feature-settings: "ss01" 1;
+  }
+}
+
+@layer components {
+  .villa-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .villa-section {
+    @apply py-16 lg:py-24;
+  }
+
+  .villa-card {
+    @apply bg-card rounded-lg shadow-soft-shadow p-6 transition-all duration-300 hover:shadow-luxury-shadow hover:-translate-y-1;
+  }
+
+  .villa-gradient-text {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .villa-hero-bg {
+    background: var(--hero-gradient);
   }
 }
