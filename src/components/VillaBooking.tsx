@@ -3,10 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CalendarDays, MessageSquare, Mail, Phone, Euro } from "lucide-react";
-
 const VillaBooking = () => {
-  return (
-    <section className="villa-section bg-card">
+  return <section className="villa-section bg-card">
       <div className="villa-container">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Booking Form */}
@@ -79,15 +77,15 @@ const VillaBooking = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-border">
                     <span className="font-medium">Off Season</span>
-                    <span className="text-lg font-semibold">€280/night</span>
+                    <span className="text-lg font-semibold">€450/night</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-border">
                     <span className="font-medium">Peak Season</span>
-                    <span className="text-lg font-semibold">€380/night</span>
+                    <span className="text-lg font-semibold">€900/night</span>
                   </div>
                   <div className="flex justify-between items-center py-3">
                     <span className="font-medium">Holiday Periods</span>
-                    <span className="text-lg font-semibold">€450/night</span>
+                    <span className="text-lg font-semibold">€900/night</span>
                   </div>
                   <div className="mt-6 p-4 bg-accent rounded-lg">
                     <p className="text-sm text-accent-foreground">
@@ -145,8 +143,6 @@ const VillaBooking = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default VillaBooking;

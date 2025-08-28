@@ -1,15 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { CalendarDays, MapPin, Users, Star } from "lucide-react";
 import villaHeroImage from "@/assets/villa-hero.jpg";
-
 const VillaHero = () => {
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${villaHeroImage})` }}
-      >
+      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
+      backgroundImage: `url(${villaHeroImage})`
+    }}>
         <div className="absolute inset-0 bg-black/40"></div>
       </div>
 
@@ -19,17 +16,13 @@ const VillaHero = () => {
           {/* Rating */}
           <div className="flex items-center justify-center gap-2 mb-6">
             <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              ))}
+              {[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}
             </div>
-            <span className="text-lg font-medium">4.9 • 127 reviews</span>
+            <span className="text-lg font-medium">5.0 • 41 reviews</span>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
-            Villa Hacken
-          </h1>
+          <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">Villa Häcken</h1>
           
           <p className="text-xl md:text-2xl mb-8 font-light leading-relaxed">
             Experience luxury in the heart of Swedish nature. 
@@ -41,7 +34,7 @@ const VillaHero = () => {
           <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-lg">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              <span>Härjedalen, Sweden</span>
+              <span>Lerum, Sweden</span>
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -71,8 +64,6 @@ const VillaHero = () => {
           <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default VillaHero;
