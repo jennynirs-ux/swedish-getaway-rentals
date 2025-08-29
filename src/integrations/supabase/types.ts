@@ -14,13 +14,207 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      availability: {
+        Row: {
+          available: boolean
+          created_at: string
+          date: string
+          id: string
+          property_id: string
+          reason: string | null
+        }
+        Insert: {
+          available?: boolean
+          created_at?: string
+          date: string
+          id?: string
+          property_id: string
+          reason?: string | null
+        }
+        Update: {
+          available?: boolean
+          created_at?: string
+          date?: string
+          id?: string
+          property_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          check_in_date: string
+          check_out_date: string
+          created_at: string
+          currency: string
+          guest_email: string
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          number_of_guests: number
+          property_id: string
+          special_requests: string | null
+          status: string
+          stripe_payment_intent_id: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          check_in_date: string
+          check_out_date: string
+          created_at?: string
+          currency?: string
+          guest_email: string
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          number_of_guests: number
+          property_id: string
+          special_requests?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          check_in_date?: string
+          check_out_date?: string
+          created_at?: string
+          currency?: string
+          guest_email?: string
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          number_of_guests?: number
+          property_id?: string
+          special_requests?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          is_admin: boolean
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_admin?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_admin?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          active: boolean
+          amenities: string[] | null
+          bathrooms: number
+          bedrooms: number
+          created_at: string
+          currency: string
+          description: string | null
+          gallery_images: string[] | null
+          hero_image_url: string | null
+          id: string
+          location: string | null
+          max_guests: number
+          price_per_night: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amenities?: string[] | null
+          bathrooms?: number
+          bedrooms?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          gallery_images?: string[] | null
+          hero_image_url?: string | null
+          id?: string
+          location?: string | null
+          max_guests?: number
+          price_per_night: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amenities?: string[] | null
+          bathrooms?: number
+          bedrooms?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          gallery_images?: string[] | null
+          hero_image_url?: string | null
+          id?: string
+          location?: string | null
+          max_guests?: number
+          price_per_night?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_booking_conflict: {
+        Args: {
+          booking_id_param?: string
+          check_in_param: string
+          check_out_param: string
+          property_id_param: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
