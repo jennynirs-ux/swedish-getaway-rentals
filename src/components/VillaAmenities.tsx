@@ -69,7 +69,8 @@ const VillaAmenities = () => {
               <div className="text-center">
                 <div className="text-4xl mb-4">
               </div>
-                <h4 className="text-xl font-semibold mb-2">Nature Immersion</h4>
+                <h4 className="text-xl font-semibold mb-2">🔥
+Nature Immersion</h4>
                 <p className="text-white/90">
                   Surrounded by pristine forest with private hiking trails
                 </p>
