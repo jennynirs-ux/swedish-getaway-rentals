@@ -5,10 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Star, Users, Wifi, TreePine, Waves } from "lucide-react";
 import villaHeroImage from "@/assets/villa-hero.jpg";
 import lakehouseHeroImage from "@/assets/lakehouse-hero.jpg";
-
 const HomePage = () => {
-  return (
-    <div className="min-h-screen bg-gradient-subtle">
+  return <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
       <header className="py-8">
         <div className="container mx-auto px-4">
@@ -27,11 +25,7 @@ const HomePage = () => {
             {/* Villa Hacken */}
             <Card className="overflow-hidden hover-scale">
               <div className="relative h-64">
-                <img 
-                  src={villaHeroImage} 
-                  alt="Villa Hacken exterior" 
-                  className="w-full h-full object-cover"
-                />
+                <img src={villaHeroImage} alt="Villa Hacken exterior" className="w-full h-full object-cover" />
                 <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
                   <Star className="w-3 h-3 mr-1" />
                   5.0
@@ -67,7 +61,7 @@ const HomePage = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-2xl font-bold text-foreground">1,500 SEK</span>
+                    <span className="text-2xl font-bold text-foreground">9,000 SEK</span>
                     <span className="text-muted-foreground">/night</span>
                   </div>
                   <Link to="/villa-hacken">
@@ -80,11 +74,7 @@ const HomePage = () => {
             {/* Lakehouse Getaway */}
             <Card className="overflow-hidden hover-scale">
               <div className="relative h-64">
-                <img 
-                  src={lakehouseHeroImage} 
-                  alt="Lakehouse Getaway exterior" 
-                  className="w-full h-full object-cover"
-                />
+                <img src={lakehouseHeroImage} alt="Lakehouse Getaway exterior" className="w-full h-full object-cover" />
                 <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
                   <Star className="w-3 h-3 mr-1" />
                   4.9
@@ -149,8 +139,6 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default HomePage;
