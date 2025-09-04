@@ -1,4 +1,4 @@
-import { Wifi, Car, Waves, TreePine, UtensilsCrossed, Flame, Users, Bed } from "lucide-react";
+import { Wifi, Car, Waves, TreePine, UtensilsCrossed, Flame, Users, Bed, Mountain, Sparkles } from "lucide-react";
 const VillaAmenities = () => {
   const amenities = [{
     icon: Bed,
@@ -67,23 +67,27 @@ const VillaAmenities = () => {
             <h3 className="text-3xl font-display font-bold mb-6">What Makes Villa Häcken Special</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
               <div className="text-center">
-                <div className="text-4xl mb-4">
-              </div>
-                <h4 className="text-xl font-semibold mb-2">🔥
-Nature Immersion</h4>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-xl mb-4 hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                  <Mountain className="h-8 w-8 text-white" />
+                </div>
+                <h4 className="text-xl font-semibold mb-2">Nature Immersion</h4>
                 <p className="text-white/90">
                   Surrounded by pristine forest with private hiking trails
                 </p>
               </div>
               <div className="text-center">
-                <div className="text-4xl mb-4">🔥</div>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-xl mb-4 hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                  <Flame className="h-8 w-8 text-white" />
+                </div>
                 <h4 className="text-xl font-semibold mb-2">Authentic Swedish</h4>
                 <p className="text-white/90">
                   Traditional sauna experience with lake access
                 </p>
               </div>
               <div className="text-center">
-                <div className="text-4xl mb-4">✨</div>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-xl mb-4 hover:bg-white/30 transition-all duration-300 hover:scale-105">
+                  <Sparkles className="h-8 w-8 text-white" />
+                </div>
                 <h4 className="text-xl font-semibold mb-2">Luxury Comfort</h4>
                 <p className="text-white/90">
                   Modern amenities in a stunning natural setting
