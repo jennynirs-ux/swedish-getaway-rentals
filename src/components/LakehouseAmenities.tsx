@@ -1,4 +1,4 @@
-import { Waves, Fish, TreePine, Wifi, Car, Utensils, Flame, Bed } from "lucide-react";
+import { Waves, Fish, TreePine, Wifi, Car, Utensils, Flame, Bed, Mountain, Sailboat } from "lucide-react";
 
 const amenities = [
   {
@@ -84,7 +84,9 @@ const LakehouseAmenities = () => {
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="text-4xl mb-4">🌊</div>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-xl mb-4 hover:bg-primary/20 transition-all duration-300 hover:scale-105">
+                <Waves className="h-8 w-8 text-primary" />
+              </div>
               <h4 className="text-xl font-semibold text-foreground mb-3">Pristine Waters</h4>
               <p className="text-muted-foreground">
                 Crystal clear lake perfect for swimming, fishing, and water sports. The water quality is exceptional.
@@ -92,7 +94,9 @@ const LakehouseAmenities = () => {
             </div>
             
             <div className="text-center">
-              <div className="text-4xl mb-4">🏞️</div>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-xl mb-4 hover:bg-primary/20 transition-all duration-300 hover:scale-105">
+                <Mountain className="h-8 w-8 text-primary" />
+              </div>
               <h4 className="text-xl font-semibold text-foreground mb-3">Natural Paradise</h4>
               <p className="text-muted-foreground">
                 Surrounded by untouched Swedish forest with abundant wildlife and peaceful hiking trails.
@@ -100,7 +104,9 @@ const LakehouseAmenities = () => {
             </div>
             
             <div className="text-center">
-              <div className="text-4xl mb-4">🛶</div>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-xl mb-4 hover:bg-primary/20 transition-all duration-300 hover:scale-105">
+                <Sailboat className="h-8 w-8 text-primary" />
+              </div>
               <h4 className="text-xl font-semibold text-foreground mb-3">Water Adventures</h4>
               <p className="text-muted-foreground">
                 Kayaks, fishing gear, and swimming area included. Perfect for families and adventure seekers.
