@@ -134,7 +134,7 @@ const HomePage = () => {
               <Button size="lg">Book Villa Hacken</Button>
             </Link>
             <Link to="/lakehouse-getaway">
-              <Button variant="outline" size="lg">Book Lakehouse</Button>
+              <Button size="lg">Book Lakehouse</Button>
             </Link>
           </div>
         </div>
