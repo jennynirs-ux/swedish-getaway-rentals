@@ -136,6 +136,9 @@ const HomePage = () => {
             <Link to="/lakehouse-getaway">
               <Button size="lg">Book Lakehouse</Button>
             </Link>
+            <Link to="/auth">
+              <Button variant="outline" size="lg">Admin Login</Button>
+            </Link>
           </div>
         </div>
       </footer>
