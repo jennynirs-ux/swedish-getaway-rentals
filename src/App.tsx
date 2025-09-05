@@ -9,8 +9,6 @@ import LakehouseGetaway from "./pages/LakehouseGetaway";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
-import BecomeHost from "./pages/BecomeHost";
-import HostDashboard from "./pages/HostDashboard";
 
 const queryClient = new QueryClient();
 
@@ -26,8 +24,6 @@ const App = () => (
           <Route path="/lakehouse-getaway" element={<LakehouseGetaway />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<Admin />} />
-          <Route path="/become-host" element={<BecomeHost />} />
-          <Route path="/host/dashboard" element={<HostDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

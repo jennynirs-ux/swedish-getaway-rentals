@@ -114,78 +114,13 @@ export type Database = {
           },
         ]
       }
-      host_applications: {
-        Row: {
-          admin_notes: string | null
-          business_name: string
-          contact_phone: string | null
-          description: string
-          experience: string | null
-          id: string
-          property_count: number | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          submitted_at: string
-          user_id: string
-        }
-        Insert: {
-          admin_notes?: string | null
-          business_name: string
-          contact_phone?: string | null
-          description: string
-          experience?: string | null
-          id?: string
-          property_count?: number | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          submitted_at?: string
-          user_id: string
-        }
-        Update: {
-          admin_notes?: string | null
-          business_name?: string
-          contact_phone?: string | null
-          description?: string
-          experience?: string | null
-          id?: string
-          property_count?: number | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          submitted_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "host_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "host_applications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           created_at: string
           email: string | null
           full_name: string | null
-          host_application_date: string | null
-          host_approved: boolean
-          host_business_name: string | null
-          host_description: string | null
           id: string
           is_admin: boolean
-          is_host: boolean
           phone: string | null
           updated_at: string
           user_id: string
@@ -194,13 +129,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
-          host_application_date?: string | null
-          host_approved?: boolean
-          host_business_name?: string | null
-          host_description?: string | null
           id?: string
           is_admin?: boolean
-          is_host?: boolean
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -209,13 +139,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
-          host_application_date?: string | null
-          host_approved?: boolean
-          host_business_name?: string | null
-          host_description?: string | null
           id?: string
           is_admin?: boolean
-          is_host?: boolean
           phone?: string | null
           updated_at?: string
           user_id?: string
@@ -233,11 +158,9 @@ export type Database = {
           description: string | null
           gallery_images: string[] | null
           hero_image_url: string | null
-          host_id: string | null
           id: string
           location: string | null
           max_guests: number
-          pending_approval: boolean
           price_per_night: number
           title: string
           updated_at: string
@@ -252,11 +175,9 @@ export type Database = {
           description?: string | null
           gallery_images?: string[] | null
           hero_image_url?: string | null
-          host_id?: string | null
           id?: string
           location?: string | null
           max_guests?: number
-          pending_approval?: boolean
           price_per_night: number
           title: string
           updated_at?: string
@@ -271,34 +192,20 @@ export type Database = {
           description?: string | null
           gallery_images?: string[] | null
           hero_image_url?: string | null
-          host_id?: string | null
           id?: string
           location?: string | null
           max_guests?: number
-          pending_approval?: boolean
           price_per_night?: number
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "properties_host_id_fkey"
-            columns: ["host_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      approve_host_application: {
-        Args: { application_id: string }
-        Returns: undefined
-      }
       check_booking_conflict: {
         Args: {
           booking_id_param?: string
