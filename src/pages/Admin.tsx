@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
-import { Settings, Plus, Edit, LogOut, Image } from "lucide-react";
+import { Settings, Plus, Edit, LogOut, Image, TrendingUp, Users, Calendar, DollarSign, Eye, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Property {
@@ -28,6 +28,26 @@ interface Property {
   active: boolean;
 }
 
+interface Booking {
+  id: string;
+  property_id: string;
+  guest_name: string;
+  check_in_date: string;
+  check_out_date: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+}
+
+interface DashboardStats {
+  totalProperties: number;
+  activeProperties: number;
+  totalBookings: number;
+  pendingBookings: number;
+  totalRevenue: number;
+  monthlyRevenue: number;
+}
+
 const Admin = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -35,6 +55,15 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalProperties: 0,
+    activeProperties: 0,
+    totalBookings: 0,
+    pendingBookings: 0,
+    totalRevenue: 0,
+    monthlyRevenue: 0
+  });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -94,6 +123,8 @@ const Admin = () => {
       if (data?.is_admin) {
         setIsAdmin(true);
         loadProperties();
+        loadBookings();
+        loadStats();
       } else {
         toast({
           title: "Åtkomst nekad",
@@ -126,6 +157,64 @@ const Admin = () => {
         description: "Kunde inte ladda properties",
         variant: "destructive"
       });
+    }
+  };
+
+  const loadBookings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+      toast({
+        title: "Fel",
+        description: "Kunde inte ladda bokningar",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      // Load properties stats
+      const { data: propertiesData, error: propError } = await supabase
+        .from('properties')
+        .select('*');
+
+      // Load bookings stats
+      const { data: bookingsData, error: bookError } = await supabase
+        .from('bookings')
+        .select('*');
+
+      if (propError) throw propError;
+      if (bookError) throw bookError;
+
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const monthlyBookings = bookingsData?.filter(booking => {
+        const bookingDate = new Date(booking.created_at);
+        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+      }) || [];
+
+      const confirmedBookings = bookingsData?.filter(b => b.status === 'confirmed') || [];
+      const pendingBookings = bookingsData?.filter(b => b.status === 'pending') || [];
+
+      setStats({
+        totalProperties: propertiesData?.length || 0,
+        activeProperties: propertiesData?.filter(p => p.active)?.length || 0,
+        totalBookings: bookingsData?.length || 0,
+        pendingBookings: pendingBookings.length,
+        totalRevenue: confirmedBookings.reduce((sum, booking) => sum + booking.total_amount, 0),
+        monthlyRevenue: monthlyBookings.filter(b => b.status === 'confirmed').reduce((sum, booking) => sum + booking.total_amount, 0)
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
     }
   };
 
@@ -254,11 +343,114 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="properties" className="space-y-6">
+        <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="dashboard">Översikt</TabsTrigger>
             <TabsTrigger value="properties">Hantera Properties</TabsTrigger>
             <TabsTrigger value="add">Lägg till Property</TabsTrigger>
+            <TabsTrigger value="bookings">Bokningar</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dashboard">
+            <div className="grid gap-6">
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Totalt Properties</CardTitle>
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalProperties}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats.activeProperties} aktiva
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Totalt Bokningar</CardTitle>
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalBookings}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats.pendingBookings} väntande
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Intäkt</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()} SEK</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats.monthlyRevenue.toLocaleString()} SEK denna månad
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Senaste Bokningar</CardTitle>
+                    <CardDescription>De senaste bokningarna i systemet</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {bookings.slice(0, 5).map((booking) => (
+                        <div key={booking.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div>
+                            <p className="font-medium">{booking.guest_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(booking.check_in_date).toLocaleDateString('sv-SE')} - {new Date(booking.check_out_date).toLocaleDateString('sv-SE')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={booking.status === 'confirmed' ? 'default' : booking.status === 'pending' ? 'secondary' : 'destructive'}>
+                              {booking.status}
+                            </Badge>
+                            <p className="text-sm font-medium">{booking.total_amount.toLocaleString()} SEK</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Properties Översikt</CardTitle>
+                    <CardDescription>Status för dina properties</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {properties.slice(0, 4).map((property) => (
+                        <div key={property.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div>
+                            <p className="font-medium">{property.title}</p>
+                            <p className="text-sm text-muted-foreground">{property.location}</p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={property.active ? 'default' : 'secondary'}>
+                              {property.active ? 'Aktiv' : 'Inaktiv'}
+                            </Badge>
+                            <p className="text-sm font-medium">{property.price_per_night} SEK/natt</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="properties">
             <div className="grid gap-6">
@@ -435,6 +627,58 @@ const Admin = () => {
                     )}
                   </div>
                 </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bookings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Alla Bokningar</CardTitle>
+                <CardDescription>Hantera och övervaka alla bokningar</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {bookings.map((booking) => (
+                    <Card key={booking.id} className="border">
+                      <CardContent className="p-4">
+                        <div className="grid md:grid-cols-4 gap-4 items-center">
+                          <div>
+                            <h3 className="font-semibold">{booking.guest_name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Boknings-ID: {booking.id.slice(0, 8)}...
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              {new Date(booking.check_in_date).toLocaleDateString('sv-SE')} - {new Date(booking.check_out_date).toLocaleDateString('sv-SE')}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Skapad: {new Date(booking.created_at).toLocaleDateString('sv-SE')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">{booking.total_amount.toLocaleString()} SEK</p>
+                            <Badge variant={booking.status === 'confirmed' ? 'default' : booking.status === 'pending' ? 'secondary' : 'destructive'}>
+                              {booking.status}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-end">
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-2" />
+                              Visa detaljer
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {bookings.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Inga bokningar hittades
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
