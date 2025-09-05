@@ -80,9 +80,7 @@ const VillaAmenities = () => {
                   <Flame className="h-8 w-8 text-white" />
                 </div>
                 <h4 className="text-xl font-semibold mb-2">Authentic Swedish</h4>
-                <p className="text-white/90">
-                  Traditional sauna experience with lake access
-                </p>
+                <p className="text-white/90">Traditional hot tub experience with lake access</p>
               </div>
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-xl mb-4 hover:bg-white/30 transition-all duration-300 hover:scale-105">

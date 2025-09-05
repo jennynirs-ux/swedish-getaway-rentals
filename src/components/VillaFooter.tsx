@@ -1,13 +1,11 @@
 import { MapPin, Mail, Phone } from "lucide-react";
-
 const VillaFooter = () => {
-  return (
-    <footer className="bg-primary text-primary-foreground py-12">
+  return <footer className="bg-primary text-primary-foreground py-12">
       <div className="villa-container">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <h3 className="text-2xl font-display font-bold mb-4">Villa Hacken</h3>
+            <h3 className="text-2xl font-display font-bold mb-4">Villa Häcken</h3>
             <p className="text-primary-foreground/80 mb-4">
               Your luxury retreat in the heart of Swedish nature. 
               Creating unforgettable memories since 2018.
@@ -63,8 +61,6 @@ const VillaFooter = () => {
           </p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default VillaFooter;
