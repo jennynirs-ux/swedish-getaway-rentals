@@ -115,22 +115,7 @@ const VillaBooking = () => {
             </Card>
 
             {/* What's Included */}
-            <Card className="shadow-soft-shadow">
-              <CardHeader>
-                <CardTitle>Your Complete Guide Includes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>🌲 House & nature orientation guide</p>
-                  <p>🚶‍♀️ Local hiking tips & outdoor adventures</p>
-                  <p>🔥 Fireplace, pizza oven & hot tub instructions</p>
-                  <p>🧼 Check-in arrival & departure guidelines</p>
-                  <p>💧 Eco-friendly systems information</p>
-                  <p>🗺️ Local favorites - restaurants & attractions</p>
-                  <p>🇸🇪 First time in Sweden? Cultural tips included</p>
-                </div>
-              </CardContent>
-            </Card>
+            
 
             {/* Pricing */}
             <Card className="shadow-soft-shadow">
