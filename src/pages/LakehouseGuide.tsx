@@ -1,7 +1,8 @@
-import { ArrowLeft, Wifi, MapPin, Car, Utensils, Flame, TreePine, Home, Phone } from "lucide-react";
+import { ArrowLeft, Wifi, MapPin, Home, Phone, AlertCircle, Flame, TreePine, Car, Utensils } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const LakehouseGuide = () => {
   return (
@@ -26,7 +27,7 @@ const LakehouseGuide = () => {
           {/* Welcome Section */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="text-2xl">🏡 Welcome to Your Stay – House & Nature Combined</CardTitle>
+              <CardTitle className="text-2xl">Welcome to Your Stay – House & Nature Combined</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
@@ -36,11 +37,11 @@ const LakehouseGuide = () => {
               <div className="space-y-2 mb-4 text-sm">
                 <p>This guide will help you:</p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                  <li>🌲 Get familiar with the house and how things work</li>
-                  <li>🚶‍♀️ Find local tips and outdoor adventures</li>
-                  <li>🔥 Use the fireplace and more</li>
-                  <li>🧼 Know what to bring and how to leave the house</li>
-                  <li>💧 Understand our eco-friendly systems</li>
+                  <li>Get familiar with the house and how things work</li>
+                  <li>Find local tips and outdoor adventures</li>
+                  <li>Use the fireplace and more</li>
+                  <li>Know what to bring and how to leave the house</li>
+                  <li>Understand our eco-friendly systems</li>
                 </ul>
               </div>
               <p className="text-sm italic">
@@ -58,7 +59,7 @@ const LakehouseGuide = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-semibold mb-2">Wi-Fi Access</h4>
                   <p className="text-sm"><strong>Network:</strong> Villa Häcken_Guest</p>
@@ -79,39 +80,57 @@ const LakehouseGuide = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  Arriving at the Lakehouse
+                  Arriving
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <h4 className="font-semibold mb-2">What to Bring</h4>
+                  <h4 className="font-semibold mb-3">What to Bring - Essentials</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Personal toiletries and medications</li>
-                    <li>• Comfortable outdoor and hiking gear</li>
-                    <li>• Swimwear for lake activities</li>
-                    <li>• Your favorite coffee/tea and snacks</li>
-                    <li>• Camera for stunning lake views</li>
-                    <li>• Warm clothes (Swedish weather can change)</li>
+                    <li>• Toothbrush & toothpaste</li>
+                    <li>• Pyjamas and change of clothes</li>
+                    <li>• Personal medication or must-haves</li>
+                    <li>• Rain jacket and extra layer (Swedish weather is unpredictable)</li>
+                    <li>• Extra pair of socks (no shoes indoors in Swedish homes)</li>
+                    <li>• Good walking shoes or hiking boots</li>
+                    <li>• Swimming gear for lake activities</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Directions & Parking</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Free parking available at the property. Follow the lakeside road to the designated parking area. 
-                    Detailed GPS coordinates will be provided before arrival.
-                  </p>
+                  <h4 className="font-semibold mb-3">Nice to Have</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• A good book for quiet lakeside mornings</li>
+                    <li>• Headlamp or flashlight (gets very dark at night)</li>
+                    <li>• Snacks or special food items</li>
+                    <li>• Fishing gear (fishing license required - fiskekort.se)</li>
+                    <li>• Camera for stunning lake views</li>
+                  </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Check-in Process</h4>
+                  <h4 className="font-semibold mb-3">Provided at the House</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Toilet paper, hand soap, dish soap</li>
+                    <li>• Basic spices: salt, pepper, olive oil</li>
+                    <li>• Coffee beans</li>
+                    <li>• Bed linens and towels</li>
+                  </ul>
+                </div>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-3">Check-in & Parking</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Check-in is after 4:00 PM (16:00). Free parking available at the property.
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    Check-in is after 3:00 PM. We'll send you detailed arrival instructions including access codes 
-                    and a welcome package location 24 hours before your stay.
+                    We'll send detailed arrival instructions including access codes 24 hours before your stay.
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* House Guide */}
+            {/* House Systems */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -119,38 +138,50 @@ const LakehouseGuide = () => {
                   How Things Work
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <h4 className="font-semibold mb-2">Eco-Friendly Systems</h4>
+                  <h4 className="font-semibold mb-3">Sustainability & Energy</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Off-grid living with sustainable power</li>
-                    <li>• Rainwater collection and filtration</li>
-                    <li>• Composting toilet system</li>
-                    <li>• Solar heating for water</li>
+                    <li>• Powered by solar panels with smart heating system</li>
+                    <li>• Heating adjusts automatically to outdoor temperature</li>
+                    <li>• Please be mindful of energy usage on cloudy days</li>
+                    <li>• Turn off lights and unplug unused appliances</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Heating & Lighting</h4>
+                  <h4 className="font-semibold mb-3">Kitchen & Appliances</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Oven with specific heating instructions</li>
+                    <li>• Water system for dishes and drinking</li>
+                    <li>• Outdoor kitchen with gas stove available</li>
+                    <li>• BBQ grill and cooking utensils provided</li>
+                  </ul>
+                </div>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-3">Water & Waste Systems</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Water supply from lake filtration system</li>
+                    <li>• Separett composting toilet system</li>
+                    <li>• Gray water system for dishwashing</li>
+                    <li>• Recycling bins and compost bucket provided</li>
+                  </ul>
+                </div>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-3">Safety & Heating</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Wood-burning stove for heating</li>
                     <li>• LED lighting throughout</li>
-                    <li>• Candles provided for ambiance</li>
+                    <li>• Fire safety equipment available</li>
                     <li>• Extra blankets in bedroom closet</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Water & Waste</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Drinking water from lake filtration</li>
-                    <li>• Gray water system for dishwashing</li>
-                    <li>• Recycling bins provided</li>
-                    <li>• Compost bucket for organic waste</li>
                   </ul>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Lake Activities */}
+            {/* Lake & Outdoor Activities */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -158,32 +189,34 @@ const LakehouseGuide = () => {
                   Lake & Outdoor Activities
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <h4 className="font-semibold mb-2">Lake Access</h4>
+                  <h4 className="font-semibold mb-3">Lake Access</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Private dock for swimming and fishing</li>
                     <li>• Kayak available for guest use</li>
                     <li>• Life jackets provided in various sizes</li>
-                    <li>• Fishing equipment available</li>
+                    <li>• Fishing equipment available on-site</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Outdoor Cooking</h4>
+                  <h4 className="font-semibold mb-3">Outdoor Cooking & Fire</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Outdoor kitchen with gas stove</li>
-                    <li>• BBQ grill and utensils</li>
                     <li>• Fire pit for evening gatherings</li>
                     <li>• Firewood stored in shed</li>
+                    <li>• Indoor fireplace for cozy evenings</li>
+                    <li>• Kindling and fire starters provided</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Fireplace Instructions</h4>
+                  <h4 className="font-semibold mb-3">Nature Activities</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Indoor fireplace for cozy evenings</li>
-                    <li>• Dry firewood available outside</li>
-                    <li>• Kindling and fire starters provided</li>
-                    <li>• Always ensure fire is completely out</li>
+                    <li>• Lakeside trail circuit (2-3 hours)</li>
+                    <li>• Forest mushroom and berry picking</li>
+                    <li>• Bird watching from the dock</li>
+                    <li>• Photography spots marked on property</li>
                   </ul>
                 </div>
               </CardContent>
@@ -197,18 +230,9 @@ const LakehouseGuide = () => {
                   Local Adventures
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <h4 className="font-semibold mb-2">Hiking & Nature</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Lakeside trail circuit (2-3 hours)</li>
-                    <li>• Forest mushroom and berry picking</li>
-                    <li>• Bird watching from the dock</li>
-                    <li>• Photography spots marked on property map</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Nearby Attractions</h4>
+                  <h4 className="font-semibold mb-3">Nearby Attractions</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Traditional Swedish village - 15 minutes</li>
                     <li>• Local artisan workshops</li>
@@ -216,13 +240,24 @@ const LakehouseGuide = () => {
                     <li>• Farmers market (weekends only)</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Seasonal Activities</h4>
+                  <h4 className="font-semibold mb-3">Seasonal Activities</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Summer: Swimming, kayaking, midnight sun</li>
                     <li>• Autumn: Mushroom picking, northern lights</li>
                     <li>• Winter: Ice fishing, cross-country skiing</li>
                     <li>• Spring: Bird migration, wildflower blooms</li>
+                  </ul>
+                </div>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-3">Shopping & Services</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• ICA Kvantum - grocery store nearby</li>
+                    <li>• Local farm shop for fresh produce</li>
+                    <li>• Gas station and firewood available</li>
+                    <li>• Recycling station near ICA</li>
                   </ul>
                 </div>
               </CardContent>
@@ -231,11 +266,11 @@ const LakehouseGuide = () => {
             {/* First Time in Sweden */}
             <Card>
               <CardHeader>
-                <CardTitle>🇸🇪 First Time in Sweden?</CardTitle>
+                <CardTitle>First Time in Sweden?</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <h4 className="font-semibold mb-2">Cultural Tips</h4>
+                  <h4 className="font-semibold mb-3">Cultural Tips</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• "Allemansrätten" - Freedom to roam in nature</li>
                     <li>• "Lagom" - The Swedish art of balance</li>
@@ -244,8 +279,9 @@ const LakehouseGuide = () => {
                     <li>• Remove shoes when entering homes</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Nature Etiquette</h4>
+                  <h4 className="font-semibold mb-3">Nature Etiquette</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Leave no trace - pack out what you bring</li>
                     <li>• Don't disturb wildlife or nesting birds</li>
@@ -253,8 +289,9 @@ const LakehouseGuide = () => {
                     <li>• Respect private property boundaries</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Practical Information</h4>
+                  <h4 className="font-semibold mb-3">Practical Information</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Currency: Swedish Krona (SEK)</li>
                     <li>• Cards accepted almost everywhere</li>
@@ -268,23 +305,21 @@ const LakehouseGuide = () => {
             {/* Check-out */}
             <Card>
               <CardHeader>
-                <CardTitle>🧼 Check-out Guidelines</CardTitle>
+                <CardTitle>Check-out Guidelines</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <h4 className="font-semibold mb-2">Before Departure</h4>
+                  <h4 className="font-semibold mb-3">Before Departure</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Check-out by 11:00 AM</li>
                     <li>• Strip beds and place linens in hamper</li>
                     <li>• Wash and put away all dishes</li>
                     <li>• Empty compost bucket into outdoor bin</li>
-                    <li>• Ensure fire is completely extinguished</li>
-                    <li>• Close and lock all windows and doors</li>
-                    <li>• Return keys to lockbox</li>
                   </ul>
                 </div>
+                <Separator />
                 <div>
-                  <h4 className="font-semibold mb-2">Sustainability</h4>
+                  <h4 className="font-semibold mb-3">Sustainability Steps</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• Turn off all lights and equipment</li>
                     <li>• Close water valves</li>
@@ -292,11 +327,15 @@ const LakehouseGuide = () => {
                     <li>• Leave outdoor equipment clean and dry</li>
                   </ul>
                 </div>
-                <div className="mt-4 p-4 bg-accent/10 rounded-lg">
-                  <p className="text-sm italic text-muted-foreground">
-                    "Thank you for respecting our little piece of paradise. We hope the lakehouse has given you 
-                    the peace and connection with nature that it gives us."
-                  </p>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold mb-3">Final Steps</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Ensure fire is completely extinguished</li>
+                    <li>• Close and lock all windows and doors</li>
+                    <li>• Return keys to lockbox</li>
+                    <li>• Return borrowed items (kayak, life jackets)</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -305,7 +344,7 @@ const LakehouseGuide = () => {
           {/* Special Message */}
           <Card className="mt-8 bg-gradient-to-r from-accent/5 to-primary/5 border-primary/20">
             <CardHeader>
-              <CardTitle className="text-xl">💛 A Note From Us</CardTitle>
+              <CardTitle className="text-xl">A Note From Us</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
