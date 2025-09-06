@@ -24,13 +24,23 @@ const VillaGuide = () => {
           {/* Welcome Section */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="text-2xl">Welcome to Your Stay</CardTitle>
+              <CardTitle className="text-2xl">🏡 Welcome to Your Stay – House & Nature Combined</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
                 We're so happy to have you here! Whether you're here to relax, explore nature, enjoy outdoor cooking 
                 or simply recharge, this place is designed for just that – comfort, simplicity, and a touch of off-grid living.
               </p>
+              <div className="space-y-2 mb-4 text-sm">
+                <p>This guide will help you:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                  <li>🌲 Get familiar with the house and how things work</li>
+                  <li>🚶‍♀️ Find local tips and outdoor adventures</li>
+                  <li>🔥 Use the fireplace, pizza oven, hot tub and more</li>
+                  <li>🧼 Know what to bring and how to leave the house</li>
+                  <li>💧 Understand our eco-friendly systems</li>
+                </ul>
+              </div>
               <p className="text-sm italic">
                 Take a few minutes to browse through the sections – it'll make your stay smoother and even more enjoyable.
               </p>
@@ -106,26 +116,31 @@ const VillaGuide = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Heating & Energy</h4>
+                  <h4 className="font-semibold mb-2">💡 Quick Facts</h4>
                   <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Solar-powered with automatic heating</li>
+                    <li>• Drinking water is fresh from our well</li>
+                    <li>• Powered by solar energy</li>
+                    <li>• Heat adjusts automatically based on outdoor temperature</li>
+                    <li>• Waste and recycling are managed locally</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Heritage & Character</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Many furnishings are heritage and restored second-hand pieces</li>
+                    <li>• Kept to preserve the history of our ancestors</li>
+                    <li>• Exterior panel treatment dates back 1000 years</li>
+                    <li>• Connected to rich Scandinavian heritage</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Energy & Environment</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Solar-powered with automatic heating system</li>
                     <li>• Temperature adjusts based on outdoor conditions</li>
-                    <li>• Backup heating available if needed</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Water System</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Fresh drinking water from our well</li>
-                    <li>• Hot water available throughout</li>
                     <li>• Please conserve water when possible</li>
+                    <li>• Separate bins for recycling, compost, and general waste</li>
                   </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Waste & Recycling</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Managed locally. Separate bins for recycling, compost, and general waste are provided.
-                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -263,8 +278,34 @@ const VillaGuide = () => {
             </Card>
           </div>
 
+          {/* Special Message */}
+          <Card className="mt-8 bg-gradient-to-r from-accent/5 to-primary/5 border-primary/20">
+            <CardHeader>
+              <CardTitle className="text-xl">💛 A Note From Us</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-muted-foreground">
+                  This is a place we care deeply about. It's built on simplicity, sustainability and space to breathe.
+                </p>
+                <p className="text-muted-foreground">
+                  We ask that you treat the house and nature around it with the same love and respect we do.
+                </p>
+                <p className="font-medium">
+                  Enjoy every moment. You're officially on slow time now.
+                </p>
+                <div className="mt-4 p-4 bg-background/80 rounded-lg border">
+                  <p className="text-sm italic text-muted-foreground">
+                    "What you see here is more than a house – it's a story told in wood, light, effort and love. 
+                    Thank you for treating it with care."
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Contact Section */}
-          <Card className="mt-8">
+          <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Phone className="h-5 w-5" />
@@ -285,8 +326,17 @@ const VillaGuide = () => {
                   <p className="text-sm text-muted-foreground">+46 70 123 4567</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold">WhatsApp</h4>
-                  <p className="text-sm text-muted-foreground">Quick responses</p>
+                  <h4 className="font-semibold">Weather</h4>
+                  <p className="text-sm text-muted-foreground">
+                    <a 
+                      href="https://www.smhi.se/vader/prognoser-och-varningar/vaderprognos/q/Lerum/Stora%20H%C3%A4rsj%C3%B6n/2673117" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      Local forecast
+                    </a>
+                  </p>
                 </div>
               </div>
             </CardContent>
