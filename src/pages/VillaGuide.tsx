@@ -2,10 +2,8 @@ import { ArrowLeft, Wifi, MapPin, Car, Utensils, Flame, TreePine, Home, Phone } 
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
 const VillaGuide = () => {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
@@ -26,7 +24,7 @@ const VillaGuide = () => {
           {/* Welcome Section */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="text-2xl">🏡 Welcome to Your Stay</CardTitle>
+              <CardTitle className="text-2xl">Welcome to Your Stay</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
@@ -295,8 +293,6 @@ const VillaGuide = () => {
           </Card>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default VillaGuide;
