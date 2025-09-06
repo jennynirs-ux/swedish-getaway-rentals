@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Mail, Phone, MessageCircle } from "lucide-react";
+import { Calendar, Mail, Phone, MessageCircle, Wifi, TreePine, Flame, Waves } from "lucide-react";
 
 const LakehouseBooking = () => {
   return (
@@ -77,8 +77,76 @@ const LakehouseBooking = () => {
             </Card>
           </div>
 
-          {/* Pricing & Contact Info */}
+          {/* Property Info & Pricing */}
           <div className="space-y-6">
+            {/* Property Features */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TreePine className="h-5 w-5" />
+                  Your Peaceful Escape
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Built on simplicity, sustainability and space to breathe. Experience tranquility and off-grid living.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TreePine className="h-4 w-4 text-primary" />
+                    <span className="text-sm">Eco-friendly off-grid living</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Waves className="h-4 w-4 text-primary" />
+                    <span className="text-sm">Direct lake access</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-primary" />
+                    <span className="text-sm">Cozy fireplace</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Wi-Fi Information */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wifi className="h-5 w-5" />
+                  Stay Connected
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm"><strong>Network:</strong> Villa Häcken_Guest</p>
+                  <p className="text-sm"><strong>Password:</strong> Hacken78</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* What's Included */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Your Complete Guide</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>🌲 House orientation & eco-systems guide</p>
+                  <p>🚶‍♀️ Local hiking trails & adventures</p>
+                  <p>🔥 Fireplace & heating instructions</p>
+                  <p>🧼 Check-in & departure guidelines</p>
+                  <p>💧 Sustainable living systems info</p>
+                  <p>🗺️ Local recommendations & cultural tips</p>
+                  <p>🇸🇪 First time in Sweden guide</p>
+                </div>
+                <div className="mt-4 p-3 bg-accent/10 rounded-lg">
+                  <p className="text-xs italic text-muted-foreground">
+                    "You're officially on slow time now. Treat this place with the same love and respect we do."
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Pricing Card */}
             <Card className="shadow-lg">
               <CardHeader>
