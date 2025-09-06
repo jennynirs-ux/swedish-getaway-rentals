@@ -1,4 +1,6 @@
-import { Waves, Fish, TreePine, Wifi, Car, Utensils, Flame, Bed, Mountain, Sailboat } from "lucide-react";
+import { Waves, Fish, TreePine, Wifi, Car, Utensils, Flame, Bed, Mountain, Sailboat, BookOpen } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const amenities = [
   {
@@ -112,6 +114,15 @@ const LakehouseAmenities = () => {
                 Kayaks, fishing gear, and swimming area included. Perfect for families and adventure seekers.
               </p>
             </div>
+          </div>
+          
+          <div className="text-center mt-12">
+            <Link to="/lakehouse-getaway/guide">
+              <Button variant="outline" size="lg" className="gap-2">
+                <BookOpen className="h-4 w-4" />
+                View Complete Guest Guide
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

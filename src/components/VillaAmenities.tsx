@@ -1,4 +1,6 @@
-import { Wifi, Car, Waves, TreePine, UtensilsCrossed, Flame, Users, Bed, Mountain, Sparkles } from "lucide-react";
+import { Wifi, Car, Waves, TreePine, UtensilsCrossed, Flame, Users, Bed, Mountain, Sparkles, BookOpen } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 const VillaAmenities = () => {
   const amenities = [{
     icon: Bed,
@@ -91,6 +93,15 @@ const VillaAmenities = () => {
                   Modern amenities in a stunning natural setting
                 </p>
               </div>
+            </div>
+            
+            <div className="text-center mt-8">
+              <Link to="/villa-hacken/guide">
+                <Button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 hover:border-white/40 transition-all duration-300">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  View Complete Guest Guide
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
