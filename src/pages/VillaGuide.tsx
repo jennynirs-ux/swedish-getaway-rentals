@@ -1,498 +1,240 @@
-import { ArrowLeft, Wifi, MapPin, Home, Phone, AlertCircle, Flame, TreePine, Car, Utensils, HelpCircle, CheckCircle, Clock, Users, Coffee, Waves, Mountain, Sun, Moon } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, MapPin, Home, Users, Utensils, Waves, TreePine, CheckCircle, Settings, Sparkles, Mountain, Car } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GuideSectionDialog } from "@/components/GuideSectionDialog";
 
 const VillaGuide = () => {
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section);
+  const handleSectionClick = (section) => {
+    setSelectedSection(section);
+    setIsDialogOpen(true);
   };
+
+  const guideSections = [
+    {
+      icon: MapPin,
+      title: "Arriving",
+      description: "Your journey to Villa Häcken and getting settled in your forest retreat.",
+      content: [
+        "Address: Villa Häcken, private forest location (exact coordinates sent 24h before arrival)",
+        "Follow signs for 'Villa Häcken' from the main forest road",
+        "Private driveway with parking for multiple vehicles",
+        "Check-in time: 4:00 PM (early arrival available upon request)",
+        "Key collection from secure lockbox (code provided before arrival)",
+        "Emergency contact numbers posted inside main entrance",
+        "Welcome basket with local specialties awaits you",
+        "Property map and house manual in the main living area"
+      ],
+      tips: [
+        "Download offline maps - forest location has limited cellular coverage",
+        "Bring a flashlight for evening arrivals",
+        "Stock up on groceries beforehand - nearest village is 12km away",
+        "Weather can change quickly in the forest - pack accordingly"
+      ],
+      important: [
+        "Respect quiet forest environment - wildlife is abundant",
+        "No smoking anywhere on the property",
+        "Maximum 8 guests as per local regulations",
+        "Report any issues immediately to emergency contact"
+      ]
+    },
+    {
+      icon: Waves,
+      title: "Sauna & Wellness",
+      description: "Authentic Swedish sauna experience and outdoor wellness facilities.",
+      content: [
+        "Traditional wood-fired sauna ready to use (heating instructions provided)",
+        "Outdoor hot tub with forest views - available year-round",
+        "Changing facilities and outdoor shower area",
+        "Sauna accessories: towels, robes, and traditional birch whisks",
+        "Hot tub maintenance kit and usage guidelines",
+        "Wellness area lighting for evening relaxation",
+        "Safety equipment and first aid kit nearby",
+        "Traditional cooling pool for authentic sauna experience"
+      ],
+      tips: [
+        "Allow 45 minutes for sauna to reach optimal temperature",
+        "Best sauna experience is in the evening under the Nordic sky",
+        "Hydrate well before and after sauna sessions",
+        "Try the traditional Swedish sauna ritual with birch whisks"
+      ],
+      important: [
+        "Never leave sauna fire unattended",
+        "Children must be supervised in all wellness areas",
+        "Check hot tub temperature before use",
+        "Report any equipment malfunctions immediately"
+      ]
+    },
+    {
+      icon: TreePine,
+      title: "Forest & Outdoor",
+      description: "Exploring the pristine Swedish forest surrounding Villa Häcken.",
+      content: [
+        "Private forest trails marked with wooden posts",
+        "Trail difficulty levels clearly marked (easy, moderate, challenging)",
+        "Detailed trail maps available - always carry one",
+        "Designated areas for berry picking and mushroom foraging",
+        "Wildlife observation points with benches",
+        "Outdoor dining area with fire pit and BBQ facilities",
+        "Forest photography spots marked on property map",
+        "Emergency whistle and first aid supplies at trail heads"
+      ],
+      tips: [
+        "Early morning is best for wildlife spotting",
+        "Wear appropriate hiking boots - trails can be uneven",
+        "Bring insect repellent during summer months",
+        "Forage responsibly - take only what you need"
+      ],
+      important: [
+        "Always inform someone of your hiking plans",
+        "Stay on marked trails - respect private property boundaries",
+        "No camping or fires outside designated areas",
+        "Protect the forest - follow Leave No Trace principles"
+      ]
+    },
+    {
+      icon: Home,
+      title: "House Systems",
+      description: "Understanding Villa Häcken's modern systems and traditional elements.",
+      content: [
+        "Central heating with individual room controls",
+        "Hot water system with efficient recovery time",
+        "Modern septic system - guidelines posted in bathrooms",
+        "Private well water - tested regularly, safe to drink",
+        "Backup generator for power outages (automatic activation)",
+        "High-speed fiber internet throughout the villa",
+        "Waste management and recycling guidelines",
+        "Traditional wood-burning fireplace with safety equipment"
+      ],
+      tips: [
+        "Adjust heating room by room for optimal comfort",
+        "Wood for fireplace provided - instructions in living room",
+        "WiFi details posted in main entrance area",
+        "Use energy efficiently - villa is eco-friendly designed"
+      ],
+      important: [
+        "Report any plumbing or electrical issues immediately",
+        "Never attempt repairs yourself",
+        "Keep fireplace area clear of combustibles",
+        "Follow all safety procedures posted throughout villa"
+      ]
+    },
+    {
+      icon: Utensils,
+      title: "Kitchen & Dining",
+      description: "Gourmet kitchen facilities and dining experiences at Villa Häcken.",
+      content: [
+        "Professional-grade kitchen with premium appliances",
+        "Induction cooking surface with specialized cookware provided",
+        "Large refrigerator/freezer with ice maker and wine cooler",
+        "Dishwasher with eco-friendly detergents supplied",
+        "Coffee station: espresso machine, grinder, and premium Swedish coffee",
+        "Dining for 8 people indoors and additional outdoor seating",
+        "Outdoor BBQ area with gas grill and charcoal options",
+        "Herb garden with fresh ingredients for cooking"
+      ],
+      tips: [
+        "Try local Swedish specialties from the welcome basket",
+        "Fresh herbs available from the villa garden",
+        "Outdoor dining is magical during Nordic summer evenings",
+        "Local farm shop 12km away for fresh, organic ingredients"
+      ],
+      important: [
+        "Store food properly - forest wildlife is abundant",
+        "Clean up thoroughly after cooking",
+        "Turn off all appliances when not in use",
+        "Follow fire safety when using outdoor BBQ"
+      ]
+    },
+    {
+      icon: CheckCircle,
+      title: "Check-out",
+      description: "Departure procedures to ensure Villa Häcken is ready for future guests.",
+      content: [
+        "Check-out time: 11:00 AM (late departure available with prior arrangement)",
+        "Complete checkout checklist provided in guest folder",
+        "Final walkthrough to check for personal belongings",
+        "Return all keys to lockbox and reset combination",
+        "Final meter readings and damage assessment",
+        "Feedback form completion (helps us improve your experience)",
+        "Property security check before departure",
+        "Emergency contact available until you're safely on your way"
+      ],
+      tips: [
+        "Start packing the evening before departure",
+        "Take final photos of your memorable forest retreat",
+        "Check weather and road conditions for departure",
+        "Download navigation route for safe journey home"
+      ],
+      important: [
+        "Ensure all fires are completely extinguished",
+        "Secure all windows and exterior doors",
+        "Turn off main water supply if staying in winter",
+        "Report any maintenance needs or damage before leaving"
+      ]
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link to="/villa-hacken">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Villa Häcken
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Villa Häcken - Guest Guide</h1>
+      <div className="bg-warm-gradient text-white py-16">
+        <div className="villa-container">
+          <Link to="/villa-hacken">
+            <Button variant="ghost" className="text-white hover:bg-white/20 mb-8">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Villa Häcken
+            </Button>
+          </Link>
+          
+          <div className="max-w-4xl">
+            <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
+              Villa Häcken Guest Guide
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
+              Your complete guide to experiencing luxury in the heart of Swedish nature.
+            </p>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Welcome Section */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-2xl">Welcome to Your Stay – House & Nature Combined</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                We're so happy to have you here! Whether you're here to relax, explore nature, enjoy outdoor cooking 
-                or simply recharge, this place is designed for just that – comfort, simplicity, and a touch of off-grid living.
-              </p>
-              <div className="space-y-2 mb-4 text-sm">
-                <p>This guide will help you:</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                  <li>Get familiar with the house and how things work</li>
-                  <li>Find local tips and outdoor adventures</li>
-                  <li>Use the fireplace, pizza oven, hot tub and more</li>
-                  <li>Know what to bring and how to leave the house</li>
-                  <li>Understand our eco-friendly systems</li>
-                </ul>
-              </div>
-              <p className="text-sm italic">
-                Take a few minutes to browse through the sections – it'll make your stay smoother and even more enjoyable.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Quick Access */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wifi className="h-5 w-5" />
-                Quick Access Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Wi-Fi Access</h4>
-                  <p className="text-sm"><strong>Network:</strong> Villa Häcken_Guest</p>
-                  <p className="text-sm"><strong>Password:</strong> Hacken78</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Emergency Contact</h4>
-                  <p className="text-sm"><strong>Phone:</strong> +46 70 123 4567</p>
-                  <p className="text-sm"><strong>Email:</strong> villa@hacken.se</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Interactive Guide Sections */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {[
-              { 
-                icon: MapPin, 
-                title: "Arriving", 
-                description: "Everything you need for a smooth arrival",
-                color: "text-blue-600",
-                section: "arriving"
-              },
-              { 
-                icon: Home, 
-                title: "House Systems", 
-                description: "How our eco-friendly systems work",
-                color: "text-green-600",
-                section: "systems"
-              },
-              { 
-                icon: Flame, 
-                title: "Outdoor Features", 
-                description: "Pizza oven, hot tub, and fireplace",
-                color: "text-orange-600",
-                section: "outdoor"
-              },
-              { 
-                icon: TreePine, 
-                title: "Local Adventures", 
-                description: "Hiking, dining, and nature activities",
-                color: "text-emerald-600",
-                section: "local"
-              },
-              { 
-                icon: Users, 
-                title: "Swedish Culture", 
-                description: "Tips for first-time visitors",
-                color: "text-yellow-600",
-                section: "culture"
-              },
-              { 
-                icon: CheckCircle, 
-                title: "Check-out", 
-                description: "Simple steps before departure",
-                color: "text-purple-600",
-                section: "checkout"
-              }
-            ].map((item, index) => (
-              <Card 
-                key={index} 
-                className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
-                onClick={() => toggleSection(item.section)}
+      {/* Guide Sections */}
+      <div className="villa-section">
+        <div className="villa-container">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {guideSections.map((section, index) => (
+              <div
+                key={index}
+                className="guide-section-card"
+                onClick={() => handleSectionClick(section)}
               >
-                <CardHeader className="text-center pb-2">
-                  <item.icon className={`h-12 w-12 mx-auto mb-2 ${item.color}`} />
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground text-center">
-                    {item.description}
-                  </p>
-                </CardContent>
-              </Card>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <section.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-display font-semibold text-foreground mb-2">
+                      {section.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {section.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-
-          {/* Detailed Sections */}
-          <div className="space-y-8">
-            {/* Arriving */}
-            {(expandedSection === "arriving" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-blue-600" />
-                    Arriving
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Coffee className="h-4 w-4" />
-                      What to Bring - Essentials
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Toothbrush & toothpaste</li>
-                      <li>• Pyjamas and change of clothes</li>
-                      <li>• Personal medication or must-haves</li>
-                      <li>• Rain jacket and extra layer (Swedish weather is unpredictable)</li>
-                      <li>• Extra pair of socks (no shoes indoors in Swedish homes)</li>
-                      <li>• Good walking shoes or hiking boots</li>
-                      <li>• Swimming gear for the lake</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Sun className="h-4 w-4" />
-                      Nice to Have
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• A good book for quiet forest mornings</li>
-                      <li>• Headlamp or flashlight (gets very dark at night)</li>
-                      <li>• Snacks or special food items</li>
-                      <li>• Fishing gear (fishing license required - fiskekort.se)</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Provided at the House
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Toilet paper, hand soap, dish soap</li>
-                      <li>• Basic spices: salt, pepper, olive oil</li>
-                      <li>• Coffee beans</li>
-                      <li>• Bed linens and towels</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Check-in & Parking
-                    </h4>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Check-in is after 3:00 PM. Free parking available directly at the property.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      We'll provide detailed arrival instructions with door codes via email before your stay.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* House Systems */}
-            {(expandedSection === "systems" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Home className="h-5 w-5 text-green-600" />
-                    How Things Work
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Sun className="h-4 w-4" />
-                      Sustainability & Energy
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Powered by solar panels with grid backup</li>
-                      <li>• Smart heating adjusts automatically to outdoor temperature</li>
-                      <li>• Fresh drinking water from our well</li>
-                      <li>• Please be mindful of energy usage on cloudy days</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Coffee className="h-4 w-4" />
-                      Smart Features
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Control lights via switches or "Hey Google"</li>
-                      <li>• Bean-to-cup espresso machine in kitchen</li>
-                      <li>• Microwave/oven combo unit</li>
-                      <li>• Dishwasher (no frying pans or wooden tools)</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Mountain className="h-4 w-4" />
-                      Heritage & Character
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Many furnishings are restored heritage pieces</li>
-                      <li>• Preserved to honor the history of our ancestors</li>
-                      <li>• Exterior panel treatment dates back 1000 years</li>
-                      <li>• Connected to rich Scandinavian heritage</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Outdoor Features */}
-            {(expandedSection === "outdoor" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Flame className="h-5 w-5 text-orange-600" />
-                    Outdoor Features
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Utensils className="h-4 w-4" />
-                      Pizza Oven
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Wood-fired Neapolitan pizza oven</li>
-                      <li>• Firewood provided in storage area</li>
-                      <li>• Allow 45-60 minutes for proper heating</li>
-                      <li>• Pizza stones and tools available</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Waves className="h-4 w-4" />
-                      Hot Tub
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Available year-round</li>
-                      <li>• Instructions posted beside the tub</li>
-                      <li>• Please rinse before entering</li>
-                      <li>• Cover after use to maintain temperature</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Flame className="h-4 w-4" />
-                      Indoor Fireplace
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Cozy fireplace for evening warmth</li>
-                      <li>• Dry firewood stored nearby</li>
-                      <li>• Fire starter and matches provided</li>
-                      <li>• Always close damper when not in use</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Local Favorites */}
-            {(expandedSection === "local" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TreePine className="h-5 w-5 text-emerald-600" />
-                    Local Favorites
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Mountain className="h-4 w-4" />
-                      Hiking & Nature
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Forest trails directly from the property</li>
-                      <li>• Lake Härssjön - 15 minutes walk</li>
-                      <li>• Delsjöområdet nature reserve - 20 minutes drive</li>
-                      <li>• Marked hiking trails with varying difficulty</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Car className="h-4 w-4" />
-                      Shopping & Dining
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• ICA Kvantum - 7 km away (grocery store)</li>
-                      <li>• Local farm shop for fresh produce</li>
-                      <li>• Lerum town center - restaurants & cafes</li>
-                      <li>• Gothenburg city center - 30 minutes drive</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* First Time in Sweden */}
-            {(expandedSection === "culture" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-yellow-600" />
-                    First Time in Sweden?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3">Cultural Tips</h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• "Allemansrätten" - Right to roam freely in nature</li>
-                      <li>• Remove shoes when entering homes</li>
-                      <li>• Most Swedes speak excellent English</li>
-                      <li>• Tipping is not expected but appreciated</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3">Practical Information</h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Sweden uses SEK (Swedish Krona)</li>
-                      <li>• Card payments accepted everywhere</li>
-                      <li>• 220V electrical outlets (European plug)</li>
-                      <li>• Emergency number: 112</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Check-out */}
-            {(expandedSection === "checkout" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-purple-600" />
-                    Check-out Guidelines
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      General Areas
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Check-out by 11:00 AM</li>
-                      <li>• Put furniture back in original place</li>
-                      <li>• Empty all trash bins</li>
-                      <li>• Take waste to recycling station near ICA Kvantum</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3">Final Steps</h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Load and start dishwasher</li>
-                      <li>• Strip beds and place linens on laundry room floor</li>
-                      <li>• Close all windows and turn off lights</li>
-                      <li>• Return borrowed items and lock all doors</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Special Message */}
-          <Card className="mt-8 bg-gradient-to-r from-accent/5 to-primary/5 border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-xl">A Note From Us</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  This is a place we care deeply about. It's built on simplicity, sustainability and space to breathe.
-                </p>
-                <p className="text-muted-foreground">
-                  We ask that you treat the house and nature around it with the same love and respect we do.
-                </p>
-                <p className="font-medium">
-                  Enjoy every moment. You're officially on slow time now.
-                </p>
-                <div className="mt-4 p-4 bg-background/80 rounded-lg border">
-                  <p className="text-sm italic text-muted-foreground">
-                    "What you see here is more than a house – it's a story told in wood, light, effort and love. 
-                    Thank you for treating it with care."
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Contact Section */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                Need Help?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                If you have any questions during your stay, don't hesitate to reach out:
-              </p>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <h4 className="font-semibold">Email</h4>
-                  <p className="text-sm text-muted-foreground">villa@hacken.se</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Phone</h4>
-                  <p className="text-sm text-muted-foreground">+46 70 123 4567</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Weather</h4>
-                  <p className="text-sm text-muted-foreground">
-                    <a 
-                      href="https://www.smhi.se/vader/prognoser-och-varningar/vaderprognos/q/Lerum/Stora%20H%C3%A4rsj%C3%B6n/2673117" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Local forecast
-                    </a>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      </main>
+
+        <GuideSectionDialog
+          section={selectedSection}
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+        />
+      </div>
     </div>
   );
 };

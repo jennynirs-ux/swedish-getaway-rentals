@@ -122,11 +122,23 @@
     @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
   }
 
+  .lakehouse-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
   .villa-section {
     @apply py-16 lg:py-24;
   }
 
+  .lakehouse-section {
+    @apply py-16 lg:py-24;
+  }
+
   .villa-card {
+    @apply bg-card rounded-lg shadow-soft-shadow p-6 transition-all duration-300 hover:shadow-luxury-shadow hover:-translate-y-1;
+  }
+
+  .lakehouse-card {
     @apply bg-card rounded-lg shadow-soft-shadow p-6 transition-all duration-300 hover:shadow-luxury-shadow hover:-translate-y-1;
   }
 
@@ -136,5 +148,13 @@
 
   .villa-hero-bg {
     background: var(--hero-gradient);
+  }
+
+  .guide-section-card {
+    @apply bg-card border border-border rounded-lg p-6 transition-all duration-300 hover:shadow-soft-shadow cursor-pointer;
+  }
+
+  .guide-section-card:hover {
+    @apply border-primary/20 shadow-lg;
   }
 }

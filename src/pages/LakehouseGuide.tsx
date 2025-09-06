@@ -1,487 +1,232 @@
-import { ArrowLeft, Wifi, MapPin, Home, Phone, AlertCircle, Flame, TreePine, Car, Utensils, CheckCircle, Clock, Users, Coffee, Waves, Mountain, Sun, Moon } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, MapPin, Waves, Fish, TreePine, Home, CheckCircle, Utensils } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GuideSectionDialog } from "@/components/GuideSectionDialog";
 
 const LakehouseGuide = () => {
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section);
+  const handleSectionClick = (section) => {
+    setSelectedSection(section);
+    setIsDialogOpen(true);
   };
+
+  const guideSections = [
+    {
+      icon: MapPin,
+      title: "Arriving",
+      description: "Everything you need to know about getting to the lakehouse and your first steps upon arrival.",
+      content: [
+        "Address: Private lakehouse location will be shared 24 hours before arrival",
+        "GPS coordinates will be provided for accurate navigation",
+        "Look for the wooden sign with 'Lakehouse Retreat' at the entrance",
+        "Parking is available directly next to the lakehouse",
+        "Check-in time is 4:00 PM, early arrival can be arranged upon request",
+        "Keys are located in the lockbox - code will be provided before arrival"
+      ],
+      tips: [
+        "Download offline maps as cell service can be spotty in remote areas",
+        "Bring a flashlight for evening arrivals as outdoor lighting is minimal",
+        "Stock up on groceries before arrival - nearest store is 15km away"
+      ],
+      important: [
+        "Respect quiet hours from 10 PM to 8 AM",
+        "No smoking anywhere on the property",
+        "Maximum 6 guests allowed"
+      ]
+    },
+    {
+      icon: Waves,
+      title: "Lake Activities",
+      description: "Make the most of your lakeside location with swimming, fishing, and water sports.",
+      content: [
+        "Swimming area marked with buoys - water depth gradually increases",
+        "Life jackets available in all sizes in the boat house",
+        "Kayaks stored in boat house - no experience necessary",
+        "Fishing permitted with proper license (we can arrange)",
+        "Best fishing spots: early morning near the reeds, evening by the dock",
+        "Common fish: perch, pike, and bass",
+        "Water temperature monitored daily - posted on dock",
+        "Changing room and outdoor shower available by the lake"
+      ],
+      tips: [
+        "Morning is the best time for fishing and calmest water",
+        "Use the provided fish cleaning station",
+        "Sun protection is essential - UV reflects off water",
+        "Check weather conditions before water activities"
+      ],
+      important: [
+        "Never swim alone - use buddy system",
+        "Children must be supervised at all times near water",
+        "Return all equipment clean and where you found it"
+      ]
+    },
+    {
+      icon: TreePine,
+      title: "Forest Activities",
+      description: "Explore the surrounding Swedish forest with hiking trails and nature experiences.",
+      content: [
+        "Marked trail system with varying difficulty levels",
+        "Trail maps available at the lakehouse - take one with you",
+        "Berry picking allowed (blueberries, lingonberries in season)",
+        "Mushroom foraging permitted with proper identification guide",
+        "Wildlife viewing opportunities: deer, birds, occasional moose",
+        "Photography spots marked on trail maps",
+        "Rest areas with benches every 2km",
+        "Trail maintenance tools available if you encounter fallen trees"
+      ],
+      tips: [
+        "Wear appropriate hiking boots - trails can be muddy",
+        "Bring insect repellent during summer months",
+        "Start early to avoid afternoon heat",
+        "Pack snacks and water for longer hikes"
+      ],
+      important: [
+        "Inform someone of your hiking plans and expected return",
+        "Stick to marked trails only",
+        "Do not feed or approach wildlife",
+        "Follow Leave No Trace principles"
+      ]
+    },
+    {
+      icon: Home,
+      title: "House Systems",
+      description: "Understanding the lakehouse systems, utilities, and how everything works.",
+      content: [
+        "Electric heating controlled by thermostats in each room",
+        "Hot water heated by electric boiler - allow 30 minutes for recovery",
+        "Septic system - only toilet paper should be flushed",
+        "Well water system - safe to drink, may have mineral taste",
+        "Garbage collection on Thursdays - bins by the road before 7 AM",
+        "Recycling guidelines posted in kitchen",
+        "Backup generator for power outages - instructions in utility room",
+        "WiFi password and network info on kitchen counter"
+      ],
+      tips: [
+        "Be mindful of water usage as system relies on well",
+        "Turn off lights and heat when leaving for extended periods",
+        "Emergency contact numbers posted by phone",
+        "Use wood stove for cozy atmosphere and backup heating"
+      ],
+      important: [
+        "Report any plumbing issues immediately",
+        "Do not attempt generator repairs yourself",
+        "Keep septic system healthy - no chemicals down drains"
+      ]
+    },
+    {
+      icon: Utensils,
+      title: "Kitchen & Dining",
+      description: "Everything you need to know about the fully equipped kitchen and dining facilities.",
+      content: [
+        "Full kitchen with modern appliances and cookware",
+        "Induction cooktop - compatible cookware provided",
+        "Large refrigerator/freezer with ice maker",
+        "Dishwasher - eco-friendly detergent provided",
+        "Coffee machine, French press, and electric kettle",
+        "Dining table seats 6 comfortably",
+        "Outdoor grill available with propane tank",
+        "Fish cleaning station by the lake with running water"
+      ],
+      tips: [
+        "Local specialty ingredients available at nearby farm shop",
+        "Fresh fish cleaning guide posted by cleaning station",
+        "Use outdoor grill for authentic lakeside dining experience",
+        "Compost bin for food scraps"
+      ],
+      important: [
+        "Clean up after cooking to avoid attracting wildlife",
+        "Store food properly - bears are present in the area",
+        "Turn off all appliances when not in use"
+      ]
+    },
+    {
+      icon: CheckCircle,
+      title: "Check-out",
+      description: "Departure procedures and ensuring the lakehouse is ready for the next guests.",
+      content: [
+        "Check-out time is 11:00 AM - late departure fees may apply",
+        "Complete cleaning checklist provided in welcome folder",
+        "Remove all personal belongings and check all rooms/closets",
+        "Return keys to lockbox and scramble the code",
+        "Settle any incidental charges or damages",
+        "Leave review and feedback for future improvements",
+        "Emergency contact available until you safely leave the area"
+      ],
+      tips: [
+        "Start packing the evening before departure",
+        "Take final photos as memories of your stay",
+        "Check weather conditions for safe travel",
+        "Download route for return journey"
+      ],
+      important: [
+        "Ensure all fires are completely extinguished",
+        "Secure all windows and doors",
+        "Report any damage or maintenance needs",
+        "Do not leave without completing checkout procedure"
+      ]
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link to="/lakehouse-getaway">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Lakehouse Getaway
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Lakehouse Getaway - Guest Guide</h1>
+      <div className="bg-warm-gradient text-white py-16">
+        <div className="lakehouse-container">
+          <Link to="/lakehouse-getaway">
+            <Button variant="ghost" className="text-white hover:bg-white/20 mb-8">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Lakehouse
+            </Button>
+          </Link>
+          
+          <div className="max-w-4xl">
+            <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
+              Lakehouse Guest Guide
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
+              Everything you need to know for an amazing lakeside retreat in the heart of Swedish nature.
+            </p>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Welcome Section */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-2xl">Welcome to Your Stay – House & Nature Combined</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                We're so happy to have you here! Whether you're here to relax, explore nature, enjoy outdoor cooking 
-                or simply recharge, this place is designed for just that – comfort, simplicity, and a touch of off-grid living.
-              </p>
-              <div className="space-y-2 mb-4 text-sm">
-                <p>This guide will help you:</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                  <li>Get familiar with the house and how things work</li>
-                  <li>Find local tips and outdoor adventures</li>
-                  <li>Use the fireplace and more</li>
-                  <li>Know what to bring and how to leave the house</li>
-                  <li>Understand our eco-friendly systems</li>
-                </ul>
-              </div>
-              <p className="text-sm italic">
-                Take a few minutes to browse through the sections – it'll make your stay smoother and even more enjoyable.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Quick Access */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wifi className="h-5 w-5" />
-                Quick Access Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Wi-Fi Access</h4>
-                  <p className="text-sm"><strong>Network:</strong> Villa Häcken_Guest</p>
-                  <p className="text-sm"><strong>Password:</strong> Hacken78</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Emergency Contact</h4>
-                  <p className="text-sm"><strong>Email:</strong> jolofsson87@gmail.com</p>
-                  <p className="text-sm"><strong>Phone:</strong> +46 XX XXX XX XX</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Interactive Guide Sections */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {[
-              { 
-                icon: MapPin, 
-                title: "Arriving", 
-                description: "Everything you need for a smooth arrival",
-                color: "text-blue-600",
-                section: "arriving"
-              },
-              { 
-                icon: Home, 
-                title: "House Systems", 
-                description: "How our off-grid systems work",
-                color: "text-green-600",
-                section: "systems"
-              },
-              { 
-                icon: Waves, 
-                title: "Lake Activities", 
-                description: "Dock, kayak, fishing, and more",
-                color: "text-cyan-600",
-                section: "lake"
-              },
-              { 
-                icon: TreePine, 
-                title: "Local Adventures", 
-                description: "Nature trails and attractions",
-                color: "text-emerald-600",
-                section: "local"
-              },
-              { 
-                icon: Users, 
-                title: "Swedish Culture", 
-                description: "Tips for first-time visitors",
-                color: "text-yellow-600",
-                section: "culture"
-              },
-              { 
-                icon: CheckCircle, 
-                title: "Check-out", 
-                description: "Simple steps before departure",
-                color: "text-purple-600",
-                section: "checkout"
-              }
-            ].map((item, index) => (
-              <Card 
-                key={index} 
-                className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
-                onClick={() => toggleSection(item.section)}
+      {/* Guide Sections */}
+      <div className="lakehouse-section">
+        <div className="lakehouse-container">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {guideSections.map((section, index) => (
+              <div
+                key={index}
+                className="guide-section-card"
+                onClick={() => handleSectionClick(section)}
               >
-                <CardHeader className="text-center pb-2">
-                  <item.icon className={`h-12 w-12 mx-auto mb-2 ${item.color}`} />
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground text-center">
-                    {item.description}
-                  </p>
-                </CardContent>
-              </Card>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <section.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-display font-semibold text-foreground mb-2">
+                      {section.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {section.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-
-          {/* Detailed Sections */}
-          <div className="space-y-8">
-            {/* Arriving */}
-            {(expandedSection === "arriving" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-blue-600" />
-                    Arriving
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Coffee className="h-4 w-4" />
-                      What to Bring - Essentials
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Toothbrush & toothpaste</li>
-                      <li>• Pyjamas and change of clothes</li>
-                      <li>• Personal medication or must-haves</li>
-                      <li>• Rain jacket and extra layer (Swedish weather is unpredictable)</li>
-                      <li>• Extra pair of socks (no shoes indoors in Swedish homes)</li>
-                      <li>• Good walking shoes or hiking boots</li>
-                      <li>• Swimming gear for lake activities</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Sun className="h-4 w-4" />
-                      Nice to Have
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• A good book for quiet lakeside mornings</li>
-                      <li>• Headlamp or flashlight (gets very dark at night)</li>
-                      <li>• Snacks or special food items</li>
-                      <li>• Fishing gear (fishing license required - fiskekort.se)</li>
-                      <li>• Camera for stunning lake views</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Check-in & Parking
-                    </h4>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Check-in is after 4:00 PM (16:00). Free parking available at the property.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      We'll send detailed arrival instructions including access codes 24 hours before your stay.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* House Systems */}
-            {(expandedSection === "systems" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Home className="h-5 w-5 text-green-600" />
-                    How Things Work
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Sun className="h-4 w-4" />
-                      Sustainability & Energy
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Powered by solar panels with smart heating system</li>
-                      <li>• Heating adjusts automatically to outdoor temperature</li>
-                      <li>• Please be mindful of energy usage on cloudy days</li>
-                      <li>• Turn off lights and unplug unused appliances</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Utensils className="h-4 w-4" />
-                      Kitchen & Appliances
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Oven with specific heating instructions</li>
-                      <li>• Water system for dishes and drinking</li>
-                      <li>• Outdoor kitchen with gas stove available</li>
-                      <li>• BBQ grill and cooking utensils provided</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Waves className="h-4 w-4" />
-                      Water & Waste Systems
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Water supply from lake filtration system</li>
-                      <li>• Separett composting toilet system</li>
-                      <li>• Gray water system for dishwashing</li>
-                      <li>• Recycling bins and compost bucket provided</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Lake & Outdoor Activities */}
-            {(expandedSection === "lake" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Waves className="h-5 w-5 text-cyan-600" />
-                    Lake & Outdoor Activities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Waves className="h-4 w-4" />
-                      Lake Access
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Private dock for swimming and fishing</li>
-                      <li>• Kayak available for guest use</li>
-                      <li>• Life jackets provided in various sizes</li>
-                      <li>• Fishing equipment available on-site</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Flame className="h-4 w-4" />
-                      Outdoor Cooking & Fire
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Fire pit for evening gatherings</li>
-                      <li>• Firewood stored in shed</li>
-                      <li>• Indoor fireplace for cozy evenings</li>
-                      <li>• Kindling and fire starters provided</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <TreePine className="h-4 w-4" />
-                      Nature Activities
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Lakeside trail circuit (2-3 hours)</li>
-                      <li>• Forest mushroom and berry picking</li>
-                      <li>• Bird watching from the dock</li>
-                      <li>• Photography spots marked on property</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Local Adventures */}
-            {(expandedSection === "local" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TreePine className="h-5 w-5 text-emerald-600" />
-                    Local Adventures
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Mountain className="h-4 w-4" />
-                      Nearby Attractions
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Traditional Swedish village - 15 minutes</li>
-                      <li>• Local artisan workshops</li>
-                      <li>• Historic wooden church</li>
-                      <li>• Farmers market (weekends only)</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Sun className="h-4 w-4" />
-                      Seasonal Activities
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Summer: Swimming, kayaking, midnight sun</li>
-                      <li>• Autumn: Mushroom picking, northern lights</li>
-                      <li>• Winter: Ice fishing, cross-country skiing</li>
-                      <li>• Spring: Bird migration, wildflower blooms</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* First Time in Sweden */}
-            {(expandedSection === "culture" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-yellow-600" />
-                    First Time in Sweden?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3">Cultural Tips</h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• "Allemansrätten" - Freedom to roam in nature</li>
-                      <li>• "Lagom" - The Swedish art of balance</li>
-                      <li>• "Fika" - Coffee break culture (very important!)</li>
-                      <li>• Swedes value personal space and quietness</li>
-                      <li>• Remove shoes when entering homes</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3">Nature Etiquette</h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Leave no trace - pack out what you bring</li>
-                      <li>• Don't disturb wildlife or nesting birds</li>
-                      <li>• Fire only in designated areas</li>
-                      <li>• Respect private property boundaries</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Check-out */}
-            {(expandedSection === "checkout" || expandedSection === null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-purple-600" />
-                    Check-out Guidelines
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Before Departure
-                    </h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Check-out by 11:00 AM</li>
-                      <li>• Strip beds and place linens in hamper</li>
-                      <li>• Wash and put away all dishes</li>
-                      <li>• Empty compost bucket into outdoor bin</li>
-                    </ul>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-semibold mb-3">Final Steps</h4>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Turn off all lights and equipment</li>
-                      <li>• Close water valves and sort recycling</li>
-                      <li>• Ensure fire is completely extinguished</li>
-                      <li>• Return keys and borrowed equipment</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Special Message */}
-          <Card className="mt-8 bg-gradient-to-r from-accent/5 to-primary/5 border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-xl">A Note From Us</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  This is a place we care deeply about. It's built on simplicity, sustainability and space to breathe.
-                </p>
-                <p className="text-muted-foreground">
-                  We ask that you treat the house and nature around it with the same love and respect we do.
-                </p>
-                <p className="font-medium">
-                  Enjoy every moment. You're officially on slow time now.
-                </p>
-                <div className="mt-4 p-4 bg-background/80 rounded-lg border">
-                  <p className="text-sm italic text-muted-foreground">
-                    "What you see here is more than a house – it's a story told in wood, light, effort and love. 
-                    Thank you for treating it with care."
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Contact Section */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                Need Assistance?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                For any questions or assistance during your stay:
-              </p>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <h4 className="font-semibold">Email</h4>
-                  <p className="text-sm text-muted-foreground">jolofsson87@gmail.com</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Phone</h4>
-                  <p className="text-sm text-muted-foreground">+46 XX XXX XX XX</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Weather</h4>
-                  <p className="text-sm text-muted-foreground">
-                    <a 
-                      href="https://www.smhi.se/vader/prognoser-och-varningar/vaderprognos/q/Lerum/Stora%20H%C3%A4rsj%C3%B6n/2673117" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Local forecast
-                    </a>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      </main>
+
+        <GuideSectionDialog
+          section={selectedSection}
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+        />
+      </div>
     </div>
   );
 };

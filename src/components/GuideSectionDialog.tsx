@@ -1,0 +1,106 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { LucideIcon } from "lucide-react";
+
+interface GuideSection {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  content: string[];
+  tips?: string[];
+  important?: string[];
+}
+
+interface GuideSectionDialogProps {
+  section: GuideSection | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const GuideSectionDialog = ({ section, isOpen, onClose }: GuideSectionDialogProps) => {
+  if (!section) return null;
+
+  const IconComponent = section.icon;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl w-full max-h-[90vh] overflow-y-auto bg-card">
+        <DialogHeader className="pb-6 flex flex-row items-center justify-between border-b border-border">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <IconComponent className="w-6 h-6 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl font-display font-bold text-foreground">
+              {section.title}
+            </DialogTitle>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0 hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
+        
+        <div className="py-6 space-y-6">
+          {/* Description */}
+          <p className="text-muted-foreground text-lg leading-relaxed">
+            {section.description}
+          </p>
+
+          {/* Main Content */}
+          {section.content && section.content.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-foreground mb-4">Information</h4>
+              <div className="space-y-3">
+                {section.content.map((item, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                    <p className="text-muted-foreground leading-relaxed">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tips */}
+          {section.tips && section.tips.length > 0 && (
+            <div className="bg-accent/10 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                💡 Tips
+              </h4>
+              <div className="space-y-2">
+                {section.tips.map((tip, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                    <p className="text-muted-foreground text-sm leading-relaxed">{tip}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Important Notes */}
+          {section.important && section.important.length > 0 && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                ⚠️ Important
+              </h4>
+              <div className="space-y-2">
+                {section.important.map((note, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 bg-destructive rounded-full mt-2 flex-shrink-0" />
+                    <p className="text-muted-foreground text-sm leading-relaxed">{note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
