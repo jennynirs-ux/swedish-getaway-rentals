@@ -27,8 +27,16 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full p-0 bg-white">
-        <DialogHeader className="p-6 pb-0">
+        <DialogHeader className="p-6 pb-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-2xl font-bold">{currentImage?.title}</DialogTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0 hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DialogHeader>
         
         <div className="relative">

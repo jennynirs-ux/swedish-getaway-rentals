@@ -1,40 +1,66 @@
+import { useState } from "react";
 import { Wifi, Car, Waves, TreePine, UtensilsCrossed, Flame, Users, Bed, Mountain, Sparkles, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { AmenityDialog } from "@/components/AmenityDialog";
 const VillaAmenities = () => {
+  const [selectedAmenity, setSelectedAmenity] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const amenities = [{
     icon: Bed,
     title: "4 Bedrooms",
-    description: "Spacious bedrooms with premium linens and forest views"
+    description: "Spacious bedrooms with premium linens and forest views",
+    detailedDescription: "Villa Häcken features four beautifully appointed bedrooms, each offering stunning views of the surrounding forest. All rooms are furnished with high-quality linens, comfortable mattresses, and thoughtful amenities for a restful night's sleep.",
+    features: ["Premium cotton bed linens", "Memory foam mattresses", "Forest view windows", "Individual climate control", "Blackout curtains", "Reading lights"]
   }, {
     icon: Users,
     title: "8 Guests",
-    description: "Comfortably accommodates up to 8 guests"
+    description: "Comfortably accommodates up to 8 guests",
+    detailedDescription: "The villa is designed to comfortably accommodate up to 8 guests across four bedrooms and multiple living spaces. Perfect for families, groups of friends, or corporate retreats seeking a peaceful getaway.",
+    features: ["4 bedrooms with various bed configurations", "Multiple bathrooms", "Spacious living areas", "Dining for 8 people", "Outdoor seating areas"]
   }, {
     icon: Waves,
     title: "Sauna & Hot Tub",
-    description: "Traditional Finnish sauna and outdoor hot tub"
+    description: "Traditional Finnish sauna and outdoor hot tub",
+    detailedDescription: "Experience the authentic Swedish wellness tradition with our traditional wood-fired sauna and outdoor hot tub. Perfect for relaxation after a day of forest exploration or simply to unwind under the Nordic sky.",
+    features: ["Traditional wood-fired sauna", "Outdoor hot tub with forest views", "Sauna accessories provided", "Changing area", "Outdoor shower", "Towels and robes included"]
   }, {
     icon: Flame,
     title: "Fireplace",
-    description: "Cozy fireplace for those chilly Swedish evenings"
+    description: "Cozy fireplace for those chilly Swedish evenings",
+    detailedDescription: "The centerpiece of the living room is a beautiful stone fireplace that creates the perfect atmosphere for cozy evenings. Gather around with family and friends while enjoying the warmth and ambiance.",
+    features: ["Natural stone fireplace", "Firewood provided", "Comfortable seating area", "Fire safety equipment", "Fireplace tools included"]
   }, {
     icon: UtensilsCrossed,
     title: "Full Kitchen",
-    description: "Modern kitchen with premium appliances"
+    description: "Modern kitchen with premium appliances",
+    detailedDescription: "The fully equipped modern kitchen features high-end appliances and everything you need to prepare delicious meals during your stay. From coffee makers to full cooking equipment, we've got you covered.",
+    features: ["Premium appliances", "Full cookware and utensils", "Dishwasher", "Coffee machine", "Large refrigerator/freezer", "Dining area for 8", "Kitchen island with bar seating"]
   }, {
     icon: TreePine,
     title: "Forest Access",
-    description: "Direct access to hiking trails and nature walks"
+    description: "Direct access to hiking trails and nature walks",
+    detailedDescription: "Step directly from the villa into pristine Swedish forest with well-marked hiking trails. Explore the natural beauty, spot local wildlife, and enjoy the peace and tranquility of the Nordic wilderness.",
+    features: ["Private forest trails", "Marked hiking paths", "Wildlife viewing opportunities", "Berry picking areas", "Mushroom foraging spots", "Trail maps provided"]
   }, {
     icon: Wifi,
     title: "High-Speed WiFi",
-    description: "Stay connected with fast and reliable internet"
+    description: "Stay connected with fast and reliable internet",
+    detailedDescription: "Enjoy high-speed fiber internet throughout the villa, perfect for remote work, streaming, or staying in touch with family and friends. The connection is reliable and fast enough for video calls and streaming.",
+    features: ["Fiber internet connection", "WiFi throughout the property", "Work-from-villa friendly", "Streaming capabilities", "Multiple device support"]
   }, {
     icon: Car,
     title: "Private Parking",
-    description: "Secure parking for multiple vehicles"
+    description: "Secure parking for multiple vehicles",
+    detailedDescription: "The villa offers secure, private parking for multiple vehicles. Whether you're arriving by car or renting one locally, you'll have convenient and safe parking right at the property.",
+    features: ["Space for multiple cars", "Secure private area", "Easy property access", "EV charging available", "Covered parking option"]
   }];
+
+  const handleAmenityClick = (amenity) => {
+    setSelectedAmenity(amenity);
+    setIsDialogOpen(true);
+  };
   return <section className="villa-section">
       <div className="villa-container">
         <div className="text-center mb-16">
@@ -48,7 +74,12 @@ const VillaAmenities = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {amenities.map((amenity, index) => <div key={index} className="villa-card text-center group">
+          {amenities.map((amenity, index) => (
+            <div 
+              key={index} 
+              className="villa-card text-center group cursor-pointer hover:scale-105 transition-all duration-300"
+              onClick={() => handleAmenityClick(amenity)}
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-xl mb-6 group-hover:bg-primary-hover transition-colors duration-300">
                 <amenity.icon className="h-8 w-8 text-primary-foreground" />
               </div>
@@ -60,7 +91,8 @@ const VillaAmenities = () => {
               <p className="text-muted-foreground leading-relaxed">
                 {amenity.description}
               </p>
-            </div>)}
+            </div>
+          ))}
         </div>
 
         {/* Special Features */}
@@ -105,6 +137,12 @@ const VillaAmenities = () => {
             </div>
           </div>
         </div>
+
+        <AmenityDialog 
+          amenity={selectedAmenity}
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+        />
       </div>
     </section>;
 };
