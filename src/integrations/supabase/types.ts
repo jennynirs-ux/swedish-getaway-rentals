@@ -20,24 +20,30 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          minimum_nights: number | null
           property_id: string
           reason: string | null
+          seasonal_price: number | null
         }
         Insert: {
           available?: boolean
           created_at?: string
           date: string
           id?: string
+          minimum_nights?: number | null
           property_id: string
           reason?: string | null
+          seasonal_price?: number | null
         }
         Update: {
           available?: boolean
           created_at?: string
           date?: string
           id?: string
+          minimum_nights?: number | null
           property_id?: string
           reason?: string | null
+          seasonal_price?: number | null
         }
         Relationships: [
           {
@@ -107,6 +113,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          property_id: string | null
+          read: boolean
+          replied_at: string | null
+          reply: string | null
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          property_id?: string | null
+          read?: boolean
+          replied_at?: string | null
+          reply?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          property_id?: string | null
+          read?: boolean
+          replied_at?: string | null
+          reply?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_messages_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -307,6 +366,10 @@ export type Database = {
           property_id_param: string
         }
         Returns: boolean
+      }
+      get_dashboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
     }
     Enums: {

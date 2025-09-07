@@ -8,10 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
-import { Settings, Plus, Edit, LogOut, Image } from "lucide-react";
+import { Settings, Plus, Edit, LogOut, Image, Trash2, Home, Calendar, MessageSquare, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import DashboardOverview from "@/components/admin/DashboardOverview";
+import BookingsManagement from "@/components/admin/BookingsManagement";
+import MessagesInbox from "@/components/admin/MessagesInbox";
+import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar";
 
 interface Property {
   id: string;
@@ -28,6 +33,12 @@ interface Property {
   active: boolean;
 }
 
+const amenitiesList = [
+  'WiFi', 'Sauna', 'Sjöutsikt', 'Skog', 'Parkering', 'Kök', 'Tvättmaskin', 
+  'Diskmaskin', 'TV', 'Eldstad', 'Terrass', 'Utegrill', 'Båt', 'Fiske', 
+  'Vandring', 'Gym', 'Pool', 'Spa', 'Bastu', 'Jacuzzi'
+];
+
 const Admin = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -43,7 +54,7 @@ const Admin = () => {
     max_guests: "",
     bedrooms: "",
     bathrooms: "",
-    amenities: "",
+    amenities: [] as string[],
     hero_image_url: "",
     gallery_images: ""
   });
@@ -143,7 +154,7 @@ const Admin = () => {
       max_guests: "",
       bedrooms: "",
       bathrooms: "",
-      amenities: "",
+      amenities: [],
       hero_image_url: "",
       gallery_images: ""
     });
@@ -160,10 +171,46 @@ const Admin = () => {
       max_guests: property.max_guests.toString(),
       bedrooms: property.bedrooms.toString(),
       bathrooms: property.bathrooms.toString(),
-      amenities: property.amenities?.join(', ') || "",
+      amenities: property.amenities || [],
       hero_image_url: property.hero_image_url || "",
       gallery_images: property.gallery_images?.join(', ') || ""
     });
+  };
+
+  const handleDelete = async (propertyId: string) => {
+    if (!confirm('Är du säker på att du vill ta bort denna property?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Framgång",
+        description: "Property borttagen"
+      });
+      
+      loadProperties();
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({
+        title: "Fel",
+        description: "Kunde inte ta bort property",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAmenityChange = (amenity: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: checked 
+        ? [...prev.amenities, amenity]
+        : prev.amenities.filter(a => a !== amenity)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,7 +226,7 @@ const Admin = () => {
         max_guests: parseInt(formData.max_guests),
         bedrooms: parseInt(formData.bedrooms),
         bathrooms: parseInt(formData.bathrooms),
-        amenities: formData.amenities.split(',').map(a => a.trim()).filter(a => a),
+        amenities: formData.amenities,
         hero_image_url: formData.hero_image_url,
         gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a)
       };
@@ -240,7 +287,7 @@ const Admin = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Settings className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-2xl font-bold">Swedish Getaway Rentals - Admin</h1>
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="secondary">Admin</Badge>
@@ -254,52 +301,107 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="properties" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="properties">Hantera Properties</TabsTrigger>
-            <TabsTrigger value="add">Lägg till Property</TabsTrigger>
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="properties" className="flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Properties
+            </TabsTrigger>
+            <TabsTrigger value="bookings" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Bokningar
+            </TabsTrigger>
+            <TabsTrigger value="availability" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Tillgänglighet
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Meddelanden
+            </TabsTrigger>
+            <TabsTrigger value="add" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Lägg till
+            </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="dashboard">
+            <DashboardOverview />
+          </TabsContent>
+
+          <TabsContent value="bookings">
+            <BookingsManagement />
+          </TabsContent>
+
+          <TabsContent value="availability">
+            <AvailabilityCalendar />
+          </TabsContent>
+
+          <TabsContent value="messages">
+            <MessagesInbox />
+          </TabsContent>
+
           <TabsContent value="properties">
-            <div className="grid gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Befintliga Properties</CardTitle>
-                  <CardDescription>
-                    Hantera och uppdatera dina befintliga rental properties
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4">
-                    {properties.map((property) => (
-                      <Card key={property.id} className="border">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-semibold">{property.title}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {property.location} • {property.price_per_night} SEK/natt
-                              </p>
-                              <div className="flex items-center space-x-2 mt-2">
-                                <Badge variant={property.active ? "default" : "secondary"}>
-                                  {property.active ? "Aktiv" : "Inaktiv"}
-                                </Badge>
-                                <Badge variant="outline">
-                                  {property.max_guests} gäster
-                                </Badge>
-                              </div>
-                            </div>
-                            <Button onClick={() => handleEdit(property)} variant="outline">
-                              <Edit className="h-4 w-4 mr-2" />
-                              Redigera
-                            </Button>
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold">Hantera Properties</h2>
+                <p className="text-muted-foreground">Hantera och uppdatera dina befintliga rental properties</p>
+              </div>
+              
+              <div className="grid gap-4">
+                {properties.map((property) => (
+                  <Card key={property.id} className="border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{property.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {property.location} • {property.price_per_night} SEK/natt
+                          </p>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <Badge variant={property.active ? "default" : "secondary"}>
+                              {property.active ? "Aktiv" : "Inaktiv"}
+                            </Badge>
+                            <Badge variant="outline">
+                              {property.max_guests} gäster
+                            </Badge>
+                            <Badge variant="outline">
+                              {property.bedrooms} sovrum
+                            </Badge>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                          {property.amenities && property.amenities.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {property.amenities.slice(0, 3).map((amenity) => (
+                                <Badge key={amenity} variant="outline" className="text-xs">
+                                  {amenity}
+                                </Badge>
+                              ))}
+                              {property.amenities.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{property.amenities.length - 3} fler
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleEdit(property)} variant="outline">
+                            <Edit className="h-4 w-4 mr-2" />
+                            Redigera
+                          </Button>
+                          <Button onClick={() => handleDelete(property.id)} variant="destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </TabsContent>
 
@@ -320,7 +422,7 @@ const Admin = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="title">Titel</Label>
+                      <Label htmlFor="title">Titel *</Label>
                       <Input
                         id="title"
                         value={formData.title}
@@ -329,7 +431,7 @@ const Admin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="location">Plats</Label>
+                      <Label htmlFor="location">Plats *</Label>
                       <Input
                         id="location"
                         value={formData.location}
@@ -351,7 +453,7 @@ const Admin = () => {
 
                   <div className="grid md:grid-cols-4 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="price">Pris per natt (SEK)</Label>
+                      <Label htmlFor="price">Pris per natt (SEK) *</Label>
                       <Input
                         id="price"
                         type="number"
@@ -361,7 +463,7 @@ const Admin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="guests">Max gäster</Label>
+                      <Label htmlFor="guests">Max gäster *</Label>
                       <Input
                         id="guests"
                         type="number"
@@ -371,7 +473,7 @@ const Admin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="bedrooms">Sovrum</Label>
+                      <Label htmlFor="bedrooms">Sovrum *</Label>
                       <Input
                         id="bedrooms"
                         type="number"
@@ -381,7 +483,7 @@ const Admin = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="bathrooms">Badrum</Label>
+                      <Label htmlFor="bathrooms">Badrum *</Label>
                       <Input
                         id="bathrooms"
                         type="number"
@@ -393,13 +495,21 @@ const Admin = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amenities">Bekvämligheter (separera med komma)</Label>
-                    <Input
-                      id="amenities"
-                      value={formData.amenities}
-                      onChange={(e) => setFormData({...formData, amenities: e.target.value})}
-                      placeholder="WiFi, Sauna, Sjö, etc."
-                    />
+                    <Label>Bekvämligheter</Label>
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                      {amenitiesList.map((amenity) => (
+                        <div key={amenity} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={amenity}
+                            checked={formData.amenities.includes(amenity)}
+                            onCheckedChange={(checked) => handleAmenityChange(amenity, checked as boolean)}
+                          />
+                          <Label htmlFor={amenity} className="text-sm font-normal">
+                            {amenity}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
