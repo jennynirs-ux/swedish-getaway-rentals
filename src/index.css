@@ -17,20 +17,20 @@
     --popover: 28 25% 95%;
     --popover-foreground: 25 25% 15%;
 
-    /* Villa Brand - Warm Earth Tones */
-    --primary: 25 45% 25%;
-    --primary-foreground: 28 20% 97%;
-    --primary-hover: 25 55% 20%;
+    /* Earth Tones - Forest & Natural Colors */
+    --primary: 25 40% 35%;
+    --primary-foreground: 45 20% 95%;
+    --primary-hover: 25 50% 30%;
 
-    /* Accent Colors - Nordic Blues */
-    --secondary: 200 15% 88%;
-    --secondary-foreground: 25 25% 15%;
+    /* Natural Secondary - Stone & Sand */
+    --secondary: 35 25% 85%;
+    --secondary-foreground: 25 25% 20%;
 
-    --muted: 28 15% 92%;
-    --muted-foreground: 25 15% 45%;
+    --muted: 30 20% 90%;
+    --muted-foreground: 25 20% 50%;
 
-    --accent: 200 25% 82%;
-    --accent-foreground: 25 25% 15%;
+    --accent: 120 20% 75%;
+    --accent-foreground: 25 25% 20%;
 
     /* Status Colors */
     --destructive: 0 70% 55%;
@@ -49,12 +49,12 @@
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
 
-    /* Villa Specific Design Tokens */
-    --warm-gradient: linear-gradient(135deg, hsl(25 45% 25%), hsl(35 50% 35%));
-    --hero-gradient: linear-gradient(135deg, hsl(25 45% 25%) 0%, hsl(35 50% 35%) 50%, hsl(200 25% 82%) 100%);
-    --luxury-shadow: 0 25px 50px -12px hsl(25 45% 25% / 0.25);
-    --soft-shadow: 0 10px 30px -10px hsl(25 45% 25% / 0.15);
-    --glow-shadow: 0 0 40px hsl(25 45% 25% / 0.2);
+    /* Earth & Forest Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(25 40% 35%), hsl(35 50% 40%));
+    --gradient-subtle: linear-gradient(180deg, hsl(45 30% 96%), hsl(35 25% 92%));
+    --shadow-elegant: 0 20px 40px -10px hsl(25 40% 35% / 0.2);
+    --soft-shadow: 0 8px 25px -8px hsl(25 40% 35% / 0.15);
+    --glow-shadow: 0 0 30px hsl(120 20% 50% / 0.3);
 
     /* Typography Scale */
     --font-display: 'Playfair Display', serif;

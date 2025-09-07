@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PropertySearch from "@/components/PropertySearch";
 import PropertyCard from "@/components/PropertyCard";
 import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
+import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 const HomePage = () => {
   const { properties, loading } = useProperties();
   const {
@@ -23,16 +24,20 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Header */}
-      <header className="py-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-primary opacity-10"></div>
+      {/* Hero Section */}
+      <header className="relative py-20 overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${forestHeroBg})` }}
+        />
+        <div className="absolute inset-0 bg-black/40"></div>
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold text-foreground mb-4">
-              Upptäck Sverige
+          <div className="text-center mb-12">
+            <h1 className="text-6xl font-bold text-white mb-6">
+              Swedish Getaway Rentals
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Hitta ditt perfekta skandinaviska resmål med våra handplockade fastigheter
+            <p className="text-2xl text-white/90 max-w-3xl mx-auto">
+              Discover your perfect retreat in Sweden
             </p>
           </div>
           
@@ -44,35 +49,22 @@ const HomePage = () => {
         </div>
       </header>
 
-      {/* Results Header */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground">
-              {loading ? "Laddar fastigheter..." : `${totalResults} fastigheter hittade`}
-            </h2>
-            {filters.location && (
-              <p className="text-muted-foreground">
-                i {filters.location}
-              </p>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[200px]">
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Sortera efter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recommended">Rekommenderat</SelectItem>
-                <SelectItem value="price_asc">Pris: Lägst först</SelectItem>
-                <SelectItem value="price_desc">Pris: Högst först</SelectItem>
-                <SelectItem value="rating">Högst betyg</SelectItem>
-                <SelectItem value="newest">Nyast först</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Sort Controls */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-end">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[200px]">
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recommended">Recommended</SelectItem>
+              <SelectItem value="price_asc">Price: Low to High</SelectItem>
+              <SelectItem value="price_desc">Price: High to Low</SelectItem>
+              <SelectItem value="rating">Highest Rated</SelectItem>
+              <SelectItem value="newest">Newest First</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -96,9 +88,9 @@ const HomePage = () => {
                 </div>
               ))}
             </div>
-          ) : filteredProperties.length > 0 ? (
+          ) : properties.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {filteredProperties.map((property) => (
+              {properties.map((property) => (
                 <PropertyCard
                   key={property.id}
                   property={property}
@@ -112,10 +104,10 @@ const HomePage = () => {
               <div className="max-w-md mx-auto">
                 <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Inga fastigheter hittade
+                  No properties found
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Prova att justera dina sökfilter eller sök efter en annan plats.
+                  Try adjusting your search filters or search for a different location.
                 </p>
                 <Button onClick={() => setFilters({
                   location: "",
@@ -126,7 +118,7 @@ const HomePage = () => {
                   amenities: [],
                   propertyType: ""
                 })}>
-                  Rensa alla filter
+                  Clear all filters
                 </Button>
               </div>
             </div>
@@ -141,7 +133,7 @@ const HomePage = () => {
             <div>
               <h3 className="text-xl font-semibold text-foreground mb-4">Swedish Getaway Rentals</h3>
               <p className="text-muted-foreground mb-4">
-                Upptäck autentiska svenska upplevelser i våra handpockade fastigheter.
+                Discover authentic Swedish experiences in our handpicked properties.
               </p>
               <div className="flex gap-2">
                 <Link to="/auth">
@@ -151,29 +143,29 @@ const HomePage = () => {
             </div>
             
             <div>
-              <h4 className="font-semibold text-foreground mb-4">Populära destinationer</h4>
+              <h4 className="font-semibold text-foreground mb-4">Popular Destinations</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link to="#" className="hover:text-foreground transition-colors">Västergötland</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Stockholms skärgård</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Stockholm Archipelago</Link></li>
                 <li><Link to="#" className="hover:text-foreground transition-colors">Småland</Link></li>
                 <li><Link to="#" className="hover:text-foreground transition-colors">Dalarna</Link></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold text-foreground mb-4">Upptäck Sverige</h4>
+              <h4 className="font-semibold text-foreground mb-4">Discover Sweden</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="#" className="hover:text-foreground transition-colors">Lokala upplevelser</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Säsongsguider</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Svenska traditioner</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Hållbar turism</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Local Experiences</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Seasonal Guides</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Swedish Traditions</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Sustainable Tourism</Link></li>
               </ul>
             </div>
           </div>
           
           <div className="text-center pt-8 border-t border-border">
             <p className="text-muted-foreground">
-              © 2024 Swedish Getaway Rentals. Skapad med kärlek för svenska upplevelser.
+              © 2024 Swedish Getaway Rentals. Created with love for Swedish experiences.
             </p>
           </div>
         </div>

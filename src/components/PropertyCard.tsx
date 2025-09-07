@@ -76,8 +76,8 @@ const PropertyCard = ({
     e.stopPropagation();
     onFavoriteToggle?.(property.id);
     toast({
-      title: isFavorite ? "Borttagen från favoriter" : "Tillagd i favoriter",
-      description: `${property.title} ${isFavorite ? "borttagen från" : "tillagd i"} dina favoriter`,
+      title: isFavorite ? "Removed from favorites" : "Added to favorites",
+      description: `${property.title} ${isFavorite ? "removed from" : "added to"} your favorites`,
     });
   };
 
@@ -93,8 +93,8 @@ const PropertyCard = ({
     } else {
       navigator.clipboard.writeText(window.location.origin + getPropertyRoute(property));
       toast({
-        title: "Länk kopierad",
-        description: "Länken har kopierats till urklipp",
+        title: "Link copied",
+        description: "Link has been copied to clipboard",
       });
     }
   };
@@ -127,11 +127,6 @@ const PropertyCard = ({
               <Star className="w-3 h-3 mr-1 fill-current" />
               4.8
             </Badge>
-            {property.active && (
-              <Badge variant="secondary" className="bg-green-500 text-white shadow-md">
-                Tillgänglig
-              </Badge>
-            )}
           </div>
 
           {/* Action Buttons */}
@@ -160,7 +155,7 @@ const PropertyCard = ({
           <div className="absolute bottom-4 left-4">
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
               {property.title.toLowerCase().includes('villa') ? 'Villa' :
-               property.title.toLowerCase().includes('lakehouse') ? 'Sjöhus' : 'Fastighet'}
+               property.title.toLowerCase().includes('lakehouse') ? 'Lakehouse' : 'Property'}
             </Badge>
           </div>
         </div>
@@ -192,15 +187,15 @@ const PropertyCard = ({
           <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
             <div className="flex items-center">
               <Users className="w-4 h-4 mr-1" />
-              {property.max_guests} gäster
+              {property.max_guests} guests
             </div>
             <div className="flex items-center">
               <Bed className="w-4 h-4 mr-1" />
-              {property.bedrooms} sovrum
+              {property.bedrooms} bedrooms
             </div>
             <div className="flex items-center">
               <Bath className="w-4 h-4 mr-1" />
-              {property.bathrooms} badrum
+              {property.bathrooms} bathrooms
             </div>
           </div>
 
@@ -214,7 +209,7 @@ const PropertyCard = ({
             ))}
             {property.amenities && property.amenities.length > 3 && (
               <div className="text-xs text-muted-foreground px-2 py-1">
-                +{property.amenities.length - 3} till
+                +{property.amenities.length - 3} more
               </div>
             )}
           </div>
@@ -225,10 +220,10 @@ const PropertyCard = ({
               <span className="text-2xl font-bold text-foreground">
                 {property.price_per_night.toLocaleString()} {property.currency}
               </span>
-              <span className="text-muted-foreground text-sm ml-1">/natt</span>
+              <span className="text-muted-foreground text-sm ml-1">/night</span>
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-              Visa Detaljer
+              View Details
             </Button>
           </div>
         </CardContent>

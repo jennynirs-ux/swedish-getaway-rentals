@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { sv } from "date-fns/locale";
 
 interface SearchFilters {
   location: string;
@@ -84,7 +83,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Vart vill du åka?"
+                placeholder="Where do you want to go?"
                 value={filters.location}
                 onChange={(e) => updateFilters({ location: e.target.value })}
                 className="pl-10"
@@ -98,7 +97,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left">
                   <Calendar className="mr-2 h-4 w-4" />
-                  {filters.checkIn ? format(filters.checkIn, "dd MMM", { locale: sv }) : "Incheckning"}
+                  {filters.checkIn ? format(filters.checkIn, "dd MMM") : "Check-in"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -118,7 +117,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left">
                   <Calendar className="mr-2 h-4 w-4" />
-                  {filters.checkOut ? format(filters.checkOut, "dd MMM", { locale: sv }) : "Utcheckning"}
+                  {filters.checkOut ? format(filters.checkOut, "dd MMM") : "Check-out"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -137,12 +136,12 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             <Select value={filters.guests.toString()} onValueChange={(value) => updateFilters({ guests: parseInt(value) })}>
               <SelectTrigger>
                 <Users className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Gäster" />
+                <SelectValue placeholder="Guests" />
               </SelectTrigger>
               <SelectContent>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                   <SelectItem key={num} value={num.toString()}>
-                    {num} {num === 1 ? "gäst" : "gäster"}
+                    {num} {num === 1 ? "guest" : "guests"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -153,7 +152,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
           <div className="flex gap-2">
             <Button className="px-6">
               <Search className="h-4 w-4 mr-2" />
-              Sök
+              Search
             </Button>
             <Button
               variant="outline"
@@ -175,10 +174,10 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       {showFilters && (
         <Card className="mt-4 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Filter & sortera</h3>
+            <h3 className="text-lg font-semibold">Filters & Sort</h3>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Rensa alla
+                Clear all
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
                 <X className="h-4 w-4" />
@@ -189,7 +188,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Price Range */}
             <div>
-              <label className="text-sm font-medium mb-3 block">Prisintervall per natt</label>
+              <label className="text-sm font-medium mb-3 block">Price range per night</label>
               <div className="px-3">
                 <Slider
                   value={filters.priceRange}
@@ -208,24 +207,24 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
 
             {/* Property Type */}
             <div>
-              <label className="text-sm font-medium mb-3 block">Typ av boende</label>
+              <label className="text-sm font-medium mb-3 block">Property type</label>
               <Select value={filters.propertyType} onValueChange={(value) => updateFilters({ propertyType: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Alla typer" />
+                  <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Alla typer</SelectItem>
+                  <SelectItem value="">All types</SelectItem>
                   <SelectItem value="villa">Villa</SelectItem>
-                  <SelectItem value="lakehouse">Sjöhus</SelectItem>
-                  <SelectItem value="cabin">Stuga</SelectItem>
-                  <SelectItem value="apartment">Lägenhet</SelectItem>
+                  <SelectItem value="lakehouse">Lakehouse</SelectItem>
+                  <SelectItem value="cabin">Cabin</SelectItem>
+                  <SelectItem value="apartment">Apartment</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Amenities */}
             <div>
-              <label className="text-sm font-medium mb-3 block">Bekvämligheter</label>
+              <label className="text-sm font-medium mb-3 block">Amenities</label>
               <div className="flex flex-wrap gap-2">
                 {availableAmenities.map((amenity) => (
                   <Button
