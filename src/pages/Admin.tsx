@@ -47,6 +47,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -163,6 +164,7 @@ const Admin = () => {
   };
 
   const handleEdit = (property: Property) => {
+    console.log('Editing property:', property);
     setSelectedProperty(property);
     setFormData({
       title: property.title,
@@ -176,6 +178,8 @@ const Admin = () => {
       hero_image_url: property.hero_image_url || "",
       gallery_images: property.gallery_images?.join(', ') || ""
     });
+    // Switch to the add tab where the form is located
+    setActiveTab("add");
   };
 
   const handleDelete = async (propertyId: string) => {
@@ -219,16 +223,8 @@ const Admin = () => {
     setLoading(true);
 
     try {
-      // Get the current user's profile to use as host_id
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (profileError) {
-        throw new Error('Kunde inte hämta användarprofi');
-      }
+      console.log('Submitting form data:', formData);
+      console.log('Selected property:', selectedProperty);
 
       const propertyData = {
         title: formData.title,
@@ -240,28 +236,37 @@ const Admin = () => {
         bathrooms: parseInt(formData.bathrooms),
         amenities: formData.amenities,
         hero_image_url: formData.hero_image_url,
-        gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a),
-        host_id: profile.id // Always set host_id for new properties
+        gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a)
       };
 
-      let error;
       let result;
       if (selectedProperty) {
-        // For updates, preserve existing host_id
-        const updateData = { ...propertyData };
-        delete updateData.host_id; // Don't update host_id on existing properties
-        
+        console.log('Updating existing property with ID:', selectedProperty.id);
         result = await supabase
           .from('properties')
-          .update(updateData)
+          .update(propertyData)
           .eq('id', selectedProperty.id)
           .select();
       } else {
+        console.log('Creating new property');
+        // Get the current user's profile to use as host_id for new properties
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user?.id)
+          .single();
+
+        if (profileError) {
+          throw new Error('Kunde inte hämta användarprofi');
+        }
+
         result = await supabase
           .from('properties')
-          .insert(propertyData)
+          .insert({ ...propertyData, host_id: profile.id })
           .select();
       }
+      
+      console.log('Supabase result:', result);
       
       if (result.error) {
         console.error('Supabase error:', result.error);
@@ -275,6 +280,9 @@ const Admin = () => {
       
       resetForm();
       loadProperties();
+      
+      // Switch back to properties tab after successful save
+      setActiveTab("properties");
     } catch (error: any) {
       console.error('Error saving property:', error);
       toast({
@@ -324,7 +332,7 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="dashboard" className="space-y-6" id="admin-tabs">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" id="admin-tabs">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
