@@ -1,143 +1,184 @@
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Users, Wifi, TreePine, Waves, Calendar } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProperties } from "@/hooks/useProperties";
+import { usePropertyFilters } from "@/hooks/usePropertyFilters";
 import { Skeleton } from "@/components/ui/skeleton";
+import PropertySearch from "@/components/PropertySearch";
+import PropertyCard from "@/components/PropertyCard";
+import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
 const HomePage = () => {
   const { properties, loading } = useProperties();
+  const {
+    filters,
+    setFilters,
+    sortBy,
+    setSortBy,
+    favorites,
+    toggleFavorite,
+    availableAmenities,
+    filteredProperties,
+    totalResults
+  } = usePropertyFilters(properties);
 
-  const getPropertyRoute = (property: any) => {
-    // Map property titles to specific routes
-    if (property.title.toLowerCase().includes('villa') || property.title.toLowerCase().includes('hacken')) {
-      return '/villa-hacken';
-    }
-    if (property.title.toLowerCase().includes('lakehouse') || property.title.toLowerCase().includes('lake')) {
-      return '/lakehouse-getaway';
-    }
-    // Default fallback
-    return `/property/${property.id}`;
-  };
-
-  const getAmenityIcon = (amenity: string) => {
-    const lower = amenity.toLowerCase();
-    if (lower.includes('wifi') || lower.includes('internet')) return <Wifi className="w-4 h-4 mr-1" />;
-    if (lower.includes('sauna')) return <TreePine className="w-4 h-4 mr-1" />;
-    if (lower.includes('lake') || lower.includes('water')) return <Waves className="w-4 h-4 mr-1" />;
-    return <Calendar className="w-4 h-4 mr-1" />;
-  };
-
-  return <div className="min-h-screen bg-gradient-subtle">
+  return (
+    <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
-      <header className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Swedish Getaway Rentals</h1>
-            <p className="text-lg text-muted-foreground">Discover your perfect retreat in Sweden</p>
+      <header className="py-8 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-primary opacity-10"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-bold text-foreground mb-4">
+              Upptäck Sverige
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Hitta ditt perfekta skandinaviska resmål med våra handplockade fastigheter
+            </p>
           </div>
+          
+          {/* Search Component */}
+          <PropertySearch 
+            onFiltersChange={setFilters}
+            availableAmenities={availableAmenities}
+          />
         </div>
       </header>
 
+      {/* Results Header */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground">
+              {loading ? "Laddar fastigheter..." : `${totalResults} fastigheter hittade`}
+            </h2>
+            {filters.location && (
+              <p className="text-muted-foreground">
+                i {filters.location}
+              </p>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[200px]">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Sortera efter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recommended">Rekommenderat</SelectItem>
+                <SelectItem value="price_asc">Pris: Lägst först</SelectItem>
+                <SelectItem value="price_desc">Pris: Högst först</SelectItem>
+                <SelectItem value="rating">Högst betyg</SelectItem>
+                <SelectItem value="newest">Nyast först</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
       {/* Property Cards */}
-      <main className="py-12">
+      <main className="pb-12">
         <div className="container mx-auto px-4">
           {loading ? (
-            <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-              {[1, 2].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <Skeleton className="h-64 w-full" />
-                  <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-16 w-full mb-4" />
-                    <div className="flex justify-between">
-                      <Skeleton className="h-8 w-1/3" />
-                      <Skeleton className="h-10 w-24" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-muted rounded-lg h-64 mb-4"></div>
+                  <div className="space-y-2">
+                    <div className="bg-muted h-6 rounded w-3/4"></div>
+                    <div className="bg-muted h-4 rounded w-1/2"></div>
+                    <div className="bg-muted h-16 rounded"></div>
+                    <div className="flex justify-between items-end">
+                      <div className="bg-muted h-8 rounded w-1/3"></div>
+                      <div className="bg-muted h-10 rounded w-24"></div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProperties.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {filteredProperties.map((property) => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  onFavoriteToggle={toggleFavorite}
+                  isFavorite={favorites.includes(property.id)}
+                />
               ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {properties.map((property) => (
-                <Card key={property.id} className="overflow-hidden hover-scale">
-                  <div className="relative h-64">
-                    <img 
-                      src={property.hero_image_url || '/placeholder.svg'} 
-                      alt={property.title} 
-                      className="w-full h-full object-cover" 
-                    />
-                    <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
-                      <Star className="w-3 h-3 mr-1" />
-                      4.8
-                    </Badge>
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      {property.title}
-                      <Badge variant="secondary">Tillgänglig</Badge>
-                    </CardTitle>
-                    <div className="flex items-center text-muted-foreground text-sm">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      {property.location || 'Sverige'}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4 line-clamp-1">
-                      {property.description?.substring(0, 80)}...
-                    </p>
-                    <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
-                      <div className="flex items-center">
-                        <Users className="w-4 h-4 mr-1" />
-                        {property.max_guests} gäster
-                      </div>
-                      {property.amenities?.slice(0, 2).map((amenity, index) => (
-                        <div key={index} className="flex items-center">
-                          {getAmenityIcon(amenity)}
-                          <span className="capitalize">{amenity}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-2xl font-bold text-foreground">
-                          {property.price_per_night.toLocaleString()} {property.currency}
-                        </span>
-                        <span className="text-muted-foreground">/natt</span>
-                      </div>
-                      <Link to={getPropertyRoute(property)}>
-                        <Button>Visa Detaljer</Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Inga fastigheter hittade
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Prova att justera dina sökfilter eller sök efter en annan plats.
+                </p>
+                <Button onClick={() => setFilters({
+                  location: "",
+                  checkIn: undefined,
+                  checkOut: undefined,
+                  guests: 2,
+                  priceRange: [0, 5000],
+                  amenities: [],
+                  propertyType: ""
+                })}>
+                  Rensa alla filter
+                </Button>
+              </div>
             </div>
           )}
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-border">
-        <div className="container mx-auto px-4 text-center">
-          <h3 className="text-xl font-semibold text-foreground mb-2">Ready for your Swedish adventure?</h3>
-          <p className="text-muted-foreground mb-6">Book your perfect getaway today</p>
-          <div className="flex justify-center gap-4 flex-wrap">
-            {properties.slice(0, 2).map((property) => (
-              <Link key={property.id} to={getPropertyRoute(property)}>
-                <Button size="lg">Boka {property.title}</Button>
-              </Link>
-            ))}
-            <Link to="/auth">
-              <Button variant="outline" size="lg">Admin Login</Button>
-            </Link>
+      <footer className="py-16 border-t border-border bg-card">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            <div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">Swedish Getaway Rentals</h3>
+              <p className="text-muted-foreground mb-4">
+                Upptäck autentiska svenska upplevelser i våra handpockade fastigheter.
+              </p>
+              <div className="flex gap-2">
+                <Link to="/auth">
+                  <Button variant="outline">Admin Login</Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Populära destinationer</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="#" className="hover:text-foreground transition-colors">Västergötland</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Stockholms skärgård</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Småland</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Dalarna</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Upptäck Sverige</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="#" className="hover:text-foreground transition-colors">Lokala upplevelser</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Säsongsguider</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Svenska traditioner</Link></li>
+                <li><Link to="#" className="hover:text-foreground transition-colors">Hållbar turism</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="text-center pt-8 border-t border-border">
+            <p className="text-muted-foreground">
+              © 2024 Swedish Getaway Rentals. Skapad med kärlek för svenska upplevelser.
+            </p>
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
 export default HomePage;
