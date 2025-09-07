@@ -87,8 +87,8 @@ const HomePage = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground mb-4 line-clamp-2">
-                      {property.description}
+                    <p className="text-muted-foreground mb-4 line-clamp-1">
+                      {property.description?.substring(0, 80)}...
                     </p>
                     <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
                       <div className="flex items-center">
