@@ -31,7 +31,7 @@ interface Property {
   hero_image_url: string;
   gallery_images: string[];
   active: boolean;
-  host_id?: string;
+  host_id: string;
 }
 
 const amenitiesList = [
@@ -245,26 +245,27 @@ const Admin = () => {
       };
 
       let error;
+      let result;
       if (selectedProperty) {
-        // For updates, don't change host_id if it already exists
+        // For updates, preserve existing host_id
         const updateData = { ...propertyData };
-        if (selectedProperty.host_id) {
-          delete updateData.host_id;
-        }
+        delete updateData.host_id; // Don't update host_id on existing properties
         
-        ({ error } = await supabase
+        result = await supabase
           .from('properties')
           .update(updateData)
-          .eq('id', selectedProperty.id));
+          .eq('id', selectedProperty.id)
+          .select();
       } else {
-        ({ error } = await supabase
+        result = await supabase
           .from('properties')
-          .insert(propertyData));
+          .insert(propertyData)
+          .select();
       }
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+      
+      if (result.error) {
+        console.error('Supabase error:', result.error);
+        throw result.error;
       }
 
       toast({
