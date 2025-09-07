@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CalendarDays, MapPin, Users, Star } from "lucide-react";
+import { CalendarDays, MapPin, Users, Star, ChevronDown } from "lucide-react";
 import villaHeroImage from "@/assets/villa-hero.jpg";
 const VillaHero = () => {
   return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -60,9 +60,7 @@ const VillaHero = () => {
 
       {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-        <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
-        </div>
+        <ChevronDown className="w-6 h-6" />
       </div>
     </section>;
 };
