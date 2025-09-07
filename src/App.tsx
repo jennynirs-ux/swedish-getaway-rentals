@@ -14,25 +14,27 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/villa-hacken" element={<VillaHacken />} />
-          <Route path="/villa-hacken/guide" element={<VillaGuide />} />
-          <Route path="/lakehouse-getaway" element={<LakehouseGetaway />} />
-          <Route path="/lakehouse-getaway/guide" element={<LakehouseGuide />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/villa-hacken" element={<VillaHacken />} />
+            <Route path="/villa-hacken/guide" element={<VillaGuide />} />
+            <Route path="/lakehouse-getaway" element={<LakehouseGetaway />} />
+            <Route path="/lakehouse-getaway/guide" element={<LakehouseGuide />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
