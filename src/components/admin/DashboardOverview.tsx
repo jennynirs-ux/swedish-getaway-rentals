@@ -61,7 +61,7 @@ const DashboardOverview = () => {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.location.hash = '#properties'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aktiva Rentals</CardTitle>
             <Home className="h-4 w-4 text-muted-foreground" />
@@ -74,7 +74,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.location.hash = '#bookings'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Kommande Bokningar</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -87,7 +87,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.location.hash = '#bookings'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Totala Bokningar</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -100,7 +100,7 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.location.hash = '#messages'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Olästa Meddelanden</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />

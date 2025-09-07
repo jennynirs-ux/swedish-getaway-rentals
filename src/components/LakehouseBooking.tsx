@@ -1,80 +1,44 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Mail, Phone, MessageCircle, Wifi, TreePine, Flame, Waves } from "lucide-react";
+import { Mail, Phone, MessageCircle, Wifi, TreePine, Flame, Waves } from "lucide-react";
+import BookingForm from "@/components/BookingForm";
+import { useProperties } from "@/hooks/useProperties";
 
 const LakehouseBooking = () => {
+  const { properties } = useProperties();
+  
+  // Find Lakehouse or use property with lake in title/amenities
+  const lakehouseProperty = properties.find(p => 
+    p.title.toLowerCase().includes('lakehouse') || 
+    p.title.toLowerCase().includes('lake') ||
+    p.amenities?.some(a => a.toLowerCase().includes('lake'))
+  ) || properties[1] || properties[0];
+
+  if (!lakehouseProperty) {
+    return <div>Property not found</div>;
+  }
+
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-foreground mb-4">
-            Book Your Lakeside Retreat
+            Boka Din Retreat vid Sjön
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Ready to experience the magic of Swedish lakeside living? Send us your booking inquiry and we'll get back to you within 24 hours.
+            Redo att uppleva magin av svenskt liv vid sjön? Skicka din bokningsförfrågan så hör vi av oss inom 24 timmar.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {/* Booking Form */}
           <div className="lg:col-span-2">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="w-5 h-5 mr-2" />
-                  Booking Inquiry
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="checkin">Check-in Date</Label>
-                    <Input type="date" id="checkin" />
-                  </div>
-                  <div>
-                    <Label htmlFor="checkout">Check-out Date</Label>
-                    <Input type="date" id="checkout" />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="guests">Number of Guests (max 6)</Label>
-                  <Input type="number" id="guests" min="1" max="6" placeholder="2" />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input type="text" id="name" placeholder="Your name" />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input type="email" id="email" placeholder="your.email@example.com" />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input type="tel" id="phone" placeholder="+46 XX XXX XX XX" />
-                </div>
-
-                <div>
-                  <Label htmlFor="message">Special Requests or Questions</Label>
-                  <Textarea 
-                    id="message" 
-                    rows={4} 
-                    placeholder="Let us know about any special requirements, dietary restrictions, or questions you might have..."
-                  />
-                </div>
-
-                <Button className="w-full" size="lg">
-                  Request Availability
-                </Button>
-              </CardContent>
-            </Card>
+            <BookingForm 
+              propertyId={lakehouseProperty.id}
+              propertyTitle={lakehouseProperty.title}
+              pricePerNight={lakehouseProperty.price_per_night}
+              currency={lakehouseProperty.currency}
+              maxGuests={lakehouseProperty.max_guests}
+            />
           </div>
 
           {/* Property Info & Pricing */}

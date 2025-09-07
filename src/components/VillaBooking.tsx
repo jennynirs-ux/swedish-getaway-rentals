@@ -1,66 +1,39 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CalendarDays, MessageSquare, Mail, Phone, Euro, Wifi, TreePine, Flame, Waves } from "lucide-react";
+import { Mail, Phone, Euro, Wifi, TreePine, Flame, Waves, MessageSquare } from "lucide-react";
+import BookingForm from "@/components/BookingForm";
+import { useProperties } from "@/hooks/useProperties";
 const VillaBooking = () => {
+  const { properties } = useProperties();
+  
+  // Find Villa Hacken or use first property as fallback
+  const villaProperty = properties.find(p => 
+    p.title.toLowerCase().includes('villa') || p.title.toLowerCase().includes('hacken')
+  ) || properties[0];
+
+  if (!villaProperty) {
+    return <div>Property not found</div>;
+  }
+
   return <section className="villa-section bg-card">
       <div className="villa-container">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Booking Form */}
           <div>
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-              Book Your Stay
+              Boka Din Vistelse
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Ready to experience the magic of Villa Hacken? 
-              Get in touch to check availability and rates.
+              Redo att uppleva magin av {villaProperty.title}? 
+              Skicka en förfrågan för att kontrollera tillgänglighet och priser.
             </p>
 
-            <Card className="shadow-soft-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5" />
-                  Reservation Inquiry
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="checkin">Check-in Date</Label>
-                    <Input id="checkin" type="date" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="checkout">Check-out Date</Label>
-                    <Input id="checkout" type="date" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="guests">Number of Guests</Label>
-                  <Input id="guests" type="number" min="1" max="8" placeholder="2" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="name">Your Name</Label>
-                  <Input id="name" placeholder="Full Name" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" placeholder="your@email.com" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="message">Special Requests</Label>
-                  <Input id="message" placeholder="Any special requirements or questions?" />
-                </div>
-
-                <Button className="w-full bg-primary hover:bg-primary-hover text-primary-foreground">
-                  Request Availability
-                </Button>
-              </CardContent>
-            </Card>
+            <BookingForm 
+              propertyId={villaProperty.id}
+              propertyTitle={villaProperty.title}
+              pricePerNight={villaProperty.price_per_night}
+              currency={villaProperty.currency}
+              maxGuests={villaProperty.max_guests}
+            />
           </div>
 
           {/* Property Information & Contact */}
