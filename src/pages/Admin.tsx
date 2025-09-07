@@ -31,6 +31,7 @@ interface Property {
   hero_image_url: string;
   gallery_images: string[];
   active: boolean;
+  host_id?: string;
 }
 
 const amenitiesList = [
@@ -218,6 +219,17 @@ const Admin = () => {
     setLoading(true);
 
     try {
+      // Get the current user's profile to use as host_id
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (profileError) {
+        throw new Error('Kunde inte hämta användarprofi');
+      }
+
       const propertyData = {
         title: formData.title,
         description: formData.description,
@@ -228,14 +240,21 @@ const Admin = () => {
         bathrooms: parseInt(formData.bathrooms),
         amenities: formData.amenities,
         hero_image_url: formData.hero_image_url,
-        gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a)
+        gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a),
+        host_id: profile.id // Always set host_id for new properties
       };
 
       let error;
       if (selectedProperty) {
+        // For updates, don't change host_id if it already exists
+        const updateData = { ...propertyData };
+        if (selectedProperty.host_id) {
+          delete updateData.host_id;
+        }
+        
         ({ error } = await supabase
           .from('properties')
-          .update(propertyData)
+          .update(updateData)
           .eq('id', selectedProperty.id));
       } else {
         ({ error } = await supabase
@@ -243,7 +262,10 @@ const Admin = () => {
           .insert(propertyData));
       }
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Framgång",
@@ -252,11 +274,11 @@ const Admin = () => {
       
       resetForm();
       loadProperties();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving property:', error);
       toast({
         title: "Fel",
-        description: "Kunde inte spara property",
+        description: error.message || "Kunde inte spara property. Kontrollera att alla fält är korrekt ifyllda.",
         variant: "destructive"
       });
     } finally {
