@@ -93,7 +93,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="check_in_date">Incheckning</Label>
+              <Label htmlFor="check_in_date">Check-in</Label>
               <Input 
                 id="check_in_date"
                 name="check_in_date"
@@ -105,7 +105,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="check_out_date">Utcheckning</Label>
+              <Label htmlFor="check_out_date">Check-out</Label>
               <Input 
                 id="check_out_date"
                 name="check_out_date"
@@ -119,7 +119,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="number_of_guests">Antal gäster (max {maxGuests})</Label>
+            <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
             <Input 
               id="number_of_guests"
               name="number_of_guests"
@@ -133,11 +133,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="guest_name">Ditt namn</Label>
+            <Label htmlFor="guest_name">Your name</Label>
             <Input 
               id="guest_name"
               name="guest_name"
-              placeholder="För- och efternamn" 
+              placeholder="First and last name" 
               value={formData.guest_name}
               onChange={handleChange}
               required
@@ -145,12 +145,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="guest_email">E-postadress</Label>
+            <Label htmlFor="guest_email">Email address</Label>
             <Input 
               id="guest_email"
               name="guest_email"
               type="email" 
-              placeholder="din@email.com" 
+              placeholder="your@email.com" 
               value={formData.guest_email}
               onChange={handleChange}
               required
@@ -158,7 +158,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="guest_phone">Telefonnummer (valfritt)</Label>
+            <Label htmlFor="guest_phone">Phone number (optional)</Label>
             <Input 
               id="guest_phone"
               name="guest_phone"
@@ -170,11 +170,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="special_requests">Specialönskemål</Label>
+            <Label htmlFor="special_requests">Special requests</Label>
             <Textarea 
               id="special_requests"
               name="special_requests"
-              placeholder="Eventuella specialönskemål eller frågor..." 
+              placeholder="Any special requests or questions..." 
               value={formData.special_requests}
               onChange={handleChange}
               rows={3}
@@ -184,15 +184,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {totalAmount > 0 && (
             <div className="p-4 bg-accent rounded-lg">
               <div className="flex justify-between items-center mb-2">
-                <span>Antal nätter:</span>
+                <span>Number of nights:</span>
                 <span className="font-medium">{nights}</span>
               </div>
               <div className="flex justify-between items-center mb-2">
-                <span>Pris per natt:</span>
+                <span>Price per night:</span>
                 <span className="font-medium">{pricePerNight.toLocaleString()} {currency}</span>
               </div>
               <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
-                <span>Totalt:</span>
+                <span>Total:</span>
                 <span>{totalAmount.toLocaleString()} {currency}</span>
               </div>
             </div>
@@ -203,7 +203,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full" 
             disabled={loading || totalAmount <= 0}
           >
-            {loading ? 'Skickar...' : 'Skicka bokningsförfrågan'}
+            {loading ? 'Sending...' : 'Send booking request'}
           </Button>
         </form>
       </CardContent>
