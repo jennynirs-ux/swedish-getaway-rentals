@@ -3,17 +3,15 @@ import { Mail, Phone, Euro, Wifi, TreePine, Flame, Waves, MessageSquare } from "
 import BookingForm from "@/components/BookingForm";
 import { useProperties } from "@/hooks/useProperties";
 const VillaBooking = () => {
-  const { properties } = useProperties();
-  
-  // Find Villa Hacken or use first property as fallback
-  const villaProperty = properties.find(p => 
-    p.title.toLowerCase().includes('villa') || p.title.toLowerCase().includes('hacken')
-  ) || properties[0];
+  const {
+    properties
+  } = useProperties();
 
+  // Find Villa Hacken or use first property as fallback
+  const villaProperty = properties.find(p => p.title.toLowerCase().includes('villa') || p.title.toLowerCase().includes('hacken')) || properties[0];
   if (!villaProperty) {
     return <div>Property not found</div>;
   }
-
   return <section className="villa-section bg-card">
       <div className="villa-container">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
@@ -27,65 +25,16 @@ const VillaBooking = () => {
               Send an inquiry to check availability and pricing.
             </p>
 
-            <BookingForm 
-              propertyId={villaProperty.id}
-              propertyTitle={villaProperty.title}
-              pricePerNight={villaProperty.price_per_night}
-              currency={villaProperty.currency}
-              maxGuests={villaProperty.max_guests}
-            />
+            <BookingForm propertyId={villaProperty.id} propertyTitle={villaProperty.title} pricePerNight={villaProperty.price_per_night} currency={villaProperty.currency} maxGuests={villaProperty.max_guests} />
           </div>
 
           {/* Property Information & Contact */}
           <div className="space-y-8">
             {/* Property Features */}
-            <Card className="shadow-soft-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TreePine className="h-5 w-5" />
-                  Your Nature Retreat
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Experience comfort, simplicity, and a touch of off-grid living. This place is designed for relaxation, nature exploration, and outdoor cooking.
-                </p>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <TreePine className="h-4 w-4 text-primary" />
-                    <span className="text-sm">Solar powered & eco-friendly</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Waves className="h-4 w-4 text-primary" />
-                    <span className="text-sm">Fresh well water</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-primary" />
-                    <span className="text-sm">Pizza oven & hot tub</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Wifi className="h-4 w-4 text-primary" />
-                    <span className="text-sm">Wi-Fi included</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            
 
             {/* Wi-Fi Information */}
-            <Card className="shadow-soft-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wifi className="h-5 w-5" />
-                  Stay Connected
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm"><strong>Network:</strong> Villa Häcken_Guest</p>
-                  <p className="text-sm"><strong>Password:</strong> Hacken78</p>
-                </div>
-              </CardContent>
-            </Card>
+            
 
             {/* What's Included */}
             
