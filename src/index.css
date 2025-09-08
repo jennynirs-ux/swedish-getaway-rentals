@@ -52,6 +52,7 @@
     /* Earth & Forest Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(25 40% 35%), hsl(35 50% 40%));
     --gradient-subtle: linear-gradient(180deg, hsl(45 30% 96%), hsl(35 25% 92%));
+    --gradient-dark: linear-gradient(135deg, hsl(25 35% 20%), hsl(35 40% 25%));
     --shadow-elegant: 0 20px 40px -10px hsl(25 40% 35% / 0.2);
     --soft-shadow: 0 8px 25px -8px hsl(25 40% 35% / 0.15);
     --glow-shadow: 0 0 30px hsl(120 20% 50% / 0.3);
@@ -148,6 +149,10 @@
 
   .villa-hero-bg {
     background: var(--hero-gradient);
+  }
+
+  .bg-gradient-dark {
+    background: var(--gradient-dark);
   }
 
   .guide-section-card {

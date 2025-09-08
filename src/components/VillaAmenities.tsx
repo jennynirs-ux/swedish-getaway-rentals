@@ -96,7 +96,7 @@ const VillaAmenities = () => {
         </div>
 
         {/* Special Features */}
-        <div className="mt-20 bg-warm-gradient rounded-2xl p-8 md:p-12 text-white">
+        <div className="mt-20 bg-gradient-dark rounded-2xl p-8 md:p-12 text-white">
           <div className="text-center">
             <h3 className="text-3xl font-display font-bold mb-6">What Makes Villa Häcken Special</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
