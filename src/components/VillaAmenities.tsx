@@ -20,12 +20,6 @@ const VillaAmenities = () => {
     detailedDescription: "The villa is designed to comfortably accommodate up to 8 guests across four bedrooms and multiple living spaces. Perfect for families, groups of friends, or corporate retreats seeking a peaceful getaway.",
     features: ["4 bedrooms with various bed configurations", "Multiple bathrooms", "Spacious living areas", "Dining for 8 people", "Outdoor seating areas"]
   }, {
-    icon: Waves,
-    title: "Sauna & Hot Tub",
-    description: "Traditional Finnish sauna and outdoor hot tub",
-    detailedDescription: "Experience the authentic Swedish wellness tradition with our traditional wood-fired sauna and outdoor hot tub. Perfect for relaxation after a day of forest exploration or simply to unwind under the Nordic sky.",
-    features: ["Traditional wood-fired sauna", "Outdoor hot tub with forest views", "Sauna accessories provided", "Changing area", "Outdoor shower", "Towels and robes included"]
-  }, {
     icon: Flame,
     title: "Fireplace",
     description: "Cozy fireplace for those chilly Swedish evenings",
