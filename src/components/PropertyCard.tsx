@@ -125,7 +125,7 @@ const PropertyCard = ({
           <div className="absolute top-4 left-4 flex gap-2">
             <Badge className="bg-primary text-primary-foreground shadow-md">
               <Star className="w-3 h-3 mr-1 fill-current" />
-              4.8
+              5.0
             </Badge>
           </div>
 
