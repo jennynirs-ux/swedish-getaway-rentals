@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Apple, Package, Recycle, Newspaper, Wine, Package2, Trash2 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 interface GuideSection {
@@ -56,12 +56,37 @@ export const GuideSectionDialog = ({ section, isOpen, onClose }: GuideSectionDia
             <div>
               <h4 className="text-lg font-semibold text-foreground mb-4">Information</h4>
               <div className="space-y-3">
-                {section.content.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-muted-foreground leading-relaxed">{item}</p>
-                  </div>
-                ))}
+                {section.content.map((item, index) => {
+                  // Get appropriate icon for recycling section
+                  const getWasteIcon = () => {
+                    if (section.title === "Recycling & Environment") {
+                      if (item.includes("Food waste")) return Apple;
+                      if (item.includes("Paper packaging")) return Package;
+                      if (item.includes("Plastic packaging")) return Package2;
+                      if (item.includes("Newspapers")) return Newspaper;
+                      if (item.includes("Clear glass")) return Wine;
+                      if (item.includes("Metal packaging")) return Package;
+                      if (item.includes("Residual waste")) return Trash2;
+                      if (item.includes("Separate containers")) return Recycle;
+                    }
+                    return null;
+                  };
+                  
+                  const WasteIcon = getWasteIcon();
+                  
+                  return (
+                    <div key={index} className="flex items-start gap-3">
+                      {WasteIcon ? (
+                        <div className="w-6 h-6 text-primary mt-1 flex-shrink-0">
+                          <WasteIcon className="w-full h-full" />
+                        </div>
+                      ) : (
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                      )}
+                      <p className="text-muted-foreground leading-relaxed">{item}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
