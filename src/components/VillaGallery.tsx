@@ -113,7 +113,7 @@ const VillaGallery = ({ property }: VillaGalleryProps) => {
                   {images[3].title}
                 </h3>
                 <p className="text-lg md:text-xl opacity-90 leading-relaxed">
-                  Experience the perfect harmony between contemporary design and the breathtaking Swedish wilderness.
+                  {images[3].description}
                 </p>
               </div>
             </div>
