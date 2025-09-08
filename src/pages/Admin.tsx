@@ -242,7 +242,8 @@ const Admin = () => {
         bathrooms: parseInt(formData.bathrooms),
         amenities: formData.amenities,
         hero_image_url: formData.hero_image_url,
-        gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a)
+        gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a),
+        gallery_metadata: formData.gallery_metadata
       };
 
       let result;
@@ -566,7 +567,13 @@ const Admin = () => {
                   <GalleryMetadataEditor
                     images={formData.gallery_images.split(',').filter(img => img.trim())}
                     metadata={formData.gallery_metadata}
-                    onChange={(metadata) => setFormData({...formData, gallery_metadata: metadata})}
+                    onChange={(metadata, images) => {
+                      setFormData({
+                        ...formData, 
+                        gallery_metadata: metadata,
+                        gallery_images: images ? images.join(', ') : formData.gallery_images
+                      });
+                    }}
                   />
 
                   <div className="flex space-x-4">
