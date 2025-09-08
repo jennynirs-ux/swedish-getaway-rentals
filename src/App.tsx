@@ -8,6 +8,8 @@ import VillaHacken from "./pages/VillaHacken";
 import LakehouseGetaway from "./pages/LakehouseGetaway";
 import VillaGuide from "./pages/VillaGuide";
 import LakehouseGuide from "./pages/LakehouseGuide";
+import PropertyPage from "./pages/PropertyPage";
+import PropertyGuide from "./pages/PropertyGuide";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -27,6 +29,8 @@ const App = () => {
             <Route path="/villa-hacken/guide" element={<VillaGuide />} />
             <Route path="/lakehouse-getaway" element={<LakehouseGetaway />} />
             <Route path="/lakehouse-getaway/guide" element={<LakehouseGuide />} />
+            <Route path="/property/:id" element={<PropertyPage />} />
+            <Route path="/property/:id/guide" element={<PropertyGuide />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
