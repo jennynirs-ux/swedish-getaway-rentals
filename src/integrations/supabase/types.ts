@@ -393,65 +393,7 @@ export type Database = {
       }
     }
     Views: {
-      secure_bookings: {
-        Row: {
-          check_in_date: string | null
-          check_out_date: string | null
-          created_at: string | null
-          currency: string | null
-          guest_email: string | null
-          guest_name: string | null
-          guest_phone: string | null
-          id: string | null
-          number_of_guests: number | null
-          property_id: string | null
-          special_requests: string | null
-          status: string | null
-          total_amount: number | null
-          user_id: string | null
-        }
-        Insert: {
-          check_in_date?: string | null
-          check_out_date?: string | null
-          created_at?: string | null
-          currency?: string | null
-          guest_email?: string | null
-          guest_name?: string | null
-          guest_phone?: string | null
-          id?: string | null
-          number_of_guests?: number | null
-          property_id?: string | null
-          special_requests?: string | null
-          status?: string | null
-          total_amount?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          check_in_date?: string | null
-          check_out_date?: string | null
-          created_at?: string | null
-          currency?: string | null
-          guest_email?: string | null
-          guest_name?: string | null
-          guest_phone?: string | null
-          id?: string | null
-          number_of_guests?: number | null
-          property_id?: string | null
-          special_requests?: string | null
-          status?: string | null
-          total_amount?: number | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       approve_host_application: {
@@ -483,8 +425,8 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
-      user_can_access_booking: {
-        Args: { booking_row: Database["public"]["Tables"]["bookings"]["Row"] }
+      is_booking_accessible: {
+        Args: { booking_id: string }
         Returns: boolean
       }
       validate_password_strength: {
