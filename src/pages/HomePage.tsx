@@ -9,7 +9,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
-const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
+import bookCover from "@/assets/book-cover.jpg";
 const HomePage = () => {
   const {
     properties,
@@ -114,9 +114,7 @@ const HomePage = () => {
       <section className="py-12 bg-gradient-to-br from-muted/50 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl font-bold text-foreground mb-8 text-left">
-              Looking for the perfect retreat read?
-            </h2>
+            <h2 className="text-3xl font-bold text-center text-foreground mb-8">A gripping and unforgettable true story of survival and meaning. This is my story about surviving one of the most devastating natural disasters of our time, the 2004 Indian Ocean tsunami. Perfect reading for your Swedish getaway. Available in both Swedish and English.</h2>
             
             <div className="grid lg:grid-cols-12 gap-8 items-center">
               {/* Book Cover - Left Side */}
@@ -130,9 +128,16 @@ const HomePage = () => {
               {/* Book Information - Right Side */}
               <div className="lg:col-span-8 space-y-4">
                 <div>
-                  <h3 className="text-2xl font-semibold text-foreground mb-1">When the Ocean changed everything</h3>
-                  <h4 className="text-lg text-muted-foreground mb-3">My Journey through Disaster</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">A gripping and unforgettable true story of survival and meaning. Perfect reading for your Swedish getaway. Available in both Swedish and English.</p>
+                  <h3 className="text-2xl font-semibold text-foreground mb-1">
+                    När havet förändrade allt
+                  </h3>
+                  <h4 className="text-lg text-muted-foreground mb-3">
+                    When the Ocean Changed Everything
+                  </h4>
+                  <p className="text-base text-muted-foreground leading-relaxed">
+                    A gripping and unforgettable story of survival and meaning. Perfect reading for your Swedish getaway. 
+                    Available in both Swedish and English.
+                  </p>
                 </div>
 
                 {/* Reviews Carousel */}
