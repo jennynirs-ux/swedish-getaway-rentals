@@ -181,8 +181,13 @@ const VillaGuide = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-warm-gradient text-white py-16">
-        <div className="villa-container">
+      <div className="relative bg-warm-gradient text-white py-16 overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/src/assets/villa-hero.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="villa-container relative z-10">
           <Link to="/villa-hacken">
             <Button variant="ghost" className="text-white hover:bg-white/20 mb-8">
               <ArrowLeft className="h-4 w-4 mr-2" />
