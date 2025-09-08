@@ -17,6 +17,8 @@ import DashboardOverview from "@/components/admin/DashboardOverview";
 import BookingsManagement from "@/components/admin/BookingsManagement";
 import MessagesInbox from "@/components/admin/MessagesInbox";
 import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar";
+import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 
 interface Property {
   id: string;
@@ -543,26 +545,19 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="hero_image">Hero-bild URL</Label>
-                    <Input
-                      id="hero_image"
-                      value={formData.hero_image_url}
-                      onChange={(e) => setFormData({...formData, hero_image_url: e.target.value})}
-                      placeholder="https://example.com/image.jpg"
-                    />
-                  </div>
+                  <ImageUpload
+                    label="Hero-bild"
+                    value={formData.hero_image_url}
+                    onChange={(url) => setFormData({...formData, hero_image_url: url})}
+                    onRemove={() => setFormData({...formData, hero_image_url: ''})}
+                  />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="gallery_images">Galleri-bilder URLs (separera med komma)</Label>
-                    <Textarea
-                      id="gallery_images"
-                      value={formData.gallery_images}
-                      onChange={(e) => setFormData({...formData, gallery_images: e.target.value})}
-                      placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                      rows={3}
-                    />
-                  </div>
+                  <MultipleImageUpload
+                    label="Galleri-bilder"
+                    value={formData.gallery_images.split(',').filter(img => img.trim())}
+                    onChange={(urls) => setFormData({...formData, gallery_images: urls.join(', ')})}
+                    maxImages={10}
+                  />
 
                   <div className="flex space-x-4">
                     <Button type="submit" disabled={loading}>
