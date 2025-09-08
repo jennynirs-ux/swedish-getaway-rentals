@@ -14,6 +14,7 @@ export interface Property {
   amenities: string[];
   hero_image_url: string;
   gallery_images: string[];
+  gallery_metadata?: { title: string; description: string; alt: string }[];
   active: boolean;
   host_id: string;
 }
@@ -33,7 +34,11 @@ export const useProperties = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProperties(data || []);
+      const mappedData = (data || []).map((item: any) => ({
+        ...item,
+        gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : []
+      }));
+      setProperties(mappedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch properties');
     } finally {

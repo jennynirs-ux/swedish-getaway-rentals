@@ -291,6 +291,7 @@ export type Database = {
           currency: string
           description: string | null
           gallery_images: string[] | null
+          gallery_metadata: Json | null
           hero_image_url: string | null
           host_id: string | null
           id: string
@@ -310,6 +311,7 @@ export type Database = {
           currency?: string
           description?: string | null
           gallery_images?: string[] | null
+          gallery_metadata?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
           id?: string
@@ -329,6 +331,7 @@ export type Database = {
           currency?: string
           description?: string | null
           gallery_images?: string[] | null
+          gallery_metadata?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
           id?: string

@@ -20,7 +20,7 @@ const VillaHacken = () => {
     <div className="min-h-screen">
       <PropertyNavigation />
       <VillaHero property={villaProperty} />
-      <VillaGallery />
+      <VillaGallery property={villaProperty} />
       <VillaAmenities />
       <VillaBooking />
       <VillaFooter />

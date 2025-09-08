@@ -3,12 +3,18 @@ import villaInteriorImage from "@/assets/villa-interior.jpg";
 import villaBedroomImage from "@/assets/villa-bedroom.jpg";
 import villaSaunaImage from "@/assets/villa-sauna.jpg";
 import { ImageDialog } from "@/components/ImageDialog";
+import { Property } from "@/hooks/useProperties";
 
-const VillaGallery = () => {
+interface VillaGalleryProps {
+  property?: Property;
+}
+
+const VillaGallery = ({ property }: VillaGalleryProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  const images = [
+  // Use property gallery images if available, otherwise fallback to static images
+  const defaultImages = [
     {
       src: villaInteriorImage,
       alt: "Luxurious living room with fireplace",
@@ -28,6 +34,20 @@ const VillaGallery = () => {
       description: "Authentic Swedish sauna experience"
     }
   ];
+
+  const propertyImages = property?.gallery_images && property.gallery_images.length > 0
+    ? property.gallery_images.map((src, index) => {
+        const metadata = (property as any).gallery_metadata?.[index] || {};
+        return {
+          src,
+          alt: metadata.alt || `Gallery image ${index + 1}`,
+          title: metadata.title || `Image ${index + 1}`,
+          description: metadata.description || ""
+        };
+      })
+    : defaultImages;
+
+  const images = propertyImages;
 
   const openDialog = (index: number) => {
     setSelectedImageIndex(index);

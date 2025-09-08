@@ -19,6 +19,7 @@ import MessagesInbox from "@/components/admin/MessagesInbox";
 import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
+import { GalleryMetadataEditor } from "@/components/admin/GalleryMetadataEditor";
 
 interface Property {
   id: string;
@@ -60,7 +61,8 @@ const Admin = () => {
     bathrooms: "",
     amenities: [] as string[],
     hero_image_url: "",
-    gallery_images: ""
+    gallery_images: "",
+    gallery_metadata: [] as { title: string; description: string; alt: string }[]
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -160,7 +162,8 @@ const Admin = () => {
       bathrooms: "",
       amenities: [],
       hero_image_url: "",
-      gallery_images: ""
+      gallery_images: "",
+      gallery_metadata: []
     });
     setSelectedProperty(null);
   };
@@ -178,7 +181,8 @@ const Admin = () => {
       bathrooms: property.bathrooms.toString(),
       amenities: property.amenities || [],
       hero_image_url: property.hero_image_url || "",
-      gallery_images: property.gallery_images?.join(', ') || ""
+      gallery_images: property.gallery_images?.join(', ') || "",
+      gallery_metadata: (property as any).gallery_metadata || []
     });
     // Switch to the add tab where the form is located
     setActiveTab("add");
@@ -557,6 +561,12 @@ const Admin = () => {
                     value={formData.gallery_images.split(',').filter(img => img.trim())}
                     onChange={(urls) => setFormData({...formData, gallery_images: urls.join(', ')})}
                     maxImages={10}
+                  />
+
+                  <GalleryMetadataEditor
+                    images={formData.gallery_images.split(',').filter(img => img.trim())}
+                    metadata={formData.gallery_metadata}
+                    onChange={(metadata) => setFormData({...formData, gallery_metadata: metadata})}
                   />
 
                   <div className="flex space-x-4">
