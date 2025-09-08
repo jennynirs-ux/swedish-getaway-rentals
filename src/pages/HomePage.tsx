@@ -9,7 +9,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
-import bookCover from "@/assets/book-cover.jpg";
+const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 const HomePage = () => {
   const {
     properties,
