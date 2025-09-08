@@ -85,27 +85,9 @@ const HomePage = () => {
                 </div>)}
             </div> : properties.length > 0 ? <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {properties.map(property => <PropertyCard key={property.id} property={property} onFavoriteToggle={toggleFavorite} isFavorite={favorites.includes(property.id)} />)}
-            </div> : <div className="text-center py-16">
-              <div className="max-w-md mx-auto">
-                <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  No properties found
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Try adjusting your search filters or search for a different location.
-                </p>
-                <Button onClick={() => setFilters({
-              location: "",
-              checkIn: undefined,
-              checkOut: undefined,
-              guests: 2,
-              priceRange: [0, 5000],
-              amenities: [],
-              propertyType: ""
-            })}>
-                  Clear all filters
-                </Button>
-              </div>
+            </div> : <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {/* Show all properties when no filters are applied */}
+              {properties.map(property => <PropertyCard key={property.id} property={property} onFavoriteToggle={toggleFavorite} isFavorite={favorites.includes(property.id)} />)}
             </div>}
         </div>
       </main>
