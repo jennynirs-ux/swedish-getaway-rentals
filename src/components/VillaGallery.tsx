@@ -35,7 +35,7 @@ const VillaGallery = () => {
   };
 
   return (
-    <section className="villa-section bg-card">
+    <section id="villa-gallery" className="villa-section bg-card">
       <div className="villa-container">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">

@@ -51,7 +51,12 @@ const VillaHero = () => {
             <Button size="lg" variant="default" className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90">
               Book Your Stay
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-primary">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-primary"
+              onClick={() => document.getElementById('villa-gallery')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               View Gallery
             </Button>
           </div>
