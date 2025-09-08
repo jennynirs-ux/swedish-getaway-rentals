@@ -64,7 +64,8 @@ export const GuideSectionDialog = ({ section, isOpen, onClose }: GuideSectionDia
                       if (item.includes("Paper packaging")) return Package;
                       if (item.includes("Plastic packaging")) return Package2;
                       if (item.includes("Newspapers")) return Newspaper;
-                      if (item.includes("Clear glass")) return Wine;
+                      if (item.includes("Clear glass packaging")) return Wine;
+                      if (item.includes("Coloured glass packaging")) return Wine;
                       if (item.includes("Metal packaging")) return Package;
                       if (item.includes("Residual waste")) return Trash2;
                       if (item.includes("Separate containers")) return Recycle;

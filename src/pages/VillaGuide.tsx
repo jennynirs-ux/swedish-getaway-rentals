@@ -163,7 +163,8 @@ const VillaGuide = () => {
         "Paper packaging: pasta packs, milk cartons, juice cartons, toilet roll tubes, cardboard boxes",
         "Plastic packaging: bottles, cans, plastic bags, refill packs, crisp packets, polystyrene",
         "Newspapers: daily and weekly newspapers, magazines, catalogues, advertising flyers, brochures",
-        "Clear glass packaging: coloured or clear glass bottles and jars (remove caps and lids)",
+        "Clear glass packaging: clear glass bottles and jars (remove caps and lids)",
+        "Coloured glass packaging: coloured glass bottles and jars (remove caps and lids)",
         "Metal packaging: tin cans, empty spray cans, tubes, bottle caps, lids, empty paint tins",
         "Residual waste: nappies, envelopes, dishcloths, toothbrushes, hair from hairbrushes",
         "Separate containers provided for each waste type in kitchen and outdoor areas"
