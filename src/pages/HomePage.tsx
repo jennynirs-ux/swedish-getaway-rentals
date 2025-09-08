@@ -8,6 +8,7 @@ import PropertySearch from "@/components/PropertySearch";
 import PropertyCard from "@/components/PropertyCard";
 import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
+import bookCover from "@/assets/book-cover.jpg";
 const HomePage = () => {
   const { properties, loading } = useProperties();
   const {
@@ -139,7 +140,7 @@ const HomePage = () => {
               <div className="flex justify-center">
                 <div className="relative group">
                   <img 
-                    src={import.meta.resolve("@/assets/book-cover.jpg")}
+                    src={bookCover}
                     alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs"
                     className="w-64 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
                   />
