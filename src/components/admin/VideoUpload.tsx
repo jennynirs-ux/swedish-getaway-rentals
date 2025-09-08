@@ -1,37 +1,46 @@
 import React, { useState } from 'react';
-import { Upload, X, Plus, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Video, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface MultipleImageUploadProps {
+interface VideoUploadProps {
   value: string[];
   onChange: (urls: string[]) => void;
   label: string;
-  maxImages?: number;
+  maxVideos?: number;
   className?: string;
 }
 
-export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
+export const VideoUpload: React.FC<VideoUploadProps> = ({
   value = [],
   onChange,
   label,
-  maxImages = 50,
+  maxVideos = 5,
   className = '',
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
 
-  const uploadImages = async (files: FileList) => {
+  const uploadVideos = async (files: FileList) => {
     try {
       setIsUploading(true);
       const uploadPromises = [];
       
-      for (let i = 0; i < files.length && value.length + uploadPromises.length < maxImages; i++) {
+      for (let i = 0; i < files.length && value.length + uploadPromises.length < maxVideos; i++) {
         const file = files[i];
-        if (file.type.startsWith('image/')) {
-          uploadPromises.push(uploadSingleImage(file));
+        if (file.type.startsWith('video/')) {
+          // Check file size (100MB limit)
+          if (file.size > 100 * 1024 * 1024) {
+            toast({
+              title: "Fel",
+              description: `Filen ${file.name} är för stor. Max 100MB per video.`,
+              variant: "destructive",
+            });
+            continue;
+          }
+          uploadPromises.push(uploadSingleVideo(file));
         }
       }
 
@@ -40,14 +49,14 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
       onChange(newUrls);
       
       toast({
-        title: "Success",
-        description: `${uploadedUrls.length} image(s) uploaded successfully`,
+        title: "Framgång",
+        description: `${uploadedUrls.length} video(r) uppladdade`,
       });
     } catch (error) {
       console.error('Upload error:', error);
       toast({
-        title: "Error",
-        description: "Failed to upload some images",
+        title: "Fel",
+        description: "Kunde inte ladda upp videor",
         variant: "destructive",
       });
     } finally {
@@ -55,13 +64,13 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
     }
   };
 
-  const uploadSingleImage = async (file: File): Promise<string | null> => {
+  const uploadSingleVideo = async (file: File): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `properties/gallery/${fileName}`;
+    const filePath = `properties/videos/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('property-images')
+      .from('property-videos')
       .upload(filePath, file);
 
     if (uploadError) {
@@ -70,7 +79,7 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
     }
 
     const { data } = supabase.storage
-      .from('property-images')
+      .from('property-videos')
       .getPublicUrl(filePath);
 
     return data.publicUrl;
@@ -79,7 +88,7 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      uploadImages(files);
+      uploadVideos(files);
     }
   };
 
@@ -89,7 +98,7 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
     
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      uploadImages(files);
+      uploadVideos(files);
     }
   };
 
@@ -103,33 +112,39 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
     setDragActive(false);
   };
 
-  const removeImage = (index: number) => {
+  const removeVideo = (index: number) => {
     const newUrls = value.filter((_, i) => i !== index);
     onChange(newUrls);
   };
 
-  const canAddMore = value.length < maxImages;
+  const canAddMore = value.length < maxVideos;
 
   return (
     <div className={`space-y-4 ${className}`}>
       <label className="text-sm font-medium">{label}</label>
       
-      {/* Existing Images Grid */}
+      {/* Existing Videos Grid */}
       {value.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {value.map((url, index) => (
             <div key={index} className="relative group">
-              <img
-                src={url}
-                alt={`Gallery image ${index + 1}`}
-                className="w-full h-32 object-cover rounded-lg border"
-              />
+              <div className="relative w-full h-48 bg-gray-100 rounded-lg border overflow-hidden">
+                <video 
+                  src={url} 
+                  className="w-full h-full object-cover"
+                  controls={false}
+                  muted
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                  <Play className="h-8 w-8 text-white" />
+                </div>
+              </div>
               <Button
                 type="button"
                 variant="destructive"
                 size="sm"
                 className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removeImage(index)}
+                onClick={() => removeVideo(index)}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -150,11 +165,11 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
         >
           <input
             type="file"
-            accept="image/*"
+            accept="video/mp4,video/webm,video/mov,video/avi"
             multiple
             onChange={handleFileSelect}
             className="hidden"
-            id={`multiple-image-upload-${label}`}
+            id={`video-upload-${label}`}
             disabled={isUploading}
           />
           
@@ -162,21 +177,21 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
             {isUploading ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             ) : (
-              <ImageIcon className="h-8 w-8 text-gray-400" />
+              <Video className="h-8 w-8 text-gray-400" />
             )}
             
             <div>
               <label
-                htmlFor={`multiple-image-upload-${label}`}
+                htmlFor={`video-upload-${label}`}
                 className="cursor-pointer text-primary hover:text-primary/80"
               >
-                Click to upload images
+                Klicka för att ladda upp videor
               </label>
-              <p className="text-sm text-gray-500">or drag and drop multiple images</p>
+              <p className="text-sm text-gray-500">eller dra och släpp flera videor</p>
             </div>
             
             <p className="text-xs text-gray-400">
-              {value.length}/{maxImages} images • PNG, JPG, WEBP up to 10MB each
+              {value.length}/{maxVideos} videor • MP4, WebM, MOV upp till 100MB var
             </p>
           </div>
         </div>
@@ -184,7 +199,7 @@ export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
       
       {!canAddMore && (
         <p className="text-sm text-gray-500 text-center">
-          Maximum of {maxImages} images reached
+          Maximum {maxVideos} videor uppnått
         </p>
       )}
     </div>

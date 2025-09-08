@@ -301,6 +301,8 @@ export type Database = {
           price_per_night: number
           title: string
           updated_at: string
+          video_metadata: Json | null
+          video_urls: string[] | null
         }
         Insert: {
           active?: boolean
@@ -321,6 +323,8 @@ export type Database = {
           price_per_night: number
           title: string
           updated_at?: string
+          video_metadata?: Json | null
+          video_urls?: string[] | null
         }
         Update: {
           active?: boolean
@@ -341,6 +345,8 @@ export type Database = {
           price_per_night?: number
           title?: string
           updated_at?: string
+          video_metadata?: Json | null
+          video_urls?: string[] | null
         }
         Relationships: [
           {

@@ -21,6 +21,8 @@ import FinancialDashboard from "@/components/admin/FinancialDashboard";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { GalleryMetadataEditor } from "@/components/admin/GalleryMetadataEditor";
+import { VideoUpload } from "@/components/admin/VideoUpload";
+import { VideoMetadataEditor } from "@/components/admin/VideoMetadataEditor";
 
 interface Property {
   id: string;
@@ -63,7 +65,9 @@ const Admin = () => {
     amenities: [] as string[],
     hero_image_url: "",
     gallery_images: "",
-    gallery_metadata: [] as { title: string; description: string; alt: string }[]
+    gallery_metadata: [] as { title: string; description: string; alt: string }[],
+    video_urls: "",
+    video_metadata: [] as { title: string; description: string }[]
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -179,7 +183,9 @@ const Admin = () => {
       amenities: [],
       hero_image_url: "",
       gallery_images: "",
-      gallery_metadata: []
+      gallery_metadata: [],
+      video_urls: "",
+      video_metadata: []
     });
     setSelectedProperty(null);
   };
@@ -198,7 +204,9 @@ const Admin = () => {
       amenities: property.amenities || [],
       hero_image_url: property.hero_image_url || "",
       gallery_images: property.gallery_images?.join(', ') || "",
-      gallery_metadata: (property as any).gallery_metadata || []
+      gallery_metadata: (property as any).gallery_metadata || [],
+      video_urls: (property as any).video_urls?.join(', ') || "",
+      video_metadata: (property as any).video_metadata || []
     });
     // Switch to the add tab where the form is located
     setActiveTab("add");
@@ -259,7 +267,9 @@ const Admin = () => {
         amenities: formData.amenities,
         hero_image_url: formData.hero_image_url,
         gallery_images: formData.gallery_images.split(',').map(a => a.trim()).filter(a => a),
-        gallery_metadata: formData.gallery_metadata
+        gallery_metadata: formData.gallery_metadata,
+        video_urls: formData.video_urls.split(',').map(a => a.trim()).filter(a => a),
+        video_metadata: formData.video_metadata
       };
 
       let result;
@@ -585,7 +595,7 @@ const Admin = () => {
                     label="Galleri-bilder"
                     value={formData.gallery_images.split(',').filter(img => img.trim())}
                     onChange={(urls) => setFormData({...formData, gallery_images: urls.join(', ')})}
-                    maxImages={10}
+                    maxImages={50}
                   />
 
                   <GalleryMetadataEditor
@@ -596,6 +606,25 @@ const Admin = () => {
                         ...formData, 
                         gallery_metadata: metadata,
                         gallery_images: images ? images.join(', ') : formData.gallery_images
+                      });
+                    }}
+                  />
+
+                  <VideoUpload
+                    label="Property-videor"
+                    value={formData.video_urls.split(',').filter(url => url.trim())}
+                    onChange={(urls) => setFormData({...formData, video_urls: urls.join(', ')})}
+                    maxVideos={5}
+                  />
+
+                  <VideoMetadataEditor
+                    videos={formData.video_urls.split(',').filter(url => url.trim())}
+                    metadata={formData.video_metadata}
+                    onChange={(metadata, videos) => {
+                      setFormData({
+                        ...formData, 
+                        video_metadata: metadata,
+                        video_urls: videos ? videos.join(', ') : formData.video_urls
                       });
                     }}
                   />
