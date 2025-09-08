@@ -2,6 +2,7 @@ import { useState } from "react";
 import villaInteriorImage from "@/assets/villa-interior.jpg";
 import villaBedroomImage from "@/assets/villa-bedroom.jpg";
 import villaSaunaImage from "@/assets/villa-sauna.jpg";
+import villaHeroImage from "@/assets/villa-hero.jpg";
 import { ImageDialog } from "@/components/ImageDialog";
 import { Property } from "@/hooks/useProperties";
 
@@ -32,6 +33,12 @@ const VillaGallery = ({ property }: VillaGalleryProps) => {
       alt: "Outdoor sauna and hot tub",
       title: "Wellness & Relaxation",
       description: "Authentic Swedish sauna experience"
+    },
+    {
+      src: villaHeroImage,
+      alt: "Villa Häcken surrounded by forest",
+      title: "Modern Luxury in Nature",
+      description: "Where contemporary design meets the breathtaking Swedish wilderness"
     }
   ];
 
@@ -91,6 +98,27 @@ const VillaGallery = ({ property }: VillaGalleryProps) => {
             </div>
           ))}
         </div>
+
+        {/* Large featured image with text overlay */}
+        {images.length > 3 && (
+          <div className="mt-16 relative overflow-hidden rounded-xl h-[500px] group cursor-pointer" onClick={() => openDialog(3)}>
+            <img 
+              src={images[3].src} 
+              alt={images[3].alt} 
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
+              <div className="text-white p-12 md:p-16 max-w-2xl">
+                <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
+                  Where Modern Luxury Meets Nature
+                </h3>
+                <p className="text-lg md:text-xl opacity-90 leading-relaxed">
+                  Experience the perfect harmony between contemporary design and the breathtaking Swedish wilderness.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <ImageDialog
           images={images}
