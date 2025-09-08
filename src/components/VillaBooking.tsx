@@ -20,11 +20,11 @@ const VillaBooking = () => {
           {/* Booking Form */}
           <div>
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-              Boka Din Vistelse
+              Book Your Stay
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Redo att uppleva magin av {villaProperty.title}? 
-              Skicka en förfrågan för att kontrollera tillgänglighet och priser.
+              Ready to experience the magic of {villaProperty.title}? 
+              Send an inquiry to check availability and pricing.
             </p>
 
             <BookingForm 
