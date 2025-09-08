@@ -110,7 +110,7 @@ const VillaGallery = ({ property }: VillaGalleryProps) => {
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
               <div className="text-white p-12 md:p-16 max-w-2xl">
                 <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
-                  Where Modern Luxury Meets Nature
+                  {images[3].title}
                 </h3>
                 <p className="text-lg md:text-xl opacity-90 leading-relaxed">
                   Experience the perfect harmony between contemporary design and the breathtaking Swedish wilderness.
