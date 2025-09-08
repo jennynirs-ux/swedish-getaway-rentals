@@ -48,7 +48,7 @@ const VillaGuide = () => {
     },
     {
       icon: Waves,
-      title: "Sauna & Wellness",
+      title: "Spa & Wellness",
       description: "Authentic Swedish sauna experience and outdoor wellness facilities.",
       content: [
         "Traditional wood-fired sauna ready to use (heating instructions provided)",
