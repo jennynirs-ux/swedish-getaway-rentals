@@ -107,8 +107,8 @@ const VillaGallery = ({ property }: VillaGalleryProps) => {
               alt={images[3].alt} 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center justify-center">
-              <div className="text-white p-12 md:p-16 max-w-2xl text-center">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
+              <div className="text-white p-12 md:p-16 max-w-2xl">
                 <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
                   Where Modern Luxury Meets Nature
                 </h3>
