@@ -1,4 +1,13 @@
 import { useState } from "react";
+import villaNew1 from "@/assets/villa-new-1.jpg";
+import villaNew3 from "@/assets/villa-new-3.jpg";
+import villaNew4 from "@/assets/villa-new-4.jpg";
+import villaNew5 from "@/assets/villa-new-5.jpg";
+import villaNew6 from "@/assets/villa-new-6.jpg";
+import villaNew7 from "@/assets/villa-new-7.jpg";
+import villaNew8 from "@/assets/villa-new-8.jpg";
+import villaNew9 from "@/assets/villa-new-9.jpg";
+import villaNew10 from "@/assets/villa-new-10.jpg";
 import villaInteriorImage from "@/assets/villa-interior.jpg";
 import villaBedroomImage from "@/assets/villa-bedroom.jpg";
 import villaSaunaImage from "@/assets/villa-sauna.jpg";
@@ -9,6 +18,60 @@ const VillaGallery = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const images = [
+    {
+      src: villaNew1,
+      alt: "Villa exterior view",
+      title: "Beautiful Villa",
+      description: "Stunning exterior architecture"
+    },
+    {
+      src: villaNew3,
+      alt: "Villa interior space",
+      title: "Modern Interior",
+      description: "Contemporary living spaces"
+    },
+    {
+      src: villaNew4,
+      alt: "Villa amenities",
+      title: "Premium Amenities",
+      description: "Luxury facilities and features"
+    },
+    {
+      src: villaNew5,
+      alt: "Villa outdoor area",
+      title: "Outdoor Paradise",
+      description: "Beautiful outdoor spaces"
+    },
+    {
+      src: villaNew6,
+      alt: "Villa bedroom",
+      title: "Comfortable Bedrooms",
+      description: "Relaxing sleeping quarters"
+    },
+    {
+      src: villaNew7,
+      alt: "Villa kitchen",
+      title: "Gourmet Kitchen",
+      description: "Fully equipped cooking space"
+    },
+    {
+      src: villaNew8,
+      alt: "Villa bathroom",
+      title: "Spa-like Bathrooms",
+      description: "Luxurious bathing facilities"
+    },
+    {
+      src: villaNew9,
+      alt: "Villa living room",
+      title: "Elegant Living",
+      description: "Sophisticated common areas"
+    },
+    {
+      src: villaNew10,
+      alt: "Villa dining area",
+      title: "Dining Excellence",
+      description: "Perfect for memorable meals"
+    },
     {
       src: villaInteriorImage,
       alt: "Luxurious living room with fireplace",

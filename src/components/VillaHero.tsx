@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { CalendarDays, MapPin, Users, Star, ChevronDown } from "lucide-react";
-import villaHeroImage from "@/assets/villa-hero.jpg";
+import villaHeroImage from "@/assets/villa-new-2.jpg";
 const VillaHero = () => {
   return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
