@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Home, Users, Utensils, Waves, TreePine, CheckCircle, Settings, Sparkles, Mountain, Car } from "lucide-react";
+import { ArrowLeft, MapPin, Home, Users, Utensils, Waves, TreePine, CheckCircle, Settings, Sparkles, Mountain, Car, Recycle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GuideSectionDialog } from "@/components/GuideSectionDialog";
 import { useProperties } from "@/hooks/useProperties";
@@ -152,6 +152,33 @@ const VillaGuide = () => {
         "Clean up thoroughly after cooking",
         "Turn off all appliances when not in use",
         "Follow fire safety when using outdoor BBQ"
+      ]
+    },
+    {
+      icon: Recycle,
+      title: "Recycling & Environment",
+      description: "Help us protect Swedish nature by following our comprehensive recycling guidelines.",
+      content: [
+        "Food waste: fruit and vegetable scraps, tea bags, coffee grounds, eggshells, meat bones",
+        "Paper packaging: pasta packs, milk cartons, juice cartons, toilet roll tubes, cardboard boxes",
+        "Plastic packaging: bottles, cans, plastic bags, refill packs, crisp packets, polystyrene",
+        "Newspapers: daily and weekly newspapers, magazines, catalogues, advertising flyers, brochures",
+        "Clear glass packaging: coloured or clear glass bottles and jars (remove caps and lids)",
+        "Metal packaging: tin cans, empty spray cans, tubes, bottle caps, lids, empty paint tins",
+        "Residual waste: nappies, envelopes, dishcloths, toothbrushes, hair from hairbrushes",
+        "Separate containers provided for each waste type in kitchen and outdoor areas"
+      ],
+      tips: [
+        "Flatten and fold packaging in two to save space in recycling bins",
+        "Remove plastic wrapping and advertising stickers from newspapers",
+        "Sort coloured and clear glass in correct containers",
+        "Empty and rinse containers before recycling"
+      ],
+      important: [
+        "Do not mix different types of waste - sort correctly",
+        "Plastic items other than packaging go to household waste",
+        "Hazardous waste and electrical items should not go in regular bins",
+        "Contact us for guidance on proper disposal of special items"
       ]
     },
     {
