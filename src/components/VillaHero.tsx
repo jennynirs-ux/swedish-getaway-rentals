@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { CalendarDays, MapPin, Users, Star, ChevronDown } from "lucide-react";
 import villaHeroImage from "@/assets/villa-hero.jpg";
-const VillaHero = () => {
+import { Property } from "@/hooks/useProperties";
+
+interface VillaHeroProps {
+  property?: Property;
+}
+
+const VillaHero = ({ property }: VillaHeroProps) => {
   return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
-      backgroundImage: `url(${villaHeroImage})`
+      backgroundImage: `url(${property?.hero_image_url || villaHeroImage})`
     }}>
         <div className="absolute inset-0 bg-black/40"></div>
       </div>
