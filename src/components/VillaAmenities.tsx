@@ -11,7 +11,7 @@ const VillaAmenities = () => {
     icon: Bed,
     title: "4 Bedrooms",
     description: "Spacious bedrooms with premium linens and forest views",
-    detailedDescription: "Villa Häcken features four beautifully appointed bedrooms, each offering stunning views of the surrounding forest. All rooms are furnished with high-quality linens, comfortable mattresses, and thoughtful amenities for a restful night's sleep.",
+    detailedDescription: "Villa Häcken features four beautifully appointed bedrooms, each offering stunning views of the surrounding forest and lake. All rooms are furnished with high-quality linens, comfortable mattresses, and thoughtful amenities for a restful night's sleep.",
     features: ["Premium cotton bed linens", "Memory foam mattresses", "Forest view windows", "Individual climate control", "Blackout curtains", "Reading lights"]
   }, {
     icon: Users,
