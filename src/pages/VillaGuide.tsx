@@ -3,10 +3,15 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, MapPin, Home, Users, Utensils, Waves, TreePine, CheckCircle, Settings, Sparkles, Mountain, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GuideSectionDialog } from "@/components/GuideSectionDialog";
+import { useProperties } from "@/hooks/useProperties";
 
 const VillaGuide = () => {
   const [selectedSection, setSelectedSection] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { properties, loading } = useProperties();
+  
+  // Find the Villa Häcken property or use the first one
+  const villaProperty = properties.find(p => p.title.includes("Villa Häcken")) || properties[0];
 
   const handleSectionClick = (section) => {
     setSelectedSection(section);
@@ -184,7 +189,7 @@ const VillaGuide = () => {
       <div className="relative bg-warm-gradient text-white py-16 overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/src/assets/villa-hero.jpg')" }}
+          style={{ backgroundImage: `url(${villaProperty?.gallery_images?.[4] || '/src/assets/villa-hero.jpg'})` }}
         />
         <div className="absolute inset-0 bg-black/40" />
         <div className="villa-container relative z-10">
