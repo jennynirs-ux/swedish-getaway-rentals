@@ -17,6 +17,7 @@ import DashboardOverview from "@/components/admin/DashboardOverview";
 import BookingsManagement from "@/components/admin/BookingsManagement";
 import MessagesInbox from "@/components/admin/MessagesInbox";
 import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar";
+import FinancialDashboard from "@/components/admin/FinancialDashboard";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { GalleryMetadataEditor } from "@/components/admin/GalleryMetadataEditor";
@@ -361,6 +362,10 @@ const Admin = () => {
               <MessageSquare className="h-4 w-4" />
               Meddelanden
             </TabsTrigger>
+            <TabsTrigger value="finances" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Ekonomi
+            </TabsTrigger>
             <TabsTrigger value="add" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Lägg till
@@ -381,6 +386,10 @@ const Admin = () => {
 
           <TabsContent value="messages">
             <MessagesInbox />
+          </TabsContent>
+
+          <TabsContent value="finances">
+            <FinancialDashboard onBack={() => setActiveTab("dashboard")} />
           </TabsContent>
 
           <TabsContent value="properties">
