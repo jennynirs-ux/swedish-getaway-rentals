@@ -6,6 +6,7 @@ import { usePropertyFilters } from "@/hooks/usePropertyFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import PropertySearch from "@/components/PropertySearch";
 import PropertyCard from "@/components/PropertyCard";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 import bookCover from "@/assets/book-cover.jpg";
@@ -128,76 +129,114 @@ const HomePage = () => {
       </main>
 
       {/* Book Promotion Section */}
-      <section className="py-16 bg-gradient-to-br from-muted/50 to-background">
+      <section className="py-12 bg-gradient-to-br from-muted/50 to-background">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-4xl font-bold text-center text-foreground mb-12">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl font-bold text-center text-foreground mb-8">
               Looking for the perfect retreat read?
             </h2>
             
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Book Cover */}
-              <div className="flex justify-center">
+            <div className="grid lg:grid-cols-12 gap-8 items-center">
+              {/* Book Cover - Left Side */}
+              <div className="lg:col-span-4 flex justify-center lg:justify-start">
                 <div className="relative group">
                   <img 
                     src={bookCover}
                     alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs"
-                    className="w-64 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
+                    className="w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 rounded-lg transition-opacity"></div>
                 </div>
               </div>
 
-              {/* Book Information */}
-              <div className="space-y-6">
+              {/* Book Information - Right Side */}
+              <div className="lg:col-span-8 space-y-4">
                 <div>
-                  <h3 className="text-2xl font-semibold text-foreground mb-2">
+                  <h3 className="text-2xl font-semibold text-foreground mb-1">
                     När havet förändrade allt
                   </h3>
-                  <h4 className="text-xl text-muted-foreground mb-4">
+                  <h4 className="text-lg text-muted-foreground mb-3">
                     When the Ocean Changed Everything
                   </h4>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     A gripping and unforgettable story of survival and meaning. Perfect reading for your Swedish getaway. 
                     Available in both Swedish and English.
                   </p>
                 </div>
 
-                {/* Reviews */}
-                <div className="space-y-4">
-                  <div className="bg-card/50 rounded-lg p-4 border border-border/50">
-                    <div className="flex items-center mb-2">
-                      <div className="flex text-yellow-500">
-                        {[1,2,3,4,5].map(i => (
-                          <span key={i}>★</span>
-                        ))}
-                      </div>
-                      <span className="ml-2 text-sm text-muted-foreground">by Patrik</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground italic">
-                      "A gripping and unforgettable story of survival and meaning that stays with you long after the last page. 
-                      Jenny's voice is both raw and hopeful, delivering a story that feels important and honest in every way."
-                    </p>
-                  </div>
-
-                  <div className="bg-card/50 rounded-lg p-4 border border-border/50">
-                    <div className="flex items-center mb-2">
-                      <div className="flex text-yellow-500">
-                        {[1,2,3,4,5].map(i => (
-                          <span key={i}>★</span>
-                        ))}
-                      </div>
-                      <span className="ml-2 text-sm text-muted-foreground">by Anna</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground italic">
-                      "A very gripping and captivating book. I read it straight through, couldn't stop reading..."
-                    </p>
-                  </div>
+                {/* Reviews Carousel */}
+                <div className="relative">
+                  <Carousel className="w-full max-w-lg">
+                    <CarouselContent>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1,2,3,4,5].map(i => (
+                                <span key={i}>★</span>
+                              ))}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Patrik</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "A gripping and unforgettable story of survival and meaning that stays with you long after the last page."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1,2,3,4,5].map(i => (
+                                <span key={i}>★</span>
+                              ))}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Anna</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "A very gripping and captivating book. I read it straight through, couldn't stop reading..."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1,2,3,4,5].map(i => (
+                                <span key={i}>★</span>
+                              ))}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Per</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "An emotional journey that captured my heart. Jenny's storytelling is both beautiful and devastating."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1,2,3,4,5].map(i => (
+                                <span key={i}>★</span>
+                              ))}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Karl-olov</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "A masterpiece of Swedish literature. This book will resonate with readers long after finishing it."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                    </CarouselContent>
+                    <CarouselPrevious className="left-0" />
+                    <CarouselNext className="right-0" />
+                  </Carousel>
                 </div>
 
                 {/* Call to Action */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button asChild className="flex-1">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button asChild size="sm" className="flex-1">
                     <a 
                       href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843" 
                       target="_blank" 
@@ -206,7 +245,7 @@ const HomePage = () => {
                       Order in Swedish
                     </a>
                   </Button>
-                  <Button variant="outline" asChild className="flex-1">
+                  <Button variant="outline" asChild size="sm" className="flex-1">
                     <a 
                       href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661" 
                       target="_blank" 
