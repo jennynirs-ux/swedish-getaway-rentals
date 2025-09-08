@@ -88,9 +88,9 @@ const HomePage = () => {
                 </div>
               ))}
             </div>
-          ) : properties.length > 0 ? (
+          ) : filteredProperties.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {properties.map((property) => (
+              {filteredProperties.map((property) => (
                 <PropertyCard
                   key={property.id}
                   property={property}
@@ -125,6 +125,101 @@ const HomePage = () => {
           )}
         </div>
       </main>
+
+      {/* Book Promotion Section */}
+      <section className="py-16 bg-gradient-to-br from-muted/50 to-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-4xl font-bold text-center text-foreground mb-12">
+              Looking for the perfect retreat read?
+            </h2>
+            
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Book Cover */}
+              <div className="flex justify-center">
+                <div className="relative group">
+                  <img 
+                    src={import.meta.resolve("@/assets/book-cover.jpg")}
+                    alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs"
+                    className="w-64 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 rounded-lg transition-opacity"></div>
+                </div>
+              </div>
+
+              {/* Book Information */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-2xl font-semibold text-foreground mb-2">
+                    När havet förändrade allt
+                  </h3>
+                  <h4 className="text-xl text-muted-foreground mb-4">
+                    When the Ocean Changed Everything
+                  </h4>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    A gripping and unforgettable story of survival and meaning. Perfect reading for your Swedish getaway. 
+                    Available in both Swedish and English.
+                  </p>
+                </div>
+
+                {/* Reviews */}
+                <div className="space-y-4">
+                  <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                    <div className="flex items-center mb-2">
+                      <div className="flex text-yellow-500">
+                        {[1,2,3,4,5].map(i => (
+                          <span key={i}>★</span>
+                        ))}
+                      </div>
+                      <span className="ml-2 text-sm text-muted-foreground">by Patrik</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground italic">
+                      "A gripping and unforgettable story of survival and meaning that stays with you long after the last page. 
+                      Jenny's voice is both raw and hopeful, delivering a story that feels important and honest in every way."
+                    </p>
+                  </div>
+
+                  <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                    <div className="flex items-center mb-2">
+                      <div className="flex text-yellow-500">
+                        {[1,2,3,4,5].map(i => (
+                          <span key={i}>★</span>
+                        ))}
+                      </div>
+                      <span className="ml-2 text-sm text-muted-foreground">by Anna</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground italic">
+                      "A very gripping and captivating book. I read it straight through, couldn't stop reading..."
+                    </p>
+                  </div>
+                </div>
+
+                {/* Call to Action */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button asChild className="flex-1">
+                    <a 
+                      href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      Order in Swedish
+                    </a>
+                  </Button>
+                  <Button variant="outline" asChild className="flex-1">
+                    <a 
+                      href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      Order in English
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="py-16 border-t border-border bg-card">
