@@ -43,8 +43,8 @@ const HomePage = () => {
             </p>
           </div>
           
-          {/* Search Component */}
-          <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} />
+          {/* Search Component - Hidden for now */}
+          {/* <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} /> */}
         </div>
       </header>
 
