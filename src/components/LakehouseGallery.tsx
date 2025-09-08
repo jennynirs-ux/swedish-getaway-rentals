@@ -4,12 +4,18 @@ import lakehouseBedroomImage from "@/assets/lakehouse-bedroom.jpg";
 import lakehouseLakeImage from "@/assets/lakehouse-lake.jpg";
 import lakehouseHeroImage from "@/assets/lakehouse-hero.jpg";
 import { ImageDialog } from "@/components/ImageDialog";
+import { Property } from "@/hooks/useProperties";
 
-const LakehouseGallery = () => {
+interface LakehouseGalleryProps {
+  property?: Property;
+}
+
+const LakehouseGallery = ({ property }: LakehouseGalleryProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  const images = [
+  // Use property gallery images if available, otherwise fallback to static images
+  const defaultImages = [
     {
       src: lakehouseHeroImage,
       alt: "Lakehouse exterior with lake view",
@@ -35,6 +41,20 @@ const LakehouseGallery = () => {
       description: "Your own private dock provides direct access to the crystal clear lake. Perfect for swimming, fishing, kayaking, or simply enjoying the peaceful water views."
     }
   ];
+
+  const propertyImages = property?.gallery_images && property.gallery_images.length > 0
+    ? property.gallery_images.map((src, index) => {
+        const metadata = (property as any).gallery_metadata?.[index] || {};
+        return {
+          src,
+          alt: metadata.alt || `Gallery image ${index + 1}`,
+          title: metadata.title || `Image ${index + 1}`,
+          description: metadata.description || ""
+        };
+      })
+    : defaultImages;
+
+  const images = propertyImages;
 
   const handleImageClick = (index: number) => {
     setSelectedImageIndex(index);

@@ -2,9 +2,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, Calendar, ChevronDown } from "lucide-react";
 import lakehouseHeroImage from "@/assets/lakehouse-hero.jpg";
-const LakehouseHero = () => {
+import { Property } from "@/hooks/useProperties";
+
+interface LakehouseHeroProps {
+  property?: Property;
+}
+
+const LakehouseHero = ({ property }: LakehouseHeroProps) => {
+  const heroImage = property?.hero_image_url || lakehouseHeroImage;
+  const title = property?.title || "Lakehouse Getaway";
+  const description = property?.description || "Experience the tranquility of Swedish lakeside living in this charming wooden cabin. Wake up to pristine waters and forest views.";
+  const location = property?.location || "Lerum, Sweden";
+  const maxGuests = property?.max_guests || 4;
+
   return <section className="relative h-screen bg-cover bg-center bg-no-repeat" style={{
-    backgroundImage: `url(${lakehouseHeroImage})`
+    backgroundImage: `url(${heroImage})`
   }}>
       <div className="absolute inset-0 bg-black/40"></div>
       
@@ -12,28 +24,28 @@ const LakehouseHero = () => {
         <div className="text-center text-white px-4 max-w-4xl mx-auto">
           {/* Rating Badge */}
           <Badge className="mb-6 bg-white/20 text-white border-white/30 hover:bg-white/30">
-            ⭐ 4.9 • Highly Rated
+            ⭐ 5.0 • Highly Rated
           </Badge>
 
           {/* Main Title */}
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
-            Lakehouse Getaway
+            {title}
           </h1>
 
           {/* Description */}
           <p className="text-xl md:text-2xl mb-8 text-white/90 animate-fade-in max-w-2xl mx-auto">
-            Experience the tranquility of Swedish lakeside living in this charming wooden cabin. Wake up to pristine waters and forest views.
+            {description}
           </p>
 
           {/* Key Information */}
           <div className="flex flex-wrap justify-center gap-6 mb-8 text-white/90">
             <div className="flex items-center">
               <MapPin className="w-5 h-5 mr-2" />
-              <span>Lerum, Sweden</span>
+              <span>{location}</span>
             </div>
             <div className="flex items-center">
               <Users className="w-5 h-5 mr-2" />
-              <span>Up to 4 guests</span>
+              <span>Up to {maxGuests} guests</span>
             </div>
             <div className="flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
