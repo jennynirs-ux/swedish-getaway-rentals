@@ -2,12 +2,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProperties } from "@/hooks/useProperties";
-import { usePropertyFilters } from "@/hooks/usePropertyFilters";
 import { Skeleton } from "@/components/ui/skeleton";
-import PropertySearch from "@/components/PropertySearch";
 import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
+import { Grid3X3 } from "lucide-react";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 const HomePage = () => {
@@ -15,17 +13,6 @@ const HomePage = () => {
     properties,
     loading
   } = useProperties();
-  const {
-    filters,
-    setFilters,
-    sortBy,
-    setSortBy,
-    favorites,
-    toggleFavorite,
-    availableAmenities,
-    filteredProperties,
-    totalResults
-  } = usePropertyFilters(properties);
   return <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
       <header className="relative py-20 overflow-hidden">
@@ -48,24 +35,6 @@ const HomePage = () => {
         </div>
       </header>
 
-      {/* Sort Controls */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-end">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[200px]">
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recommended">Recommended</SelectItem>
-              <SelectItem value="price_asc">Price: Low to High</SelectItem>
-              <SelectItem value="price_desc">Price: High to Low</SelectItem>
-              <SelectItem value="rating">Highest Rated</SelectItem>
-              <SelectItem value="newest">Newest First</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
 
       {/* Property Cards */}
       <main className="pb-12">
@@ -84,7 +53,7 @@ const HomePage = () => {
                   </div>
                 </div>)}
             </div> : properties.length > 0 ? <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {properties.map(property => <PropertyCard key={property.id} property={property} onFavoriteToggle={toggleFavorite} isFavorite={favorites.includes(property.id)} />)}
+              {properties.map(property => <PropertyCard key={property.id} property={property} />)}
             </div> : <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -92,19 +61,8 @@ const HomePage = () => {
                   No properties found
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Try adjusting your search filters or search for a different location.
+                  No properties are currently available.
                 </p>
-                <Button onClick={() => setFilters({
-              location: "",
-              checkIn: undefined,
-              checkOut: undefined,
-              guests: 2,
-              priceRange: [0, 5000],
-              amenities: [],
-              propertyType: ""
-            })}>
-                  Clear all filters
-                </Button>
               </div>
             </div>}
         </div>
