@@ -429,6 +429,10 @@ export type Database = {
         Args: { booking_id: string }
         Returns: boolean
       }
+      is_user_admin_safe: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       validate_password_strength: {
         Args: { password: string }
         Returns: boolean
