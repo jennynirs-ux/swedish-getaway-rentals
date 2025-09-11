@@ -62,12 +62,12 @@ export const MediaDialog = ({ media, isOpen, onClose, initialIndex = 0 }: MediaD
         
         <div className="flex-1 flex flex-col p-6 pt-2">
           {/* Media Display */}
-          <div className="relative flex-1 flex items-center justify-center bg-black rounded-lg overflow-hidden">
+          <div className="relative flex-1 flex items-center justify-center bg-black rounded-lg overflow-hidden min-h-0">
             {currentMedia.type === 'image' ? (
               <img
                 src={currentMedia.url}
                 alt={currentMedia.alt || currentMedia.title || ''}
-                className="max-w-full max-h-full object-contain"
+                className="w-full h-full object-contain"
               />
             ) : (
               <div className="relative w-full h-full flex items-center justify-center">
