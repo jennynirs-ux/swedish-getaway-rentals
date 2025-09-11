@@ -105,18 +105,18 @@ const LakehouseGallery = ({ property }: LakehouseGalleryProps) => {
 
         {/* Large featured image with text overlay */}
         {images.length > 3 && (
-          <div className="mt-16 relative overflow-hidden rounded-xl h-64 md:h-80 lg:h-[500px] group cursor-pointer" onClick={() => openDialog(3)}>
+          <div className="mt-16 relative overflow-hidden rounded-xl h-[500px] group cursor-pointer" onClick={() => openDialog(3)}>
             <img 
               src={images[3].src} 
               alt={images[3].alt} 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center justify-center md:justify-start">
-              <div className="text-white p-6 md:p-12 lg:p-16 max-w-2xl text-center md:text-left">
-                <h3 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold mb-2 md:mb-4">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
+              <div className="text-white p-12 md:p-16 max-w-2xl">
+                <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
                   Where Tranquil Waters Meet Swedish Nature
                 </h3>
-                <p className="text-base md:text-lg lg:text-xl opacity-90 leading-relaxed">
+                <p className="text-lg md:text-xl opacity-90 leading-relaxed">
                   Discover the perfect balance between lakeside serenity and modern comfort in the heart of pristine Swedish wilderness.
                 </p>
               </div>
