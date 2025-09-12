@@ -19,6 +19,8 @@ import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import HostApplication from "./pages/HostApplication";
+import HostDashboard from "./components/host/HostDashboard";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,8 @@ const App = () => {
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/host-application" element={<HostApplication />} />
+            <Route path="/host-dashboard" element={<HostDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </TooltipProvider>

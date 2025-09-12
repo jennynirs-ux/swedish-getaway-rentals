@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.create-booking-payment]
 verify_jwt = false
 
+[functions.create-booking-payment-connect]
+verify_jwt = false
+
 [functions.handle-payment-success]
 verify_jwt = false
 

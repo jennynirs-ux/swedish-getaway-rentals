@@ -193,11 +193,16 @@ const HomePage = () => {
               <p className="text-muted-foreground mb-4">
                 Discover authentic Nordic experiences in our handpicked properties.
               </p>
-              <div className="flex gap-2">
-                <Link to="/auth">
-                  <Button variant="outline">Admin Login</Button>
-                </Link>
-              </div>
+               <div className="flex gap-2">
+                 <Link to="/auth">
+                   <Button variant="outline">Admin Login</Button>
+                 </Link>
+               </div>
+               <div className="mt-4">
+                 <Link to="/host-application" className="text-muted-foreground hover:text-foreground underline">
+                   Do you want to become a Nordic Getaways host?
+                 </Link>
+               </div>
             </div>
             
             <div>

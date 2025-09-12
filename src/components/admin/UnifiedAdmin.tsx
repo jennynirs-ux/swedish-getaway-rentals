@@ -7,6 +7,7 @@ import ShopProductsManagement from "./ShopProductsManagement";
 import OrdersManagement from "./OrdersManagement";
 import PropertiesManagement from "./PropertiesManagement";
 import PropertyDetailEditor from "./PropertyDetailEditor";
+import HostManagement from "./HostManagement";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -23,7 +24,7 @@ const UnifiedAdmin = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Home className="w-4 h-4" />
             Dashboard
@@ -31,6 +32,10 @@ const UnifiedAdmin = () => {
           <TabsTrigger value="rentals" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Rentals
+          </TabsTrigger>
+          <TabsTrigger value="hosts" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Hosts
           </TabsTrigger>
           <TabsTrigger value="products" className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4" />
@@ -59,6 +64,10 @@ const UnifiedAdmin = () => {
         <TabsContent value="rentals" className="space-y-6">
           <PropertiesManagement />
           <BookingsManagement />
+        </TabsContent>
+
+        <TabsContent value="hosts" className="space-y-6">
+          <HostManagement />
         </TabsContent>
 
         <TabsContent value="products" className="space-y-6">
