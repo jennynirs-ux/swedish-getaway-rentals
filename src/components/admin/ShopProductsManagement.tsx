@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Edit2, Eye, EyeOff, Home, RefreshCw } from "lucide-react";
+import { Edit2, Eye, EyeOff, Home, RefreshCw, Upload, X } from "lucide-react";
 
 interface ShopProduct {
   id: string;
@@ -19,8 +19,15 @@ interface ShopProduct {
   image_url: string;
   custom_description?: string;
   custom_price?: number;
-  visible: boolean;
-  printful_data: any;
+  title_override?: string;
+  description_override?: string;
+  price_override?: number;
+  main_image_override?: string;
+  additional_images_override?: string[];
+  is_visible_shop: boolean;
+  is_visible_home: boolean;
+  sort_order?: number;
+  printful_data?: any;
   created_at: string;
 }
 
@@ -30,10 +37,13 @@ const ShopProductsManagement = () => {
   const [syncing, setSyncing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ShopProduct | null>(null);
   const [editForm, setEditForm] = useState({
-    custom_description: '',
-    custom_price: '',
-    visible: true,
-    show_on_homepage: false
+    title_override: '',
+    description_override: '',
+    price_override: '',
+    main_image_override: '',
+    is_visible_shop: true,
+    is_visible_home: false,
+    sort_order: ''
   });
 
   useEffect(() => {
@@ -45,6 +55,7 @@ const ShopProductsManagement = () => {
       const { data, error } = await supabase
         .from('shop_products')
         .select('*')
+        .order('sort_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -88,10 +99,13 @@ const ShopProductsManagement = () => {
   const handleEdit = (product: ShopProduct) => {
     setEditingProduct(product);
     setEditForm({
-      custom_description: product.custom_description || '',
-      custom_price: product.custom_price?.toString() || '',
-      visible: product.visible,
-      show_on_homepage: false // This would need to be fetched from a separate field
+      title_override: product.title_override || '',
+      description_override: product.description_override || '',
+      price_override: product.price_override?.toString() || '',
+      main_image_override: product.main_image_override || '',
+      is_visible_shop: product.is_visible_shop,
+      is_visible_home: product.is_visible_home,
+      sort_order: product.sort_order?.toString() || ''
     });
   };
 
@@ -100,15 +114,38 @@ const ShopProductsManagement = () => {
 
     try {
       const updateData: any = {
-        visible: editForm.visible,
+        is_visible_shop: editForm.is_visible_shop,
+        is_visible_home: editForm.is_visible_home,
       };
 
-      if (editForm.custom_description.trim()) {
-        updateData.custom_description = editForm.custom_description.trim();
+      if (editForm.title_override.trim()) {
+        updateData.title_override = editForm.title_override.trim();
+      } else {
+        updateData.title_override = null;
       }
 
-      if (editForm.custom_price.trim()) {
-        updateData.custom_price = parseInt(editForm.custom_price);
+      if (editForm.description_override.trim()) {
+        updateData.description_override = editForm.description_override.trim();
+      } else {
+        updateData.description_override = null;
+      }
+
+      if (editForm.price_override.trim()) {
+        updateData.price_override = parseInt(editForm.price_override);
+      } else {
+        updateData.price_override = null;
+      }
+
+      if (editForm.main_image_override.trim()) {
+        updateData.main_image_override = editForm.main_image_override.trim();
+      } else {
+        updateData.main_image_override = null;
+      }
+
+      if (editForm.sort_order.trim()) {
+        updateData.sort_order = parseInt(editForm.sort_order);
+      } else {
+        updateData.sort_order = null;
       }
 
       const { error } = await supabase
@@ -135,11 +172,11 @@ const ShopProductsManagement = () => {
     }
   };
 
-  const toggleVisibility = async (productId: string, visible: boolean) => {
+  const toggleVisibility = async (productId: string, field: 'is_visible_shop' | 'is_visible_home', value: boolean) => {
     try {
       const { error } = await supabase
         .from('shop_products')
-        .update({ visible })
+        .update({ [field]: value })
         .eq('id', productId);
 
       if (error) throw error;
@@ -147,7 +184,7 @@ const ShopProductsManagement = () => {
       await loadProducts();
       toast({
         title: "Success",
-        description: `Product ${visible ? 'shown' : 'hidden'} successfully`,
+        description: `Product visibility updated successfully`,
       });
     } catch (error) {
       console.error('Error toggling visibility:', error);
@@ -164,6 +201,15 @@ const ShopProductsManagement = () => {
       style: 'currency',
       currency: currency,
     }).format(price / 100);
+  };
+
+  const getDisplayData = (product: ShopProduct) => {
+    const title = product.title_override || product.title;
+    const description = product.description_override || product.custom_description || product.description;
+    const price = product.price_override || product.custom_price || product.price;
+    const imageUrl = product.main_image_override || product.image_url;
+    
+    return { title, description, price, imageUrl };
   };
 
   if (loading) {
@@ -193,34 +239,75 @@ const ShopProductsManagement = () => {
       {editingProduct && (
         <Card>
           <CardHeader>
-            <CardTitle>Edit Product: {editingProduct.title}</CardTitle>
+            <CardTitle>Edit Product: {getDisplayData(editingProduct).title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Custom Description (optional)</Label>
-              <Textarea
-                value={editForm.custom_description}
-                onChange={(e) => setEditForm(prev => ({ ...prev, custom_description: e.target.value }))}
-                placeholder="Override the default description..."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Title Override (optional)</Label>
+                <Input
+                  value={editForm.title_override}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, title_override: e.target.value }))}
+                  placeholder="Override product title..."
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Price Override (optional, in cents)</Label>
+                <Input
+                  type="number"
+                  value={editForm.price_override}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, price_override: e.target.value }))}
+                  placeholder="e.g. 2500 for 25.00 SEK"
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
-              <Label>Custom Price (optional, in cents)</Label>
-              <Input
-                type="number"
-                value={editForm.custom_price}
-                onChange={(e) => setEditForm(prev => ({ ...prev, custom_price: e.target.value }))}
-                placeholder="e.g. 2500 for 25.00 SEK"
+              <Label>Description Override (optional)</Label>
+              <Textarea
+                value={editForm.description_override}
+                onChange={(e) => setEditForm(prev => ({ ...prev, description_override: e.target.value }))}
+                placeholder="Override the default description..."
+                rows={3}
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={editForm.visible}
-                onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, visible: checked }))}
+            <div className="space-y-2">
+              <Label>Main Image Override (optional)</Label>
+              <Input
+                value={editForm.main_image_override}
+                onChange={(e) => setEditForm(prev => ({ ...prev, main_image_override: e.target.value }))}
+                placeholder="Override main image URL..."
               />
-              <Label>Visible in shop</Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sort Order (optional)</Label>
+              <Input
+                type="number"
+                value={editForm.sort_order}
+                onChange={(e) => setEditForm(prev => ({ ...prev, sort_order: e.target.value }))}
+                placeholder="Lower numbers appear first"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editForm.is_visible_shop}
+                  onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, is_visible_shop: checked }))}
+                />
+                <Label>Visible in shop</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editForm.is_visible_home}
+                  onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, is_visible_home: checked }))}
+                />
+                <Label>Show on homepage</Label>
+              </div>
             </div>
 
             <div className="flex gap-2">
@@ -233,39 +320,50 @@ const ShopProductsManagement = () => {
 
       <div className="grid gap-4">
         {products.map((product) => {
-          const finalPrice = product.custom_price || product.price;
-          const finalDescription = product.custom_description || product.description;
+          const { title, description, price, imageUrl } = getDisplayData(product);
           
           return (
             <Card key={product.id} className="border">
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <img
-                    src={product.image_url || '/placeholder.svg'}
-                    alt={product.title}
+                    src={imageUrl || '/placeholder.svg'}
+                    alt={title}
                     className="w-20 h-20 object-cover rounded-lg"
+                    loading="lazy"
                   />
                   
                   <div className="flex-1">
-                    <h3 className="font-semibold">{product.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {finalDescription?.substring(0, 100)}...
-                    </p>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-bold text-primary">
-                        {formatPrice(finalPrice, product.currency)}
-                      </span>
-                      {product.custom_price && (
-                        <Badge variant="secondary">Custom Price</Badge>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold">{title}</h3>
+                      {product.sort_order && (
+                        <Badge variant="outline">Order: {product.sort_order}</Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={product.visible ? "default" : "secondary"}>
-                        {product.visible ? "Visible" : "Hidden"}
-                      </Badge>
-                      {product.custom_description && (
-                        <Badge variant="outline">Custom Description</Badge>
+                    
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {description?.substring(0, 100)}...
+                    </p>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-bold text-primary">
+                        {formatPrice(price, product.currency)}
+                      </span>
+                      {product.price_override && (
+                        <Badge variant="secondary">Custom Price</Badge>
                       )}
+                      {product.title_override && (
+                        <Badge variant="outline">Custom Title</Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Badge variant={product.is_visible_shop ? "default" : "secondary"}>
+                        {product.is_visible_shop ? "Shop" : "Hidden from Shop"}
+                      </Badge>
+                      <Badge variant={product.is_visible_home ? "default" : "secondary"}>
+                        {product.is_visible_home ? "Homepage" : "Hidden from Homepage"}
+                      </Badge>
                     </div>
                   </div>
                   
@@ -282,12 +380,24 @@ const ShopProductsManagement = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => toggleVisibility(product.id, !product.visible)}
+                      onClick={() => toggleVisibility(product.id, 'is_visible_shop', !product.is_visible_shop)}
                     >
-                      {product.visible ? (
-                        <><EyeOff className="h-4 w-4 mr-2" />Hide</>
+                      {product.is_visible_shop ? (
+                        <><EyeOff className="h-4 w-4 mr-2" />Hide Shop</>
                       ) : (
-                        <><Eye className="h-4 w-4 mr-2" />Show</>
+                        <><Eye className="h-4 w-4 mr-2" />Show Shop</>
+                      )}
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleVisibility(product.id, 'is_visible_home', !product.is_visible_home)}
+                    >
+                      {product.is_visible_home ? (
+                        <><Home className="h-4 w-4 mr-2" />Hide Home</>
+                      ) : (
+                        <><Home className="h-4 w-4 mr-2" />Show Home</>
                       )}
                     </Button>
                   </div>

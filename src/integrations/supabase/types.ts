@@ -444,47 +444,74 @@ export type Database = {
       }
       shop_products: {
         Row: {
+          additional_images_override: string[] | null
           created_at: string
           currency: string
           custom_description: string | null
           custom_price: number | null
           description: string | null
+          description_override: string | null
           id: string
           image_url: string | null
+          is_visible_home: boolean | null
+          is_visible_shop: boolean | null
+          main_image_override: string | null
           price: number
+          price_override: number | null
           printful_data: Json | null
           printful_product_id: string
+          printful_sync_variant_id: string | null
+          sort_order: number | null
           title: string
+          title_override: string | null
           updated_at: string
           visible: boolean
         }
         Insert: {
+          additional_images_override?: string[] | null
           created_at?: string
           currency?: string
           custom_description?: string | null
           custom_price?: number | null
           description?: string | null
+          description_override?: string | null
           id?: string
           image_url?: string | null
+          is_visible_home?: boolean | null
+          is_visible_shop?: boolean | null
+          main_image_override?: string | null
           price: number
+          price_override?: number | null
           printful_data?: Json | null
           printful_product_id: string
+          printful_sync_variant_id?: string | null
+          sort_order?: number | null
           title: string
+          title_override?: string | null
           updated_at?: string
           visible?: boolean
         }
         Update: {
+          additional_images_override?: string[] | null
           created_at?: string
           currency?: string
           custom_description?: string | null
           custom_price?: number | null
           description?: string | null
+          description_override?: string | null
           id?: string
           image_url?: string | null
+          is_visible_home?: boolean | null
+          is_visible_shop?: boolean | null
+          main_image_override?: string | null
           price?: number
+          price_override?: number | null
           printful_data?: Json | null
           printful_product_id?: string
+          printful_sync_variant_id?: string | null
+          sort_order?: number | null
           title?: string
+          title_override?: string | null
           updated_at?: string
           visible?: boolean
         }

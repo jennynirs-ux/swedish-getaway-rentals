@@ -15,6 +15,15 @@ interface ShopProduct {
   image_url: string;
   custom_description?: string;
   custom_price?: number;
+  title_override?: string;
+  description_override?: string;
+  price_override?: number;
+  main_image_override?: string;
+  additional_images_override?: string[];
+  is_visible_shop: boolean;
+  is_visible_home: boolean;
+  sort_order?: number;
+  printful_data?: any;
 }
 
 const HomepageProducts = () => {
@@ -31,13 +40,14 @@ const HomepageProducts = () => {
       // First sync with Printful to get latest products
       await supabase.functions.invoke('fetch-printful-products');
       
-      // Then fetch visible products for homepage
+      // Then fetch visible products for homepage (exactly 6 products)
       const { data, error } = await supabase
         .from('shop_products')
         .select('*')
-        .eq('visible', true)
+        .eq('is_visible_home', true)
+        .order('sort_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(6);
 
       if (error) throw error;
       setProducts(data || []);
@@ -83,6 +93,15 @@ const HomepageProducts = () => {
     }).format(price / 100);
   };
 
+  const getDisplayData = (product: ShopProduct) => {
+    const title = product.title_override || product.title;
+    const description = product.description_override || product.custom_description || product.description;
+    const price = product.price_override || product.custom_price || product.price;
+    const imageUrl = product.main_image_override || product.image_url;
+    
+    return { title, description, price, imageUrl };
+  };
+
   if (loading || products.length === 0) {
     return null;
   }
@@ -99,44 +118,41 @@ const HomepageProducts = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {products.map((product) => {
-            const finalPrice = product.custom_price || product.price;
-            const finalDescription = product.custom_description || product.description;
+            const { title, description, price, imageUrl } = getDisplayData(product);
             
             return (
-              <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
-                <div className="aspect-square overflow-hidden rounded-t-lg">
+              <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
+                <div className="aspect-[4/3] overflow-hidden rounded-t-lg">
                   <img
-                    src={product.image_url || '/placeholder.svg'}
-                    alt={product.title}
+                    src={imageUrl || '/placeholder.svg'}
+                    alt={title}
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 
-                <CardContent className="p-6 space-y-4">
-                  <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
-                    {product.title}
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                    {title}
                   </h3>
                   
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {finalDescription}
-                  </p>
-                  
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="text-2xl font-bold text-primary">
-                      {formatPrice(finalPrice, product.currency)}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="text-xl font-bold text-primary">
+                      {formatPrice(price, product.currency)}
                     </div>
                     
                     <Button
+                      size="sm"
                       onClick={() => handlePurchase(product)}
                       disabled={purchasing === product.id}
                       className="bg-primary hover:bg-primary/90"
                     >
                       {purchasing === product.id ? (
-                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                        <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full mr-1" />
                       ) : (
-                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        <ShoppingCart className="w-3 h-3 mr-1" />
                       )}
                       Buy Now
                     </Button>

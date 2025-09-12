@@ -81,13 +81,42 @@ serve(async (req) => {
           }
         }
 
-        // Upsert product
-        await supabase
+        // Upsert product while preserving local overrides
+        const { data: existingProduct } = await supabase
           .from("shop_products")
-          .upsert(productData, { 
-            onConflict: "printful_product_id",
-            ignoreDuplicates: false 
-          });
+          .select("*")
+          .eq("printful_product_id", productData.printful_product_id)
+          .single();
+
+        // If product exists, preserve local overrides
+        if (existingProduct) {
+          const updateData = {
+            ...productData,
+            // Preserve existing local overrides
+            title_override: existingProduct.title_override,
+            description_override: existingProduct.description_override,
+            price_override: existingProduct.price_override,
+            main_image_override: existingProduct.main_image_override,
+            additional_images_override: existingProduct.additional_images_override,
+            is_visible_shop: existingProduct.is_visible_shop,
+            is_visible_home: existingProduct.is_visible_home,
+            sort_order: existingProduct.sort_order,
+          };
+
+          await supabase
+            .from("shop_products")
+            .update(updateData)
+            .eq("id", existingProduct.id);
+        } else {
+          // New product, set default visibility
+          await supabase
+            .from("shop_products")
+            .insert({
+              ...productData,
+              is_visible_shop: true,
+              is_visible_home: false
+            });
+        }
       }
     }
 
