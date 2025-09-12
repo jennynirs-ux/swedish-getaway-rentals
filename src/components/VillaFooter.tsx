@@ -6,13 +6,10 @@ const VillaFooter = () => {
           {/* Brand */}
           <div>
             <h3 className="text-2xl font-display font-bold mb-4">Villa Häcken</h3>
-            <p className="text-primary-foreground/80 mb-4">
-              Your luxury retreat in the heart of Swedish nature. 
-              Creating unforgettable memories since 2018.
-            </p>
+            <p className="text-primary-foreground/80 mb-4">Your luxury retreat in the heart of Swedish nature. Creating unforgettable memories since 2020.</p>
             <div className="flex items-center gap-2 text-primary-foreground/60">
               <MapPin className="h-4 w-4" />
-              <span>Härjedalen, Sweden</span>
+              <span>Lerum, Sweden</span>
             </div>
           </div>
 
@@ -45,7 +42,7 @@ const VillaFooter = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <span className="text-primary-foreground/80">+46 70 123 4567</span>
+                <span className="text-primary-foreground/80">+46 70 199 3032</span>
               </div>
             </div>
           </div>
@@ -54,7 +51,10 @@ const VillaFooter = () => {
         {/* Bottom */}
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center">
           <p className="text-primary-foreground/60">
-            © 2025 Nordic Getaways. Created with love for Nordic experiences.
+            © 2024 Villa Hacken. All rights reserved. | 
+            <span className="ml-1">
+              Created with care for your perfect getaway.
+            </span>
           </p>
         </div>
       </div>

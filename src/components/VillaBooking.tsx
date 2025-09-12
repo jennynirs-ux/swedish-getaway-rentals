@@ -83,7 +83,7 @@ const VillaBooking = () => {
                   </div>
                   <div>
                     <p className="font-semibold">Email</p>
-                    <p className="text-muted-foreground">villa@hacken.se</p>
+                    <p className="text-muted-foreground">jolofsson87@gmail.se</p>
                   </div>
                 </div>
 
@@ -93,7 +93,7 @@ const VillaBooking = () => {
                   </div>
                   <div>
                     <p className="font-semibold">Phone</p>
-                    <p className="text-muted-foreground">+46 70 123 4567</p>
+                    <p className="text-muted-foreground">+46 70 199 30 32</p>
                   </div>
                 </div>
 
@@ -103,7 +103,7 @@ const VillaBooking = () => {
                   </div>
                   <div>
                     <p className="font-semibold">WhatsApp</p>
-                    <p className="text-muted-foreground">Quick responses</p>
+                    <p className="text-muted-foreground">+46 70 199 30 32</p>
                   </div>
                 </div>
 
