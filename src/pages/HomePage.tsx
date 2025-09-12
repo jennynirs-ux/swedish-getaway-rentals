@@ -35,14 +35,6 @@ const HomePage = () => {
             </p>
           </div>
           
-          {/* Nordic Shop Button - Upper Right */}
-          <div className="absolute top-8 right-8">
-            <Button asChild className="bg-[#8B4513] hover:bg-[#7A3F12] text-white border-none">
-              <Link to="/shop">
-                Nordic Shop
-              </Link>
-            </Button>
-          </div>
           
           {/* Search Component - Hidden for now */}
           {/* <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} /> */}
@@ -92,9 +84,9 @@ const HomePage = () => {
             
             <div className="grid lg:grid-cols-12 gap-8 items-center">
               {/* Book Cover - Left Side */}
-              <div className="lg:col-span-4 flex justify-center lg:justify-start">
+              <div className="lg:col-span-4 flex justify-center lg:justify-start mb-6 lg:mb-0">
                 <div className="relative group">
-                  <img src={bookCover} alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs" className="w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105" />
+                  <img src={bookCover} alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs" className="w-40 sm:w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 rounded-lg transition-opacity"></div>
                 </div>
               </div>
@@ -102,17 +94,17 @@ const HomePage = () => {
               {/* Book Information - Right Side */}
               <div className="lg:col-span-8 space-y-4">
                 <div>
-                  <h3 className="text-2xl font-semibold text-foreground mb-1">When the Ocean changed everything</h3>
-                  <h4 className="text-lg text-muted-foreground mb-3">My Journey through Disaster</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">A gripping and unforgettable true story of survival and meaning. Perfect reading for your Swedish getaway. Available in both Swedish and English.</p>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-1">When the Ocean changed everything</h3>
+                  <h4 className="text-base sm:text-lg text-muted-foreground mb-3">My Journey through Disaster</h4>
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">A gripping and unforgettable true story of survival and meaning. Perfect reading for your Swedish getaway. Available in both Swedish and English.</p>
                 </div>
 
                 {/* Reviews Carousel */}
-                <div className="relative">
-                  <Carousel className="w-full max-w-lg">
+                <div className="relative mx-4 sm:mx-0">
+                  <Carousel className="w-full max-w-full lg:max-w-lg">
                     <CarouselContent>
                       <CarouselItem>
-                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                        <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
                               {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
@@ -125,7 +117,7 @@ const HomePage = () => {
                         </div>
                       </CarouselItem>
                       <CarouselItem>
-                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                        <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
                               {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
@@ -138,7 +130,7 @@ const HomePage = () => {
                         </div>
                       </CarouselItem>
                       <CarouselItem>
-                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                        <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
                               {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
@@ -151,7 +143,7 @@ const HomePage = () => {
                         </div>
                       </CarouselItem>
                       <CarouselItem>
-                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                        <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
                               {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
@@ -164,8 +156,8 @@ const HomePage = () => {
                         </div>
                       </CarouselItem>
                      </CarouselContent>
-                     <CarouselPrevious className="left-0 md:-left-12 top-1/2 -translate-y-1/2" />
-                     <CarouselNext className="right-0 md:-right-12 top-1/2 -translate-y-1/2" />
+                     <CarouselPrevious className="hidden sm:flex -left-2 lg:-left-12 top-1/2 -translate-y-1/2" />
+                     <CarouselNext className="hidden sm:flex -right-2 lg:-right-12 top-1/2 -translate-y-1/2" />
                   </Carousel>
                 </div>
 
