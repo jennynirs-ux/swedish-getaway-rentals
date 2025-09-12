@@ -13,11 +13,26 @@ serve(async (req) => {
   }
 
   try {
-    const { session_id } = await req.json();
+    // Input validation and sanitization
+    const requestBody = await req.json();
+    const { session_id } = requestBody;
     
     if (!session_id) {
+      console.error("Missing session ID in request");
       throw new Error("Session ID is required");
     }
+
+    // Validate session ID format (Stripe session IDs start with cs_)
+    if (!session_id.startsWith('cs_')) {
+      console.error("Invalid session ID format:", session_id);
+      throw new Error("Invalid session ID format");
+    }
+
+    // Rate limiting and security logging
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    
+    console.log(`Payment success handler called from IP: ${clientIP}, User-Agent: ${userAgent}, Session: ${session_id}`);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",

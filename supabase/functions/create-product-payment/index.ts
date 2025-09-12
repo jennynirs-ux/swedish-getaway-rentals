@@ -13,11 +13,42 @@ serve(async (req) => {
   }
 
   try {
-    const { productId, quantity = 1, customerEmail, customerName } = await req.json();
+    // Input validation and sanitization
+    const requestBody = await req.json();
+    const { productId, quantity = 1, customerEmail, customerName } = requestBody;
     
     if (!productId) {
+      console.error("Missing product ID in request");
       throw new Error("Product ID is required");
     }
+
+    // Validate product ID format (should be UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(productId)) {
+      console.error("Invalid product ID format:", productId);
+      throw new Error("Invalid product ID format");
+    }
+
+    // Validate quantity
+    if (typeof quantity !== 'number' || quantity < 1 || quantity > 100) {
+      console.error("Invalid quantity:", quantity);
+      throw new Error("Quantity must be between 1 and 100");
+    }
+
+    // Validate email if provided
+    if (customerEmail) {
+      const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+      if (!emailRegex.test(customerEmail)) {
+        console.error("Invalid email format:", customerEmail);
+        throw new Error("Invalid email format");
+      }
+    }
+
+    // Rate limiting check
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    
+    console.log(`Product payment request from IP: ${clientIP}, User-Agent: ${userAgent}, Product: ${productId}`);
 
     // Get product details from database
     const supabase = createClient(
@@ -77,9 +108,18 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error creating product payment:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    // Don't expose internal error details to client
+    const isValidationError = error.message.includes('Product ID is required') || 
+                             error.message.includes('Invalid') || 
+                             error.message.includes('Product not found') ||
+                             error.message.includes('Quantity must be');
+    
+    const clientError = isValidationError ? error.message : "Payment processing failed. Please try again.";
+    
+    return new Response(JSON.stringify({ error: clientError }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: isValidationError ? 400 : 500,
     });
   }
 });

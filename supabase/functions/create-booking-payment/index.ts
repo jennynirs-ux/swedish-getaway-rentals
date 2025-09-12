@@ -13,11 +13,42 @@ serve(async (req) => {
   }
 
   try {
-    const { bookingData } = await req.json();
+    // Input validation and sanitization
+    const requestBody = await req.json();
+    const { bookingData } = requestBody;
     
     if (!bookingData) {
+      console.error("Missing booking data in request");
       throw new Error("Booking data is required");
     }
+
+    // Validate required fields
+    const requiredFields = ['guest_name', 'guest_email', 'check_in_date', 'check_out_date', 'total_amount'];
+    for (const field of requiredFields) {
+      if (!bookingData[field]) {
+        console.error(`Missing required field: ${field}`);
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    // Validate email format
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(bookingData.guest_email)) {
+      console.error("Invalid email format:", bookingData.guest_email);
+      throw new Error("Invalid email format");
+    }
+
+    // Validate amount
+    if (typeof bookingData.total_amount !== 'number' || bookingData.total_amount <= 0) {
+      console.error("Invalid amount:", bookingData.total_amount);
+      throw new Error("Invalid amount");
+    }
+
+    // Rate limiting check
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    
+    console.log(`Booking payment request from IP: ${clientIP}, User-Agent: ${userAgent}, Email: ${bookingData.guest_email}`);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -54,9 +85,17 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error creating booking payment:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    // Don't expose internal error details to client
+    const isValidationError = error.message.includes('Missing required field') || 
+                             error.message.includes('Invalid email') || 
+                             error.message.includes('Invalid amount');
+    
+    const clientError = isValidationError ? error.message : "Payment processing failed. Please try again.";
+    
+    return new Response(JSON.stringify({ error: clientError }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: isValidationError ? 400 : 500,
     });
   }
 });

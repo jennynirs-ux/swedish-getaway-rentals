@@ -543,6 +543,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_user_rate_limit: {
+        Args: {
+          max_requests?: number
+          table_name: string
+          time_window_minutes?: number
+          user_identifier: string
+        }
+        Returns: boolean
+      }
       get_dashboard_stats: {
         Args: Record<PropertyKey, never>
         Returns: Json
