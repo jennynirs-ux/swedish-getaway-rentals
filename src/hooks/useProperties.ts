@@ -15,8 +15,13 @@ export interface Property {
   hero_image_url: string;
   gallery_images: string[];
   gallery_metadata?: { title: string; description: string; alt: string }[];
+  video_urls?: string[];
+  video_metadata?: { title: string; description: string }[];
   active: boolean;
   host_id: string;
+  what_makes_special?: string;
+  get_in_touch_info?: any;
+  guidebook_sections?: { title: string; content: string; image_url?: string }[];
 }
 
 export const useProperties = () => {

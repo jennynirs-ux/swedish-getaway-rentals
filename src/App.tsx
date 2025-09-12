@@ -3,33 +3,34 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CartProvider } from "./context/CartContext";
+import { CartProvider } from "@/context/CartContext";
 import Index from "./pages/Index";
-import Shop from "./pages/Shop";
-import Cart from "./pages/Cart";
-import BookingSuccess from "./pages/BookingSuccess";
 import VillaGuide from "./pages/VillaGuide";
 import LakehouseGuide from "./pages/LakehouseGuide";
+import PropertyPage from "./pages/PropertyPage";
 import PropertyGuide from "./pages/PropertyGuide";
+import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
+import BookingSuccess from "./pages/BookingSuccess";
+import OrderSuccess from "./pages/OrderSuccess";
+import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import HostApplication from "./pages/HostApplication";
 import HostDashboard from "./components/host/HostDashboard";
-import PropertyPage from "./pages/PropertyPage";
-import OrderSuccess from "./pages/OrderSuccess";
-import ProductDetail from "./pages/ProductDetail";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <CartProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/villa-hacken" element={<PropertyPage />} />
             <Route path="/villa-hacken/guide" element={<VillaGuide />} />
@@ -48,10 +49,11 @@ const App = () => (
             <Route path="/host-dashboard" element={<HostDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </CartProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+          </TooltipProvider>
+        </CartProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
