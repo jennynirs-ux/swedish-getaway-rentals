@@ -28,10 +28,10 @@ const HomePage = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold text-white mb-6">
-              Swedish Getaway Rentals
+              Nordic Getaways
             </h1>
             <p className="text-2xl text-white/90 max-w-3xl mx-auto">
-              Discover your perfect retreat in Sweden
+              Discover your perfect retreat in the Nordic
             </p>
           </div>
           
@@ -189,9 +189,9 @@ const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
-              <h3 className="text-xl font-semibold text-foreground mb-4">Swedish Getaway Rentals</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-4">Nordic Getaways</h3>
               <p className="text-muted-foreground mb-4">
-                Discover authentic Swedish experiences in our handpicked properties.
+                Discover authentic Nordic experiences in our handpicked properties.
               </p>
               <div className="flex gap-2">
                 <Link to="/auth">
