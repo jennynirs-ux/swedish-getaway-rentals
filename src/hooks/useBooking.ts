@@ -58,14 +58,17 @@ export const useBooking = () => {
         return { success: false, error: 'Dates not available' };
       }
 
-      // Create Stripe payment session
-      const { data, error } = await supabase.functions.invoke('create-booking-payment', {
+      // Create Stripe Connect payment session
+      const { data, error } = await supabase.functions.invoke('create-booking-payment-connect', {
         body: {
-          bookingData: {
-            ...bookingData,
-            property_title: bookingData.property_title || 'Property Booking',
-            currency: bookingData.currency || 'SEK'
-          }
+          propertyId: bookingData.property_id,
+          checkInDate: bookingData.check_in_date,
+          checkOutDate: bookingData.check_out_date,
+          numberOfGuests: bookingData.number_of_guests,
+          guestName: bookingData.guest_name,
+          guestEmail: bookingData.guest_email,
+          guestPhone: bookingData.guest_phone,
+          specialRequests: bookingData.special_requests
         }
       });
 

@@ -53,13 +53,8 @@ const PropertyCard = ({
   const [imageLoading, setImageLoading] = useState(true);
   const { toast } = useToast();
 
+  // Always use dynamic property routes
   const getPropertyRoute = (property: Property) => {
-    if (property.title.toLowerCase().includes('villa') || property.title.toLowerCase().includes('hacken')) {
-      return '/villa-hacken';
-    }
-    if (property.title.toLowerCase().includes('lakehouse') || property.title.toLowerCase().includes('lake')) {
-      return '/lakehouse-getaway';
-    }
     return `/property/${property.id}`;
   };
 
@@ -217,8 +212,8 @@ const PropertyCard = ({
           {/* Price and CTA */}
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-2xl font-bold text-foreground">
-                {property.price_per_night.toLocaleString()} {property.currency}
+               <span className="text-2xl font-bold text-foreground">
+                 {((property.price_per_night || 0) / 100).toLocaleString()} {property.currency}
               </span>
               <span className="text-muted-foreground text-sm ml-1">/night</span>
             </div>
