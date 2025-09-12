@@ -7,7 +7,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
-import forestHeroBg from "@/assets/forest-hero-bg.jpg";
+import forestHeroBg from "@/assets/forest-hero-light.jpg";
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 const HomePage = () => {
   const {
@@ -20,7 +20,7 @@ const HomePage = () => {
         <div className="absolute inset-0">
           <img 
             src={forestHeroBg} 
-            alt="Swedish forest background" 
+            alt="Swedish forest background with sunlight through trees" 
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60"></div>
@@ -33,6 +33,15 @@ const HomePage = () => {
             <p className="text-2xl text-white/90 max-w-3xl mx-auto">
               Discover your perfect retreat in Sweden
             </p>
+          </div>
+          
+          {/* Nordic Shop Button - Upper Right */}
+          <div className="absolute top-8 right-8">
+            <Button asChild className="bg-[#8B4513] hover:bg-[#7A3F12] text-white border-none">
+              <Link to="/shop">
+                Nordic Shop
+              </Link>
+            </Button>
           </div>
           
           {/* Search Component - Hidden for now */}
@@ -154,9 +163,9 @@ const HomePage = () => {
                           </p>
                         </div>
                       </CarouselItem>
-                    </CarouselContent>
-                    <CarouselPrevious className="left-2 md:left-4" />
-                    <CarouselNext className="right-2 md:right-4" />
+                     </CarouselContent>
+                     <CarouselPrevious className="left-0 md:-left-12 top-1/2 -translate-y-1/2" />
+                     <CarouselNext className="right-0 md:-right-12 top-1/2 -translate-y-1/2" />
                   </Carousel>
                 </div>
 
@@ -174,14 +183,6 @@ const HomePage = () => {
                   </Button>
                 </div>
                 
-                {/* Nordic Shop Button */}
-                <div className="mt-6 text-center">
-                  <Button asChild variant="secondary" size="lg" className="bg-[#8B4513] hover:bg-[#7A3F12] text-white border-none">
-                    <Link to="/shop">
-                      Nordic Shop
-                    </Link>
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
@@ -230,7 +231,7 @@ const HomePage = () => {
           
           <div className="text-center pt-8 border-t border-border">
             <p className="text-muted-foreground">
-              © 2024 Swedish Getaway Rentals. Created with love for Swedish experiences.
+              © 2025 Nordic Getaways. Created with love for Nordic experiences.
             </p>
           </div>
         </div>

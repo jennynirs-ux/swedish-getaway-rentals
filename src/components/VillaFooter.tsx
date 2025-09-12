@@ -54,10 +54,7 @@ const VillaFooter = () => {
         {/* Bottom */}
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center">
           <p className="text-primary-foreground/60">
-            © 2024 Villa Hacken. All rights reserved. | 
-            <span className="ml-1">
-              Created with care for your perfect getaway.
-            </span>
+            © 2025 Nordic Getaways. Created with love for Nordic experiences.
           </p>
         </div>
       </div>

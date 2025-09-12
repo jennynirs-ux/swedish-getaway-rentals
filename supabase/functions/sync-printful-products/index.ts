@@ -117,7 +117,7 @@ serve(async (req) => {
         printful_sync_variant_id: mainVariant.id?.toString(),
         title: existing?.title_override || printfulProduct.name,
         description: existing?.description_override || productDetail.product?.description || printfulProduct.name,
-        price: Math.round(parseFloat(mainVariant.retail_price || '0') * 100), // Convert to cents
+        price: Math.round(parseFloat(mainVariant.retail_price || '0') * 100), // Convert to cents from Printful retail_price
         currency: mainVariant.currency || 'SEK',
         image_url: allImages[0] || printfulProduct.thumbnail_url,
         additional_images_override: allImages.slice(1),
@@ -149,7 +149,7 @@ serve(async (req) => {
         // Only update these fields if no override exists
         if (!existing.title_override) updateData.title = productData.title;
         if (!existing.description_override) updateData.description = productData.description;
-        if (!existing.price_override) updateData.price = productData.price;
+        if (!existing.price_override) updateData.price = productData.price; // Always sync with Printful retail_price unless overridden
         if (!existing.main_image_override) updateData.image_url = productData.image_url;
         
         // Always update additional images and currency

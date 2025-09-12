@@ -26,7 +26,7 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-full p-0 bg-white">
+      <DialogContent className="max-w-7xl w-full h-fit max-h-[90vh] p-0 bg-white overflow-y-auto">
         <DialogHeader className="p-6 pb-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-2xl font-bold">{currentImage?.title}</DialogTitle>
           <Button
@@ -41,11 +41,11 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
         
         <div className="relative">
           {/* Main Image */}
-          <div className="relative h-96 md:h-[500px] overflow-hidden flex items-center justify-center bg-muted">
+          <div className="relative h-[70vh] md:h-[80vh] max-h-[600px] overflow-hidden flex items-center justify-center bg-muted">
             <img
               src={currentImage?.src}
               alt={currentImage?.alt}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full w-auto h-auto object-contain"
             />
             
             {/* Navigation Arrows */}
