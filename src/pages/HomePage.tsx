@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
-import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 import HomepageProducts from "@/components/HomepageProducts";
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 const HomePage = () => {
@@ -17,10 +16,7 @@ const HomePage = () => {
   return <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
       <header className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
-        backgroundImage: `url(${forestHeroBg})`
-      }} />
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-background/80"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold text-white mb-6">

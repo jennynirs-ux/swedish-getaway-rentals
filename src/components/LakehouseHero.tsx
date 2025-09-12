@@ -63,7 +63,7 @@ const LakehouseHero = ({ property }: LakehouseHeroProps) => {
             <Button 
               size="lg" 
               variant="outline" 
-              className="text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-primary"
+              className="text-lg px-8 py-6 bg-amber-800 border-amber-800 text-white hover:bg-amber-900 hover:border-amber-900 transition-all shadow-lg"
               onClick={() => document.getElementById('lakehouse-gallery')?.scrollIntoView({ behavior: 'smooth' })}
             >
               View Gallery

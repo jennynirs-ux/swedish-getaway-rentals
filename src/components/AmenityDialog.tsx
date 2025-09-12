@@ -24,16 +24,8 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl w-full p-0 bg-card">
-        <DialogHeader className="p-6 pb-0 flex flex-row items-center justify-between">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-2xl font-bold text-foreground">{amenity.title}</DialogTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0 hover:bg-muted"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
         
         <div className="p-6">

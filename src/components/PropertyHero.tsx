@@ -51,7 +51,7 @@ const PropertyHero = ({ property }: PropertyHeroProps) => {
           <Button 
             variant="outline" 
             size="lg" 
-            className="border-white text-white hover:bg-white hover:text-primary px-8 py-4 text-lg backdrop-blur-sm"
+            className="bg-amber-800 border-amber-800 text-white hover:bg-amber-900 hover:border-amber-900 px-8 py-4 text-lg backdrop-blur-sm transition-all shadow-lg"
             onClick={() => document.getElementById('property-gallery')?.scrollIntoView({ behavior: 'smooth' })}
           >
             View Gallery

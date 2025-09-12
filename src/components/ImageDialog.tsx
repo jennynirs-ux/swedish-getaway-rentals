@@ -41,11 +41,11 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
         
         <div className="relative">
           {/* Main Image */}
-          <div className="relative h-96 md:h-[500px] overflow-hidden">
+          <div className="relative h-96 md:h-[500px] overflow-hidden flex items-center justify-center bg-muted">
             <img
               src={currentImage?.src}
               alt={currentImage?.alt}
-              className="w-full h-full object-cover"
+              className="max-w-full max-h-full object-contain"
             />
             
             {/* Navigation Arrows */}
