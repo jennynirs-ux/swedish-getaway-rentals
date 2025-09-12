@@ -1,106 +1,123 @@
 import { useState } from "react";
-import { ImageDialog } from "@/components/ImageDialog";
 import { Property } from "@/hooks/useProperties";
+import { MediaDialog } from "@/components/MediaDialog";
 
 interface PropertyGalleryProps {
-  property?: Property;
+  property: Property;
+}
+
+interface MediaItem {
+  type: 'image' | 'video';
+  url: string;
+  title?: string;
+  description?: string;
+  alt?: string;
 }
 
 const PropertyGallery = ({ property }: PropertyGalleryProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
-  // Use property gallery images if available, otherwise show a placeholder
-  const images = property?.gallery_images && property.gallery_images.length > 0
-    ? property.gallery_images.map((src, index) => {
-        const metadata = (property as any).gallery_metadata?.[index] || {};
-        return {
-          src,
-          alt: metadata.alt || `Gallery image ${index + 1}`,
-          title: metadata.title || `Image ${index + 1}`,
-          description: metadata.description || ""
-        };
-      })
-    : [
-        {
-          src: property?.hero_image_url || '/placeholder.svg',
-          alt: property?.title || 'Property image',
-          title: property?.title || 'Property',
-          description: property?.description || ''
-        }
-      ];
+  // Prepare media items from property data
+  const mediaItems: MediaItem[] = [
+    ...(property.gallery_images || []).map((url, index) => ({
+      type: 'image' as const,
+      url,
+      title: property.gallery_metadata?.[index]?.title || `Image ${index + 1}`,
+      description: property.gallery_metadata?.[index]?.description,
+      alt: property.gallery_metadata?.[index]?.alt || `${property.title} photo ${index + 1}`
+    })),
+    ...(property.video_urls || []).map((url, index) => ({
+      type: 'video' as const,
+      url,
+      title: property.video_metadata?.[index]?.title || `Video ${index + 1}`,
+      description: property.video_metadata?.[index]?.description,
+      alt: `${property.title} video ${index + 1}`
+    }))
+  ];
 
   const openDialog = (index: number) => {
-    setSelectedImageIndex(index);
+    setSelectedMediaIndex(index);
     setIsDialogOpen(true);
   };
 
-  return (
-    <section id="property-gallery" className="villa-section bg-card">
-      <div className="villa-container">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-            Discover Your Retreat
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Every corner has been thoughtfully designed to provide the ultimate combination of luxury, comfort, and connection with nature.
-          </p>
-        </div>
+  if (!mediaItems.length) {
+    return null;
+  }
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {images.slice(0, 3).map((image, index) => (
+  return (
+    <section id="gallery-section" className="py-16 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* First 3 images as thumbnails */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {mediaItems.slice(0, 3).map((media, index) => (
+              <div 
+                key={index} 
+                className="group relative overflow-hidden rounded-lg aspect-[4/3] cursor-pointer"
+                onClick={() => openDialog(index)}
+              >
+                <img 
+                  src={media.url} 
+                  alt={media.alt || media.title} 
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-4 left-4 text-white">
+                    <h3 className="text-lg font-semibold">{media.title}</h3>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 4th image displayed larger with title and description */}
+          {mediaItems.length > 3 && (
             <div 
-              key={index} 
-              className="group relative overflow-hidden rounded-xl aspect-[4/3] cursor-pointer"
-              onClick={() => openDialog(index)}
+              className="relative overflow-hidden rounded-lg h-[400px] cursor-pointer group"
+              onClick={() => openDialog(3)}
             >
               <img 
-                src={image.src} 
-                alt={image.alt} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                src={mediaItems[3].url} 
+                alt={mediaItems[3].alt || mediaItems[3].title} 
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="absolute bottom-6 left-6 text-white">
-                  <h3 className="text-xl font-display font-semibold">{image.title}</h3>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
+                <div className="text-white p-8 max-w-2xl">
+                  <h3 className="text-3xl md:text-4xl font-bold mb-4">
+                    {mediaItems[3].title}
+                  </h3>
+                  {mediaItems[3].description && (
+                    <p className="text-lg opacity-90 leading-relaxed">
+                      {mediaItems[3].description}
+                    </p>
+                  )}
                 </div>
               </div>
-              {index === 2 && images.length > 3 && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <span className="text-white text-lg font-semibold">+{images.length - 3} mer</span>
-                </div>
-              )}
             </div>
-          ))}
+          )}
+
+          {/* Show gallery count if more than 4 images */}
+          {mediaItems.length > 4 && (
+            <div className="text-center mt-6">
+              <button 
+                onClick={() => openDialog(0)}
+                className="text-primary hover:underline font-medium"
+              >
+                View all {mediaItems.length} photos
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Large featured image with text overlay */}
-        {images.length > 3 && (
-          <div className="mt-16 relative overflow-hidden rounded-xl h-[500px] group cursor-pointer" onClick={() => openDialog(3)}>
-            <img 
-              src={images[3].src} 
-              alt={images[3].alt} 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center justify-center">
-              <div className="text-white text-center max-w-2xl px-6">
-                <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
-                  Where Modern Luxury Meets Nature
-                </h3>
-                <p className="text-lg md:text-xl opacity-90 leading-relaxed">
-                  Experience the perfect harmony between contemporary design and the breathtaking Swedish wilderness.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <ImageDialog
-          images={images}
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-          initialIndex={selectedImageIndex}
-        />
       </div>
+
+      {/* Media Dialog */}
+      <MediaDialog
+        media={mediaItems}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        initialIndex={selectedMediaIndex}
+      />
     </section>
   );
 };

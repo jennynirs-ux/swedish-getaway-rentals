@@ -1,85 +1,116 @@
+import { useState } from "react";
 import { Property } from "@/hooks/useProperties";
-import { Wifi, Car, Utensils, TreePine, Waves, Coffee, Bed, Bath } from "lucide-react";
+import { AmenityDialog } from "@/components/AmenityDialog";
+import { 
+  Wifi, Car, Coffee, Utensils, Waves, TreePine, Mountain, Home, 
+  Bed, Bath, Users, Flame, UtensilsCrossed, Car as Parking,
+  Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake
+} from "lucide-react";
 
 interface PropertyAmenitiesProps {
-  property?: Property;
+  property: Property;
+}
+
+interface AmenityData {
+  icon: any;
+  title: string;
+  description: string;
+  detailedDescription?: string;
+  image?: string;
+  features?: string[];
 }
 
 const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
+  const [selectedAmenity, setSelectedAmenity] = useState<AmenityData | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Icon mapping for amenities
   const getAmenityIcon = (amenity: string) => {
-    const lower = amenity.toLowerCase();
-    if (lower.includes('wifi') || lower.includes('internet')) return <Wifi className="w-8 h-8" />;
-    if (lower.includes('parking') || lower.includes('car')) return <Car className="w-8 h-8" />;
-    if (lower.includes('kitchen') || lower.includes('cooking')) return <Utensils className="w-8 h-8" />;
-    if (lower.includes('sauna') || lower.includes('wellness')) return <TreePine className="w-8 h-8" />;
-    if (lower.includes('lake') || lower.includes('water')) return <Waves className="w-8 h-8" />;
-    if (lower.includes('coffee') || lower.includes('breakfast')) return <Coffee className="w-8 h-8" />;
-    return <TreePine className="w-8 h-8" />;
+    const amenityLower = amenity.toLowerCase();
+    if (amenityLower.includes('wifi') || amenityLower.includes('internet')) return Wifi;
+    if (amenityLower.includes('parking') || amenityLower.includes('garage')) return Parking;
+    if (amenityLower.includes('coffee') || amenityLower.includes('kitchen')) return Coffee;
+    if (amenityLower.includes('dining') || amenityLower.includes('restaurant')) return Utensils;
+    if (amenityLower.includes('sauna') || amenityLower.includes('spa') || amenityLower.includes('hot tub')) return Waves;
+    if (amenityLower.includes('forest') || amenityLower.includes('nature')) return TreePine;
+    if (amenityLower.includes('view') || amenityLower.includes('mountain')) return Mountain;
+    if (amenityLower.includes('bedroom') || amenityLower.includes('bed')) return Bed;
+    if (amenityLower.includes('bathroom') || amenityLower.includes('bath')) return Bath;
+    if (amenityLower.includes('guest') || amenityLower.includes('people')) return Users;
+    if (amenityLower.includes('fireplace') || amenityLower.includes('fire')) return Flame;
+    if (amenityLower.includes('heating') || amenityLower.includes('warm')) return Thermometer;
+    if (amenityLower.includes('security') || amenityLower.includes('safe')) return Shield;
+    if (amenityLower.includes('tv') || amenityLower.includes('television')) return Tv;
+    if (amenityLower.includes('gym') || amenityLower.includes('fitness')) return Dumbbell;
+    if (amenityLower.includes('pet') || amenityLower.includes('dog')) return PawPrint;
+    if (amenityLower.includes('air') || amenityLower.includes('cooling')) return Snowflake;
+    return Home;
   };
 
-  const defaultAmenities = [
-    'High-speed WiFi',
-    'Fully equipped kitchen',
-    'Parking included',
-    'Sauna & wellness',
-    'Coffee & breakfast',
-    'Premium location'
-  ];
+  // Prepare amenities data
+  const amenitiesData: AmenityData[] = (property.amenities || []).slice(0, 8).map((amenity, index) => ({
+    icon: getAmenityIcon(amenity),
+    title: amenity,
+    description: property.amenities_descriptions?.[amenity] || `Enjoy ${amenity.toLowerCase()} during your stay`,
+    detailedDescription: property.amenities_descriptions?.[amenity],
+    features: []
+  }));
 
-  const amenities = property?.amenities && property.amenities.length > 0 
-    ? property.amenities 
-    : defaultAmenities;
+  const handleAmenityClick = (amenity: AmenityData) => {
+    setSelectedAmenity(amenity);
+    setIsDialogOpen(true);
+  };
+
+  if (!amenitiesData.length) {
+    return null;
+  }
 
   return (
-    <section className="villa-section">
-      <div className="villa-container">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-            Premium Amenities
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Every detail has been carefully considered to ensure your comfort and enjoyment during your stay.
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {amenities.map((amenity, index) => (
-            <div key={index} className="text-center group">
-              <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                {getAmenityIcon(amenity)}
-              </div>
-              <h3 className="text-xl font-display font-semibold mb-3 group-hover:text-primary transition-colors">
-                {amenity}
-              </h3>
-            </div>
-          ))}
-        </div>
+    <section className="py-16 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Premium Amenities
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Everything you need for an unforgettable stay, from modern conveniences 
+              to unique experiences that celebrate Nordic culture.
+            </p>
+          </div>
 
-        {/* Property Details */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-          <div className="group">
-            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-              <Bed className="w-8 h-8" />
-            </div>
-            <h4 className="text-lg font-semibold mb-2">{property?.bedrooms || 4} Bedrooms</h4>
-            <p className="text-muted-foreground">Comfortable sleeping areas</p>
-          </div>
-          <div className="group">
-            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-              <Bath className="w-8 h-8" />
-            </div>
-            <h4 className="text-lg font-semibold mb-2">{property?.bathrooms || 2} Bathrooms</h4>
-            <p className="text-muted-foreground">Modern facilities</p>
-          </div>
-          <div className="group">
-            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-              <TreePine className="w-8 h-8" />
-            </div>
-            <h4 className="text-lg font-semibold mb-2">Up to {property?.max_guests || 8} Guests</h4>
-            <p className="text-muted-foreground">Perfect for groups</p>
+          {/* Amenities Grid - First 8 amenities */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {amenitiesData.map((amenity, index) => (
+              <div 
+                key={index} 
+                className="text-center p-6 rounded-lg bg-background hover:bg-muted/50 transition-all duration-300 cursor-pointer group hover:scale-105"
+                onClick={() => handleAmenityClick(amenity)}
+              >
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-xl mb-4 group-hover:bg-primary/20 transition-colors duration-300">
+                  <amenity.icon className="h-8 w-8 text-primary" />
+                </div>
+                
+                <h3 className="text-lg font-semibold mb-2">
+                  {amenity.title}
+                </h3>
+                
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {amenity.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
+
+      {/* Amenity Detail Dialog */}
+      <AmenityDialog 
+        amenity={selectedAmenity}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+      />
     </section>
   );
 };

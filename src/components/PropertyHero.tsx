@@ -1,66 +1,98 @@
-import { Property } from "@/hooks/useProperties";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Users, Calendar, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Property } from "@/hooks/useProperties";
 
 interface PropertyHeroProps {
-  property?: Property;
+  property: Property;
 }
 
 const PropertyHero = ({ property }: PropertyHeroProps) => {
+  const scrollToBooking = () => {
+    document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollToGallery = () => {
+    document.getElementById('gallery-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <section 
-      className="relative h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
-      style={{ 
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${property?.hero_image_url || '/placeholder.svg'})` 
-      }}
-    >
-      <div className="villa-container text-center text-white z-10">
-        <Badge className="bg-white/20 text-white border-white/30 mb-6 backdrop-blur-sm">
-          <Star className="w-4 h-4 mr-2 fill-current" />
-          Premium Property
-        </Badge>
-        
-        <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
-          {property?.title || "Luxury Retreat"}
-        </h1>
-        
-        <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto font-light leading-relaxed">
-          {property?.description || "Experience luxury in perfect harmony with nature"}
-        </p>
-        
-        <div className="flex flex-wrap justify-center gap-6 mb-12 text-lg">
-          <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-            <MapPin className="w-5 h-5 mr-2" />
-            {property?.location || "Sverige"}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Hero Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${property.hero_image_url || property.gallery_images?.[0] || ''})`
+        }}
+      >
+        <div className="absolute inset-0 bg-black/40"></div>
+      </div>
+
+      {/* Hero Content */}
+      <div className="relative z-10 container mx-auto px-4 text-center text-white">
+        <div className="max-w-4xl mx-auto">
+          {/* Rating */}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              ))}
+            </div>
+            <span className="text-lg font-medium">
+              {property.review_rating || 5.0} • {property.review_count || 0} reviews
+            </span>
           </div>
-          <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-            <Users className="w-5 h-5 mr-2" />
-            Up to {property?.max_guests || 8} guests
+
+          {/* Property Title */}
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            {property.title}
+          </h1>
+          
+          {/* Tagline */}
+          <div className="text-xl md:text-2xl mb-8 font-light leading-relaxed">
+            <p>{property.tagline_line1 || 'Experience luxury in the heart of Swedish nature.'}</p>
+            <p>{property.tagline_line2 || 'Your perfect escape awaits.'}</p>
           </div>
-          <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-            <Calendar className="w-5 h-5 mr-2" />
-            Available year-round
+
+          {/* Quick Info */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-lg">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              <span>{property.location}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <span>Up to {property.max_guests} guests</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <span>{property.availability_text || 'Available year-round'}</span>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-lg">
-            Book Your Stay
-          </Button>
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="bg-amber-800 border-amber-800 text-white hover:bg-amber-900 hover:border-amber-900 px-8 py-4 text-lg backdrop-blur-sm transition-all shadow-lg"
-            onClick={() => document.getElementById('property-gallery')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            View Gallery
-          </Button>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90"
+              onClick={scrollToBooking}
+            >
+              Book Your Stay
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="text-lg px-8 py-6 border-white text-white hover:bg-white/10"
+              onClick={scrollToGallery}
+            >
+              View Gallery
+            </Button>
+          </div>
         </div>
       </div>
-      
+
+      {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-        <ChevronDown className="w-8 h-8" />
+        <ChevronDown className="w-6 h-6" />
       </div>
     </section>
   );
