@@ -120,6 +120,53 @@ export type Database = {
           },
         ]
       }
+      bookings_commission: {
+        Row: {
+          booking_id: string
+          commission_rate: number
+          created_at: string
+          host_amount: number
+          id: string
+          platform_commission: number
+          status: string
+          stripe_transfer_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          commission_rate: number
+          created_at?: string
+          host_amount: number
+          id?: string
+          platform_commission: number
+          status?: string
+          stripe_transfer_id?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          commission_rate?: number
+          created_at?: string
+          host_amount?: number
+          id?: string
+          platform_commission?: number
+          status?: string
+          stripe_transfer_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_commission_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_messages: {
         Row: {
           created_at: string
@@ -284,8 +331,33 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          commission_rate: number | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -293,14 +365,17 @@ export type Database = {
           host_approved: boolean
           host_business_name: string | null
           host_description: string | null
+          host_onboarding_completed: boolean | null
           id: string
           is_admin: boolean
           is_host: boolean
           phone: string | null
+          stripe_connect_account_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          commission_rate?: number | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -308,14 +383,17 @@ export type Database = {
           host_approved?: boolean
           host_business_name?: string | null
           host_description?: string | null
+          host_onboarding_completed?: boolean | null
           id?: string
           is_admin?: boolean
           is_host?: boolean
           phone?: string | null
+          stripe_connect_account_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          commission_rate?: number | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -323,10 +401,12 @@ export type Database = {
           host_approved?: boolean
           host_business_name?: string | null
           host_description?: string | null
+          host_onboarding_completed?: boolean | null
           id?: string
           is_admin?: boolean
           is_host?: boolean
           phone?: string | null
+          stripe_connect_account_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -339,11 +419,13 @@ export type Database = {
           amenities_descriptions: Json | null
           bathrooms: number
           bedrooms: number
+          commission_rate: number | null
           created_at: string
           currency: string
           description: string | null
           gallery_images: string[] | null
           gallery_metadata: Json | null
+          get_in_touch_info: Json | null
           guidebook_sections: Json | null
           hero_image_url: string | null
           host_id: string | null
@@ -356,6 +438,7 @@ export type Database = {
           updated_at: string
           video_metadata: Json | null
           video_urls: string[] | null
+          what_makes_special: string | null
         }
         Insert: {
           active?: boolean
@@ -363,11 +446,13 @@ export type Database = {
           amenities_descriptions?: Json | null
           bathrooms?: number
           bedrooms?: number
+          commission_rate?: number | null
           created_at?: string
           currency?: string
           description?: string | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
+          get_in_touch_info?: Json | null
           guidebook_sections?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
@@ -380,6 +465,7 @@ export type Database = {
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
+          what_makes_special?: string | null
         }
         Update: {
           active?: boolean
@@ -387,11 +473,13 @@ export type Database = {
           amenities_descriptions?: Json | null
           bathrooms?: number
           bedrooms?: number
+          commission_rate?: number | null
           created_at?: string
           currency?: string
           description?: string | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
+          get_in_touch_info?: Json | null
           guidebook_sections?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
@@ -404,6 +492,7 @@ export type Database = {
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
+          what_makes_special?: string | null
         }
         Relationships: [
           {
@@ -531,6 +620,13 @@ export type Database = {
       approve_host_application: {
         Args: { application_id: string }
         Returns: undefined
+      }
+      calculate_commission_split: {
+        Args: { commission_rate_param?: number; total_amount_param: number }
+        Returns: {
+          host_amount: number
+          platform_commission: number
+        }[]
       }
       check_booking_conflict: {
         Args: {
