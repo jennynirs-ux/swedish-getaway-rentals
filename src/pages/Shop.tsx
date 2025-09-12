@@ -145,8 +145,15 @@ const Shop = () => {
       <MainNavigation showBackButton currentPage="shop" />
       
       {/* Header */}
-      <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-20 pt-28">
-        <div className="container mx-auto px-4 text-center">
+      <section className="relative bg-gradient-to-r from-primary/10 to-secondary/10 py-20 pt-28 overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{
+            backgroundImage: `url(/assets/forest-hero-bg.jpg)`
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/80"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Nordic Store</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             Discover unique Nordic-inspired products that bring the beauty of Scandinavia to your home.

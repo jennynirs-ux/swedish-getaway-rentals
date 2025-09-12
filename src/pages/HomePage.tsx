@@ -168,6 +168,11 @@ const HomePage = () => {
                       Order in English
                     </a>
                   </Button>
+                  <Button asChild variant="secondary" size="sm" className="flex-1">
+                    <Link to="/shop">
+                      Nordic Shop
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </div>

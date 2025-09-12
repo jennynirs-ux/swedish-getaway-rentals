@@ -50,9 +50,11 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     bathrooms: "1",
     max_guests: "4",
     amenities: [] as string[],
+    amenities_descriptions: {} as Record<string, string>,
     hero_image_url: "",
     gallery_images: [] as string[],
     gallery_metadata: [] as { title: string; description: string; alt: string }[],
+    guidebook_sections: [] as { title: string; content: string; image_url?: string }[],
     active: true,
   });
   const [newAmenity, setNewAmenity] = useState("");
@@ -111,9 +113,11 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bathrooms: data.bathrooms?.toString() || "1",
         max_guests: data.max_guests?.toString() || "4",
         amenities: data.amenities || [],
+        amenities_descriptions: data.amenities_descriptions || {},
         hero_image_url: data.hero_image_url || "",
         gallery_images: data.gallery_images || [],
         gallery_metadata: galleryMetadata,
+        guidebook_sections: data.guidebook_sections || [],
         active: data.active,
       });
     } catch (error) {
@@ -193,18 +197,58 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
   const addAmenity = () => {
     if (newAmenity.trim() && !form.amenities.includes(newAmenity.trim())) {
+      const amenity = newAmenity.trim();
       setForm(prev => ({ 
         ...prev, 
-        amenities: [...prev.amenities, newAmenity.trim()] 
+        amenities: [...prev.amenities, amenity],
+        amenities_descriptions: { ...prev.amenities_descriptions, [amenity]: "" }
       }));
       setNewAmenity("");
     }
   };
 
   const removeAmenity = (amenity: string) => {
-    setForm(prev => ({ 
-      ...prev, 
-      amenities: prev.amenities.filter(a => a !== amenity) 
+    setForm(prev => {
+      const newDescriptions = { ...prev.amenities_descriptions };
+      delete newDescriptions[amenity];
+      return {
+        ...prev, 
+        amenities: prev.amenities.filter(a => a !== amenity),
+        amenities_descriptions: newDescriptions
+      };
+    });
+  };
+
+  const updateAmenityDescription = (amenity: string, description: string) => {
+    setForm(prev => ({
+      ...prev,
+      amenities_descriptions: {
+        ...prev.amenities_descriptions,
+        [amenity]: description
+      }
+    }));
+  };
+
+  const addGuidebookSection = () => {
+    setForm(prev => ({
+      ...prev,
+      guidebook_sections: [...prev.guidebook_sections, { title: "", content: "", image_url: "" }]
+    }));
+  };
+
+  const updateGuidebookSection = (index: number, field: string, value: string) => {
+    setForm(prev => ({
+      ...prev,
+      guidebook_sections: prev.guidebook_sections.map((section, i) => 
+        i === index ? { ...section, [field]: value } : section
+      )
+    }));
+  };
+
+  const removeGuidebookSection = (index: number) => {
+    setForm(prev => ({
+      ...prev,
+      guidebook_sections: prev.guidebook_sections.filter((_, i) => i !== index)
     }));
   };
 
@@ -221,9 +265,11 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bathrooms: parseInt(form.bathrooms) || 1,
         max_guests: parseInt(form.max_guests) || 4,
         amenities: form.amenities,
+        amenities_descriptions: form.amenities_descriptions,
         hero_image_url: form.hero_image_url,
         gallery_images: form.gallery_images,
         gallery_metadata: form.gallery_metadata,
+        guidebook_sections: form.guidebook_sections,
         active: form.active,
       };
 
@@ -370,14 +416,22 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
                 {form.amenities.map((amenity, index) => (
-                  <Badge key={index} variant="secondary" className="gap-1">
-                    {amenity}
-                    <button onClick={() => removeAmenity(amenity)}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
+                  <div key={index} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary">{amenity}</Badge>
+                      <button onClick={() => removeAmenity(amenity)}>
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <Textarea
+                      placeholder="Amenity description..."
+                      value={form.amenities_descriptions[amenity] || ""}
+                      onChange={(e) => updateAmenityDescription(amenity, e.target.value)}
+                      rows={2}
+                    />
+                  </div>
                 ))}
               </div>
             </CardContent>
@@ -486,6 +540,61 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Guidebook Sections */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Guidebook Content
+                <Button onClick={addGuidebookSection} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Section
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {form.guidebook_sections.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No guidebook sections yet. Add sections to help guests understand your property.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {form.guidebook_sections.map((section, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Section {index + 1}</h4>
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          onClick={() => removeGuidebookSection(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          placeholder="Section title..."
+                          value={section.title}
+                          onChange={(e) => updateGuidebookSection(index, 'title', e.target.value)}
+                        />
+                        <Input
+                          placeholder="Section image URL (optional)..."
+                          value={section.image_url || ""}
+                          onChange={(e) => updateGuidebookSection(index, 'image_url', e.target.value)}
+                        />
+                      </div>
+                      <Textarea
+                        placeholder="Section content..."
+                        value={section.content}
+                        onChange={(e) => updateGuidebookSection(index, 'content', e.target.value)}
+                        rows={4}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

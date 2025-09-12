@@ -193,7 +193,10 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
     <div className="space-y-6">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => onNavigateToTab?.('rentals')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Rentals</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -206,7 +209,10 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => onNavigateToTab?.('rentals')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -219,7 +225,10 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => onNavigateToTab?.('products')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Shop Products</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
@@ -232,7 +241,10 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => onNavigateToTab?.('orders')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -308,7 +320,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
                   />
                   <h4 className="font-medium text-sm">{property.title}</h4>
                   <p className="text-xs text-muted-foreground">
-                    {formatCurrency(property.price_per_night)} / night
+                    {formatCurrency(property.price_per_night * 100)} / night
                   </p>
                 </div>
               ))}
