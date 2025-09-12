@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId } = await req.json();
+    const { session_id } = await req.json();
     
-    if (!sessionId) {
+    if (!session_id) {
       throw new Error("Session ID is required");
     }
 
@@ -23,13 +23,10 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Retrieve the checkout session
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['line_items', 'customer_details']
-    });
-
-    if (session.payment_status !== "paid") {
-      throw new Error("Payment not completed");
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    
+    if (!session) {
+      throw new Error("Session not found");
     }
 
     const supabase = createClient(
@@ -37,58 +34,83 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    if (session.metadata?.type === "booking") {
-      // Handle booking payment
+    let result = { success: true, type: 'unknown' };
+
+    if (session.metadata?.type === 'booking') {
       const bookingData = JSON.parse(session.metadata.booking_data);
       
-      const { error } = await supabase
-        .from("bookings")
+      const { error: bookingError } = await supabase
+        .from('bookings')
         .insert({
           property_id: bookingData.property_id,
-          user_id: bookingData.user_id || null,
           guest_name: bookingData.guest_name,
           guest_email: bookingData.guest_email,
           guest_phone: bookingData.guest_phone,
           check_in_date: bookingData.check_in_date,
           check_out_date: bookingData.check_out_date,
           number_of_guests: bookingData.number_of_guests,
+          special_requests: bookingData.special_requests,
           total_amount: bookingData.total_amount,
           currency: bookingData.currency,
-          special_requests: bookingData.special_requests,
-          stripe_payment_intent_id: session.payment_intent,
-          status: "confirmed"
+          status: 'confirmed',
+          stripe_payment_intent_id: session.payment_intent
         });
 
-      if (error) {
-        console.error("Error saving booking:", error);
-        throw new Error("Failed to save booking");
-      }
+      if (bookingError) throw bookingError;
+      result.type = 'booking';
 
-    } else if (session.metadata?.type === "product") {
-      // Handle product order
-      const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
-      
-      // Create order in Printful
-      let printfulOrderId = null;
-      if (printfulToken) {
+    } else if (session.metadata?.type === 'product') {
+      const productId = session.metadata.product_id;
+      const quantity = parseInt(session.metadata.quantity || '1');
+      const printfulProductId = session.metadata.printful_product_id;
+
+      const { data: product, error: productError } = await supabase
+        .from('shop_products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (productError) throw productError;
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          customer_name: session.customer_details?.name || session.shipping_details?.name || '',
+          customer_email: session.customer_details?.email || '',
+          total_amount: session.amount_total,
+          currency: session.currency?.toUpperCase() || 'SEK',
+          status: 'paid',
+          product_data: {
+            name: product.title,
+            description: product.custom_description || product.description,
+            price: product.custom_price || product.price,
+            quantity: quantity
+          },
+          shipping_address: session.shipping_details,
+          stripe_payment_intent_id: session.payment_intent
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      if (printfulProductId && session.shipping_details) {
         try {
+          const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
+          
           const printfulOrder = {
             recipient: {
-              name: session.customer_details?.name || "Customer",
-              email: session.customer_details?.email,
-              address1: session.shipping_details?.address?.line1,
-              address2: session.shipping_details?.address?.line2,
-              city: session.shipping_details?.address?.city,
-              state_code: session.shipping_details?.address?.state,
-              country_code: session.shipping_details?.address?.country,
-              zip: session.shipping_details?.address?.postal_code,
+              name: session.shipping_details.name || '',
+              email: session.customer_details?.email || '',
+              address1: session.shipping_details.address?.line1 || '',
+              city: session.shipping_details.address?.city || '',
+              country_code: session.shipping_details.address?.country || 'SE',
+              zip: session.shipping_details.address?.postal_code || ''
             },
-            items: [
-              {
-                sync_variant_id: parseInt(session.metadata.printful_product_id),
-                quantity: parseInt(session.metadata.quantity),
-              }
-            ]
+            items: [{
+              sync_variant_id: parseInt(printfulProductId),
+              quantity: quantity
+            }]
           };
 
           const printfulResponse = await fetch("https://api.printful.com/orders", {
@@ -101,44 +123,24 @@ serve(async (req) => {
           });
 
           if (printfulResponse.ok) {
-            const printfulData = await printfulResponse.json();
-            printfulOrderId = printfulData.result?.id;
+            const printfulResult = await printfulResponse.json();
+            await supabase
+              .from('orders')
+              .update({ 
+                printful_order_id: printfulResult.result.id.toString(),
+                status: 'processing'
+              })
+              .eq('id', order.id);
           }
         } catch (printfulError) {
-          console.error("Printful order creation failed:", printfulError);
+          console.error('Printful order failed:', printfulError);
         }
       }
 
-      // Save order to database
-      const { error } = await supabase
-        .from("orders")
-        .insert({
-          customer_email: session.customer_details?.email,
-          customer_name: session.customer_details?.name,
-          stripe_payment_intent_id: session.payment_intent,
-          printful_order_id: printfulOrderId,
-          status: printfulOrderId ? "processing" : "paid",
-          total_amount: session.amount_total,
-          currency: session.currency?.toUpperCase(),
-          product_data: {
-            product_id: session.metadata.product_id,
-            printful_product_id: session.metadata.printful_product_id,
-            quantity: parseInt(session.metadata.quantity)
-          },
-          shipping_address: session.shipping_details?.address
-        });
-
-      if (error) {
-        console.error("Error saving order:", error);
-        throw new Error("Failed to save order");
-      }
+      result.type = 'product';
     }
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      payment_status: session.payment_status,
-      type: session.metadata?.type
-    }), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

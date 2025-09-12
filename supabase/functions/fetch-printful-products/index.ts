@@ -41,18 +41,45 @@ serve(async (req) => {
     // Sync products with our database
     if (data.result && Array.isArray(data.result)) {
       for (const product of data.result) {
-        // Convert price from USD cents to SEK (rough conversion)
-        const priceInSEK = Math.round((product.retail_price || 0) * 11); // Approximate USD to SEK conversion
-        
-        const productData = {
+        // Get sync variants for each product to have proper variant IDs
+        const variantsResponse = await fetch(`https://api.printful.com/sync/products/${product.id}`, {
+          headers: {
+            "Authorization": `Bearer ${printfulToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        let productData = {
           printful_product_id: product.id.toString(),
           title: product.name || "Untitled Product",
           description: product.description || "",
-          price: priceInSEK,
+          price: Math.round((product.retail_price || 2500)), // Default price in SEK cents
           currency: "SEK",
           image_url: product.thumbnail_url || "",
           printful_data: product,
         };
+
+        // If we can get variant details, use the first variant's price
+        if (variantsResponse.ok) {
+          const variantsData = await variantsResponse.json();
+          if (variantsData.result && variantsData.result.sync_variants && variantsData.result.sync_variants.length > 0) {
+            const firstVariant = variantsData.result.sync_variants[0];
+            if (firstVariant.retail_price) {
+              // Convert USD to SEK (approximate rate 1 USD = 11 SEK)
+              productData.price = Math.round(parseFloat(firstVariant.retail_price) * 11 * 100); // Convert to cents
+            }
+            
+            // Update printful_data to include variant information
+            productData.printful_data = {
+              ...product,
+              sync_variants: variantsData.result.sync_variants,
+              sync_product_id: variantsData.result.id
+            };
+            
+            // Use the sync variant ID as the product identifier for ordering
+            productData.printful_product_id = firstVariant.id.toString();
+          }
+        }
 
         // Upsert product
         await supabase

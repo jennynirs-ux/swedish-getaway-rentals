@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
-import { Settings, Plus, Edit, LogOut, Image, Trash2, Home, Calendar, MessageSquare, BarChart3 } from "lucide-react";
+import { Settings, Plus, Edit, LogOut, Image, Trash2, Home, Calendar, MessageSquare, BarChart3, ShoppingCart, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardOverview from "@/components/admin/DashboardOverview";
 import BookingsManagement from "@/components/admin/BookingsManagement";
@@ -23,6 +23,8 @@ import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { GalleryMetadataEditor } from "@/components/admin/GalleryMetadataEditor";
 import { VideoUpload } from "@/components/admin/VideoUpload";
 import { VideoMetadataEditor } from "@/components/admin/VideoMetadataEditor";
+import ShopProductsManagement from "@/components/admin/ShopProductsManagement";
+import OrdersManagement from "@/components/admin/OrdersManagement";
 
 interface Property {
   id: string;
@@ -366,7 +368,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" id="admin-tabs">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -390,6 +392,14 @@ const Admin = () => {
             <TabsTrigger value="finances" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Ekonomi
+            </TabsTrigger>
+            <TabsTrigger value="shop-products" className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              Shop Products
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Orders
             </TabsTrigger>
             <TabsTrigger value="add" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -643,6 +653,14 @@ const Admin = () => {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="shop-products">
+            <ShopProductsManagement />
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <OrdersManagement />
           </TabsContent>
         </Tabs>
       </main>

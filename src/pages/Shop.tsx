@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import MainNavigation from "@/components/MainNavigation";
 interface ShopProduct {
   id: string;
   title: string;
@@ -93,8 +94,10 @@ const Shop = () => {
       </div>;
   }
   return <div className="min-h-screen bg-background">
+      <MainNavigation showBackButton currentPage="shop" />
+      
       {/* Header */}
-      <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-16">
+      <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-20 pt-28">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Nordic Store</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

@@ -7,6 +7,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
+import HomepageProducts from "@/components/HomepageProducts";
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 const HomePage = () => {
   const {
@@ -174,6 +175,9 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Featured Products Section */}
+      <HomepageProducts />
+
       {/* Footer */}
       <footer className="py-16 border-t border-border bg-card">
         <div className="container mx-auto px-4">
@@ -201,9 +205,9 @@ const HomePage = () => {
             </div>
             
             <div>
-              <h4 className="font-semibold text-foreground mb-4">Discover Sweden</h4>
+              <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="#" className="hover:text-foreground transition-colors">Local Experiences</Link></li>
+                <li><Link to="/shop" className="hover:text-foreground transition-colors">Nordic Shop</Link></li>
                 <li><Link to="#" className="hover:text-foreground transition-colors">Seasonal Guides</Link></li>
                 <li><Link to="#" className="hover:text-foreground transition-colors">Swedish Traditions</Link></li>
                 <li><Link to="#" className="hover:text-foreground transition-colors">Sustainable Tourism</Link></li>

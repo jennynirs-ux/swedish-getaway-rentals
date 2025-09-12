@@ -28,6 +28,10 @@ const HomepageProducts = () => {
 
   const fetchFeaturedProducts = async () => {
     try {
+      // First sync with Printful to get latest products
+      await supabase.functions.invoke('fetch-printful-products');
+      
+      // Then fetch visible products for homepage
       const { data, error } = await supabase
         .from('shop_products')
         .select('*')
