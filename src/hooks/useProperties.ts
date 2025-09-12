@@ -22,6 +22,24 @@ export interface Property {
   what_makes_special?: string;
   get_in_touch_info?: any;
   guidebook_sections?: { title: string; content: string; image_url?: string }[];
+  amenities_descriptions?: Record<string, string>;
+  review_rating?: number;
+  review_count?: number;
+  tagline_line1?: string;
+  tagline_line2?: string;
+  availability_text?: string;
+  introduction_text?: string;
+  special_highlights?: { title: string; description: string }[];
+  pricing_table?: {
+    off_season: { price: number; currency: string };
+    peak_season: { price: number; currency: string };
+    holiday_periods: { price: number; currency: string };
+    cleaning_fee: { price: number; currency: string };
+    minimum_stay: number;
+    weekly_discount: string;
+  };
+  contact_response_time?: string;
+  footer_quick_links?: string[];
 }
 
 export const useProperties = () => {

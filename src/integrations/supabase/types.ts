@@ -417,12 +417,15 @@ export type Database = {
           active: boolean
           amenities: string[] | null
           amenities_descriptions: Json | null
+          availability_text: string | null
           bathrooms: number
           bedrooms: number
           commission_rate: number | null
+          contact_response_time: string | null
           created_at: string
           currency: string
           description: string | null
+          footer_quick_links: Json | null
           gallery_images: string[] | null
           gallery_metadata: Json | null
           get_in_touch_info: Json | null
@@ -430,10 +433,17 @@ export type Database = {
           hero_image_url: string | null
           host_id: string | null
           id: string
+          introduction_text: string | null
           location: string | null
           max_guests: number
           pending_approval: boolean
           price_per_night: number
+          pricing_table: Json | null
+          review_count: number | null
+          review_rating: number | null
+          special_highlights: Json | null
+          tagline_line1: string | null
+          tagline_line2: string | null
           title: string
           updated_at: string
           video_metadata: Json | null
@@ -444,12 +454,15 @@ export type Database = {
           active?: boolean
           amenities?: string[] | null
           amenities_descriptions?: Json | null
+          availability_text?: string | null
           bathrooms?: number
           bedrooms?: number
           commission_rate?: number | null
+          contact_response_time?: string | null
           created_at?: string
           currency?: string
           description?: string | null
+          footer_quick_links?: Json | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
           get_in_touch_info?: Json | null
@@ -457,10 +470,17 @@ export type Database = {
           hero_image_url?: string | null
           host_id?: string | null
           id?: string
+          introduction_text?: string | null
           location?: string | null
           max_guests?: number
           pending_approval?: boolean
           price_per_night: number
+          pricing_table?: Json | null
+          review_count?: number | null
+          review_rating?: number | null
+          special_highlights?: Json | null
+          tagline_line1?: string | null
+          tagline_line2?: string | null
           title: string
           updated_at?: string
           video_metadata?: Json | null
@@ -471,12 +491,15 @@ export type Database = {
           active?: boolean
           amenities?: string[] | null
           amenities_descriptions?: Json | null
+          availability_text?: string | null
           bathrooms?: number
           bedrooms?: number
           commission_rate?: number | null
+          contact_response_time?: string | null
           created_at?: string
           currency?: string
           description?: string | null
+          footer_quick_links?: Json | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
           get_in_touch_info?: Json | null
@@ -484,10 +507,17 @@ export type Database = {
           hero_image_url?: string | null
           host_id?: string | null
           id?: string
+          introduction_text?: string | null
           location?: string | null
           max_guests?: number
           pending_approval?: boolean
           price_per_night?: number
+          pricing_table?: Json | null
+          review_count?: number | null
+          review_rating?: number | null
+          special_highlights?: Json | null
+          tagline_line1?: string | null
+          tagline_line2?: string | null
           title?: string
           updated_at?: string
           video_metadata?: Json | null

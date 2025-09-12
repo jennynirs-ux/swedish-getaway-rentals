@@ -1,15 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/hooks/useProperties";
 import PropertyNavigation from "@/components/PropertyNavigation";
-import VillaFooter from "@/components/VillaFooter";
+import PropertyReviewSection from "@/components/PropertyReviewSection";
+import PropertyHeader from "@/components/PropertyHeader";
+import PropertyIntroduction from "@/components/PropertyIntroduction";
+import PropertySpecialHighlights from "@/components/PropertySpecialHighlights";
+import PropertyPricingTable from "@/components/PropertyPricingTable";
+import PropertyContact from "@/components/PropertyContact";
+import PropertyFooter from "@/components/PropertyFooter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Bed, Bath, Wifi, Car, Coffee, Utensils, Waves, TreePine, Mountain, Home } from "lucide-react";
+import { Wifi, Car, Coffee, Utensils, Waves, TreePine, Mountain, Home, Bed, Bath, Users, BookOpen, Calendar } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
 import BookingForm from "@/components/BookingForm";
 import { MediaDialog } from "@/components/MediaDialog";
@@ -36,6 +41,8 @@ const PropertyPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [guideDialogOpen, setGuideDialogOpen] = useState(false);
+  const bookingSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -122,6 +129,10 @@ const PropertyPage = () => {
     setGalleryOpen(true);
   };
 
+  const scrollToBooking = () => {
+    bookingSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const mediaItems: MediaItem[] = [
     ...(property?.gallery_images || []).map((url, index) => ({
       type: 'image' as const,
@@ -180,7 +191,27 @@ const PropertyPage = () => {
     <div className="min-h-screen">
       <PropertyNavigation />
       
-      {/* Hero Section */}
+      {/* Review Section */}
+      <div className="container mx-auto px-4 pt-8">
+        <PropertyReviewSection 
+          rating={property.review_rating || 5.0}
+          reviewCount={property.review_count || 0}
+        />
+      </div>
+
+      {/* Header Section */}
+      <PropertyHeader
+        title={property.title}
+        taglineLine1={property.tagline_line1 || 'Experience luxury in the heart of Swedish nature.'}
+        taglineLine2={property.tagline_line2 || 'Your perfect escape awaits.'}
+        location={property.location || ''}
+        maxGuests={property.max_guests}
+        availability={property.availability_text || 'Available year-round'}
+        onBookStay={scrollToBooking}
+        onViewGallery={() => openGallery(0)}
+      />
+
+      {/* Hero Image */}
       <section className="relative h-96 lg:h-[500px] overflow-hidden cursor-pointer" onClick={() => openGallery(0)}>
         <div className="absolute inset-0">
           <img 
@@ -188,112 +219,116 @@ const PropertyPage = () => {
             alt={property.title}
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-        </div>
-        <div className="absolute bottom-8 left-8 text-white">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-2">{property.title}</h1>
-          {property.location && (
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              <span className="text-lg">{property.location}</span>
-            </div>
-          )}
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Property Info */}
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                <span>Up to {property.max_guests} guests</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Bed className="w-4 h-4" />
-                <span>{property.bedrooms} bedroom{property.bedrooms !== 1 ? 's' : ''}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Bath className="w-4 h-4" />
-                <span>{property.bathrooms} bathroom{property.bathrooms !== 1 ? 's' : ''}</span>
-              </div>
-            </div>
+      {/* Introduction */}
+      <PropertyIntroduction
+        title={property.title}
+        introductionText={property.introduction_text || 'Every corner has been thoughtfully designed to provide the ultimate combination of luxury, comfort, and connection with nature.'}
+      />
 
-            {/* Description */}
-            {property.description && (
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">About this place</h2>
-                <p className="text-muted-foreground leading-relaxed">{property.description}</p>
+      {/* Gallery */}
+      {property.gallery_images && property.gallery_images.length > 0 && (
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-4xl font-bold text-center mb-12">Photo Gallery</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {property.gallery_images.slice(0, 8).map((image, index) => (
+                  <div 
+                    key={index} 
+                    className="aspect-square overflow-hidden rounded-lg cursor-pointer group"
+                    onClick={() => openGallery(index)}
+                  >
+                    <img 
+                      src={image} 
+                      alt={property.gallery_metadata?.[index]?.title || `${property.title} photo ${index + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ))}
               </div>
-            )}
-
-            {/* What Makes This Property Special */}
-            {property.what_makes_special && (
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">What makes {property.title} special</h2>
-                <p className="text-muted-foreground leading-relaxed">{property.what_makes_special}</p>
-              </div>
-            )}
-
-            {/* Amenities */}
-            {property.amenities && property.amenities.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Amenities</h2>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {property.amenities.map((amenity, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
-                      {getAmenityIcon(amenity)}
-                      <span>{amenity}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Gallery */}
-            {property.gallery_images && property.gallery_images.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Photos</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {property.gallery_images.slice(0, 6).map((image, index) => (
-                    <div 
-                      key={index} 
-                      className="aspect-square overflow-hidden rounded-lg cursor-pointer"
-                      onClick={() => openGallery(index)}
-                    >
-                      <img 
-                        src={image} 
-                        alt={`${property.title} photo ${index + 1}`}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform"
-                      />
-                    </div>
-                  ))}
-                </div>
-                {property.gallery_images.length > 6 && (
+              {property.gallery_images.length > 8 && (
+                <div className="text-center mt-8">
                   <Button 
                     variant="outline" 
-                    className="mt-4"
+                    size="lg"
                     onClick={() => openGallery(0)}
                   >
                     View all {property.gallery_images.length} photos
                   </Button>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
-            {/* Guidebook */}
-            {property.guidebook_sections && property.guidebook_sections.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Local Guide</h2>
-                <div className="space-y-6">
-                  {(property.guidebook_sections as GuidebookSection[]).map((section, index) => (
-                    <Card key={index}>
-                      <CardHeader>
-                        <CardTitle>{section.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
+      {/* Premium Amenities */}
+      {property.amenities && property.amenities.length > 0 && (
+        <section className="py-16 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-4xl font-bold text-center mb-6">Premium Amenities</h2>
+              <p className="text-xl text-muted-foreground text-center mb-12">
+                Everything you need for an unforgettable stay, from modern conveniences to unique experiences that celebrate Nordic culture.
+              </p>
+              
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {property.amenities.map((amenity, index) => (
+                  <div key={index} className="flex items-start gap-4 p-6 rounded-lg border bg-card">
+                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                      {getAmenityIcon(amenity)}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">{amenity}</h3>
+                      {property.amenities_descriptions?.[amenity] && (
+                        <p className="text-sm text-muted-foreground">
+                          {property.amenities_descriptions[amenity]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Special Highlights */}
+      {property.special_highlights && property.special_highlights.length > 0 && (
+        <PropertySpecialHighlights
+          propertyTitle={property.title}
+          highlights={property.special_highlights}
+        />
+      )}
+
+      {/* Guest Guide */}
+      {property.guidebook_sections && property.guidebook_sections.length > 0 && (
+        <section className="py-16 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="text-center">
+              <h2 className="text-4xl font-bold mb-8">Guest Guide</h2>
+              <Dialog open={guideDialogOpen} onOpenChange={setGuideDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="text-lg px-8">
+                    <BookOpen className="w-5 h-5 mr-2" />
+                    View Complete Guest Guide
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl">Guest Guide - {property.title}</DialogTitle>
+                    <DialogDescription>
+                      Everything you need to know for your stay
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6 mt-6">
+                    {(property.guidebook_sections as GuidebookSection[]).map((section, index) => (
+                      <div key={index} className="border-b pb-6 last:border-b-0">
+                        <h3 className="text-xl font-semibold mb-4">{section.title}</h3>
                         {section.image_url && (
                           <img 
                             src={section.image_url} 
@@ -301,19 +336,27 @@ const PropertyPage = () => {
                             className="w-full h-48 object-cover rounded-lg mb-4"
                           />
                         )}
-                        <p className="text-muted-foreground">{section.content}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+                        <p className="text-muted-foreground leading-relaxed">{section.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
+        </section>
+      )}
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Booking Card */}
-            <Card className="sticky top-4">
+      {/* Booking Form */}
+      <section ref={bookingSectionRef} className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold text-center mb-6">Book Your Stay</h2>
+            <p className="text-xl text-muted-foreground text-center mb-12">
+              Ready to experience the magic of {property.title}? Send an inquiry to check availability and pricing.
+            </p>
+            
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="text-2xl font-bold">
@@ -332,32 +375,22 @@ const PropertyPage = () => {
                 />
               </CardContent>
             </Card>
-
-            {/* Contact */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Get in Touch</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full">Contact Host</Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Contact the Host</DialogTitle>
-                      <DialogDescription>
-                        Send a message about {property.title}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <ContactForm propertyId={property.id} />
-                  </DialogContent>
-                </Dialog>
-              </CardContent>
-            </Card>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Pricing Information */}
+      {property.pricing_table && (
+        <PropertyPricingTable pricingData={property.pricing_table} />
+      )}
+
+      {/* Contact */}
+      {property.get_in_touch_info && (
+        <PropertyContact
+          contactInfo={property.get_in_touch_info}
+          responseTime={property.contact_response_time || 'We typically respond to inquiries within 2 hours.'}
+        />
+      )}
 
       {/* Gallery Modal */}
       <MediaDialog
@@ -367,7 +400,14 @@ const PropertyPage = () => {
         initialIndex={selectedImageIndex}
       />
 
-      <VillaFooter />
+      {/* Property Footer */}
+      <PropertyFooter
+        title={property.title}
+        taglineLine1={property.tagline_line1 || 'Experience luxury in the heart of Swedish nature.'}
+        location={property.location || ''}
+        quickLinks={property.footer_quick_links || ['Photo Gallery', 'Amenities', 'Book Now', 'Contact']}
+        contactInfo={property.get_in_touch_info}
+      />
     </div>
   );
 };
