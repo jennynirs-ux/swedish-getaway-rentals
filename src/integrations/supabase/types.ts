@@ -336,6 +336,7 @@ export type Database = {
         Row: {
           active: boolean
           amenities: string[] | null
+          amenities_descriptions: Json | null
           bathrooms: number
           bedrooms: number
           created_at: string
@@ -343,6 +344,7 @@ export type Database = {
           description: string | null
           gallery_images: string[] | null
           gallery_metadata: Json | null
+          guidebook_sections: Json | null
           hero_image_url: string | null
           host_id: string | null
           id: string
@@ -358,6 +360,7 @@ export type Database = {
         Insert: {
           active?: boolean
           amenities?: string[] | null
+          amenities_descriptions?: Json | null
           bathrooms?: number
           bedrooms?: number
           created_at?: string
@@ -365,6 +368,7 @@ export type Database = {
           description?: string | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
+          guidebook_sections?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
           id?: string
@@ -380,6 +384,7 @@ export type Database = {
         Update: {
           active?: boolean
           amenities?: string[] | null
+          amenities_descriptions?: Json | null
           bathrooms?: number
           bedrooms?: number
           created_at?: string
@@ -387,6 +392,7 @@ export type Database = {
           description?: string | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
+          guidebook_sections?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
           id?: string

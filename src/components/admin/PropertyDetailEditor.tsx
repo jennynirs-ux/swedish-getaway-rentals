@@ -113,11 +113,11 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bathrooms: data.bathrooms?.toString() || "1",
         max_guests: data.max_guests?.toString() || "4",
         amenities: data.amenities || [],
-        amenities_descriptions: data.amenities_descriptions || {},
+        amenities_descriptions: (data as any).amenities_descriptions || {},
         hero_image_url: data.hero_image_url || "",
         gallery_images: data.gallery_images || [],
         gallery_metadata: galleryMetadata,
-        guidebook_sections: data.guidebook_sections || [],
+        guidebook_sections: (data as any).guidebook_sections || [],
         active: data.active,
       });
     } catch (error) {

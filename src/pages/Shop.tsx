@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
+import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 
 interface ShopProduct {
   id: string;
@@ -147,9 +148,9 @@ const Shop = () => {
       {/* Header */}
       <section className="relative bg-gradient-to-r from-primary/10 to-secondary/10 py-20 pt-28 overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
           style={{
-            backgroundImage: `url(/assets/forest-hero-bg.jpg)`
+            backgroundImage: `url(${forestHeroBg})`
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/80"></div>
