@@ -14,26 +14,26 @@ const MainNavigation = ({ showBackButton = false, currentPage }: MainNavigationP
         {showBackButton ? (
           <Link to="/">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
-              className="text-white hover:bg-white/20 border border-white/20"
+              className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
           </Link>
         ) : (
-          <Link to="/" className="text-white font-semibold text-xl">
+          <Link to="/" className="text-white font-semibold text-xl hover:text-white/90 transition-colors">
             Nordic Getaways
           </Link>
         )}
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link to="/shop">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
-              className="text-white hover:bg-white/20 border border-white/20"
+              className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm"
             >
               <ShoppingBag className="w-4 h-4 mr-2" />
               Nordic Shop
@@ -41,9 +41,9 @@ const MainNavigation = ({ showBackButton = false, currentPage }: MainNavigationP
           </Link>
           <Link to="/cart">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
-              className="text-white hover:bg-white/20 border border-white/20"
+              className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm"
             >
               Cart
             </Button>

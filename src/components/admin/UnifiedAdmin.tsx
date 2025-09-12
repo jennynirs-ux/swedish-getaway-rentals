@@ -6,9 +6,12 @@ import BookingsManagement from "./BookingsManagement";
 import ShopProductsManagement from "./ShopProductsManagement";
 import OrdersManagement from "./OrdersManagement";
 import PropertiesManagement from "./PropertiesManagement";
+import PropertyDetailEditor from "./PropertyDetailEditor";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -40,7 +43,17 @@ const UnifiedAdmin = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
-          <DashboardOverview />
+          <DashboardOverview 
+            onNavigateToTab={setActiveTab}
+            onEditProperty={(propertyId) => {
+              setEditingPropertyId(propertyId);
+              setActiveTab("rentals");
+            }}
+            onEditProduct={(productId) => {
+              setEditingProductId(productId);
+              setActiveTab("products");
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="rentals" className="space-y-6">
@@ -49,13 +62,28 @@ const UnifiedAdmin = () => {
         </TabsContent>
 
         <TabsContent value="products" className="space-y-6">
-          <ShopProductsManagement />
+          <ShopProductsManagement 
+            editingProductId={editingProductId}
+            onClearEditingProduct={() => setEditingProductId(null)}
+          />
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-6">
           <OrdersManagement />
         </TabsContent>
       </Tabs>
+
+      {/* Property Detail Editor */}
+      {editingPropertyId && (
+        <PropertyDetailEditor
+          propertyId={editingPropertyId}
+          open={!!editingPropertyId}
+          onClose={() => setEditingPropertyId(null)}
+          onSave={() => {
+            // Refresh data if needed
+          }}
+        />
+      )}
     </div>
   );
 };

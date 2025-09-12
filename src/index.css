@@ -39,10 +39,24 @@
     --success: 120 45% 45%;
     --success-foreground: 28 20% 97%;
 
-    /* Interactive Elements */
-    --border: 28 20% 85%;
-    --input: 28 20% 90%;
-    --ring: 25 45% 25%;
+  /* Interactive Elements */
+  --border: 28 20% 85%;
+  --input: 28 20% 90%;
+  --ring: 25 45% 25%;
+
+  /* Button variants */
+  --button-primary: 25 40% 35%;
+  --button-primary-hover: 25 50% 30%;
+  --button-primary-foreground: 45 20% 95%;
+  --button-secondary: 35 25% 85%;
+  --button-secondary-hover: 30 25% 80%;
+  --button-secondary-foreground: 25 25% 20%;
+  --button-outline: transparent;
+  --button-outline-hover: 28 20% 90%;
+  --button-outline-foreground: 25 40% 35%;
+  --button-ghost: transparent;
+  --button-ghost-hover: 28 20% 90%;
+  --button-ghost-foreground: 25 40% 35%;
 
     /* Border Radius */
     --radius: 0.75rem;
@@ -95,6 +109,20 @@
     --border: 25 15% 20%;
     --input: 25 15% 18%;
     --ring: 35 50% 55%;
+
+    /* Button variants - dark theme */
+    --button-primary: 35 50% 55%;
+    --button-primary-hover: 35 55% 60%;
+    --button-primary-foreground: 25 25% 8%;
+    --button-secondary: 25 15% 18%;
+    --button-secondary-hover: 25 15% 25%;
+    --button-secondary-foreground: 28 20% 95%;
+    --button-outline: transparent;
+    --button-outline-hover: 25 15% 15%;
+    --button-outline-foreground: 28 20% 95%;
+    --button-ghost: transparent;
+    --button-ghost-hover: 25 15% 15%;
+    --button-ghost-foreground: 28 20% 95%;
 
     /* Dark theme gradients */
     --warm-gradient: linear-gradient(135deg, hsl(25 45% 15%), hsl(35 50% 25%));

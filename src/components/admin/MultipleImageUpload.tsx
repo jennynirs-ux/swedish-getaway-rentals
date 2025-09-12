@@ -1,192 +1,175 @@
-import React, { useState } from 'react';
-import { Upload, X, Plus, Image as ImageIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Upload, Trash2 } from "lucide-react";
 
-interface MultipleImageUploadProps {
-  value: string[];
-  onChange: (urls: string[]) => void;
-  label: string;
-  maxImages?: number;
-  className?: string;
+interface ImageData {
+  url: string;
+  title: string;
+  alt: string;
+  description: string;
 }
 
-export const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
-  value = [],
-  onChange,
-  label,
-  maxImages = 50,
-  className = '',
-}) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const { toast } = useToast();
+interface MultipleImageUploadProps {
+  images: ImageData[];
+  onImagesChange: (images: ImageData[]) => void;
+  bucket: string;
+  folder: string;
+  title?: string;
+}
 
-  const uploadImages = async (files: FileList) => {
+const MultipleImageUpload = ({ 
+  images, 
+  onImagesChange, 
+  bucket, 
+  folder, 
+  title = "Images" 
+}: MultipleImageUploadProps) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
     try {
-      setIsUploading(true);
-      const uploadPromises = [];
-      
-      for (let i = 0; i < files.length && value.length + uploadPromises.length < maxImages; i++) {
-        const file = files[i];
-        if (file.type.startsWith('image/')) {
-          uploadPromises.push(uploadSingleImage(file));
-        }
-      }
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${folder}/${fileName}`;
 
-      const uploadedUrls = await Promise.all(uploadPromises);
-      const newUrls = [...value, ...uploadedUrls.filter(url => url)];
-      onChange(newUrls);
-      
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+
+      const newImage: ImageData = {
+        url: publicUrl,
+        title: "",
+        alt: `${title} image ${images.length + 1}`,
+        description: ""
+      };
+
+      onImagesChange([...images, newImage]);
+
       toast({
         title: "Success",
-        description: `${uploadedUrls.length} image(s) uploaded successfully`,
+        description: "Image uploaded successfully",
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Error uploading image:', error);
       toast({
         title: "Error",
-        description: "Failed to upload some images",
+        description: "Failed to upload image",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setUploading(false);
     }
-  };
-
-  const uploadSingleImage = async (file: File): Promise<string | null> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `properties/gallery/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('property-images')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      return null;
-    }
-
-    const { data } = supabase.storage
-      .from('property-images')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      uploadImages(files);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      uploadImages(files);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
   };
 
   const removeImage = (index: number) => {
-    const newUrls = value.filter((_, i) => i !== index);
-    onChange(newUrls);
+    onImagesChange(images.filter((_, i) => i !== index));
   };
 
-  const canAddMore = value.length < maxImages;
+  const updateImageMetadata = (index: number, field: string, value: string) => {
+    const updatedImages = images.map((img, i) => 
+      i === index ? { ...img, [field]: value } : img
+    );
+    onImagesChange(updatedImages);
+  };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      <label className="text-sm font-medium">{label}</label>
-      
-      {/* Existing Images Grid */}
-      {value.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {value.map((url, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={url}
-                alt={`Gallery image ${index + 1}`}
-                className="w-full h-32 object-cover rounded-lg border"
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removeImage(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          {title}
+          <Button
+            onClick={() => document.getElementById(`${folder}-upload`)?.click()}
+            disabled={uploading}
+            size="sm"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Add Image
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <input
+          id={`${folder}-upload`}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleImageUpload(file);
+          }}
+        />
+
+        {images.length === 0 && (
+          <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
+            <p className="text-muted-foreground">No images uploaded yet</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {images.map((image, index) => (
+            <div key={index} className="border rounded-lg p-4 space-y-3">
+              <div className="relative">
+                <img
+                  src={image.url}
+                  alt={image.alt}
+                  className="w-full h-48 object-cover rounded"
+                />
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="absolute top-2 right-2"
+                  onClick={() => removeImage(index)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs">Title</Label>
+                  <Input
+                    placeholder="Image title..."
+                    value={image.title}
+                    onChange={(e) => updateImageMetadata(index, 'title', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs">Alt Text</Label>
+                  <Input
+                    placeholder="Alt text for accessibility..."
+                    value={image.alt}
+                    onChange={(e) => updateImageMetadata(index, 'alt', e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs">Description</Label>
+                  <Input
+                    placeholder="Image description..."
+                    value={image.description}
+                    onChange={(e) => updateImageMetadata(index, 'description', e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           ))}
         </div>
-      )}
-
-      {/* Upload Area */}
-      {canAddMore && (
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            dragActive ? 'border-primary bg-primary/5' : 'border-gray-300'
-          }`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileSelect}
-            className="hidden"
-            id={`multiple-image-upload-${label}`}
-            disabled={isUploading}
-          />
-          
-          <div className="flex flex-col items-center space-y-2">
-            {isUploading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            ) : (
-              <ImageIcon className="h-8 w-8 text-gray-400" />
-            )}
-            
-            <div>
-              <label
-                htmlFor={`multiple-image-upload-${label}`}
-                className="cursor-pointer text-primary hover:text-primary/80"
-              >
-                Click to upload images
-              </label>
-              <p className="text-sm text-gray-500">or drag and drop multiple images</p>
-            </div>
-            
-            <p className="text-xs text-gray-400">
-              {value.length}/{maxImages} images • PNG, JPG, WEBP up to 10MB each
-            </p>
-          </div>
-        </div>
-      )}
-      
-      {!canAddMore && (
-        <p className="text-sm text-gray-500 text-center">
-          Maximum of {maxImages} images reached
-        </p>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
+
+export default MultipleImageUpload;

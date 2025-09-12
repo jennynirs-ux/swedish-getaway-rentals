@@ -31,7 +31,12 @@ interface ShopProduct {
   created_at: string;
 }
 
-const ShopProductsManagement = () => {
+interface ShopProductsManagementProps {
+  editingProductId?: string | null;
+  onClearEditingProduct?: () => void;
+}
+
+const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: ShopProductsManagementProps) => {
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -49,6 +54,16 @@ const ShopProductsManagement = () => {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    if (editingProductId) {
+      const product = products.find(p => p.id === editingProductId);
+      if (product) {
+        handleEdit(product);
+        onClearEditingProduct?.();
+      }
+    }
+  }, [editingProductId, products]);
 
   const loadProducts = async () => {
     try {

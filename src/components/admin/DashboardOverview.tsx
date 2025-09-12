@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Calendar, MessageSquare, DollarSign, ShoppingBag, Package, TrendingUp, Users } from "lucide-react";
+import { Building2, Calendar, MessageSquare, DollarSign, ShoppingBag, Package, TrendingUp, Users, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -19,7 +19,51 @@ interface DashboardStats {
   shop_revenue: number;
 }
 
-const DashboardOverview = () => {
+interface Property {
+  id: string;
+  title: string;
+  hero_image_url: string;
+  price_per_night: number;
+  currency: string;
+}
+
+interface Product {
+  id: string;
+  title: string;
+  title_override?: string;
+  image_url: string;
+  main_image_override?: string;
+  price: number;
+  price_override?: number;
+  currency: string;
+}
+
+interface Booking {
+  id: string;
+  guest_name: string;
+  property_id: string;
+  check_in_date: string;
+  total_amount: number;
+  currency: string;
+  status: string;
+}
+
+interface Order {
+  id: string;
+  customer_name: string;
+  total_amount: number;
+  currency: string;
+  status: string;
+  created_at: string;
+}
+
+interface DashboardOverviewProps {
+  onNavigateToTab?: (tab: string) => void;
+  onEditProperty?: (propertyId: string) => void;
+  onEditProduct?: (productId: string) => void;
+}
+
+const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: DashboardOverviewProps) => {
   const [stats, setStats] = useState<DashboardStats>({
     active_rentals: 0,
     total_bookings: 0,
@@ -32,6 +76,10 @@ const DashboardOverview = () => {
     shop_revenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [recentProperties, setRecentProperties] = useState<Property[]>([]);
+  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     loadDashboardStats();
@@ -44,18 +92,39 @@ const DashboardOverview = () => {
       
       if (statsError) throw statsError;
 
-      // Get additional shop stats
+      // Get recent properties with thumbnails
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select('id, title, hero_image_url, price_per_night, currency')
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      // Get recent products with thumbnails
       const { data: products, error: productsError } = await supabase
         .from('shop_products')
-        .select('id')
-        .eq('visible', true);
+        .select('id, title, title_override, image_url, main_image_override, price, price_override, currency')
+        .eq('visible', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
 
+      // Get recent bookings
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id, guest_name, property_id, check_in_date, total_amount, currency, status')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Get recent orders
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('id, total_amount, currency, created_at')
-        .eq('status', 'paid');
+        .select('id, customer_name, total_amount, currency, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
+      if (propertiesError) throw propertiesError;
       if (productsError) throw productsError;
+      if (bookingsError) throw bookingsError;
       if (ordersError) throw ordersError;
 
       // Calculate monthly shop orders and revenue
@@ -79,6 +148,11 @@ const DashboardOverview = () => {
         monthly_orders: monthlyOrders.length,
         shop_revenue: shopRevenue,
       });
+
+      setRecentProperties(properties || []);
+      setRecentProducts(products || []);
+      setRecentBookings(bookings || []);
+      setRecentOrders(orders || []);
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
       toast({
@@ -199,6 +273,187 @@ const DashboardOverview = () => {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Recent Properties */}
+      {recentProperties.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Recent Properties
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onNavigateToTab?.('rentals')}
+              >
+                View All
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentProperties.map((property) => (
+                <div 
+                  key={property.id} 
+                  className="border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => onEditProperty?.(property.id)}
+                >
+                  <img
+                    src={property.hero_image_url || '/placeholder.svg'}
+                    alt={property.title}
+                    className="w-full h-32 object-cover rounded-md mb-2"
+                  />
+                  <h4 className="font-medium text-sm">{property.title}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCurrency(property.price_per_night)} / night
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Products */}
+      {recentProducts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5" />
+                Recent Products
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onNavigateToTab?.('products')}
+              >
+                View All
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentProducts.map((product) => (
+                <div 
+                  key={product.id} 
+                  className="border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => onEditProduct?.(product.id)}
+                >
+                  <img
+                    src={product.main_image_override || product.image_url || '/placeholder.svg'}
+                    alt={product.title_override || product.title}
+                    className="w-full h-32 object-cover rounded-md mb-2"
+                  />
+                  <h4 className="font-medium text-sm">{product.title_override || product.title}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCurrency(product.price_override || product.price)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Recent Bookings */}
+        {recentBookings.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Recent Bookings
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onNavigateToTab?.('bookings')}
+                >
+                  View All
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentBookings.map((booking) => (
+                  <div 
+                    key={booking.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => onNavigateToTab?.('bookings')}
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{booking.guest_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Check-in: {new Date(booking.check_in_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'}>
+                        {booking.status}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatCurrency(booking.total_amount)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Orders */}
+        {recentOrders.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Recent Orders
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onNavigateToTab?.('orders')}
+                >
+                  View All
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentOrders.map((order) => (
+                  <div 
+                    key={order.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => onNavigateToTab?.('orders')}
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{order.customer_name || 'Guest'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={order.status === 'paid' ? 'default' : 'secondary'}>
+                        {order.status}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatCurrency(order.total_amount)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Quick Actions */}
