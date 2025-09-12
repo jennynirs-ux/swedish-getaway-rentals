@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-
 interface ShopProduct {
   id: string;
   title: string;
@@ -17,28 +16,25 @@ interface ShopProduct {
   custom_price?: number;
   printful_data: any;
 }
-
 const Shop = () => {
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
-
   useEffect(() => {
     fetchProducts();
   }, []);
-
   const fetchProducts = async () => {
     try {
       // First, sync products from Printful
       await supabase.functions.invoke('fetch-printful-products');
-      
-      // Then fetch from our database
-      const { data, error } = await supabase
-        .from('shop_products')
-        .select('*')
-        .eq('visible', true)
-        .order('created_at', { ascending: false });
 
+      // Then fetch from our database
+      const {
+        data,
+        error
+      } = await supabase.from('shop_products').select('*').eq('visible', true).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
@@ -46,26 +42,26 @@ const Shop = () => {
       toast({
         title: "Error",
         description: "Failed to load products. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handlePurchase = async (product: ShopProduct) => {
     setPurchasing(product.id);
     try {
-      const { data, error } = await supabase.functions.invoke('create-product-payment', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('create-product-payment', {
         body: {
           productId: product.id,
           quantity: 1,
-          customerEmail: '', // Stripe Checkout will collect this
+          customerEmail: '' // Stripe Checkout will collect this
         }
       });
-
       if (error) throw error;
-      
       if (data.url) {
         window.open(data.url, '_blank');
       }
@@ -74,41 +70,33 @@ const Shop = () => {
       toast({
         title: "Error",
         description: "Failed to create payment. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setPurchasing(null);
     }
   };
-
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('sv-SE', {
       style: 'currency',
-      currency: currency,
+      currency: currency
     }).format(price / 100);
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-20">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
             <p className="mt-4 text-muted-foreground">Loading products...</p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
-            Nordic Getaways Store
-          </h1>
+          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Nordic Store</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Discover unique Nordic-inspired products that bring the beauty of Scandinavia to your home.
           </p>
@@ -118,26 +106,17 @@ const Shop = () => {
       {/* Products Grid */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          {products.length === 0 ? (
-            <div className="text-center py-20">
+          {products.length === 0 ? <div className="text-center py-20">
               <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-foreground mb-2">No products available</h3>
               <p className="text-muted-foreground">Check back soon for new arrivals!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product) => {
-                const finalPrice = product.custom_price || product.price;
-                const finalDescription = product.custom_description || product.description;
-                
-                return (
-                  <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-300">
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {products.map(product => {
+            const finalPrice = product.custom_price || product.price;
+            const finalDescription = product.custom_description || product.description;
+            return <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-300">
                     <div className="aspect-square overflow-hidden rounded-t-lg">
-                      <img
-                        src={product.image_url || '/placeholder.svg'}
-                        alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <img src={product.image_url || '/placeholder.svg'} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     </div>
                     
                     <CardHeader>
@@ -162,29 +141,17 @@ const Shop = () => {
                           {formatPrice(finalPrice, product.currency)}
                         </div>
                         
-                        <Button
-                          onClick={() => handlePurchase(product)}
-                          disabled={purchasing === product.id}
-                          className="shrink-0"
-                        >
-                          {purchasing === product.id ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                          ) : (
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                          )}
+                        <Button onClick={() => handlePurchase(product)} disabled={purchasing === product.id} className="shrink-0">
+                          {purchasing === product.id ? <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" /> : <ShoppingCart className="w-4 h-4 mr-2" />}
                           Buy Now
                         </Button>
                       </div>
                     </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                  </Card>;
+          })}
+            </div>}
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Shop;
