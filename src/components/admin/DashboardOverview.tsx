@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
+import RevenueDetail from "./RevenueDetail";
 
 interface DashboardStats {
   active_rentals: number;
@@ -63,7 +64,10 @@ interface DashboardOverviewProps {
   onEditProduct?: (productId: string) => void;
 }
 
+type ViewMode = 'dashboard' | 'rental-revenue' | 'shop-revenue';
+
 const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: DashboardOverviewProps) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [stats, setStats] = useState<DashboardStats>({
     active_rentals: 0,
     total_bookings: 0,
@@ -189,6 +193,14 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
     );
   }
 
+  if (viewMode === 'rental-revenue') {
+    return <RevenueDetail type="rentals" onBack={() => setViewMode('dashboard')} />;
+  }
+
+  if (viewMode === 'shop-revenue') {
+    return <RevenueDetail type="shop" onBack={() => setViewMode('dashboard')} />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Overview Cards */}
@@ -260,7 +272,10 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
 
       {/* Revenue Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setViewMode('rental-revenue')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rental Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -273,7 +288,10 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           </CardContent>
         </Card>
         
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setViewMode('shop-revenue')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Shop Revenue</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />

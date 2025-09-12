@@ -7,6 +7,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
+import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 const HomePage = () => {
   const {
@@ -16,7 +17,14 @@ const HomePage = () => {
   return <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
       <header className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-background/80"></div>
+        <div className="absolute inset-0">
+          <img 
+            src={forestHeroBg} 
+            alt="Swedish forest background" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60"></div>
+        </div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold text-white mb-6">
@@ -147,8 +155,8 @@ const HomePage = () => {
                         </div>
                       </CarouselItem>
                     </CarouselContent>
-                    <CarouselPrevious className="left-0" />
-                    <CarouselNext className="right-0" />
+                    <CarouselPrevious className="left-2 md:left-4" />
+                    <CarouselNext className="right-2 md:right-4" />
                   </Carousel>
                 </div>
 
@@ -164,7 +172,11 @@ const HomePage = () => {
                       Order in English
                     </a>
                   </Button>
-                  <Button asChild variant="secondary" size="sm" className="flex-1">
+                </div>
+                
+                {/* Nordic Shop Button */}
+                <div className="mt-6 text-center">
+                  <Button asChild variant="secondary" size="lg" className="bg-[#8B4513] hover:bg-[#7A3F12] text-white border-none">
                     <Link to="/shop">
                       Nordic Shop
                     </Link>

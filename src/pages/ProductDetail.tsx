@@ -200,17 +200,24 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
+      {/* Navigation */}
+      <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
+        <div className="container mx-auto">
           <Link to="/shop">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-foreground border-border bg-background/80 hover:bg-background/90 backdrop-blur-sm transition-all"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Shop
+              <span className="hidden sm:inline">Back to Shop</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </Link>
         </div>
+      </nav>
+      
+      <div className="container mx-auto px-4 py-8 pt-20">
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Image Gallery */}
