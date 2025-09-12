@@ -9,7 +9,7 @@ const corsHeaders = {
 
 type CartItem = { productId: string; quantity: number; variantId?: string };
 
-offer: serve(async (req) => {
+serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

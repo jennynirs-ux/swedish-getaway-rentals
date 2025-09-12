@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.create-printful-order]
 verify_jwt = false
+
+[functions.create-cart-payment]
+verify_jwt = false

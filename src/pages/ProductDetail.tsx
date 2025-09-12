@@ -127,26 +127,22 @@ const ProductDetail = () => {
     setPurchasing(true);
     try {
       const { title } = getDisplayData(product);
-      addItem({ productId: product.id, title, price: currentPrice, currency: product.currency, quantity, image: product.main_image_override || product.image_url, variantId: selectedVariant, variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null });
-      return;
-        body: {
-          productId: product.id,
-          quantity: quantity,
-          customerEmail: '',
-          variantId: selectedVariant,
-        }
+      addItem({ 
+        productId: product.id, 
+        title, 
+        price: currentPrice, 
+        currency: product.currency, 
+        quantity, 
+        image: product.main_image_override || product.image_url, 
+        variantId: selectedVariant, 
+        variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null 
       });
-
-      if (error) throw error;
-      
-      if (data.url) {
-        window.open(data.url, '_blank');
-      }
+      toast({ title: 'Added to cart', description: title });
     } catch (error) {
-      console.error('Error creating payment:', error);
+      console.error('Error adding to cart:', error);
       toast({
         title: "Error",
-        description: "Failed to create payment. Please try again.",
+        description: "Failed to add to cart.",
         variant: "destructive",
       });
     } finally {
@@ -353,7 +349,7 @@ const ProductDetail = () => {
                 
                 {variants.length > 1 && !selectedVariant && (
                   <p className="text-sm text-muted-foreground mt-2 text-center">
-                    Added to cart. Go to Cart to checkout
+                    Please select an option to continue
                   </p>
                 )}
               </CardContent>

@@ -89,22 +89,15 @@ const Shop = () => {
     setPurchasing(product.id);
     try {
       const { title, price, imageUrl } = getDisplayData(product);
-      addItem({ productId: product.id, title, price, currency: product.currency, quantity: 1, image: imageUrl });
-      toast({ title: 'Added to cart', description: title });
-      return;
-        body: {
-          productId: product.id,
-          quantity: 1,
-          customerEmail: '', // Stripe Checkout will collect this
-        }
+      addItem({ 
+        productId: product.id, 
+        title, 
+        price, 
+        currency: product.currency, 
+        quantity: 1, 
+        image: imageUrl 
       });
-
-      if (error) throw error;
-      
-      // No redirect here; item added to cart
-      
-        window.open(data.url, '_blank');
-      }
+      toast({ title: 'Added to cart', description: title });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast({
