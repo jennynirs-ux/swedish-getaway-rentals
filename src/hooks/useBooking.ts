@@ -38,7 +38,7 @@ export const useBooking = () => {
     }
   };
 
-  const createBooking = async (bookingData: BookingData) => {
+  const createBooking = async (bookingData: BookingData & { property_title?: string; currency?: string }) => {
     try {
       setLoading(true);
 
@@ -58,35 +58,37 @@ export const useBooking = () => {
         return { success: false, error: 'Dates not available' };
       }
 
-      const { data, error } = await supabase
-        .from('bookings')
-        .insert([bookingData])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Create a guest message for the booking inquiry
-      await supabase.from('guest_messages').insert([{
-        name: bookingData.guest_name,
-        email: bookingData.guest_email,
-        phone: bookingData.guest_phone,
-        property_id: bookingData.property_id,
-        subject: 'Bokningsförfrågan',
-        message: `Ny bokningsförfrågan för ${bookingData.check_in_date} till ${bookingData.check_out_date} för ${bookingData.number_of_guests} gäster. Specialönskemål: ${bookingData.special_requests || 'Inga'}`
-      }]);
-
-      toast({
-        title: "Bokningsförfrågan skickad!",
-        description: "Vi kommer att kontakta dig inom 24 timmar för att bekräfta din bokning.",
+      // Create Stripe payment session
+      const { data, error } = await supabase.functions.invoke('create-booking-payment', {
+        body: {
+          bookingData: {
+            ...bookingData,
+            property_title: bookingData.property_title || 'Property Booking',
+            currency: bookingData.currency || 'SEK'
+          }
+        }
       });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.url) {
+        // Redirect to Stripe Checkout
+        window.open(data.url, '_blank');
+        
+        toast({
+          title: "Omdirigerar till betalning",
+          description: "Du kommer att omdirigeras för att slutföra betalningen.",
+        });
+      }
 
       return { success: true, data };
     } catch (error) {
-      console.error('Error creating booking:', error);
+      console.error('Error creating booking payment:', error);
       toast({
         title: "Fel",
-        description: "Kunde inte skicka bokningsförfrågan. Försök igen.",
+        description: "Kunde inte skapa betalning. Försök igen.",
         variant: "destructive",
       });
       return { success: false, error };

@@ -233,6 +233,57 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          printful_order_id: string | null
+          product_data: Json | null
+          shipping_address: Json | null
+          status: string
+          stripe_payment_intent_id: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          printful_order_id?: string | null
+          product_data?: Json | null
+          shipping_address?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          printful_order_id?: string | null
+          product_data?: Json | null
+          shipping_address?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -388,6 +439,54 @@ export type Database = {
           table_name?: string
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      shop_products: {
+        Row: {
+          created_at: string
+          currency: string
+          custom_description: string | null
+          custom_price: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          price: number
+          printful_data: Json | null
+          printful_product_id: string
+          title: string
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_price?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price: number
+          printful_data?: Json | null
+          printful_product_id: string
+          title: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_price?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price?: number
+          printful_data?: Json | null
+          printful_product_id?: string
+          title?: string
+          updated_at?: string
+          visible?: boolean
         }
         Relationships: []
       }
