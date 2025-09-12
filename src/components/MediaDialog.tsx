@@ -73,7 +73,7 @@ export const MediaDialog = ({ media, isOpen, onClose, initialIndex = 0 }: MediaD
               <div className="relative w-full h-full flex items-center justify-center">
                 <video
                   src={currentMedia.url}
-                  className="w-full h-full object-contain"
+                  className="max-w-full max-h-full object-contain"
                   controls
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}

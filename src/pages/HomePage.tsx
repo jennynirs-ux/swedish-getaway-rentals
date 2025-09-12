@@ -6,8 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
-import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 import HomepageProducts from "@/components/HomepageProducts";
+import forestHeroBg from "@/assets/forest-hero-light.jpg";
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 const HomePage = () => {
   const {
@@ -17,10 +17,14 @@ const HomePage = () => {
   return <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
       <header className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
-        backgroundImage: `url(${forestHeroBg})`
-      }} />
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0">
+          <img 
+            src={forestHeroBg} 
+            alt="Swedish forest background with sunlight through trees" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60"></div>
+        </div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
             <h1 className="text-6xl font-bold text-white mb-6">
@@ -31,6 +35,15 @@ const HomePage = () => {
             </p>
           </div>
           
+          {/* Nordic Shop Button - Upper Right */}
+          <div className="absolute top-8 right-8">
+            <Button asChild className="bg-[#8B4513] hover:bg-[#7A3F12] text-white border-none">
+              <Link to="/shop">
+                Nordic Shop
+              </Link>
+            </Button>
+          </div>
+          
           {/* Search Component - Hidden for now */}
           {/* <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} /> */}
         </div>
@@ -38,7 +51,36 @@ const HomePage = () => {
 
 
       {/* Property Cards */}
-      
+      <main className="pb-12">
+        <div className="container mx-auto px-4 pt-16">
+          {loading ? <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="animate-pulse">
+                  <div className="bg-muted rounded-lg h-64 mb-4"></div>
+                  <div className="space-y-2">
+                    <div className="bg-muted h-6 rounded w-3/4"></div>
+                    <div className="bg-muted h-4 rounded w-1/2"></div>
+                    <div className="bg-muted h-16 rounded"></div>
+                    <div className="flex justify-between items-end">
+                      <div className="bg-muted h-8 rounded w-1/3"></div>
+                      <div className="bg-muted h-10 rounded w-24"></div>
+                    </div>
+                  </div>
+                </div>)}
+            </div> : properties.length > 0 ? <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {properties.map(property => <PropertyCard key={property.id} property={property} />)}
+            </div> : <div className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  No properties found
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  No properties are currently available.
+                </p>
+              </div>
+            </div>}
+        </div>
+      </main>
 
       {/* Book Promotion Section */}
       <section className="py-12 bg-gradient-to-br from-muted/50 to-background">
@@ -121,9 +163,9 @@ const HomePage = () => {
                           </p>
                         </div>
                       </CarouselItem>
-                    </CarouselContent>
-                    <CarouselPrevious className="left-0" />
-                    <CarouselNext className="right-0" />
+                     </CarouselContent>
+                     <CarouselPrevious className="left-0 md:-left-12 top-1/2 -translate-y-1/2" />
+                     <CarouselNext className="right-0 md:-right-12 top-1/2 -translate-y-1/2" />
                   </Carousel>
                 </div>
 
@@ -140,6 +182,7 @@ const HomePage = () => {
                     </a>
                   </Button>
                 </div>
+                
               </div>
             </div>
           </div>
@@ -188,7 +231,7 @@ const HomePage = () => {
           
           <div className="text-center pt-8 border-t border-border">
             <p className="text-muted-foreground">
-              © 2024 Swedish Getaway Rentals. Created with love for Swedish experiences.
+              © 2025 Nordic Getaways. Created with love for Nordic experiences.
             </p>
           </div>
         </div>
