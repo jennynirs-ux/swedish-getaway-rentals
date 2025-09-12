@@ -78,6 +78,8 @@ serve(async (req) => {
       const productId = session.metadata.product_id;
       const quantity = parseInt(session.metadata.quantity || '1');
       const printfulProductId = session.metadata.printful_product_id;
+      const printfulVariantId = session.metadata.printful_variant_id;
+      const variantName = session.metadata.variant_name || '';
 
       const { data: product, error: productError } = await supabase
         .from('shop_products')
@@ -87,19 +89,28 @@ serve(async (req) => {
 
       if (productError) throw productError;
 
+      // Determine final product details
+      const finalTitle = product.title_override || product.title;
+      const finalDescription = product.description_override || product.custom_description || product.description;
+      const productDisplayName = variantName ? `${finalTitle} - ${variantName}` : finalTitle;
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_name: session.customer_details?.name || session.shipping_details?.name || '',
           customer_email: session.customer_details?.email || '',
+          customer_phone: session.customer_details?.phone || '',
           total_amount: session.amount_total,
           currency: session.currency?.toUpperCase() || 'SEK',
           status: 'paid',
           product_data: {
-            name: product.title,
-            description: product.custom_description || product.description,
-            price: product.custom_price || product.price,
-            quantity: quantity
+            name: productDisplayName,
+            description: finalDescription,
+            price: session.amount_total, // Use actual paid amount
+            quantity: quantity,
+            printful_product_id: printfulProductId,
+            printful_variant_id: printfulVariantId,
+            variant_name: variantName,
           },
           shipping_address: session.shipping_details,
           stripe_payment_intent_id: session.payment_intent
@@ -109,7 +120,8 @@ serve(async (req) => {
 
       if (orderError) throw orderError;
 
-      if (printfulProductId && session.shipping_details) {
+      // Create Printful order if we have the necessary data
+      if (printfulVariantId && session.shipping_details) {
         try {
           const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
           
@@ -118,15 +130,22 @@ serve(async (req) => {
               name: session.shipping_details.name || '',
               email: session.customer_details?.email || '',
               address1: session.shipping_details.address?.line1 || '',
+              address2: session.shipping_details.address?.line2 || '',
               city: session.shipping_details.address?.city || '',
               country_code: session.shipping_details.address?.country || 'SE',
-              zip: session.shipping_details.address?.postal_code || ''
+              state_code: session.shipping_details.address?.state || '',
+              zip: session.shipping_details.address?.postal_code || '',
+              phone: session.customer_details?.phone || '',
             },
             items: [{
-              sync_variant_id: parseInt(printfulProductId),
-              quantity: quantity
-            }]
+              sync_variant_id: parseInt(printfulVariantId),
+              quantity: quantity,
+              retail_price: (session.amount_total / 100).toFixed(2), // Convert from cents
+            }],
+            external_id: order.id, // Link back to our order
           };
+
+          console.log('Creating Printful order:', JSON.stringify(printfulOrder, null, 2));
 
           const printfulResponse = await fetch("https://api.printful.com/orders", {
             method: "POST",
@@ -139,13 +158,19 @@ serve(async (req) => {
 
           if (printfulResponse.ok) {
             const printfulResult = await printfulResponse.json();
+            console.log('Printful order created:', printfulResult.result.id);
+            
             await supabase
               .from('orders')
               .update({ 
                 printful_order_id: printfulResult.result.id.toString(),
-                status: 'processing'
+                status: 'processing',
+                updated_at: new Date().toISOString(),
               })
               .eq('id', order.id);
+          } else {
+            const errorText = await printfulResponse.text();
+            console.error('Printful order failed:', printfulResponse.status, errorText);
           }
         } catch (printfulError) {
           console.error('Printful order failed:', printfulError);

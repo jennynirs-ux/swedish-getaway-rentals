@@ -11,6 +11,7 @@ import LakehouseGuide from "./pages/LakehouseGuide";
 import PropertyPage from "./pages/PropertyPage";
 import PropertyGuide from "./pages/PropertyGuide";
 import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
 import BookingSuccess from "./pages/BookingSuccess";
 import OrderSuccess from "./pages/OrderSuccess";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => {
             <Route path="/property/:id" element={<PropertyPage />} />
             <Route path="/property/:id/guide" element={<PropertyGuide />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/booking-success" element={<BookingSuccess />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/auth" element={<Auth />} />

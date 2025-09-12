@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     // Input validation and sanitization
     const requestBody = await req.json();
-    const { productId, quantity = 1, customerEmail, customerName } = requestBody;
+    const { productId, quantity = 1, customerEmail, customerName, variantId } = requestBody;
     
     if (!productId) {
       console.error("Missing product ID in request");
@@ -66,22 +66,36 @@ serve(async (req) => {
       throw new Error("Product not found");
     }
 
-    const finalPrice = product.custom_price || product.price;
+    // Determine which variant to use
+    let selectedVariant = null;
+    if (variantId && product.printful_data?.variants) {
+      selectedVariant = product.printful_data.variants.find((v: any) => v.id?.toString() === variantId);
+    }
+    
+    // Use variant price if available, otherwise use product price
+    const finalPrice = selectedVariant 
+      ? Math.round(parseFloat(selectedVariant.retail_price || '0') * 100)
+      : (product.price_override || product.custom_price || product.price);
+    
+    const finalTitle = product.title_override || product.title;
+    const finalDescription = product.description_override || product.custom_description || product.description;
+    const finalImage = product.main_image_override || product.image_url;
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
     // Create checkout session for product
     const session = await stripe.checkout.sessions.create({
-      customer_email: customerEmail,
+      customer_email: customerEmail || undefined,
       line_items: [
         {
           price_data: {
             currency: product.currency.toLowerCase(),
             product_data: {
-              name: product.title,
-              description: product.custom_description || product.description,
-              images: product.image_url ? [product.image_url] : [],
+              name: selectedVariant ? `${finalTitle} - ${selectedVariant.name}` : finalTitle,
+              description: finalDescription,
+              images: finalImage ? [finalImage] : [],
             },
             unit_amount: finalPrice,
           },
@@ -90,7 +104,7 @@ serve(async (req) => {
       ],
       mode: "payment",
       shipping_address_collection: {
-        allowed_countries: ['SE', 'NO', 'DK', 'FI', 'DE', 'GB', 'US', 'CA'],
+        allowed_countries: ['SE', 'NO', 'DK', 'FI', 'DE', 'GB', 'US', 'CA', 'AU', 'FR', 'ES', 'IT', 'NL', 'BE'],
       },
       success_url: `${req.headers.get("origin")}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/shop`,
@@ -98,7 +112,9 @@ serve(async (req) => {
         type: "product",
         product_id: productId,
         printful_product_id: product.printful_product_id,
+        printful_variant_id: selectedVariant?.id?.toString() || product.printful_sync_variant_id,
         quantity: quantity.toString(),
+        variant_name: selectedVariant?.name || '',
       },
     });
 

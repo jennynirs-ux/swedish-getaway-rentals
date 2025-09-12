@@ -38,13 +38,14 @@ const HomepageProducts = () => {
   const fetchFeaturedProducts = async () => {
     try {
       // First sync with Printful to get latest products
-      await supabase.functions.invoke('fetch-printful-products');
+      await supabase.functions.invoke('sync-printful-products');
       
       // Then fetch visible products for homepage (exactly 6 products)
       const { data, error } = await supabase
         .from('shop_products')
         .select('*')
         .eq('is_visible_home', true)
+        .eq('visible', true)
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false })
         .limit(6);
@@ -118,28 +119,32 @@ const HomepageProducts = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
           {products.map((product) => {
             const { title, description, price, imageUrl } = getDisplayData(product);
             
             return (
-              <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md">
-                <div className="aspect-[4/3] overflow-hidden rounded-t-lg">
-                  <img
-                    src={imageUrl || '/placeholder.svg'}
-                    alt={title}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+              <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm overflow-hidden">
+                <Link to={`/product/${product.id}`} className="block">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img
+                      src={imageUrl || '/placeholder.svg'}
+                      alt={title}
+                      loading="lazy"
+                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                </Link>
                 
-                <CardContent className="p-4 space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                    {title}
-                  </h3>
+                <CardContent className="p-3 space-y-2">
+                  <Link to={`/product/${product.id}`}>
+                    <h3 className="text-sm font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
+                      {title}
+                    </h3>
+                  </Link>
                   
                   <div className="flex items-center justify-between pt-1">
-                    <div className="text-xl font-bold text-primary">
+                    <div className="text-lg font-bold text-primary">
                       {formatPrice(price, product.currency)}
                     </div>
                     
@@ -147,7 +152,7 @@ const HomepageProducts = () => {
                       size="sm"
                       onClick={() => handlePurchase(product)}
                       disabled={purchasing === product.id}
-                      className="bg-primary hover:bg-primary/90"
+                      className="bg-primary hover:bg-primary/90 text-xs px-3 py-1"
                     >
                       {purchasing === product.id ? (
                         <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full mr-1" />
