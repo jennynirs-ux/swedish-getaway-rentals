@@ -38,7 +38,7 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const session = await stripe.checkout.sessions.retrieve(session_id, { expand: ['line_items'] });
     
     if (!session) {
       throw new Error("Session not found");
@@ -178,6 +178,30 @@ serve(async (req) => {
       }
 
       result.type = 'product';
+    } else if (session.metadata?.type === 'cart') {
+      const lineItems = (session as any).line_items?.data || [];
+      const items = lineItems.map((li: any) => ({
+        name: li.description,
+        quantity: li.quantity,
+        amount_subtotal: li.amount_subtotal,
+        amount_total: li.amount_total,
+      }));
+
+      const { error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          customer_name: session.customer_details?.name || session.shipping_details?.name || '',
+          customer_email: session.customer_details?.email || '',
+          customer_phone: session.customer_details?.phone || '',
+          total_amount: session.amount_total,
+          currency: session.currency?.toUpperCase() || 'SEK',
+          status: 'paid',
+          product_data: items,
+          shipping_address: session.shipping_details,
+          stripe_payment_intent_id: session.payment_intent
+        });
+      if (orderError) throw orderError;
+      result.type = 'cart';
     }
 
     return new Response(JSON.stringify(result), {

@@ -27,7 +27,7 @@ interface AvailabilityDate {
   minimum_nights: number;
 }
 
-const AvailabilityCalendar = () => {
+const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: string } = {}) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<string>('');
   const [availability, setAvailability] = useState<AvailabilityDate[]>([]);
@@ -59,7 +59,8 @@ const AvailabilityCalendar = () => {
       setProperties(data || []);
       
       if (data && data.length > 0) {
-        setSelectedProperty(data[0].id);
+        const found = defaultPropertyId && data.find(p => p.id === defaultPropertyId);
+        setSelectedProperty(found ? found.id : data[0].id);
       }
     } catch (error) {
       console.error('Error fetching properties:', error);

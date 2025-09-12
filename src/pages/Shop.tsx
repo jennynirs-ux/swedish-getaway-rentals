@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
+import { useCart } from "@/context/CartContext";
 
 interface ShopProduct {
   id: string;
@@ -34,6 +35,7 @@ const Shop = () => {
   const [filteredProducts, setFilteredProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const { addItem } = useCart();
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -83,10 +85,13 @@ const Shop = () => {
     }
   };
 
-  const handlePurchase = async (product: ShopProduct) => {
+  const handleAddToCart = async (product: ShopProduct) => {
     setPurchasing(product.id);
     try {
-      const { data, error } = await supabase.functions.invoke('create-product-payment', {
+      const { title, price, imageUrl } = getDisplayData(product);
+      addItem({ productId: product.id, title, price, currency: product.currency, quantity: 1, image: imageUrl });
+      toast({ title: 'Added to cart', description: title });
+      return;
         body: {
           productId: product.id,
           quantity: 1,
@@ -96,14 +101,15 @@ const Shop = () => {
 
       if (error) throw error;
       
-      if (data.url) {
+      // No redirect here; item added to cart
+      
         window.open(data.url, '_blank');
       }
     } catch (error) {
-      console.error('Error creating payment:', error);
+      console.error('Error adding to cart:', error);
       toast({
         title: "Error",
-        description: "Failed to create payment. Please try again.",
+        description: "Failed to add to cart.",
         variant: "destructive",
       });
     } finally {
@@ -223,17 +229,17 @@ const Shop = () => {
                             {formatPrice(price, product.currency)}
                           </div>
                           
-                          <Button 
-                            onClick={() => handlePurchase(product)} 
-                            disabled={purchasing === product.id} 
-                            size="sm"
-                          >
+                           <Button 
+                             onClick={() => handleAddToCart(product)} 
+                             disabled={purchasing === product.id} 
+                             size="sm"
+                           >
                             {purchasing === product.id ? (
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                             ) : (
                               <ShoppingCart className="w-3 h-3 mr-1" />
                             )}
-                            Buy Now
+                            Add to Cart
                           </Button>
                         </div>
                       </CardContent>

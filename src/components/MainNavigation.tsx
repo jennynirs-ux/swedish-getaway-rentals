@@ -29,18 +29,25 @@ const MainNavigation = ({ showBackButton = false, currentPage }: MainNavigationP
         )}
         
         <div className="flex items-center gap-4">
-          {currentPage !== 'shop' && (
-            <Link to="/shop">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-white hover:bg-white/20 border border-white/20"
-              >
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Nordic Shop
-              </Button>
-            </Link>
-          )}
+          <Link to="/shop">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-white hover:bg-white/20 border border-white/20"
+            >
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              Nordic Shop
+            </Button>
+          </Link>
+          <Link to="/cart">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-white hover:bg-white/20 border border-white/20"
+            >
+              Cart
+            </Button>
+          </Link>
         </div>
       </div>
     </nav>

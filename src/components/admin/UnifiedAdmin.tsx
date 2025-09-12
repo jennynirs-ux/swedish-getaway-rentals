@@ -5,6 +5,7 @@ import DashboardOverview from "./DashboardOverview";
 import BookingsManagement from "./BookingsManagement";
 import ShopProductsManagement from "./ShopProductsManagement";
 import OrdersManagement from "./OrdersManagement";
+import PropertiesManagement from "./PropertiesManagement";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -43,6 +44,7 @@ const UnifiedAdmin = () => {
         </TabsContent>
 
         <TabsContent value="rentals" className="space-y-6">
+          <PropertiesManagement />
           <BookingsManagement />
         </TabsContent>
 

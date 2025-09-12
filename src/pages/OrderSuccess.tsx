@@ -20,7 +20,7 @@ const OrderSuccess = () => {
   const handlePaymentSuccess = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('handle-payment-success', {
-        body: { sessionId }
+        body: { session_id: sessionId }
       });
 
       if (error) throw error;

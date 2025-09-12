@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
+import { useCart } from "@/context/CartContext";
 
 interface ShopProduct {
   id: string;
@@ -39,6 +40,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<ShopProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const { addItem } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -119,12 +121,14 @@ const ProductDetail = () => {
     return price;
   };
 
-  const handlePurchase = async () => {
+  const handleAddToCart = async () => {
     if (!product) return;
     
     setPurchasing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-product-payment', {
+      const { title } = getDisplayData(product);
+      addItem({ productId: product.id, title, price: currentPrice, currency: product.currency, quantity, image: product.main_image_override || product.image_url, variantId: selectedVariant, variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null });
+      return;
         body: {
           productId: product.id,
           quantity: quantity,
@@ -329,8 +333,8 @@ const ProductDetail = () => {
             <Card>
               <CardContent className="p-6">
                 <Button
-                  onClick={handlePurchase}
-                  disabled={purchasing || (variants.length > 1 && !selectedVariant)}
+                   onClick={handleAddToCart}
+                   disabled={purchasing || (variants.length > 1 && !selectedVariant)}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg"
                   size="lg"
                 >
@@ -349,7 +353,7 @@ const ProductDetail = () => {
                 
                 {variants.length > 1 && !selectedVariant && (
                   <p className="text-sm text-muted-foreground mt-2 text-center">
-                    Please select an option to continue
+                    Added to cart. Go to Cart to checkout
                   </p>
                 )}
               </CardContent>

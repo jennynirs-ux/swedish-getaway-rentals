@@ -65,7 +65,7 @@ serve(async (req) => {
               name: `Booking: ${bookingData.property_title}`,
               description: `${bookingData.check_in_date} to ${bookingData.check_out_date} for ${bookingData.number_of_guests} guests`,
             },
-            unit_amount: bookingData.total_amount,
+            unit_amount: Math.round(bookingData.total_amount * 100),
           },
           quantity: 1,
         },

@@ -175,12 +175,28 @@ const OrdersManagement = () => {
                     <Package className="h-4 w-4" />
                     Product Details
                   </h4>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p><strong>Product:</strong> {order.product_data.name || 'Product information not available'}</p>
-                    {order.product_data.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {order.product_data.description}
-                      </p>
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    {Array.isArray(order.product_data) ? (
+                      order.product_data.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-sm">
+                          <div>
+                            <strong>{item.name}</strong>
+                            {item.description && (
+                              <span className="text-muted-foreground"> — {item.description}</span>
+                            )}
+                          </div>
+                          <div className="text-right text-muted-foreground">x{item.quantity}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <p><strong>Product:</strong> {order.product_data.name || 'Product information not available'}</p>
+                        {order.product_data.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {order.product_data.description}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
