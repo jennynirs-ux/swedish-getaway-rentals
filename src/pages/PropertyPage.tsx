@@ -103,7 +103,7 @@ const PropertyPage = () => {
     };
 
     fetchProperty();
-  }, [id]);
+  }, [id, window.location.pathname]);
 
   const getAmenityIcon = (amenity: string) => {
     const amenityLower = amenity.toLowerCase();

@@ -5,20 +5,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import Index from "./pages/Index";
+import Shop from "./pages/Shop";
+import Cart from "./pages/Cart";
+import BookingSuccess from "./pages/BookingSuccess";
 import VillaGuide from "./pages/VillaGuide";
 import LakehouseGuide from "./pages/LakehouseGuide";
-import PropertyPage from "./pages/PropertyPage";
 import PropertyGuide from "./pages/PropertyGuide";
-import Shop from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
-import BookingSuccess from "./pages/BookingSuccess";
-import OrderSuccess from "./pages/OrderSuccess";
-import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import HostApplication from "./pages/HostApplication";
 import HostDashboard from "./components/host/HostDashboard";
+import PropertyPage from "./pages/PropertyPage";
+import OrderSuccess from "./pages/OrderSuccess";
+import ProductDetail from "./pages/ProductDetail";
 
 const queryClient = new QueryClient();
 
