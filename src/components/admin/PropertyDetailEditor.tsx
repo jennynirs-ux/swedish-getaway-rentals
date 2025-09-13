@@ -165,6 +165,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         review_rating: parseFloat(form.review_rating) || 5.0,
         review_count: parseInt(form.review_count) || 0,
         active: form.active,
+        updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase
@@ -176,7 +177,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
       toast({
         title: "Success",
-        description: "Property updated successfully",
+        description: "Property updated successfully - changes will appear on the property page immediately",
       });
 
       onSave?.();

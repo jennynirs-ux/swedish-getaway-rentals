@@ -31,8 +31,10 @@ interface ICalFeed {
   url: string;
   active: boolean;
   last_sync: string | null;
-  sync_status: 'success' | 'error' | 'pending';
-  error_message?: string;
+  sync_status: string;
+  error_message?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AirbnbSyncManagerProps {
@@ -58,22 +60,40 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
 
   const loadIcalFeeds = async () => {
     try {
-      // This would fetch from a theoretical ical_feeds table
-      // For now, we'll simulate with localStorage
-      const stored = localStorage.getItem(`ical_feeds_${propertyId}`);
-      if (stored) {
-        setIcalFeeds(JSON.parse(stored));
-      }
+      const { data, error } = await supabase
+        .from('ical_feeds')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setIcalFeeds(data || []);
     } catch (error) {
       console.error('Error loading iCal feeds:', error);
     }
   };
 
-  const generateExportUrl = () => {
-    // Generate the export URL for this property's calendar
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/api/ical/export/${propertyId}`;
-    setExportUrl(url);
+  const generateExportUrl = async () => {
+    try {
+      // Get the property's export secret
+      const { data: property, error } = await supabase
+        .from('properties')
+        .select('ical_export_secret')
+        .eq('id', propertyId)
+        .single();
+
+      if (error) throw error;
+
+      // Generate the export URL for this property's calendar
+      const baseUrl = 'https://bbuutvozqfzbsnllsiai.supabase.co';
+      const url = `${baseUrl}/functions/v1/export-ical/${propertyId}?secret=${property.ical_export_secret}`;
+      setExportUrl(url);
+    } catch (error) {
+      console.error('Error generating export URL:', error);
+      const baseUrl = 'https://bbuutvozqfzbsnllsiai.supabase.co';
+      const url = `${baseUrl}/functions/v1/export-ical/${propertyId}`;
+      setExportUrl(url);
+    }
   };
 
   const addIcalFeed = async () => {
@@ -87,19 +107,21 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
     }
 
     try {
-      const feed: ICalFeed = {
-        id: Date.now().toString(),
-        property_id: propertyId,
-        name: newFeed.name.trim(),
-        url: newFeed.url.trim(),
-        active: true,
-        last_sync: null,
-        sync_status: 'pending'
-      };
+      const { data, error } = await supabase
+        .from('ical_feeds')
+        .insert({
+          property_id: propertyId,
+          name: newFeed.name.trim(),
+          url: newFeed.url.trim(),
+          active: true,
+          sync_status: 'pending'
+        })
+        .select()
+        .single();
 
-      const updatedFeeds = [...icalFeeds, feed];
-      setIcalFeeds(updatedFeeds);
-      localStorage.setItem(`ical_feeds_${propertyId}`, JSON.stringify(updatedFeeds));
+      if (error) throw error;
+
+      setIcalFeeds(prev => [...prev, data]);
 
       toast({
         title: "iCal feed added",
@@ -110,7 +132,7 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
       setShowAddFeed(false);
 
       // Trigger initial sync
-      syncFeed(feed.id);
+      syncFeed(data.id);
     } catch (error) {
       console.error('Error adding iCal feed:', error);
       toast({
@@ -123,9 +145,14 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
 
   const removeFeed = async (feedId: string) => {
     try {
-      const updatedFeeds = icalFeeds.filter(f => f.id !== feedId);
-      setIcalFeeds(updatedFeeds);
-      localStorage.setItem(`ical_feeds_${propertyId}`, JSON.stringify(updatedFeeds));
+      const { error } = await supabase
+        .from('ical_feeds')
+        .delete()
+        .eq('id', feedId);
+
+      if (error) throw error;
+
+      setIcalFeeds(prev => prev.filter(f => f.id !== feedId));
 
       toast({
         title: "Feed removed",
@@ -138,11 +165,16 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
 
   const toggleFeed = async (feedId: string, active: boolean) => {
     try {
-      const updatedFeeds = icalFeeds.map(f => 
+      const { error } = await supabase
+        .from('ical_feeds')
+        .update({ active })
+        .eq('id', feedId);
+
+      if (error) throw error;
+
+      setIcalFeeds(prev => prev.map(f => 
         f.id === feedId ? { ...f, active } : f
-      );
-      setIcalFeeds(updatedFeeds);
-      localStorage.setItem(`ical_feeds_${propertyId}`, JSON.stringify(updatedFeeds));
+      ));
 
       toast({
         title: active ? "Feed enabled" : "Feed disabled",
@@ -156,40 +188,20 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
   const syncFeed = async (feedId: string) => {
     setSyncing(true);
     try {
-      // Simulate sync process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { data, error } = await supabase.functions.invoke('sync-ical', {
+        body: { feedId }
+      });
 
-      const updatedFeeds = icalFeeds.map(f => 
-        f.id === feedId 
-          ? { 
-              ...f, 
-              last_sync: new Date().toISOString(),
-              sync_status: 'success' as const,
-              error_message: undefined
-            }
-          : f
-      );
-      setIcalFeeds(updatedFeeds);
-      localStorage.setItem(`ical_feeds_${propertyId}`, JSON.stringify(updatedFeeds));
+      if (error) throw error;
+
+      await loadIcalFeeds(); // Refresh the feeds
 
       toast({
         title: "Sync completed",
-        description: "Calendar has been synchronized successfully"
+        description: `Calendar synchronized successfully. ${data.eventsProcessed} events processed, ${data.datesUpdated} dates updated.`
       });
     } catch (error) {
       console.error('Error syncing feed:', error);
-      const updatedFeeds = icalFeeds.map(f => 
-        f.id === feedId 
-          ? { 
-              ...f, 
-              sync_status: 'error' as const,
-              error_message: 'Failed to sync calendar'
-            }
-          : f
-      );
-      setIcalFeeds(updatedFeeds);
-      localStorage.setItem(`ical_feeds_${propertyId}`, JSON.stringify(updatedFeeds));
-
       toast({
         title: "Sync failed",
         description: "Failed to synchronize calendar",
@@ -220,7 +232,7 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
     });
   };
 
-  const getSyncStatusIcon = (status: ICalFeed['sync_status']) => {
+  const getSyncStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
         return <CheckCircle className="h-4 w-4 text-green-600" />;

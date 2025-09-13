@@ -74,7 +74,8 @@ const PropertyPage = () => {
           video_metadata: Array.isArray(propertyData.video_metadata) ? propertyData.video_metadata : [],
           amenities: Array.isArray(propertyData.amenities) ? propertyData.amenities : [],
           gallery_images: Array.isArray(propertyData.gallery_images) ? propertyData.gallery_images : [],
-          video_urls: Array.isArray(propertyData.video_urls) ? propertyData.video_urls : []
+          video_urls: Array.isArray(propertyData.video_urls) ? propertyData.video_urls : [],
+          amenities_data: Array.isArray(propertyData.amenities_data) ? propertyData.amenities_data : []
         };
 
         setProperty(mappedProperty);
@@ -87,6 +88,28 @@ const PropertyPage = () => {
     };
 
     fetchProperty();
+
+    // Set up real-time subscription for property updates
+    const channel = supabase
+      .channel('property-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'properties',
+          filter: `id=eq.${id}`
+        },
+        (payload) => {
+          console.log('Property updated:', payload);
+          fetchProperty(); // Refetch property data
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id, window.location.pathname]);
 
   if (loading) {

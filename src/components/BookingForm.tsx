@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
+import { PropertyCalendarWidget } from "@/components/admin/PropertyCalendarWidget";
 
 interface BookingFormProps {
   propertyId: string;
@@ -81,42 +82,62 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const nights = formData.check_in_date && formData.check_out_date ? 
     Math.ceil((new Date(formData.check_out_date).getTime() - new Date(formData.check_in_date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
+  const handleDateSelect = (checkIn: Date | null, checkOut: Date | null) => {
+    if (checkIn) {
+      setFormData(prev => ({ ...prev, check_in_date: checkIn.toISOString().split('T')[0] }));
+    }
+    if (checkOut) {
+      setFormData(prev => ({ ...prev, check_out_date: checkOut.toISOString().split('T')[0] }));
+    }
+  };
+
   return (
-    <Card className="shadow-soft-shadow">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarDays className="h-5 w-5" />
-          Book {propertyTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="check_in_date">Check-in</Label>
-              <Input 
-                id="check_in_date"
-                name="check_in_date"
-                type="date" 
-                value={formData.check_in_date}
-                onChange={handleChange}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
+    <div className="space-y-6">
+      {/* Interactive Calendar */}
+      <PropertyCalendarWidget
+        propertyId={propertyId}
+        basePrice={pricePerNight}
+        currency={currency}
+        onDateSelect={handleDateSelect}
+        mode="guest"
+      />
+
+      {/* Booking Form */}
+      <Card className="shadow-soft-shadow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" />
+            Complete Your Booking
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="check_in_date">Check-in</Label>
+                <Input 
+                  id="check_in_date"
+                  name="check_in_date"
+                  type="date" 
+                  value={formData.check_in_date}
+                  onChange={handleChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="check_out_date">Check-out</Label>
+                <Input 
+                  id="check_out_date"
+                  name="check_out_date"
+                  type="date" 
+                  value={formData.check_out_date}
+                  onChange={handleChange}
+                  min={formData.check_in_date || new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="check_out_date">Check-out</Label>
-              <Input 
-                id="check_out_date"
-                name="check_out_date"
-                type="date" 
-                value={formData.check_out_date}
-                onChange={handleChange}
-                min={formData.check_in_date || new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
@@ -205,9 +226,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
           >
             {loading ? 'Sending...' : 'Send booking request'}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

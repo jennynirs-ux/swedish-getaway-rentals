@@ -21,7 +21,7 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
 
           {/* Booking Content */}
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Booking Form */}
+          {/* Booking Form with Calendar */}
             <div>
               <Card>
                 <CardHeader>

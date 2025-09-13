@@ -280,6 +280,45 @@ export type Database = {
           },
         ]
       }
+      ical_feeds: {
+        Row: {
+          active: boolean
+          created_at: string
+          error_message: string | null
+          id: string
+          last_sync: string | null
+          name: string
+          property_id: string
+          sync_status: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_sync?: string | null
+          name: string
+          property_id: string
+          sync_status?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_sync?: string | null
+          name?: string
+          property_id?: string
+          sync_status?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -433,6 +472,7 @@ export type Database = {
           guidebook_sections: Json | null
           hero_image_url: string | null
           host_id: string | null
+          ical_export_secret: string | null
           id: string
           introduction_text: string | null
           location: string | null
@@ -471,6 +511,7 @@ export type Database = {
           guidebook_sections?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
+          ical_export_secret?: string | null
           id?: string
           introduction_text?: string | null
           location?: string | null
@@ -509,6 +550,7 @@ export type Database = {
           guidebook_sections?: Json | null
           hero_image_url?: string | null
           host_id?: string | null
+          ical_export_secret?: string | null
           id?: string
           introduction_text?: string | null
           location?: string | null
