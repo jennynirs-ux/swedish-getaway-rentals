@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
-import { PropertyCalendarWidget } from "@/components/admin/PropertyCalendarWidget";
+import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 
 interface BookingFormProps {
   propertyId: string;
@@ -94,13 +94,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
   return (
     <div className="space-y-6">
       {/* Interactive Calendar */}
-      <PropertyCalendarWidget
-        propertyId={propertyId}
-        basePrice={pricePerNight}
-        currency={currency}
-        onDateSelect={handleDateSelect}
-        mode="guest"
-      />
+        <PropertyCalendarOptimized
+          propertyId={propertyId}
+          basePrice={pricePerNight}
+          currency={currency}
+          onDateSelect={handleDateSelect}
+          mode="guest"
+        />
 
       {/* Booking Form */}
       <Card className="shadow-soft-shadow">

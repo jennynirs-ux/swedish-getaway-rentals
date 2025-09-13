@@ -1,12 +1,14 @@
 import { Star, MapPin, Users, Calendar, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LazyImage from "@/components/LazyImage";
 import { Property } from "@/hooks/useProperties";
+import { memo } from 'react';
 
 interface PropertyHeroProps {
   property: Property;
 }
 
-const PropertyHero = ({ property }: PropertyHeroProps) => {
+const PropertyHero = memo(({ property }: PropertyHeroProps) => {
   const scrollToBooking = () => {
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -96,6 +98,8 @@ const PropertyHero = ({ property }: PropertyHeroProps) => {
       </div>
     </section>
   );
-};
+});
+
+PropertyHero.displayName = 'PropertyHero';
 
 export default PropertyHero;

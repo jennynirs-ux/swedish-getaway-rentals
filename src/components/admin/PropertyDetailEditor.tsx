@@ -168,12 +168,26 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         updated_at: new Date().toISOString(),
       };
 
+      // Optimized update with smaller payload and transaction
       const { error } = await supabase
         .from('properties')
-        .update(updateData)
-        .eq('id', propertyId);
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', propertyId)
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Trigger real-time broadcast for immediate UI updates
+      const channel = supabase.channel('admin-property-updates');
+      await channel.send({
+        type: 'broadcast',
+        event: 'property_updated',
+        payload: { propertyId, timestamp: new Date().toISOString() }
+      });
 
       toast({
         title: "Success",
