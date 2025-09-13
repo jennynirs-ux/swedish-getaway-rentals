@@ -6,10 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Upload, X, Plus, Edit2, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Settings, Image, Star, BookOpen, Calendar, Upload } from "lucide-react";
+import { GalleryMetadataEditor } from "./GalleryMetadataEditor";
+import { AmenitiesEditor } from "./AmenitiesEditor";
+import { GuidebookEditor } from "./GuidebookEditor";
+import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
+import { AirbnbSyncManager } from "./AirbnbSyncManager";
 
 interface Property {
   id: string;
@@ -39,7 +44,6 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -50,14 +54,17 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     bathrooms: "1",
     max_guests: "4",
     amenities: [] as string[],
-    amenities_descriptions: {} as Record<string, string>,
+    amenities_data: [] as any[],
     hero_image_url: "",
     gallery_images: [] as string[],
     gallery_metadata: [] as { title: string; description: string; alt: string }[],
-    guidebook_sections: [] as { title: string; content: string; image_url?: string }[],
+    guidebook_sections: [] as any[],
+    tagline_line1: "",
+    tagline_line2: "",
+    review_rating: "5.0",
+    review_count: "0",
     active: true,
   });
-  const [newAmenity, setNewAmenity] = useState("");
 
   useEffect(() => {
     if (open && propertyId) {
@@ -76,7 +83,6 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
       if (error) throw error;
 
-      // Convert gallery_metadata safely
       const galleryMetadata = Array.isArray(data.gallery_metadata) 
         ? data.gallery_metadata.map((meta: any) => ({
             title: meta?.title || "",
@@ -113,11 +119,15 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bathrooms: data.bathrooms?.toString() || "1",
         max_guests: data.max_guests?.toString() || "4",
         amenities: data.amenities || [],
-        amenities_descriptions: (data as any).amenities_descriptions || {},
+        amenities_data: (data as any).amenities_data || [],
         hero_image_url: data.hero_image_url || "",
         gallery_images: data.gallery_images || [],
         gallery_metadata: galleryMetadata,
         guidebook_sections: (data as any).guidebook_sections || [],
+        tagline_line1: (data as any).tagline_line1 || "",
+        tagline_line2: (data as any).tagline_line2 || "",
+        review_rating: ((data as any).review_rating || 5.0).toString(),
+        review_count: ((data as any).review_count || 0).toString(),
         active: data.active,
       });
     } catch (error) {
@@ -130,126 +140,6 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleImageUpload = async (file: File, type: 'hero' | 'gallery') => {
-    setUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `property-images/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('property-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('property-images')
-        .getPublicUrl(filePath);
-
-      if (type === 'hero') {
-        setForm(prev => ({ ...prev, hero_image_url: publicUrl }));
-      } else {
-        setForm(prev => ({ 
-          ...prev, 
-          gallery_images: [...prev.gallery_images, publicUrl],
-          gallery_metadata: [
-            ...prev.gallery_metadata, 
-            { title: "", description: "", alt: `Gallery image ${prev.gallery_images.length + 1}` }
-          ]
-        }));
-      }
-
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeGalleryImage = (index: number) => {
-    setForm(prev => ({
-      ...prev,
-      gallery_images: prev.gallery_images.filter((_, i) => i !== index),
-      gallery_metadata: prev.gallery_metadata.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateGalleryMetadata = (index: number, field: string, value: string) => {
-    setForm(prev => ({
-      ...prev,
-      gallery_metadata: prev.gallery_metadata.map((meta, i) => 
-        i === index ? { ...meta, [field]: value } : meta
-      ),
-    }));
-  };
-
-  const addAmenity = () => {
-    if (newAmenity.trim() && !form.amenities.includes(newAmenity.trim())) {
-      const amenity = newAmenity.trim();
-      setForm(prev => ({ 
-        ...prev, 
-        amenities: [...prev.amenities, amenity],
-        amenities_descriptions: { ...prev.amenities_descriptions, [amenity]: "" }
-      }));
-      setNewAmenity("");
-    }
-  };
-
-  const removeAmenity = (amenity: string) => {
-    setForm(prev => {
-      const newDescriptions = { ...prev.amenities_descriptions };
-      delete newDescriptions[amenity];
-      return {
-        ...prev, 
-        amenities: prev.amenities.filter(a => a !== amenity),
-        amenities_descriptions: newDescriptions
-      };
-    });
-  };
-
-  const updateAmenityDescription = (amenity: string, description: string) => {
-    setForm(prev => ({
-      ...prev,
-      amenities_descriptions: {
-        ...prev.amenities_descriptions,
-        [amenity]: description
-      }
-    }));
-  };
-
-  const addGuidebookSection = () => {
-    setForm(prev => ({
-      ...prev,
-      guidebook_sections: [...prev.guidebook_sections, { title: "", content: "", image_url: "" }]
-    }));
-  };
-
-  const updateGuidebookSection = (index: number, field: string, value: string) => {
-    setForm(prev => ({
-      ...prev,
-      guidebook_sections: prev.guidebook_sections.map((section, i) => 
-        i === index ? { ...section, [field]: value } : section
-      )
-    }));
-  };
-
-  const removeGuidebookSection = (index: number) => {
-    setForm(prev => ({
-      ...prev,
-      guidebook_sections: prev.guidebook_sections.filter((_, i) => i !== index)
-    }));
   };
 
   const handleSave = async () => {
@@ -265,11 +155,15 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bathrooms: parseInt(form.bathrooms) || 1,
         max_guests: parseInt(form.max_guests) || 4,
         amenities: form.amenities,
-        amenities_descriptions: form.amenities_descriptions,
+        amenities_data: form.amenities_data,
         hero_image_url: form.hero_image_url,
         gallery_images: form.gallery_images,
         gallery_metadata: form.gallery_metadata,
         guidebook_sections: form.guidebook_sections,
+        tagline_line1: form.tagline_line1,
+        tagline_line2: form.tagline_line2,
+        review_rating: parseFloat(form.review_rating) || 5.0,
+        review_count: parseInt(form.review_count) || 0,
         active: form.active,
       };
 
@@ -313,301 +207,188 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Property: {property?.title}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={form.title}
-                    onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Property title..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Location</Label>
-                  <Input
-                    value={form.location}
-                    onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="Property location..."
-                  />
-                </div>
-              </div>
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="basic">
+              <Settings className="h-4 w-4 mr-2" />
+              Basic
+            </TabsTrigger>
+            <TabsTrigger value="gallery">
+              <Image className="h-4 w-4 mr-2" />
+              Gallery
+            </TabsTrigger>
+            <TabsTrigger value="amenities">
+              <Star className="h-4 w-4 mr-2" />
+              Amenities
+            </TabsTrigger>
+            <TabsTrigger value="guide">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Guide
+            </TabsTrigger>
+            <TabsTrigger value="calendar">
+              <Calendar className="h-4 w-4 mr-2" />
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger value="sync">
+              <Upload className="h-4 w-4 mr-2" />
+              Sync
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={form.description}
-                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Detailed property description..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label>Price per night (SEK)</Label>
-                  <Input
-                    type="number"
-                    value={form.price_per_night}
-                    onChange={(e) => setForm(prev => ({ ...prev, price_per_night: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Bedrooms</Label>
-                  <Input
-                    type="number"
-                    value={form.bedrooms}
-                    onChange={(e) => setForm(prev => ({ ...prev, bedrooms: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Bathrooms</Label>
-                  <Input
-                    type="number"
-                    value={form.bathrooms}
-                    onChange={(e) => setForm(prev => ({ ...prev, bathrooms: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Max guests</Label>
-                  <Input
-                    type="number"
-                    value={form.max_guests}
-                    onChange={(e) => setForm(prev => ({ ...prev, max_guests: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={form.active}
-                  onCheckedChange={(checked) => setForm(prev => ({ ...prev, active: checked }))}
-                />
-                <Label>Property is active and visible</Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Amenities */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Amenities</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={newAmenity}
-                  onChange={(e) => setNewAmenity(e.target.value)}
-                  placeholder="Add amenity..."
-                  onKeyPress={(e) => e.key === 'Enter' && addAmenity()}
-                />
-                <Button onClick={addAmenity} size="icon">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {form.amenities.map((amenity, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary">{amenity}</Badge>
-                      <button onClick={() => removeAmenity(amenity)}>
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <Textarea
-                      placeholder="Amenity description..."
-                      value={form.amenities_descriptions[amenity] || ""}
-                      onChange={(e) => updateAmenityDescription(amenity, e.target.value)}
-                      rows={2}
+          <TabsContent value="basic" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Title</Label>
+                    <Input
+                      value={form.title}
+                      onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Property title..."
                     />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Hero Image */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Hero Image</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {form.hero_image_url && (
-                <img
-                  src={form.hero_image_url}
-                  alt="Hero image"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              )}
-              <div className="flex gap-2">
-                <Input
-                  value={form.hero_image_url}
-                  onChange={(e) => setForm(prev => ({ ...prev, hero_image_url: e.target.value }))}
-                  placeholder="Hero image URL..."
-                />
-                <Button
-                  onClick={() => document.getElementById('hero-upload')?.click()}
-                  disabled={uploading}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
-                <input
-                  id="hero-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file, 'hero');
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Gallery Images */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Gallery Images</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button
-                onClick={() => document.getElementById('gallery-upload')?.click()}
-                disabled={uploading}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Add Gallery Image
-              </Button>
-              <input
-                id="gallery-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file, 'gallery');
-                }}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {form.gallery_images.map((image, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-2">
-                    <div className="relative">
-                      <img
-                        src={image}
-                        alt={`Gallery ${index + 1}`}
-                        className="w-full h-32 object-cover rounded"
-                      />
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-2 right-2"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Image title..."
-                        value={form.gallery_metadata[index]?.title || ""}
-                        onChange={(e) => updateGalleryMetadata(index, 'title', e.target.value)}
-                      />
-                      <Input
-                        placeholder="Alt text..."
-                        value={form.gallery_metadata[index]?.alt || ""}
-                        onChange={(e) => updateGalleryMetadata(index, 'alt', e.target.value)}
-                      />
-                      <Textarea
-                        placeholder="Image description..."
-                        value={form.gallery_metadata[index]?.description || ""}
-                        onChange={(e) => updateGalleryMetadata(index, 'description', e.target.value)}
-                        rows={2}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Location</Label>
+                    <Input
+                      value={form.location}
+                      onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
+                      placeholder="Property location..."
+                    />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Guidebook Sections */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Guidebook Content
-                <Button onClick={addGuidebookSection} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Section
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {form.guidebook_sections.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No guidebook sections yet. Add sections to help guests understand your property.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {form.guidebook_sections.map((section, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Section {index + 1}</h4>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={() => removeGuidebookSection(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
-                          placeholder="Section title..."
-                          value={section.title}
-                          onChange={(e) => updateGuidebookSection(index, 'title', e.target.value)}
-                        />
-                        <Input
-                          placeholder="Section image URL (optional)..."
-                          value={section.image_url || ""}
-                          onChange={(e) => updateGuidebookSection(index, 'image_url', e.target.value)}
-                        />
-                      </div>
-                      <Textarea
-                        placeholder="Section content..."
-                        value={section.content}
-                        onChange={(e) => updateGuidebookSection(index, 'content', e.target.value)}
-                        rows={4}
-                      />
-                    </div>
-                  ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
-        </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={form.description}
+                    onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Detailed property description..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>Price per night (SEK)</Label>
+                    <Input
+                      type="number"
+                      value={form.price_per_night}
+                      onChange={(e) => setForm(prev => ({ ...prev, price_per_night: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bedrooms</Label>
+                    <Input
+                      type="number"
+                      value={form.bedrooms}
+                      onChange={(e) => setForm(prev => ({ ...prev, bedrooms: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bathrooms</Label>
+                    <Input
+                      type="number"
+                      value={form.bathrooms}
+                      onChange={(e) => setForm(prev => ({ ...prev, bathrooms: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max guests</Label>
+                    <Input
+                      type="number"
+                      value={form.max_guests}
+                      onChange={(e) => setForm(prev => ({ ...prev, max_guests: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={form.active}
+                    onCheckedChange={(checked) => setForm(prev => ({ ...prev, active: checked }))}
+                  />
+                  <Label>Property is active and visible</Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="gallery">
+            <GalleryMetadataEditor
+              images={form.gallery_images}
+              metadata={form.gallery_metadata}
+              onChange={(metadata, images) => {
+                setForm(prev => ({
+                  ...prev,
+                  gallery_metadata: metadata,
+                  gallery_images: images || prev.gallery_images
+                }));
+              }}
+              onSave={handleSave}
+              saving={saving}
+            />
+          </TabsContent>
+
+          <TabsContent value="amenities">
+            <AmenitiesEditor
+              amenities={form.amenities_data}
+              onChange={(amenities) => {
+                setForm(prev => ({ ...prev, amenities_data: amenities }));
+              }}
+              onSave={handleSave}
+              saving={saving}
+            />
+          </TabsContent>
+
+          <TabsContent value="guide">
+            <GuidebookEditor
+              sections={form.guidebook_sections}
+              onChange={(sections) => {
+                setForm(prev => ({ ...prev, guidebook_sections: sections }));
+              }}
+              onSave={handleSave}
+              saving={saving}
+              propertyTitle={form.title}
+            />
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            {property && (
+              <PropertyCalendarWidget
+                propertyId={property.id}
+                basePrice={parseInt(form.price_per_night) || 0}
+                currency={form.currency}
+                mode="admin"
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="sync">
+            {property && (
+              <AirbnbSyncManager
+                propertyId={property.id}
+                propertyTitle={form.title}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
