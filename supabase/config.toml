@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.sync-ical]
 verify_jwt = false
+
+[functions.auto-sync-ical]
+verify_jwt = false
