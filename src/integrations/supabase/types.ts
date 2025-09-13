@@ -416,6 +416,7 @@ export type Database = {
         Row: {
           active: boolean
           amenities: string[] | null
+          amenities_data: Json | null
           amenities_descriptions: Json | null
           availability_text: string | null
           bathrooms: number
@@ -453,6 +454,7 @@ export type Database = {
         Insert: {
           active?: boolean
           amenities?: string[] | null
+          amenities_data?: Json | null
           amenities_descriptions?: Json | null
           availability_text?: string | null
           bathrooms?: number
@@ -490,6 +492,7 @@ export type Database = {
         Update: {
           active?: boolean
           amenities?: string[] | null
+          amenities_data?: Json | null
           amenities_descriptions?: Json | null
           availability_text?: string | null
           bathrooms?: number

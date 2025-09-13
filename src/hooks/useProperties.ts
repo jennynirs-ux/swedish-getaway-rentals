@@ -21,15 +21,23 @@ export interface Property {
   host_id: string;
   what_makes_special?: string;
   get_in_touch_info?: any;
-  guidebook_sections?: { title: string; content: string; image_url?: string }[];
+  guidebook_sections?: { title: string; content: string; image_url?: string; icon?: string; id?: string; is_prefilled?: boolean; data?: any }[];
   amenities_descriptions?: Record<string, string>;
+  amenities_data?: {
+    icon: string;
+    title: string;
+    tagline: string;
+    description: string;
+    image_url?: string;
+    features?: string[];
+  }[];
   review_rating?: number;
   review_count?: number;
   tagline_line1?: string;
   tagline_line2?: string;
   availability_text?: string;
   introduction_text?: string;
-  special_highlights?: { title: string; description: string }[];
+  special_highlights?: { title: string; description: string; icon?: string }[];
   pricing_table?: {
     off_season: { price: number; currency: string };
     peak_season: { price: number; currency: string };

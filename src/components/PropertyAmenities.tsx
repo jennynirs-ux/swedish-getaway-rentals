@@ -14,9 +14,9 @@ interface PropertyAmenitiesProps {
 interface AmenityData {
   icon: any;
   title: string;
+  tagline: string;
   description: string;
-  detailedDescription?: string;
-  image?: string;
+  image_url?: string;
   features?: string[];
 }
 
@@ -47,12 +47,19 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return Home;
   };
 
-  // Prepare amenities data
-  const amenitiesData: AmenityData[] = (property.amenities || []).slice(0, 8).map((amenity, index) => ({
+  // Prepare amenities data - use new amenities_data structure if available
+  const amenitiesData: AmenityData[] = property.amenities_data?.slice(0, 8).map(amenity => ({
+    icon: getAmenityIcon(amenity.icon),
+    title: amenity.title,
+    tagline: amenity.tagline,
+    description: amenity.description,
+    image_url: amenity.image_url,
+    features: amenity.features || []
+  })) || (property.amenities || []).slice(0, 8).map((amenity, index) => ({
     icon: getAmenityIcon(amenity),
     title: amenity,
-    description: property.amenities_descriptions?.[amenity] || `Enjoy ${amenity.toLowerCase()} during your stay`,
-    detailedDescription: property.amenities_descriptions?.[amenity],
+    tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
+    description: property.amenities_descriptions?.[amenity] || `Experience premium ${amenity.toLowerCase()} facilities during your stay at our property.`,
     features: []
   }));
 
@@ -97,7 +104,7 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
                 </h3>
                 
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {amenity.description}
+                  {amenity.tagline}
                 </p>
               </div>
             ))}

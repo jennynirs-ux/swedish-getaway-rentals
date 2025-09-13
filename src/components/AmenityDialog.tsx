@@ -7,9 +7,9 @@ interface AmenityDialogProps {
   amenity: {
     icon: LucideIcon;
     title: string;
+    tagline: string;
     description: string;
-    detailedDescription?: string;
-    image?: string;
+    image_url?: string;
     features?: string[];
   } | null;
   isOpen: boolean;
@@ -26,6 +26,7 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
       <DialogContent className="max-w-2xl w-full p-0 bg-card">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-2xl font-bold text-foreground">{amenity.title}</DialogTitle>
+          <p className="text-primary font-medium mt-1">{amenity.tagline}</p>
         </DialogHeader>
         
         <div className="p-6">
@@ -34,22 +35,12 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <IconComponent className="w-8 h-8 text-primary" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-muted-foreground text-lg leading-relaxed">
                 {amenity.description}
               </p>
             </div>
           </div>
-
-          {/* Detailed description */}
-          {amenity.detailedDescription && (
-            <div className="mb-6">
-              <h4 className="text-lg font-semibold text-foreground mb-3">Details</h4>
-              <p className="text-muted-foreground leading-relaxed">
-                {amenity.detailedDescription}
-              </p>
-            </div>
-          )}
 
           {/* Features list */}
           {amenity.features && amenity.features.length > 0 && (
@@ -57,8 +48,8 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
               <h4 className="text-lg font-semibold text-foreground mb-3">Included Features</h4>
               <ul className="space-y-2">
                 {amenity.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 text-muted-foreground">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                  <li key={index} className="flex items-center gap-3 text-muted-foreground">
+                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -67,10 +58,10 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
           )}
 
           {/* Image if available */}
-          {amenity.image && (
+          {amenity.image_url && (
             <div className="rounded-lg overflow-hidden">
               <img
-                src={amenity.image}
+                src={amenity.image_url}
                 alt={amenity.title}
                 className="w-full h-48 object-cover"
               />
