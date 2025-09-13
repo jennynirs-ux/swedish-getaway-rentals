@@ -19,6 +19,10 @@ import HostDashboard from "./components/host/HostDashboard";
 import PropertyPage from "./pages/PropertyPage";
 import OrderSuccess from "./pages/OrderSuccess";
 import ProductDetail from "./pages/ProductDetail";
+import Gallery from "./pages/Gallery";
+import Amenities from "./pages/Amenities";
+import Contact from "./pages/Contact";
+import BookNow from "./pages/BookNow";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +51,10 @@ const App = () => {
             <Route path="/admin" element={<Admin />} />
             <Route path="/host-application" element={<HostApplication />} />
             <Route path="/host-dashboard" element={<HostDashboard />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/amenities" element={<Amenities />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/book-now" element={<BookNow />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </TooltipProvider>

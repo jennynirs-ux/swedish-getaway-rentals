@@ -27,13 +27,24 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                {(property.footer_quick_links || ['Photo Gallery', 'Amenities', 'Book Now', 'Contact']).map((link, index) => (
-                  <li key={index}>
-                    <a href="#" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
-                      {link}
-                    </a>
-                  </li>
-                ))}
+                {(property.footer_quick_links || ['Photo Gallery', 'Amenities', 'Book Now', 'Contact']).map((link, index) => {
+                  const linkMap: Record<string, string> = {
+                    'Photo Gallery': '/gallery',
+                    'Amenities': '/amenities',
+                    'Book Now': '/book-now',
+                    'Contact': '/contact'
+                  };
+                  return (
+                    <li key={index}>
+                      <a 
+                        href={linkMap[link] || '#'} 
+                        className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 

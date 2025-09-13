@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Building2, ShoppingBag, Package, Users, Settings } from "lucide-react";
+import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck } from "lucide-react";
 import DashboardOverview from "./DashboardOverview";
 import BookingsManagement from "./BookingsManagement";
 import ShopProductsManagement from "./ShopProductsManagement";
@@ -8,6 +8,8 @@ import OrdersManagement from "./OrdersManagement";
 import PropertiesManagement from "./PropertiesManagement";
 import PropertyDetailEditor from "./PropertyDetailEditor";
 import HostManagement from "./HostManagement";
+import { ContentEditor } from "./ContentEditor";
+import { ShippingEditor } from "./ShippingEditor";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -24,7 +26,7 @@ const UnifiedAdmin = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Home className="w-4 h-4" />
             Dashboard
@@ -44,6 +46,14 @@ const UnifiedAdmin = () => {
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
             Orders
+          </TabsTrigger>
+          <TabsTrigger value="content" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Content
+          </TabsTrigger>
+          <TabsTrigger value="shipping" className="flex items-center gap-2">
+            <Truck className="w-4 h-4" />
+            Shipping
           </TabsTrigger>
         </TabsList>
 
@@ -79,6 +89,14 @@ const UnifiedAdmin = () => {
 
         <TabsContent value="orders" className="space-y-6">
           <OrdersManagement />
+        </TabsContent>
+
+        <TabsContent value="content" className="space-y-6">
+          <ContentEditor />
+        </TabsContent>
+
+        <TabsContent value="shipping" className="space-y-6">
+          <ShippingEditor />
         </TabsContent>
       </Tabs>
 

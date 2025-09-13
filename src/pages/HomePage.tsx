@@ -194,34 +194,19 @@ const HomePage = () => {
                 Discover authentic Nordic experiences in our handpicked properties.
               </p>
                <div className="flex gap-2">
-                 <Link to="/auth">
-                   <Button variant="outline">Admin Login</Button>
+                 <Link to="/host-application">
+                   <Button variant="outline">Become a Host</Button>
                  </Link>
                </div>
-               <div className="mt-4">
-                 <Link to="/host-application" className="text-muted-foreground hover:text-foreground underline">
-                   Do you want to become a Nordic Getaways host?
-                 </Link>
-               </div>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Popular Destinations</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="#" className="hover:text-foreground transition-colors">Västergötland</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Stockholm Archipelago</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Småland</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Dalarna</Link></li>
-              </ul>
             </div>
             
             <div>
               <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link to="/shop" className="hover:text-foreground transition-colors">Nordic Shop</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Seasonal Guides</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Swedish Traditions</Link></li>
-                <li><Link to="#" className="hover:text-foreground transition-colors">Sustainable Tourism</Link></li>
+                <li><Link to="/gallery" className="hover:text-foreground transition-colors">Photo Gallery</Link></li>
+                <li><Link to="/amenities" className="hover:text-foreground transition-colors">Amenities</Link></li>
+                <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
               </ul>
             </div>
           </div>

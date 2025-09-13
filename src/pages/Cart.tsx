@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Truck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import MainNavigation from '@/components/MainNavigation';
@@ -12,10 +12,60 @@ import MainNavigation from '@/components/MainNavigation';
 const CartPage = () => {
   const { items, total, updateQuantity, removeItem, clear } = useCart();
   const [checkingOut, setCheckingOut] = useState(false);
+  const [shippingCost, setShippingCost] = useState(0);
+  const [shippingSettings, setShippingSettings] = useState<any>(null);
 
   const formatPrice = (price: number, currency: string) => new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format(price / 100);
 
   const currency = items[0]?.currency || 'SEK';
+
+  useEffect(() => {
+    fetchShippingSettings();
+    calculateShipping();
+  }, [items, total]);
+
+  const fetchShippingSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('setting_value')
+        .eq('setting_key', 'shipping_settings')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data?.setting_value) {
+        setShippingSettings(data.setting_value);
+      }
+    } catch (error) {
+      console.error('Error fetching shipping settings:', error);
+    }
+  };
+
+  const calculateShipping = () => {
+    if (!shippingSettings || items.length === 0) {
+      setShippingCost(0);
+      return;
+    }
+
+    // Check for free shipping threshold
+    if (shippingSettings.free_shipping_threshold && total >= shippingSettings.free_shipping_threshold) {
+      setShippingCost(0);
+      return;
+    }
+
+    // Use fallback rates (assume Sweden for now)
+    const swedenRate = shippingSettings.fallback_rates?.find((rate: any) => rate.region === 'Sweden');
+    if (swedenRate) {
+      setShippingCost(swedenRate.rate);
+    } else {
+      setShippingCost(4900); // Default fallback
+    }
+  };
+
+  const totalWithShipping = total + shippingCost;
 
   const checkout = async () => {
     if (items.length === 0) return;
@@ -23,7 +73,8 @@ const CartPage = () => {
     try {
       const payload = {
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
-        customerEmail: ''
+        customerEmail: '',
+        shippingCost: shippingCost
       };
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
@@ -109,6 +160,30 @@ const CartPage = () => {
                   <span>Subtotal</span>
                   <span className="font-semibold">{formatPrice(total, currency)}</span>
                 </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    <span>Shipping</span>
+                  </div>
+                  <span className="font-semibold">
+                    {shippingCost === 0 ? 'Free' : formatPrice(shippingCost, currency)}
+                  </span>
+                </div>
+
+                {shippingSettings?.free_shipping_threshold && total < shippingSettings.free_shipping_threshold && (
+                  <div className="text-sm text-muted-foreground">
+                    Add {formatPrice(shippingSettings.free_shipping_threshold - total, currency)} more for free shipping
+                  </div>
+                )}
+
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between text-lg font-bold">
+                    <span>Total</span>
+                    <span>{formatPrice(totalWithShipping, currency)}</span>
+                  </div>
+                </div>
+                
                 <Button className="w-full" disabled={checkingOut} onClick={checkout}>
                   {checkingOut ? 'Processing...' : 'Checkout'}
                 </Button>
