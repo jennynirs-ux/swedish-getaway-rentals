@@ -182,7 +182,7 @@ const HomePage = () => {
       </section>
 
       {/* Featured Products Section */}
-      /*<HomepageProducts />*/
+      <HomepageProducts />
 
       {/* Footer */}
       <footer className="py-16 border-t border-border bg-card">
