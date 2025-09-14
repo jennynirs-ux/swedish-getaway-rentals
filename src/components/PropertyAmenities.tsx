@@ -5,7 +5,7 @@ import {
   Wifi, Car, Coffee, Utensils, Waves, TreePine, Mountain, Home, 
   Bed, Bath, Users, Flame, UtensilsCrossed, Car as Parking,
   Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake,
-  ShowerHead, Droplet, Sauna, WashingMachine, Baby, Key, Accessibility 
+  ShowerHead, Droplet, Spa, WashingMachine, Baby, Key, Accessibility 
 } from "lucide-react";
 
 interface PropertyAmenitiesProps {
@@ -35,7 +35,7 @@ const amenityIconMap: Record<string, any> = {
   coffee: Coffee,
   kitchen: Utensils,
   dining: UtensilsCrossed,
-  sauna: Sauna,
+  spa: Spa,
   hottub: Bath,
   jacuzzi: Bath,
   pool: Droplet,
