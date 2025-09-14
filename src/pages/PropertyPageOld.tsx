@@ -175,13 +175,13 @@ const PropertyPage = memo(() => {
       {/* 4. What Makes Special Section */}
       <PropertySpecialHighlights 
         property={property}
-        onViewGuide={() => setGuideDialogOpen(true)}
+        onViewGuide={() => setIsGuideDialogOpen(true)}
       />
 
       {/* 5. Guest Guide Dialog */}
       <GuestGuideDialog
-        isOpen={guideDialogOpen}
-        onClose={() => setGuideDialogOpen(false)}
+        isOpen={isGuideDialogOpen}
+        onClose={() => setIsGuideDialogOpen(false)}
         property={property}
       />
 
