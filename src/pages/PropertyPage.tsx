@@ -5,7 +5,7 @@ import { Property } from "@/hooks/useProperties";
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import PropertyNavigation from "@/components/PropertyNavigation";
 import PropertyHero from "@/components/PropertyHero";
-import PropertyGalleryOptimized from "@/components/PropertyGalleryOptimized";
+import PropertyGalleryOptimized from "@/components/PropertyGallery";
 import PropertyAmenities from "@/components/PropertyAmenities";
 import PropertySpecialHighlights from "@/components/PropertySpecialHighlights";
 import PropertyBooking from "@/components/PropertyBooking";
@@ -17,7 +17,7 @@ import { ArrowLeft } from "lucide-react";
 
 // Memoized components for better performance
 const MemoizedPropertyHero = memo(PropertyHero);
-const MemoizedPropertyGalleryOptimized = memo(PropertyGalleryOptimized);
+const MemoizedPropertyGallery = memo(PropertyGallery);
 const MemoizedPropertyAmenities = memo(PropertyAmenities);
 const MemoizedPropertySpecialHighlights = memo(PropertySpecialHighlights);
 const MemoizedPropertyBooking = memo(PropertyBooking);
