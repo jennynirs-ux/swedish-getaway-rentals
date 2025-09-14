@@ -62,7 +62,7 @@ const iconOptions = [
   { value: 'parking', label: 'Parking', icon: Car },
   { value: 'coffee', label: 'Coffee/Kitchen', icon: Coffee },
   { value: 'dining', label: 'Dining', icon: Utensils },
-  { value: 'sauna', label: 'Sauna/Spa', icon: Waves },
+  { value: 'spa', label: 'Spa', icon: Waves },
   { value: 'nature', label: 'Nature', icon: TreePine },
   { value: 'view', label: 'View', icon: Mountain },
   { value: 'home', label: 'Home', icon: Home },
