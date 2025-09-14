@@ -41,10 +41,6 @@ const HomepageProducts = () => {
       const { data, error } = await supabase
         .from('shop_products')
         .select('*')
-        .eq('is_visible_home', true)
-        .eq('visible', true)
-        .order('sort_order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false })
         .limit(6);
 
       if (error) throw error;
