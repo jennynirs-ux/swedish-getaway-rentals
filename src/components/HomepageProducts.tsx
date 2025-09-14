@@ -8,28 +8,16 @@ import { Link } from "react-router-dom";
 
 interface ShopProduct {
   id: string;
-  title: string;
-  description: string;
-  price: number;
-  currency: string;
-  image_url: string;
-  custom_description?: string;
-  custom_price?: number;
-  title_override?: string;
-  description_override?: string;
-  price_override?: number;
-  main_image_override?: string;
-  additional_images_override?: string[];
-  is_visible_shop: boolean;
-  is_visible_home: boolean;
-  sort_order?: number;
-  printful_data?: any;
+  title?: string;
+  description?: string;
+  price?: number;
+  currency?: string;
+  image_url?: string;
 }
 
 const HomepageProducts = () => {
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [purchasing, setPurchasing] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFeaturedProducts();
@@ -38,69 +26,31 @@ const HomepageProducts = () => {
   const fetchFeaturedProducts = async () => {
     try {
       const { data, error } = await supabase
-        .from('shop_products')
-        .select('*')
+        .from("shop_products")
+        .select("*")
         .limit(6);
-  
+
       if (error) {
-        console.error('Supabase error:', error);
+        console.error("Supabase error:", error);
       } else {
-        console.log('Fetched products:', data);
         setProducts(data || []);
       }
     } catch (err) {
-      console.error('Unexpected error:', err);
+      console.error("Unexpected error:", err);
     } finally {
       setLoading(false);
     }
   };
-  const handlePurchase = async (product: ShopProduct) => {
-    setPurchasing(product.id);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-product-payment', {
-        body: {
-          productId: product.id,
-          quantity: 1,
-          customerEmail: '',
-        }
-      });
 
-      if (error) throw error;
-      
-      if (data.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error creating payment:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create payment. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setPurchasing(null);
-    }
-  };
-
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
-      style: 'currency',
+  const formatPrice = (price?: number, currency?: string) => {
+    if (!price || !currency) return "";
+    return new Intl.NumberFormat("sv-SE", {
+      style: "currency",
       currency: currency,
     }).format(price / 100);
   };
 
-  const getDisplayData = (product: ShopProduct) => {
-    const title = product.title_override || product.title;
-    const description = product.description_override || product.custom_description || product.description;
-    const price = product.price_override || product.custom_price || product.price;
-    const imageUrl = product.main_image_override || product.image_url;
-    
-    return { title, description, price, imageUrl };
-  };
-
-  if (loading || products.length === 0) {
-    return null;
-  }
+  if (loading) return null;
 
   return (
     <section className="py-20 bg-white">
@@ -110,57 +60,43 @@ const HomepageProducts = () => {
             Nordic Essentials
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Bring a piece of Nordic beauty home with our curated collection of authentic Swedish products.
+            Bring a piece of Nordic beauty home with our curated collection of
+            authentic Swedish products.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {products.map((product) => {
-            const { title, description, price, imageUrl } = getDisplayData(product);
-            
-            return (
-              <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm overflow-hidden">
-                <Link to={`/product/${product.id}`} className="block">
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img
-                      src={imageUrl || '/placeholder.svg'}
-                      alt={title}
-                      loading="lazy"
-                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+          {products.map((product) => (
+            <Card
+              key={product.id}
+              className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm overflow-hidden"
+            >
+              <Link to={`/product/${product.id}`} className="block">
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    src={product.image_url || "/placeholder.svg"}
+                    alt={product.title || "Product"}
+                    loading="lazy"
+                    className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              </Link>
+
+              <CardContent className="p-3 space-y-2">
+                <Link to={`/product/${product.id}`}>
+                  <h3 className="text-sm font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
+                    {product.title}
+                  </h3>
                 </Link>
-                
-                <CardContent className="p-3 space-y-2">
-                  <Link to={`/product/${product.id}`}>
-                    <h3 className="text-sm font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
-                      {title}
-                    </h3>
-                  </Link>
-                  
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="text-lg font-bold text-primary">
-                      {formatPrice(price, product.currency)}
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      onClick={() => handlePurchase(product)}
-                      disabled={purchasing === product.id}
-                      className="bg-primary hover:bg-primary/90 text-xs px-3 py-1"
-                    >
-                      {purchasing === product.id ? (
-                        <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full mr-1" />
-                      ) : (
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                      )}
-                      Buy Now
-                    </Button>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="text-lg font-bold text-primary">
+                    {formatPrice(product.price, product.currency)}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <div className="text-center">
