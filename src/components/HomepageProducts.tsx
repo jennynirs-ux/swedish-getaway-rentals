@@ -37,21 +37,23 @@ const HomepageProducts = () => {
 
   const fetchFeaturedProducts = async () => {
     try {
-      // Hämta bara från databasen, ingen sync mot Printful här
       const { data, error } = await supabase
         .from('shop_products')
         .select('*')
         .limit(6);
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
+  
+      if (error) {
+        console.error('Supabase error:', error);
+      } else {
+        console.log('Fetched products:', data);
+        setProducts(data || []);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
     } finally {
       setLoading(false);
     }
   };
-
   const handlePurchase = async (product: ShopProduct) => {
     setPurchasing(product.id);
     try {
