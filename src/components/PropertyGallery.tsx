@@ -49,6 +49,17 @@ const PropertyGallery = ({ property }: PropertyGalleryProps) => {
     <section id="gallery-section" className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              Discover your getaway
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Every moment has been carefully designed to give you the perfect balance
+              of comfort and Nordic nature.
+            </p>
+          </div>
+
           {/* First 3 images as thumbnails */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {mediaItems.slice(0, 3).map((media, index) => (
