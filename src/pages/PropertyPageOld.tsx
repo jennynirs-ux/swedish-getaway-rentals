@@ -27,6 +27,9 @@ const PropertyPage = memo(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProperty = async () => {
