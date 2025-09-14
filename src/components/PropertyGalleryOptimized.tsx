@@ -110,17 +110,27 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
 
       {/* Dialogs with optimized props */}
       <ImageDialog
-        images={property.gallery_images || []}
-        currentIndex={selectedImageIndex || 0}
+        images={(property.gallery_images || []).map((image, index) => ({
+          src: image,
+          alt: `Gallery image ${index + 1}`,
+          title: `${property.title} - Image ${index + 1}`,
+          description: `Gallery image from ${property.title}`
+        }))}
         isOpen={selectedImageIndex !== null}
         onClose={handleCloseImageDialog}
+        initialIndex={selectedImageIndex || 0}
       />
       
       <MediaDialog
-        mediaItems={property.video_urls || []}
-        currentIndex={selectedMediaIndex || 0}
+        media={(property.video_urls || []).map((video, index) => ({
+          type: 'video' as const,
+          url: video,
+          title: `${property.title} - Video ${index + 1}`,
+          alt: `Video from ${property.title}`
+        }))}
         isOpen={selectedMediaIndex !== null}
         onClose={handleCloseMediaDialog}
+        initialIndex={selectedMediaIndex || 0}
       />
     </section>
   );

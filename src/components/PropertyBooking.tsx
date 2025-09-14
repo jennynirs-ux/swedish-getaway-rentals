@@ -1,4 +1,5 @@
 import BookingForm from "./BookingForm";
+import PropertyCalendarOptimized from "./PropertyCalendarOptimized";
 import { Property } from "@/hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -44,9 +45,19 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
               </Card>
             </div>
 
-            {/* Pricing Information */}
-            <div className="space-y-6">
-              {property.pricing_table && (
+            {/* Calendar Section */}
+            <div>
+              <PropertyCalendarOptimized
+                propertyId={property.id}
+                basePrice={property.price_per_night || 0}
+                currency={property.currency}
+                mode="guest"
+              />
+            </div>
+          </div>
+
+          {/* Pricing Information Below */}
+          <div className="mt-8 space-y-6">{property.pricing_table && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Pricing Information</CardTitle>
@@ -120,8 +131,7 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                     </div>
                   </CardContent>
                 </Card>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>

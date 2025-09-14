@@ -5,7 +5,7 @@ import { Property } from "@/hooks/useProperties";
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import PropertyNavigation from "@/components/PropertyNavigation";
 import PropertyHero from "@/components/PropertyHero";
-import PropertyGallery from "@/components/PropertyGallery";
+import PropertyGalleryOptimized from "@/components/PropertyGalleryOptimized";
 import PropertyAmenities from "@/components/PropertyAmenities";
 import PropertySpecialHighlights from "@/components/PropertySpecialHighlights";
 import PropertyBooking from "@/components/PropertyBooking";
@@ -17,7 +17,7 @@ import { ArrowLeft } from "lucide-react";
 
 // Memoized components for better performance
 const MemoizedPropertyHero = memo(PropertyHero);
-const MemoizedPropertyGallery = memo(PropertyGallery);
+const MemoizedPropertyGalleryOptimized = memo(PropertyGalleryOptimized);
 const MemoizedPropertyAmenities = memo(PropertyAmenities);
 const MemoizedPropertySpecialHighlights = memo(PropertySpecialHighlights);
 const MemoizedPropertyBooking = memo(PropertyBooking);
@@ -68,6 +68,7 @@ const PropertyPage = memo(() => {
       .from('properties')
       .select(`
         id,
+        host_id,
         title,
         description,
         location,
@@ -106,12 +107,13 @@ const PropertyPage = memo(() => {
         amenities: Array.isArray(data.amenities) ? data.amenities : [],
         gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
         video_urls: Array.isArray(data.video_urls) ? data.video_urls : [],
-        gallery_metadata: Array.isArray(data.gallery_metadata) ? data.gallery_metadata : [],
-        video_metadata: Array.isArray(data.video_metadata) ? data.video_metadata : [],
-        amenities_data: Array.isArray(data.amenities_data) ? data.amenities_data : [],
-        guidebook_sections: Array.isArray(data.guidebook_sections) ? data.guidebook_sections : [],
-        special_highlights: Array.isArray(data.special_highlights) ? data.special_highlights : [],
-        footer_quick_links: Array.isArray(data.footer_quick_links) ? data.footer_quick_links : ["Photo Gallery", "Amenities", "Book Now", "Contact"]
+        gallery_metadata: Array.isArray(data.gallery_metadata) ? data.gallery_metadata as any[] : [],
+        video_metadata: Array.isArray(data.video_metadata) ? data.video_metadata as any[] : [],
+        amenities_data: Array.isArray(data.amenities_data) ? data.amenities_data as any[] : [],
+        guidebook_sections: Array.isArray(data.guidebook_sections) ? data.guidebook_sections as any[] : [],
+        special_highlights: Array.isArray(data.special_highlights) ? data.special_highlights as any[] : [],
+        footer_quick_links: Array.isArray(data.footer_quick_links) ? data.footer_quick_links as string[] : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
+        pricing_table: data.pricing_table as any
       };
       return { data: mappedProperty, error: null };
     }
@@ -147,11 +149,11 @@ const PropertyPage = memo(() => {
     return (
       <>
         <MemoizedPropertyHero property={property} />
-        <MemoizedPropertyGallery property={property} />
+        <MemoizedPropertyGalleryOptimized property={property} />
         <MemoizedPropertyAmenities property={property} />
         <MemoizedPropertySpecialHighlights 
           property={property}
-          onOpenGuide={handleGuideOpen}
+          onViewGuide={handleGuideOpen}
         />
         <MemoizedPropertyBooking property={property} />
         <MemoizedPropertyFooter property={property} />

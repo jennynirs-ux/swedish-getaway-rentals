@@ -82,12 +82,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const nights = formData.check_in_date && formData.check_out_date ? 
     Math.ceil((new Date(formData.check_out_date).getTime() - new Date(formData.check_in_date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
-  const handleDateSelect = (checkIn: Date | null, checkOut: Date | null) => {
-    if (checkIn) {
-      setFormData(prev => ({ ...prev, check_in_date: checkIn.toISOString().split('T')[0] }));
+  const handleDateSelect = (dates: { checkIn: Date | null; checkOut: Date | null }) => {
+    if (dates.checkIn) {
+      setFormData(prev => ({ ...prev, check_in_date: dates.checkIn!.toISOString().split('T')[0] }));
     }
-    if (checkOut) {
-      setFormData(prev => ({ ...prev, check_out_date: checkOut.toISOString().split('T')[0] }));
+    if (dates.checkOut) {
+      setFormData(prev => ({ ...prev, check_out_date: dates.checkOut!.toISOString().split('T')[0] }));
     }
   };
 
