@@ -4,7 +4,8 @@ import { AmenityDialog } from "@/components/AmenityDialog";
 import { 
   Wifi, Car, Coffee, Utensils, Waves, TreePine, Mountain, Home, 
   Bed, Bath, Users, Flame, UtensilsCrossed, Car as Parking,
-  Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake
+  Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake,
+  ShowerHead, Droplet, Sauna, WashingMachine, Baby, Key, Accessibility 
 } from "lucide-react";
 
 interface PropertyAmenitiesProps {
@@ -25,27 +26,45 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Icon mapping for amenities
-  const getAmenityIcon = (amenity: string) => {
-    const amenityLower = amenity.toLowerCase();
-    if (amenityLower.includes('wifi') || amenityLower.includes('internet')) return Wifi;
-    if (amenityLower.includes('parking') || amenityLower.includes('garage')) return Parking;
-    if (amenityLower.includes('coffee') || amenityLower.includes('kitchen')) return Coffee;
-    if (amenityLower.includes('dining') || amenityLower.includes('restaurant')) return Utensils;
-    if (amenityLower.includes('sauna') || amenityLower.includes('spa') || amenityLower.includes('hot tub')) return Waves;
-    if (amenityLower.includes('forest') || amenityLower.includes('nature')) return TreePine;
-    if (amenityLower.includes('view') || amenityLower.includes('mountain')) return Mountain;
-    if (amenityLower.includes('bedroom') || amenityLower.includes('bed')) return Bed;
-    if (amenityLower.includes('bathroom') || amenityLower.includes('bath')) return Bath;
-    if (amenityLower.includes('guest') || amenityLower.includes('people')) return Users;
-    if (amenityLower.includes('fireplace') || amenityLower.includes('fire')) return Flame;
-    if (amenityLower.includes('heating') || amenityLower.includes('warm')) return Thermometer;
-    if (amenityLower.includes('security') || amenityLower.includes('safe')) return Shield;
-    if (amenityLower.includes('tv') || amenityLower.includes('television')) return Tv;
-    if (amenityLower.includes('gym') || amenityLower.includes('fitness')) return Dumbbell;
-    if (amenityLower.includes('pet') || amenityLower.includes('dog')) return PawPrint;
-    if (amenityLower.includes('air') || amenityLower.includes('cooling')) return Snowflake;
-    return Home;
-  };
+// Ikon-mappning
+const amenityIconMap: Record<string, any> = {
+  wifi: Wifi,
+  internet: Wifi,
+  parking: Parking,
+  garage: Parking,
+  coffee: Coffee,
+  kitchen: Utensils,
+  dining: UtensilsCrossed,
+  sauna: Sauna,
+  hottub: Bath,
+  jacuzzi: Bath,
+  pool: Droplet,
+  shower: ShowerHead,
+  forest: TreePine,
+  mountain: Mountain,
+  view: Mountain,
+  bed: Bed,
+  bath: Bath,
+  guest: Users,
+  fireplace: Flame,
+  heating: Thermometer,
+  security: Shield,
+  tv: Tv,
+  gym: Dumbbell,
+  pet: PawPrint,
+  air: Snowflake,
+  laundry: WashingMachine,
+  baby: Baby,
+  key: Key,
+  accessible: Accessibility
+};
+
+const getAmenityIcon = (title: string) => {
+  const key = Object.keys(amenityIconMap).find(k =>
+    title.toLowerCase().includes(k)
+  );
+  return key ? amenityIconMap[key] : Home;
+};
 
   // Prepare amenities data - use new amenities_data structure if available
   const amenitiesData: AmenityData[] = property.amenities_data?.slice(0, 8).map(amenity => ({
