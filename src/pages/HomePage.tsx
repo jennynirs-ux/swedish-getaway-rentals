@@ -103,15 +103,22 @@ const HomePage = () => {
     fetchAvailability();
   }, [filters?.startDate, filters?.endDate, properties]);
 
-  // Filtrera i minnet: guests + amenities + (ev) availability
+    // Filtrera i minnet: guests + amenities + propertyType + (ev) availability
   const filteredProperties = useMemo(() => {
     // Visa alla om inga riktiga filter
     if (!hasFilters) return properties;
-
+  
     return properties.filter((p: any) => {
       // guests
       if (filters?.guests && p.max_guests < filters.guests) return false;
-
+  
+      // propertyType (visa alla om "all" eller tomt)
+      if (filters?.propertyType && filters.propertyType !== "all") {
+        if (!p.title.toLowerCase().includes(filters.propertyType.toLowerCase())) {
+          return false;
+        }
+      }
+  
       // amenities (alla valda måste finnas)
       if (filters?.amenities && filters.amenities.length > 0) {
         const names = getAmenityNames(p);
@@ -120,12 +127,12 @@ const HomePage = () => {
           if (!names.some((n) => n.includes(w))) return false;
         }
       }
-
+  
       // availability via Supabase-resultat
       if (filters?.startDate && filters?.endDate && availableIds) {
         if (!availableIds.has(String(p.id))) return false;
       }
-
+  
       return true;
     });
   }, [properties, filters, hasFilters, availableIds]);
