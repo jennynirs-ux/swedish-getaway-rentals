@@ -195,38 +195,41 @@ const Shop = () => {
                 </h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredProducts.map(product => {
                   const { title, description, price, imageUrl } = getDisplayData(product);
-                  
+              
                   return (
-                    <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    <Card 
+                      key={product.id} 
+                      className="group hover:shadow-md transition-all duration-300 overflow-hidden border"
+                    >
                       <Link to={`/product/${product.id}`} className="block">
-                        <div className="aspect-[4/3] overflow-hidden">
+                        <div className="aspect-square overflow-hidden bg-muted">
                           <img 
                             src={imageUrl || '/placeholder.svg'} 
                             alt={title} 
                             loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300" 
                           />
                         </div>
                       </Link>
                       
-                      <CardHeader className="pb-2">
+                      <CardHeader className="p-3 pb-1">
                         <Link to={`/product/${product.id}`}>
-                          <CardTitle className="text-lg font-semibold line-clamp-2 hover:text-primary transition-colors">
+                          <CardTitle className="text-sm font-semibold line-clamp-2 hover:text-primary transition-colors">
                             {title}
                           </CardTitle>
                         </Link>
                       </CardHeader>
                       
-                      <CardContent className="space-y-4">
-                        <p className="text-muted-foreground text-sm line-clamp-2">
+                      <CardContent className="px-3 pb-3 space-y-2">
+                        <p className="text-muted-foreground text-xs line-clamp-2">
                           {description}
                         </p>
                         
                         <div className="flex items-center justify-between">
-                          <div className="text-xl font-bold text-primary">
+                          <div className="text-base font-bold text-primary">
                             {formatPrice(price, product.currency)}
                           </div>
                           
@@ -234,13 +237,14 @@ const Shop = () => {
                              onClick={() => handleAddToCart(product)} 
                              disabled={purchasing === product.id} 
                              size="sm"
+                             className="text-xs px-2"
                            >
                             {purchasing === product.id ? (
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                             ) : (
                               <ShoppingCart className="w-3 h-3 mr-1" />
                             )}
-                            Add to Cart
+                            Add
                           </Button>
                         </div>
                       </CardContent>
@@ -248,6 +252,7 @@ const Shop = () => {
                   );
                 })}
               </div>
+
             </>
           )}
         </div>
