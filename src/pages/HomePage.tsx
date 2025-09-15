@@ -130,26 +130,28 @@ const HomePage = () => {
               Looking for the perfect retreat read?
             </h2>
 
-            <div className="grid lg:grid-cols-12 gap-8 items-center">
-              {/* Book Cover */}
-              <div className="lg:col-span-4 flex justify-center lg:justify-start mb-6 lg:mb-0">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Book Cover - Left */}
+              <div className="lg:col-span-4 flex justify-center lg:justify-start">
                 <div className="relative group">
                   <img
                     src={bookCover}
                     alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs"
-                    className="w-40 sm:w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
+                    className="w-32 sm:w-40 md:w-44 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 rounded-lg transition-opacity"></div>
                 </div>
               </div>
 
-              {/* Book Info */}
+              {/* Book Info - Right */}
               <div className="lg:col-span-8 space-y-4">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-1">
                     When the Ocean changed everything
                   </h3>
-                  <h4 className="text-base sm:text-lg text-muted-foreground mb-3">My Journey through Disaster</h4>
+                  <h4 className="text-base sm:text-lg text-muted-foreground mb-3">
+                    My Journey through Disaster
+                  </h4>
                   <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                     A gripping and unforgettable true story of survival and meaning. Perfect reading for your
                     Swedish getaway. Available in both Swedish and English.
@@ -157,64 +159,42 @@ const HomePage = () => {
                 </div>
 
                 {/* Reviews Carousel */}
-                <div className="relative mx-4 sm:mx-0">
-                  <Carousel className="w-full max-w-full lg:max-w-lg">
+                <div className="relative">
+                  <Carousel className="w-full max-w-lg">
                     <CarouselContent>
                       <CarouselItem>
-                        <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
-                              {[1, 2, 3, 4, 5].map((i) => (
-                                <span key={i}>★</span>
-                              ))}
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
                             </div>
                             <span className="ml-2 text-sm text-muted-foreground">by Patrik</span>
                           </div>
                           <p className="text-sm text-muted-foreground italic">
-                            "A gripping and unforgettable story of survival and meaning that stays with you long
-                            after the last page."
+                            "A gripping and unforgettable story of survival and meaning that stays with you long after the last page."
                           </p>
                         </div>
                       </CarouselItem>
                       <CarouselItem>
-                        <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
-                              {[1, 2, 3, 4, 5].map((i) => (
-                                <span key={i}>★</span>
-                              ))}
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
                             </div>
                             <span className="ml-2 text-sm text-muted-foreground">by Anna</span>
                           </div>
                           <p className="text-sm text-muted-foreground italic">
-                            "A very gripping and captivating book. I read it straight through, couldn't stop
-                            reading..."
-                          </p>
-                        </div>
-                      </CarouselItem>
-                      <CarouselItem>
-                        <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
-                          <div className="flex items-center mb-2">
-                            <div className="flex text-yellow-500 text-sm">
-                              {[1, 2, 3, 4, 5].map((i) => (
-                                <span key={i}>★</span>
-                              ))}
-                            </div>
-                            <span className="ml-2 text-sm text-muted-foreground">by Per</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground italic">
-                            "An emotional journey that captured my heart. Jenny's storytelling is both beautiful
-                            and devastating."
+                            "A very gripping and captivating book. I read it straight through, couldn't stop reading..."
                           </p>
                         </div>
                       </CarouselItem>
                     </CarouselContent>
-                    <CarouselPrevious className="hidden sm:flex -left-2 lg:-left-12 top-1/2 -translate-y-1/2" />
-                    <CarouselNext className="hidden sm:flex -right-2 lg:-right-12 top-1/2 -translate-y-1/2" />
+                    <CarouselPrevious className="hidden sm:flex -left-6 top-1/2 -translate-y-1/2" />
+                    <CarouselNext className="hidden sm:flex -right-6 top-1/2 -translate-y-1/2" />
                   </Carousel>
                 </div>
 
-                {/* CTA */}
+                {/* Call to Action */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button asChild size="sm" className="flex-1">
                     <a
@@ -240,6 +220,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
 
       {/* Featured Products Section */}
       <HomepageProducts />
