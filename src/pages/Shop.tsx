@@ -148,12 +148,12 @@ const Shop = () => {
       {/* Header */}
       <section className="relative bg-gradient-to-r from-primary/10 to-secondary/10 py-20 pt-28 overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-70"
           style={{
             backgroundImage: `url(${forestHeroBg})`
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-background/60"></div>
         <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Nordic Store</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
