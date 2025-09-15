@@ -12,6 +12,7 @@ import {
   Calendar,
   Bed,
   Bath,
+  Boat,
   Heart,
   Share2,
   Coffee,
@@ -26,7 +27,6 @@ import {
   Dumbbell,
   PawPrint,
   Snowflake,
-  Shower,
   Droplets,
   HeartHandshake,
   Cigarette,
@@ -83,14 +83,14 @@ const PropertyCard = ({
     if (lower.includes('parking') || lower.includes('garage')) return <Car className="w-4 h-4" />;
     if (lower.includes('coffee')) return <Coffee className="w-4 h-4" />;
     if (lower.includes('kitchen')) return <UtensilsCrossed className="w-4 h-4" />;
+    if (lower.includes('boat') || lower.includes('canoe') || lower.includes('kayak')) return <Boat className="w-4 h-4" />;
     if (lower.includes('dining') || lower.includes('restaurant')) return <Utensils className="w-4 h-4" />;
-    if (lower.includes('sauna') || lower.includes('spa') || lower.includes('hot tub')) return <Waves className="w-4 h-4" />;
+    if (lower.includes('jacuzzi') || lower.includes('spa') || lower.includes('hot tub')) return <Bath className="w-4 h-4" />;
     if (lower.includes('pool') || lower.includes('swimming')) return <Droplets className="w-4 h-4" />;
     if (lower.includes('forest') || lower.includes('nature')) return <TreePine className="w-4 h-4" />;
     if (lower.includes('mountain') || lower.includes('view')) return <Mountain className="w-4 h-4" />;
     if (lower.includes('bedroom') || lower.includes('bed')) return <Bed className="w-4 h-4" />;
     if (lower.includes('bathroom') || lower.includes('bath')) return <Bath className="w-4 h-4" />;
-    if (lower.includes('shower')) return <Shower className="w-4 h-4" />;
     if (lower.includes('guest') || lower.includes('people')) return <Users className="w-4 h-4" />;
     if (lower.includes('fireplace') || lower.includes('fire')) return <Flame className="w-4 h-4" />;
     if (lower.includes('heating') || lower.includes('warm')) return <Thermometer className="w-4 h-4" />;
