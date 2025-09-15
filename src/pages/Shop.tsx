@@ -205,7 +205,7 @@ const Shop = () => {
                       className="group hover:shadow-md transition-all duration-300 overflow-hidden border"
                     >
                       <Link to={`/product/${product.id}`} className="block">
-                        <div className="aspect-square overflow-hidden bg-muted">
+                        <div className="aspect-[4/3] overflow-hidden bg-muted">
                           <img 
                             src={imageUrl || '/placeholder.svg'} 
                             alt={title} 
@@ -252,6 +252,7 @@ const Shop = () => {
                   );
                 })}
               </div>
+
 
             </>
           )}
