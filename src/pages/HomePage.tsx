@@ -129,22 +129,22 @@ const HomePage = () => {
             <h2 className="text-3xl font-bold text-foreground mb-8 text-left">
               Looking for the perfect retreat read?
             </h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Book Cover - Left */}
-              <div className="lg:col-span-4 flex justify-center lg:justify-start">
+      
+            <div className="grid grid-cols-12 gap-6 items-start">
+              {/* Book Cover - Always Left */}
+              <div className="col-span-4 flex justify-center lg:justify-start">
                 <div className="relative group">
                   <img
                     src={bookCover}
                     alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs"
-                    className="w-32 sm:w-40 md:w-44 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
+                    className="w-28 sm:w-32 md:w-40 lg:w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 rounded-lg transition-opacity"></div>
                 </div>
               </div>
-
-              {/* Book Info - Right */}
-              <div className="lg:col-span-8 space-y-4">
+      
+              {/* Book Info - Always Right */}
+              <div className="col-span-8 space-y-4">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-1">
                     When the Ocean changed everything
@@ -157,10 +157,10 @@ const HomePage = () => {
                     Swedish getaway. Available in both Swedish and English.
                   </p>
                 </div>
-
+      
                 {/* Reviews Carousel */}
                 <div className="relative">
-                  <Carousel className="w-full max-w-lg">
+                  <Carousel className="w-full max-w-full">
                     <CarouselContent>
                       <CarouselItem>
                         <div className="bg-card/50 rounded-lg p-4 border border-border/50">
@@ -193,7 +193,7 @@ const HomePage = () => {
                     <CarouselNext className="hidden sm:flex -right-6 top-1/2 -translate-y-1/2" />
                   </Carousel>
                 </div>
-
+      
                 {/* Call to Action */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button asChild size="sm" className="flex-1">
@@ -220,7 +220,6 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-
 
       {/* Featured Products Section */}
       <HomepageProducts />
