@@ -126,7 +126,7 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                     )}
                     <div className="pt-2 border-t">
                       <p className="text-sm text-green-600 font-medium">
-                        ⚡ Fast Response: {property.contact_response_time || 'We typically respond to inquiries within 2 hours.'}
+                        Fast Response: {property.contact_response_time || 'We typically respond to inquiries within 2 hours.'}
                       </p>
                     </div>
                   </CardContent>
