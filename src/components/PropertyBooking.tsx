@@ -8,6 +8,9 @@ interface PropertyBookingProps {
 }
 
 const PropertyBooking = ({ property }: PropertyBookingProps) => {
+  const [selectedCheckIn, setSelectedCheckIn] = useState<Date | null>(null);
+  const [selectedCheckOut, setSelectedCheckOut] = useState<Date | null>(null);
+
   return (
     <section id="booking-section" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
