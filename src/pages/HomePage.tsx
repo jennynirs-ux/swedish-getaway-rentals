@@ -188,6 +188,32 @@ const HomePage = () => {
                           </p>
                         </div>
                       </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Per</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "An emotional journey that captured my heart. Jenny's storytelling is both beautiful and devastating."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Karl-olov</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "A masterpiece of Swedish literature. This book will resonate with readers long after finishing it."
+                          </p>
+                        </div>
+                      </CarouselItem>
                     </CarouselContent>
                     <CarouselPrevious className="hidden sm:flex -left-6 top-1/2 -translate-y-1/2" />
                     <CarouselNext className="hidden sm:flex -right-6 top-1/2 -translate-y-1/2" />
