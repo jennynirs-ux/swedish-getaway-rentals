@@ -34,7 +34,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
     guests: 2,
     priceRange: [0, 5000],
     amenities: [],
-    propertyType: ""
+    propertyType: "all",
   });
 
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
@@ -44,14 +44,14 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
   };
 
   const clearFilters = () => {
-    const clearedFilters = {
+    const clearedFilters: SearchFilters = {
       location: "",
       checkIn: undefined,
       checkOut: undefined,
       guests: 2,
-      priceRange: [0, 5000] as [number, number],
+      priceRange: [0, 5000],
       amenities: [],
-      propertyType: ""
+      propertyType: "all",
     };
     setFilters(clearedFilters);
     onFiltersChange(clearedFilters);
@@ -59,7 +59,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
 
   const toggleAmenity = (amenity: string) => {
     const newAmenities = filters.amenities.includes(amenity)
-      ? filters.amenities.filter(a => a !== amenity)
+      ? filters.amenities.filter((a) => a !== amenity)
       : [...filters.amenities, amenity];
     updateFilters({ amenities: newAmenities });
   };
@@ -68,9 +68,9 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
     filters.location,
     filters.checkIn,
     filters.checkOut,
-    filters.propertyType,
+    filters.propertyType !== "all",
     filters.amenities.length > 0,
-    filters.priceRange[0] > 0 || filters.priceRange[1] < 5000
+    filters.priceRange[0] > 0 || filters.priceRange[1] < 5000,
   ].filter(Boolean).length;
 
   return (
@@ -133,7 +133,10 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
 
           {/* Guests */}
           <div className="flex-1">
-            <Select value={filters.guests.toString()} onValueChange={(value) => updateFilters({ guests: parseInt(value) })}>
+            <Select
+              value={filters.guests.toString()}
+              onValueChange={(value) => updateFilters({ guests: parseInt(value) })}
+            >
               <SelectTrigger>
                 <Users className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Guests" />
@@ -208,12 +211,15 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             {/* Property Type */}
             <div>
               <label className="text-sm font-medium mb-3 block">Property type</label>
-              <Select value={filters.propertyType} onValueChange={(value) => updateFilters({ propertyType: value })}>
+              <Select
+                value={filters.propertyType}
+                onValueChange={(value) => updateFilters({ propertyType: value })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="villa">Villa</SelectItem>
                   <SelectItem value="lakehouse">Lakehouse</SelectItem>
                   <SelectItem value="cabin">Cabin</SelectItem>
