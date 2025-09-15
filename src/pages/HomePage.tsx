@@ -56,10 +56,11 @@ const HomePage = () => {
         </div>
       </header>
 
-      {/* Property Cards */}
+            {/* Property Cards */}
       <main className="pb-12">
         <div className="container mx-auto px-4 pt-16">
           {loading ? (
+            // Visa skeletons medan vi laddar
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="animate-pulse">
@@ -76,13 +77,8 @@ const HomePage = () => {
                 </div>
               ))}
             </div>
-          ) : filteredProperties.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {filteredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-          ) : (
+          ) : !properties || properties.length === 0 ? (
+            // Om listan verkligen är tom
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -94,9 +90,17 @@ const HomePage = () => {
                 </p>
               </div>
             </div>
+          ) : (
+            // Annars visa properties
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {filteredProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
           )}
         </div>
       </main>
+
 
       {/* Book Promotion Section */}
       <section className="py-12 bg-gradient-to-br from-muted/50 to-background">
