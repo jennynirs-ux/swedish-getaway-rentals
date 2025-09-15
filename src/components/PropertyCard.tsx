@@ -13,7 +13,7 @@ import {
   Calendar,
   Bed,
   Bath,
-  Bubbles,
+  sparkles,
   Heart,
   Share2,
   Coffee,
@@ -86,7 +86,7 @@ const PropertyCard = ({
     if (lower.includes('kitchen')) return <UtensilsCrossed className="w-4 h-4" />;
     if (lower.includes('boat') || lower.includes('canoe') || lower.includes('kayak')) return <Anchor className="w-4 h-4" />;
     if (lower.includes('dining') || lower.includes('restaurant')) return <Utensils className="w-4 h-4" />;
-    if (lower.includes('jacuzzi') || lower.includes('spa') || lower.includes('hot tub')) return <Bubbles className="w-4 h-4" />;
+    if (lower.includes('jacuzzi') || lower.includes('spa') || lower.includes('hot tub')) return <sparkles className="w-4 h-4" />;
     if (lower.includes('pool') || lower.includes('swimming')) return <Droplets className="w-4 h-4" />;
     if (lower.includes('forest') || lower.includes('nature')) return <TreePine className="w-4 h-4" />;
     if (lower.includes('mountain') || lower.includes('view')) return <Mountain className="w-4 h-4" />;
