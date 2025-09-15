@@ -14,7 +14,6 @@ import {
   Bath,
   Heart,
   Share2,
-  Car,
   Coffee,
   Utensils,
   Mountain,
