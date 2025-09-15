@@ -15,6 +15,12 @@ const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 
 const HomePage = () => {
   const { properties, loading } = useProperties();
+  const [fetchedOnce, setFetchedOnce] = useState(false);
+
+  // markera när första fetch är klar
+  useEffect(() => {
+    if (!loading) setFetchedOnce(true);
+  }, [loading]);
 
   // Filters från sökkomponenten
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
@@ -27,7 +33,6 @@ const HomePage = () => {
   const availableAmenities = useMemo(() => {
     const all = new Set<string>();
     properties.forEach((p) => {
-      // Stöd för både "amenities" (string[]) och "amenities_data" (objekt)
       if (Array.isArray((p as any).amenities_data) && (p as any).amenities_data.length > 0) {
         (p as any).amenities_data.forEach((a: any) => a?.title && all.add(String(a.title).toLowerCase()));
       } else if (Array.isArray(p.amenities)) {
@@ -37,7 +42,7 @@ const HomePage = () => {
     return Array.from(all).sort();
   }, [properties]);
 
-  // Hjälpare: plocka fram amenity-namn från property i ett konsekvent format
+  // Hjälpare
   const getAmenityNames = (p: any): string[] => {
     if (Array.isArray(p.amenities_data) && p.amenities_data.length > 0) {
       return p.amenities_data.map((a: any) => String(a?.title || "").toLowerCase()).filter(Boolean);
@@ -48,41 +53,37 @@ const HomePage = () => {
     return [];
   };
 
-  // Kolla om filters faktiskt har innehåll
   const hasFilters =
     !!filters &&
     (
       (filters.guests && filters.guests > 0) ||
       (filters.startDate && filters.endDate) ||
-      (filters.amenities && filters.amenities.length > 0)
+      (filters.amenities && filters.amenities.length > 0) ||
+      (filters.propertyType && filters.propertyType !== "all")
     );
 
-  // Hämta availability när datum finns
+  // Availability check
   useEffect(() => {
     const fetchAvailability = async () => {
       if (!filters?.startDate || !filters?.endDate) {
-        setAvailableIds(null); // Ingen datum-filtrering
+        setAvailableIds(null);
         return;
       }
       try {
         setCheckingAvailability(true);
 
-        // Hämta bokningar som överlappar vald period
-        // Overlappsvillkor: NOT (booking.check_out <= start OR booking.check_in >= end)
         const { data, error } = await supabase
           .from("bookings")
           .select("property_id, check_in, check_out, status")
           .not("status", "in", "('cancelled')")
           .or("status.eq.confirmed,status.eq.paid,status.eq.blocked")
-          .lt("check_in", filters.endDate)   // check_in < selected end
-          .gt("check_out", filters.startDate); // check_out > selected start
+          .lt("check_in", filters.endDate)
+          .gt("check_out", filters.startDate);
 
         if (error) throw error;
 
         const unavailable = new Set<string>();
-        (data || []).forEach((b: any) => {
-          if (b?.property_id) unavailable.add(String(b.property_id));
-        });
+        (data || []).forEach((b: any) => b?.property_id && unavailable.add(String(b.property_id)));
 
         const allIds = new Set(properties.map((p) => String(p.id)));
         const available = new Set<string>();
@@ -93,7 +94,6 @@ const HomePage = () => {
         setAvailableIds(available);
       } catch (e) {
         console.error("Availability check failed:", e);
-        // Om något går fel, visa hellre alla än noll
         setAvailableIds(null);
       } finally {
         setCheckingAvailability(false);
@@ -103,23 +103,16 @@ const HomePage = () => {
     fetchAvailability();
   }, [filters?.startDate, filters?.endDate, properties]);
 
-    // Filtrera i minnet: guests + amenities + propertyType + (ev) availability
+  // Filtrering
   const filteredProperties = useMemo(() => {
-    // Visa alla om inga riktiga filter
+    if (!properties || properties.length === 0) return [];
     if (!hasFilters) return properties;
-  
+
     return properties.filter((p: any) => {
-      // guests
       if (filters?.guests && p.max_guests < filters.guests) return false;
-  
-      // propertyType (visa alla om "all" eller tomt)
       if (filters?.propertyType && filters.propertyType !== "all") {
-        if (!p.title.toLowerCase().includes(filters.propertyType.toLowerCase())) {
-          return false;
-        }
+        if (!p.title.toLowerCase().includes(filters.propertyType.toLowerCase())) return false;
       }
-  
-      // amenities (alla valda måste finnas)
       if (filters?.amenities && filters.amenities.length > 0) {
         const names = getAmenityNames(p);
         const wanted = new Set(filters.amenities.map((a) => a.toLowerCase()));
@@ -127,39 +120,28 @@ const HomePage = () => {
           if (!names.some((n) => n.includes(w))) return false;
         }
       }
-  
-      // availability via Supabase-resultat
       if (filters?.startDate && filters?.endDate && availableIds) {
         if (!availableIds.has(String(p.id))) return false;
       }
-  
       return true;
     });
   }, [properties, filters, hasFilters, availableIds]);
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Hero Section */}
+      {/* Hero */}
       <header className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src={forestHeroBg} 
-            alt="Swedish forest background with sunlight through trees" 
-            className="w-full h-full object-cover"
-          />
+          <img src={forestHeroBg} alt="Swedish forest background" className="w-full h-full object-cover"/>
           <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60"></div>
         </div>
+        <div className="container mx-auto px-4 relative z-10 text-center mb-12">
+          <h1 className="text-6xl font-bold text-white mb-6">Nordic Getaways</h1>
+          <p className="text-2xl text-white/90 max-w-3xl mx-auto">
+            Discover your perfect retreat in the Nordic
+          </p>
+        </div>
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
-            <h1 className="text-6xl font-bold text-white mb-6">
-              Nordic Getaways
-            </h1>
-            <p className="text-2xl text-white/90 max-w-3xl mx-auto">
-              Discover your perfect retreat in the Nordic
-            </p>
-          </div>
-
-          {/* Search Component */}
           <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} />
         </div>
       </header>
@@ -168,39 +150,25 @@ const HomePage = () => {
       <main className="pb-12">
         <div className="container mx-auto px-4 pt-16">
           {loading || checkingAvailability ? (
-            // Skeletons under laddning eller när vi kollar availability
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-muted rounded-lg h-64 mb-4"></div>
-                  <div className="space-y-2">
-                    <div className="bg-muted h-6 rounded w-3/4"></div>
-                    <div className="bg-muted h-4 rounded w-1/2"></div>
-                    <div className="bg-muted h-16 rounded"></div>
-                    <div className="flex justify-between items-end">
-                      <div className="bg-muted h-8 rounded w-1/3"></div>
-                      <div className="bg-muted h-10 rounded w-24"></div>
-                    </div>
-                  </div>
-                </div>
+                <Skeleton key={i} className="h-80 w-full rounded-lg" />
               ))}
             </div>
-          ) : !properties || properties.length === 0 ? (
+          ) : !fetchedOnce ? (
             <div className="text-center py-16">
-              <div className="max-w-md mx-auto">
-                <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  No properties found
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  No properties are currently available.
-                </p>
-              </div>
+              <p className="text-muted-foreground">Loading properties...</p>
+            </div>
+          ) : filteredProperties.length === 0 ? (
+            <div className="text-center py-16">
+              <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4"/>
+              <h3 className="text-xl font-semibold text-foreground mb-2">No properties found</h3>
+              <p className="text-muted-foreground mb-6">No properties are currently available.</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {filteredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                <PropertyCard key={property.id} property={property}/>
               ))}
             </div>
           )}
