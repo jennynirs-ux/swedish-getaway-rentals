@@ -248,20 +248,7 @@ const HomePage = () => {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-12 bg-gradient-to-br from-muted/50 to-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-foreground mb-8 text-center">
-              Featured Products
-            </h2>
-      
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-              <HomepageProducts />
-            </div>
-          </div>
-        </div>
-      </section>
-
+      <HomepageProducts />
 
       {/* Footer */}
       <footer className="py-16 border-t border-border bg-card">
