@@ -28,7 +28,7 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="text-2xl font-bold">
-                      {((property.price_per_night || 0) / 100).toLocaleString()} {property.currency}
+                      {(property.price_per_night || 0).toLocaleString()} {property.currency}
                     </span>
                     <span className="text-sm text-muted-foreground">per night</span>
                   </CardTitle>
