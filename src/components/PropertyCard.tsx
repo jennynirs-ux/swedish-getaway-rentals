@@ -9,7 +9,7 @@ import {
   Wifi, 
   TreePine, 
   Waves,
-  Sailboat,
+  Anchor,
   Calendar,
   Bed,
   Bath,
@@ -83,7 +83,7 @@ const PropertyCard = ({
     if (lower.includes('parking') || lower.includes('garage')) return <Car className="w-4 h-4" />;
     if (lower.includes('coffee')) return <Coffee className="w-4 h-4" />;
     if (lower.includes('kitchen')) return <UtensilsCrossed className="w-4 h-4" />;
-    if (lower.includes('boat') || lower.includes('canoe') || lower.includes('kayak')) return <Sailboat className="w-4 h-4" />;
+    if (lower.includes('boat') || lower.includes('canoe') || lower.includes('kayak')) return <Anchor className="w-4 h-4" />;
     if (lower.includes('dining') || lower.includes('restaurant')) return <Utensils className="w-4 h-4" />;
     if (lower.includes('jacuzzi') || lower.includes('spa') || lower.includes('hot tub')) return <Bath className="w-4 h-4" />;
     if (lower.includes('pool') || lower.includes('swimming')) return <Droplets className="w-4 h-4" />;
