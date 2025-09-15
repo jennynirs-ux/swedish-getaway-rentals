@@ -1,20 +1,37 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
+import PropertySearch from "@/components/PropertySearch"; // aktivera din search-komponent
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
+
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
+
 const HomePage = () => {
-  const {
-    properties,
-    loading
-  } = useProperties();
-  return <div className="min-h-screen bg-gradient-subtle">
+  const { properties, loading } = useProperties();
+  const [filters, setFilters] = useState<any>(null);
+
+  // Enkel filtrering – här kan du bygga vidare
+  const filteredProperties = filters
+    ? properties.filter((p) => {
+        // Filtrera på gästantal
+        if (filters.guests && p.max_guests < filters.guests) {
+          return false;
+        }
+
+        // TODO: Filtrera på datum (kräver bokningsdata från supabase)
+        // just nu returneras alla
+        return true;
+      })
+    : properties;
+
+  return (
+    <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
       <header className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
@@ -34,19 +51,19 @@ const HomePage = () => {
               Discover your perfect retreat in the Nordic
             </p>
           </div>
-          
-          
-          {/* Search Component - Hidden for now */}
-          {/* <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} /> */}
+
+          {/* Search Component */}
+          <PropertySearch onFiltersChange={setFilters} availableAmenities={[]} />
         </div>
       </header>
-
 
       {/* Property Cards */}
       <main className="pb-12">
         <div className="container mx-auto px-4 pt-16">
-          {loading ? <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="animate-pulse">
+          {loading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="animate-pulse">
                   <div className="bg-muted rounded-lg h-64 mb-4"></div>
                   <div className="space-y-2">
                     <div className="bg-muted h-6 rounded w-3/4"></div>
@@ -57,10 +74,17 @@ const HomePage = () => {
                       <div className="bg-muted h-10 rounded w-24"></div>
                     </div>
                   </div>
-                </div>)}
-            </div> : properties.length > 0 ? <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {properties.map(property => <PropertyCard key={property.id} property={property} />)}
-            </div> : <div className="text-center py-16">
+                </div>
+              ))}
+            </div>
+          ) : filteredProperties.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {filteredProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -70,7 +94,8 @@ const HomePage = () => {
                   No properties are currently available.
                 </p>
               </div>
-            </div>}
+            </div>
+          )}
         </div>
       </main>
 
@@ -86,7 +111,11 @@ const HomePage = () => {
               {/* Book Cover - Left Side */}
               <div className="lg:col-span-4 flex justify-center lg:justify-start mb-6 lg:mb-0">
                 <div className="relative group">
-                  <img src={bookCover} alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs" className="w-40 sm:w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105" />
+                  <img 
+                    src={bookCover} 
+                    alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs" 
+                    className="w-40 sm:w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105" 
+                  />
                   <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 rounded-lg transition-opacity"></div>
                 </div>
               </div>
@@ -94,9 +123,15 @@ const HomePage = () => {
               {/* Book Information - Right Side */}
               <div className="lg:col-span-8 space-y-4">
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-1">When the Ocean changed everything</h3>
-                  <h4 className="text-base sm:text-lg text-muted-foreground mb-3">My Journey through Disaster</h4>
-                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">A gripping and unforgettable true story of survival and meaning. Perfect reading for your Swedish getaway. Available in both Swedish and English.</p>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-1">
+                    When the Ocean changed everything
+                  </h3>
+                  <h4 className="text-base sm:text-lg text-muted-foreground mb-3">
+                    My Journey through Disaster
+                  </h4>
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                    A gripping and unforgettable true story of survival and meaning. Perfect reading for your Swedish getaway. Available in both Swedish and English.
+                  </p>
                 </div>
 
                 {/* Reviews Carousel */}
@@ -107,7 +142,7 @@ const HomePage = () => {
                         <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
-                              {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
                             </div>
                             <span className="ml-2 text-sm text-muted-foreground">by Patrik</span>
                           </div>
@@ -120,7 +155,7 @@ const HomePage = () => {
                         <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
-                              {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
                             </div>
                             <span className="ml-2 text-sm text-muted-foreground">by Anna</span>
                           </div>
@@ -133,7 +168,7 @@ const HomePage = () => {
                         <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
-                              {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
                             </div>
                             <span className="ml-2 text-sm text-muted-foreground">by Per</span>
                           </div>
@@ -146,7 +181,7 @@ const HomePage = () => {
                         <div className="bg-card/50 rounded-lg p-3 sm:p-4 border border-border/50 mx-2">
                           <div className="flex items-center mb-2">
                             <div className="flex text-yellow-500 text-sm">
-                              {[1, 2, 3, 4, 5].map(i => <span key={i}>★</span>)}
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
                             </div>
                             <span className="ml-2 text-sm text-muted-foreground">by Karl-olov</span>
                           </div>
@@ -155,9 +190,9 @@ const HomePage = () => {
                           </p>
                         </div>
                       </CarouselItem>
-                     </CarouselContent>
-                     <CarouselPrevious className="hidden sm:flex -left-2 lg:-left-12 top-1/2 -translate-y-1/2" />
-                     <CarouselNext className="hidden sm:flex -right-2 lg:-right-12 top-1/2 -translate-y-1/2" />
+                    </CarouselContent>
+                    <CarouselPrevious className="hidden sm:flex -left-2 lg:-left-12 top-1/2 -translate-y-1/2" />
+                    <CarouselNext className="hidden sm:flex -right-2 lg:-right-12 top-1/2 -translate-y-1/2" />
                   </Carousel>
                 </div>
 
@@ -174,7 +209,6 @@ const HomePage = () => {
                     </a>
                   </Button>
                 </div>
-                
               </div>
             </div>
           </div>
@@ -218,6 +252,8 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default HomePage;
