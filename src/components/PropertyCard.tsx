@@ -213,7 +213,7 @@ const PropertyCard = ({
           <div className="flex items-center justify-between">
             <div>
                <span className="text-2xl font-bold text-foreground">
-                 {((property.price_per_night || 0) / 100).toLocaleString()} {property.currency}
+                 {(property.price_per_night || 0).toLocaleString()} {property.currency}
               </span>
               <span className="text-muted-foreground text-sm ml-1">/night</span>
             </div>
