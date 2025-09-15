@@ -81,7 +81,7 @@ const PropertyCard = ({
   const getAmenityIcon = (amenity: string) => {
     const lower = amenity.toLowerCase();
     if (lower.includes('wifi') || lower.includes('internet')) return <Wifi className="w-4 h-4" />;
-    (lower.includes("parking") || lower.includes("garage")) return <Parking className="w-4 h-4" />;
+    if (lower.includes("parking") || lower.includes("garage")) return <Parking className="w-4 h-4" />;
     if (lower.includes("coffee")) return <Coffee className="w-4 h-4" />;
     if (lower.includes("kitchen")) return <UtensilsCrossed className="w-4 h-4" />;
     if (lower.includes("dining") || lower.includes("restaurant")) return <Utensils className="w-4 h-4" />;
