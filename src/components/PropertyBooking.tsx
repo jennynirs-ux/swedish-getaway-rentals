@@ -40,6 +40,9 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                     pricePerNight={property.price_per_night}
                     currency={property.currency}
                     maxGuests={property.max_guests}
+                    // skickar in valda datum
+                    checkInDate={selectedCheckIn}
+                    checkOutDate={selectedCheckOut}
                   />
                 </CardContent>
               </Card>
@@ -47,12 +50,24 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
 
             {/* Calendar Section */}
             <div>
-              <PropertyCalendarOptimized
-                propertyId={property.id}
-                basePrice={property.price_per_night || 0}
-                currency={property.currency}
-                mode="guest"
-              />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Availability</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PropertyCalendarOptimized
+                    propertyId={property.id}
+                    basePrice={property.price_per_night || 0}
+                    currency={property.currency}
+                    mode="guest"
+                    // callback för att uppdatera formuläret
+                    onDateRangeSelect={(checkIn, checkOut) => {
+                      setSelectedCheckIn(checkIn);
+                      setSelectedCheckOut(checkOut);
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </div>
 
