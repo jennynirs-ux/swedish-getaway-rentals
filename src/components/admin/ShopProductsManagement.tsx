@@ -100,7 +100,7 @@ const ShopProductsManagement = ({
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke(
-        "fetch-printful-products"
+        "sync-printful-products"
       );
 
       if (error) throw error;
@@ -108,8 +108,8 @@ const ShopProductsManagement = ({
       console.log("👉 Printful sync response:", data);
 
       toast({
-        title: "Success",
-        description: "Products synced with Printful",
+        title: "Sync Successful",
+        description: `Synced ${data?.processed || 0} products from Printful`,
       });
 
       await loadProducts();
