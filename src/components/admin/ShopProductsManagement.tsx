@@ -64,53 +64,60 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
     }
   }, [editingProductId, products]);
 
-const loadProducts = async () => {
-  try {
-    setLoading(true);
-
-    // 1. Hämta Printful direkt via Edge-funktion
-    const { data: printfulRes, error: printfulError } = await supabase.functions.invoke("fetch-printful-products");
-    if (printfulError) throw printfulError;
-
-    const printfulProducts = printfulRes?.result || [];
-
-    // 2. Hämta overrides från Supabase
-    const { data: overrides, error: supabaseError } = await supabase.from("shop_products").select("*");
-    if (supabaseError) throw supabaseError;
-
-    // 3. Slå ihop baserat på printful_id
-    const merged = printfulProducts.map((p: any) => {
-      const override = overrides?.find((o) => o.printful_id === String(p.id));
-
-      return {
-        id: String(p.id), // alltid samma ID (Printfuls)
-        printful_id: String(p.id),
-        title: override?.title_override || p.name,
-        description: override?.description_override || p.description,
-        price: override?.price_override || parseFloat(p.retail_price), // Retailpris direkt från Printful
-        currency: p.currency || "EUR",
-        image_url: override?.main_image_override || p.thumbnail_url,
-        is_visible_shop: override?.is_visible_shop ?? true,
-        is_visible_home: override?.is_visible_home ?? false,
-        sort_order: override?.sort_order || null,
-        // behåll även all override-data ifall vi redigerar senare
-        ...override,
-      } as ShopProduct;
-    });
-
-    setProducts(merged);
-  } catch (error) {
-    console.error("Error loading products:", error);
-    toast({
-      title: "Error",
-      description: "Failed to load products",
-      variant: "destructive",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+  
+      // 1. Hämta från Printful via Edge-funktionen
+      const { data: printfulRes, error: printfulError } = await supabase.functions.invoke("fetch-printful-products");
+      if (printfulError) throw printfulError;
+  
+      console.log("Printful raw response:", printfulRes);
+  
+      // Produkterna kan ligga i olika fält beroende på din funktion
+      const printfulProducts =
+        printfulRes?.result ||
+        printfulRes?.data?.result ||
+        printfulRes?.products ||
+        [];
+  
+      // 2. Hämta overrides från Supabase
+      const { data: overrides, error: supabaseError } = await supabase.from("shop_products").select("*");
+      if (supabaseError) throw supabaseError;
+  
+      // 3. Slå ihop Printful + overrides
+      const merged = printfulProducts.map((p: any) => {
+        const override = overrides?.find((o) => o.printful_id === String(p.id));
+  
+        return {
+          id: String(p.id),
+          printful_id: String(p.id),
+          title: override?.title_override || p.name,
+          description: override?.description_override || p.description,
+          price: override?.price_override || parseFloat(p.retail_price),
+          currency: p.currency || "EUR",
+          image_url: override?.main_image_override || p.thumbnail_url,
+          is_visible_shop: override?.is_visible_shop ?? true,
+          is_visible_home: override?.is_visible_home ?? false,
+          sort_order: override?.sort_order || null,
+          ...override,
+        } as ShopProduct;
+      });
+  
+      console.log("Merged products:", merged);
+  
+      setProducts(merged);
+    } catch (error) {
+      console.error("Error loading products:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleEdit = (product: ShopProduct) => {
     setEditingProduct(product);
     setEditForm({
