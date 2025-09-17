@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Edit2, Eye, EyeOff, Home, RefreshCw, Upload, X } from "lucide-react";
+import { Edit2, Eye, EyeOff, Home, RefreshCw } from "lucide-react";
 
 interface ShopProduct {
   id: string;
@@ -27,8 +27,8 @@ interface ShopProduct {
   is_visible_shop: boolean;
   is_visible_home: boolean;
   sort_order?: number;
-  printful_data?: any;
-  created_at: string;
+  printful_id?: string;
+  created_at?: string;
 }
 
 interface ShopProductsManagementProps {
@@ -39,16 +39,15 @@ interface ShopProductsManagementProps {
 const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: ShopProductsManagementProps) => {
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ShopProduct | null>(null);
   const [editForm, setEditForm] = useState({
-    title_override: '',
-    description_override: '',
-    price_override: '',
-    main_image_override: '',
+    title_override: "",
+    description_override: "",
+    price_override: "",
+    main_image_override: "",
     is_visible_shop: true,
     is_visible_home: false,
-    sort_order: ''
+    sort_order: "",
   });
 
   useEffect(() => {
@@ -56,8 +55,8 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
   }, []);
 
   useEffect(() => {
-    if (editingProductId) {
-      const product = products.find(p => p.id === editingProductId);
+    if (editingProductId && products.length > 0) {
+      const product = products.find((p) => p.id === editingProductId);
       if (product) {
         handleEdit(product);
         onClearEditingProduct?.();
@@ -67,16 +66,41 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
 
   const loadProducts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('shop_products')
-        .select('*')
-        .order('sort_order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false });
+      setLoading(true);
 
-      if (error) throw error;
-      setProducts(data || []);
+      // 1. Hämta Printful direkt via Edge-funktion
+      const { data: printfulRes, error: printfulError } = await supabase.functions.invoke("fetch-printful-products");
+      if (printfulError) throw printfulError;
+
+      const printfulProducts = printfulRes?.result || [];
+
+      // 2. Hämta overrides från Supabase
+      const { data: overrides, error: supabaseError } = await supabase.from("shop_products").select("*");
+      if (supabaseError) throw supabaseError;
+
+      // 3. Slå ihop
+      const merged = printfulProducts.map((p: any) => {
+        const override = overrides?.find((o) => o.printful_id === p.id);
+
+        return {
+          ...p,
+          ...override,
+          id: override?.id || p.id,
+          printful_id: p.id,
+          title: override?.title_override || p.name,
+          description: override?.description_override || p.description,
+          price: override?.price_override || p.retail_price * 100,
+          currency: p.currency || "EUR",
+          image_url: override?.main_image_override || p.thumbnail_url,
+          is_visible_shop: override?.is_visible_shop ?? true,
+          is_visible_home: override?.is_visible_home ?? false,
+          sort_order: override?.sort_order || null,
+        } as ShopProduct;
+      });
+
+      setProducts(merged);
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error("Error loading products:", error);
       toast({
         title: "Error",
         description: "Failed to load products",
@@ -87,40 +111,16 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
     }
   };
 
-  const syncWithPrintful = async () => {
-    setSyncing(true);
-    try {
-      const { error } = await supabase.functions.invoke('fetch-printful-products');
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Products synced with Printful",
-      });
-      
-      await loadProducts();
-    } catch (error) {
-      console.error('Error syncing with Printful:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sync with Printful",
-        variant: "destructive",
-      });
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const handleEdit = (product: ShopProduct) => {
     setEditingProduct(product);
     setEditForm({
-      title_override: product.title_override || '',
-      description_override: product.description_override || '',
-      price_override: product.price_override?.toString() || '',
-      main_image_override: product.main_image_override || '',
+      title_override: product.title_override || "",
+      description_override: product.description_override || "",
+      price_override: product.price_override?.toString() || "",
+      main_image_override: product.main_image_override || "",
       is_visible_shop: product.is_visible_shop,
       is_visible_home: product.is_visible_home,
-      sort_order: product.sort_order?.toString() || ''
+      sort_order: product.sort_order?.toString() || "",
     });
   };
 
@@ -129,45 +129,28 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
 
     try {
       const updateData: any = {
+        printful_id: editingProduct.printful_id,
         is_visible_shop: editForm.is_visible_shop,
         is_visible_home: editForm.is_visible_home,
       };
 
-      if (editForm.title_override.trim()) {
-        updateData.title_override = editForm.title_override.trim();
-      } else {
-        updateData.title_override = null;
-      }
+      if (editForm.title_override.trim()) updateData.title_override = editForm.title_override.trim();
+      else updateData.title_override = null;
 
-      if (editForm.description_override.trim()) {
-        updateData.description_override = editForm.description_override.trim();
-      } else {
-        updateData.description_override = null;
-      }
+      if (editForm.description_override.trim()) updateData.description_override = editForm.description_override.trim();
+      else updateData.description_override = null;
 
-      if (editForm.price_override.trim()) {
-        updateData.price_override = parseInt(editForm.price_override);
-      } else {
-        updateData.price_override = null;
-      }
+      if (editForm.price_override.trim()) updateData.price_override = parseInt(editForm.price_override);
+      else updateData.price_override = null;
 
-      if (editForm.main_image_override.trim()) {
-        updateData.main_image_override = editForm.main_image_override.trim();
-      } else {
-        updateData.main_image_override = null;
-      }
+      if (editForm.main_image_override.trim()) updateData.main_image_override = editForm.main_image_override.trim();
+      else updateData.main_image_override = null;
 
-      if (editForm.sort_order.trim()) {
-        updateData.sort_order = parseInt(editForm.sort_order);
-      } else {
-        updateData.sort_order = null;
-      }
+      if (editForm.sort_order.trim()) updateData.sort_order = parseInt(editForm.sort_order);
+      else updateData.sort_order = null;
 
-      const { error } = await supabase
-        .from('shop_products')
-        .update(updateData)
-        .eq('id', editingProduct.id);
-
+      // Upsert = skapa om det inte finns, annars uppdatera
+      const { error } = await supabase.from("shop_products").upsert(updateData, { onConflict: "printful_id" });
       if (error) throw error;
 
       toast({
@@ -178,7 +161,7 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
       setEditingProduct(null);
       await loadProducts();
     } catch (error) {
-      console.error('Error updating product:', error);
+      console.error("Error updating product:", error);
       toast({
         title: "Error",
         description: "Failed to update product",
@@ -187,12 +170,15 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
     }
   };
 
-  const toggleVisibility = async (productId: string, field: 'is_visible_shop' | 'is_visible_home', value: boolean) => {
+  const toggleVisibility = async (
+    product: ShopProduct,
+    field: "is_visible_shop" | "is_visible_home",
+    value: boolean
+  ) => {
     try {
       const { error } = await supabase
-        .from('shop_products')
-        .update({ [field]: value })
-        .eq('id', productId);
+        .from("shop_products")
+        .upsert({ printful_id: product.printful_id, [field]: value }, { onConflict: "printful_id" });
 
       if (error) throw error;
 
@@ -202,7 +188,7 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
         description: `Product visibility updated successfully`,
       });
     } catch (error) {
-      console.error('Error toggling visibility:', error);
+      console.error("Error toggling visibility:", error);
       toast({
         title: "Error",
         description: "Failed to update product visibility",
@@ -212,19 +198,10 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
   };
 
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
-      style: 'currency',
+    return new Intl.NumberFormat("sv-SE", {
+      style: "currency",
       currency: currency,
     }).format(price / 100);
-  };
-
-  const getDisplayData = (product: ShopProduct) => {
-    const title = product.title_override || product.title;
-    const description = product.description_override || product.custom_description || product.description;
-    const price = product.price_override || product.custom_price || product.price;
-    const imageUrl = product.main_image_override || product.image_url;
-    
-    return { title, description, price, imageUrl };
   };
 
   if (loading) {
@@ -243,18 +220,18 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Shop Products</h2>
-          <p className="text-muted-foreground">Manage your Printful products and visibility settings</p>
+          <p className="text-muted-foreground">Manage your Printful products and overrides</p>
         </div>
-        <Button onClick={syncWithPrintful} disabled={syncing}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-          Sync with Printful
+        <Button onClick={loadProducts}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh from Printful
         </Button>
       </div>
 
       {editingProduct && (
         <Card>
           <CardHeader>
-            <CardTitle>Edit Product: {getDisplayData(editingProduct).title}</CardTitle>
+            <CardTitle>Edit Product: {editingProduct.title}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -262,64 +239,58 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
                 <Label>Title Override (optional)</Label>
                 <Input
                   value={editForm.title_override}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, title_override: e.target.value }))}
-                  placeholder="Override product title..."
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, title_override: e.target.value }))}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Price Override (optional, in cents)</Label>
                 <Input
                   type="number"
                   value={editForm.price_override}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, price_override: e.target.value }))}
-                  placeholder="e.g. 2500 for 25.00 SEK"
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, price_override: e.target.value }))}
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
-              <Label>Description Override (optional)</Label>
+              <Label>Description Override</Label>
               <Textarea
                 value={editForm.description_override}
-                onChange={(e) => setEditForm(prev => ({ ...prev, description_override: e.target.value }))}
-                placeholder="Override the default description..."
+                onChange={(e) => setEditForm((prev) => ({ ...prev, description_override: e.target.value }))}
                 rows={3}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Main Image Override (optional)</Label>
+              <Label>Main Image Override</Label>
               <Input
                 value={editForm.main_image_override}
-                onChange={(e) => setEditForm(prev => ({ ...prev, main_image_override: e.target.value }))}
-                placeholder="Override main image URL..."
+                onChange={(e) => setEditForm((prev) => ({ ...prev, main_image_override: e.target.value }))}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Sort Order (optional)</Label>
+              <Label>Sort Order</Label>
               <Input
                 type="number"
                 value={editForm.sort_order}
-                onChange={(e) => setEditForm(prev => ({ ...prev, sort_order: e.target.value }))}
-                placeholder="Lower numbers appear first"
+                onChange={(e) => setEditForm((prev) => ({ ...prev, sort_order: e.target.value }))}
               />
             </div>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex gap-4">
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={editForm.is_visible_shop}
-                  onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, is_visible_shop: checked }))}
+                  onCheckedChange={(checked) => setEditForm((prev) => ({ ...prev, is_visible_shop: checked }))}
                 />
                 <Label>Visible in shop</Label>
               </div>
-
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={editForm.is_visible_home}
-                  onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, is_visible_home: checked }))}
+                  onCheckedChange={(checked) => setEditForm((prev) => ({ ...prev, is_visible_home: checked }))}
                 />
                 <Label>Show on homepage</Label>
               </div>
@@ -327,111 +298,72 @@ const ShopProductsManagement = ({ editingProductId, onClearEditingProduct }: Sho
 
             <div className="flex gap-2">
               <Button onClick={handleSave}>Save Changes</Button>
-              <Button variant="outline" onClick={() => setEditingProduct(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setEditingProduct(null)}>
+                Cancel
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
       <div className="grid gap-4">
-        {products.map((product) => {
-          const { title, description, price, imageUrl } = getDisplayData(product);
-          
-          return (
-            <Card key={product.id} className="border">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <img
-                    src={imageUrl || '/placeholder.svg'}
-                    alt={title}
-                    className="w-20 h-20 object-cover rounded-lg"
-                    loading="lazy"
-                  />
-                  
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold">{title}</h3>
-                      {product.sort_order && (
-                        <Badge variant="outline">Order: {product.sort_order}</Badge>
-                      )}
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {description?.substring(0, 100)}...
-                    </p>
-                    
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-bold text-primary">
-                        {formatPrice(price, product.currency)}
-                      </span>
-                      {product.price_override && (
-                        <Badge variant="secondary">Custom Price</Badge>
-                      )}
-                      {product.title_override && (
-                        <Badge variant="outline">Custom Title</Badge>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Badge variant={product.is_visible_shop ? "default" : "secondary"}>
-                        {product.is_visible_shop ? "Shop" : "Hidden from Shop"}
-                      </Badge>
-                      <Badge variant={product.is_visible_home ? "default" : "secondary"}>
-                        {product.is_visible_home ? "Homepage" : "Hidden from Homepage"}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(product)}
-                    >
-                      <Edit2 className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => toggleVisibility(product.id, 'is_visible_shop', !product.is_visible_shop)}
-                    >
-                      {product.is_visible_shop ? (
-                        <><EyeOff className="h-4 w-4 mr-2" />Hide Shop</>
-                      ) : (
-                        <><Eye className="h-4 w-4 mr-2" />Show Shop</>
-                      )}
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => toggleVisibility(product.id, 'is_visible_home', !product.is_visible_home)}
-                    >
-                      {product.is_visible_home ? (
-                        <><Home className="h-4 w-4 mr-2" />Hide Home</>
-                      ) : (
-                        <><Home className="h-4 w-4 mr-2" />Show Home</>
-                      )}
-                    </Button>
-                  </div>
+        {products.map((product) => (
+          <Card key={product.id}>
+            <CardContent className="p-4 flex gap-4 items-start">
+              <img
+                src={product.image_url || "/placeholder.svg"}
+                alt={product.title}
+                className="w-20 h-20 object-cover rounded-lg"
+              />
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold">{product.title}</h3>
+                  {product.sort_order && <Badge variant="outline">Order: {product.sort_order}</Badge>}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                <p className="text-sm text-muted-foreground mb-2">{product.description?.substring(0, 80)}...</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-bold text-primary">{formatPrice(product.price, product.currency)}</span>
+                  {product.price_override && <Badge variant="secondary">Custom Price</Badge>}
+                </div>
+                <div className="flex gap-2">
+                  <Badge variant={product.is_visible_shop ? "default" : "secondary"}>
+                    {product.is_visible_shop ? "Shop" : "Hidden from Shop"}
+                  </Badge>
+                  <Badge variant={product.is_visible_home ? "default" : "secondary"}>
+                    {product.is_visible_home ? "Homepage" : "Hidden from Homepage"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
+                  <Edit2 className="w-4 h-4 mr-2" /> Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => toggleVisibility(product, "is_visible_shop", !product.is_visible_shop)}
+                >
+                  {product.is_visible_shop ? <><EyeOff className="w-4 h-4 mr-2" /> Hide Shop</> : <><Eye className="w-4 h-4 mr-2" /> Show Shop</>}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => toggleVisibility(product, "is_visible_home", !product.is_visible_home)}
+                >
+                  {product.is_visible_home ? <><Home className="w-4 h-4 mr-2" /> Hide Home</> : <><Home className="w-4 h-4 mr-2" /> Show Home</>}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {products.length === 0 && (
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold mb-2">No products found</h3>
-          <p className="text-muted-foreground mb-4">
-            Click "Sync with Printful" to import your products
-          </p>
-          <Button onClick={syncWithPrintful} disabled={syncing}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-            Sync with Printful
+          <p className="text-muted-foreground">Refresh to fetch products from Printful</p>
+          <Button onClick={loadProducts}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
         </div>
       )}
