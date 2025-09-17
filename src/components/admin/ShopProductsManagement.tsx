@@ -38,25 +38,33 @@ import { Edit2, Eye, EyeOff, Home, RefreshCw } from "lucide-react";
       loadProducts();
     }, []);
   
-  const loadProducts = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-printful-products');
-  
-      console.log("Printful raw response:", data, error);
-  
-      if (error) throw error;
-  
-      // många gånger ligger produkter under data.result
-      const products = data?.result || data?.products || data || [];
-      console.log("Extracted products:", products);
-  
-      setProducts(products);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadProducts = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-printful-products');
+    
+        console.log("👉 Supabase invoke response:", { data, error });
+    
+        if (error) {
+          throw new Error(error.message || "Unknown error from fetch-printful-products");
+        }
+    
+        // Kolla var produkterna faktiskt finns
+        const products = data?.result || data?.products || data || [];
+        console.log("👉 Extracted products:", products);
+    
+        setProducts(products);
+      } catch (err) {
+        console.error("❌ Error loading products:", err);
+        toast({
+          title: "Error",
+          description: "Failed to load products. Check console for details.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat("sv-SE", {
