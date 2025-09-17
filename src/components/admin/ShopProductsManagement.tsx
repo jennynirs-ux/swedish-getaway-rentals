@@ -38,32 +38,41 @@ import { Edit2, Eye, EyeOff, Home, RefreshCw } from "lucide-react";
       loadProducts();
     }, []);
   
-    const loadProducts = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('fetch-printful-products');
-    
-        console.log("👉 Supabase invoke response:", { data, error });
-    
-        if (error) {
-          throw new Error(error.message || "Unknown error from fetch-printful-products");
-        }
-    
-        // Kolla var produkterna faktiskt finns
-        const products = data?.result || data?.products || data || [];
-        console.log("👉 Extracted products:", products);
-    
-        setProducts(products);
-      } catch (err) {
-        console.error("❌ Error loading products:", err);
-        toast({
-          title: "Error",
-          description: "Failed to load products. Check console for details.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+   const loadProducts = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-printful-products');
+  
+      console.log("👉 Raw Supabase response:", { data, error });
+  
+      if (error) {
+        throw new Error(error.message || "Unknown error from fetch-printful-products");
       }
-    };
+  
+      // Försök hämta produkterna oavsett var de ligger
+      let products: any[] = [];
+      if (Array.isArray(data)) {
+        products = data;
+      } else if (data?.products && Array.isArray(data.products)) {
+        products = data.products;
+      } else if (data?.result?.items && Array.isArray(data.result.items)) {
+        products = data.result.items;
+      } else {
+        console.warn("⚠️ Could not parse products, got:", data);
+      }
+  
+      setProducts(products);
+    } catch (err) {
+      console.error("❌ Error loading products:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load products. Check console for details.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
 
   const formatPrice = (price: number, currency: string) => {
