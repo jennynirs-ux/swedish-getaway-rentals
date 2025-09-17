@@ -59,10 +59,7 @@ const Shop = () => {
 
   const fetchProducts = async () => {
     try {
-      // First sync with Printful to get latest products
-      await supabase.functions.invoke('sync-printful-products');
-      
-      // Then fetch visible products
+      // Fetch visible products from shop_products table
       const { data, error } = await supabase
         .from('shop_products')
         .select('*')
@@ -181,10 +178,10 @@ const Shop = () => {
             <div className="text-center py-20">
               <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-foreground mb-2">
-                {searchTerm ? "No products found" : "No products available"}
+                {searchTerm ? "No products found" : "No products found"}
               </h3>
               <p className="text-muted-foreground">
-                {searchTerm ? "Try adjusting your search terms" : "Check back soon for new arrivals!"}
+                {searchTerm ? "Try adjusting your search terms" : "No products found. Click Sync with Printful to import your products."}
               </p>
             </div>
           ) : (

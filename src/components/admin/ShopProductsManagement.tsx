@@ -78,7 +78,7 @@ const ShopProductsManagement = ({
 
       if (error) throw error;
 
-      if (!Array.isArray(data)) {
+      if (!data || !Array.isArray(data)) {
         console.warn("⚠️ shop_products is not an array:", data);
         setProducts([]);
       } else {
@@ -369,7 +369,7 @@ const ShopProductsManagement = ({
       )}
 
       <div className="grid gap-4">
-        {products.map((product) => {
+        {(products || []).map((product) => {
           const { title, description, price, imageUrl } = getDisplayData(product);
 
           return (
@@ -487,7 +487,7 @@ const ShopProductsManagement = ({
         })}
       </div>
 
-      {products.length === 0 && (
+      {products.length === 0 && !syncing && (
         <div className="text-center py-12">
           <h3 className="text-lg font-semibold mb-2">No products found</h3>
           <p className="text-muted-foreground mb-4">
@@ -499,6 +499,16 @@ const ShopProductsManagement = ({
             />
             Sync with Printful
           </Button>
+        </div>
+      )}
+
+      {syncing && products.length === 0 && (
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <h3 className="text-lg font-semibold mb-2">Syncing with Printful...</h3>
+          <p className="text-muted-foreground">
+            Importing products from your Printful store
+          </p>
         </div>
       )}
     </div>

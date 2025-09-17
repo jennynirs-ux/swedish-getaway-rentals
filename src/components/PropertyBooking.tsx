@@ -1,3 +1,4 @@
+import { useState } from "react";
 import BookingForm from "./BookingForm";
 import PropertyCalendarOptimized from "./PropertyCalendarOptimized";
 import { Property } from "@/hooks/useProperties";
@@ -43,9 +44,6 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                     pricePerNight={property.price_per_night}
                     currency={property.currency}
                     maxGuests={property.max_guests}
-                    // skickar in valda datum
-                    checkInDate={selectedCheckIn}
-                    checkOutDate={selectedCheckOut}
                   />
                 </CardContent>
               </Card>
@@ -63,10 +61,9 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                     basePrice={property.price_per_night || 0}
                     currency={property.currency}
                     mode="guest"
-                    // callback för att uppdatera formuläret
-                    onDateRangeSelect={(checkIn, checkOut) => {
-                      setSelectedCheckIn(checkIn);
-                      setSelectedCheckOut(checkOut);
+                    onDateSelect={(dates) => {
+                      setSelectedCheckIn(dates.checkIn);
+                      setSelectedCheckOut(dates.checkOut);
                     }}
                   />
                 </CardContent>

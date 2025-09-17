@@ -6,7 +6,13 @@ import PropertyCard from "@/components/PropertyCard";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
-import PropertySearch, { PropertyFilters } from "@/components/PropertySearch";
+import PropertySearch from "@/components/PropertySearch";
+
+interface PropertyFilters {
+  guests?: number;
+  propertyType?: string;
+  amenities?: string[];
+}
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
 
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
