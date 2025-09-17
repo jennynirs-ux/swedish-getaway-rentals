@@ -10,88 +10,49 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Edit2, Eye, EyeOff, Home, RefreshCw } from "lucide-react";
 
-interface ShopProduct {
-  id: string;
-  printful_id?: string;
-  title: string;
-  description: string;
-  price: number;
-  currency: string;
-  image_url: string;
-  title_override?: string | null;
-  description_override?: string | null;
-  price_override?: number | null;
-  main_image_override?: string | null;
-  additional_images_override?: string[];
-  is_visible_shop?: boolean;
-  is_visible_home?: boolean;
-  sort_order?: number | null;
-  created_at?: string;
-}
-
-const ShopProductsManagement = () => {
-  const [products, setProducts] = useState<ShopProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
+  interface ShopProduct {
+    id: string;
+    printful_id?: string;
+    title: string;
+    description: string;
+    price: number;
+    currency: string;
+    image_url: string;
+    title_override?: string | null;
+    description_override?: string | null;
+    price_override?: number | null;
+    main_image_override?: string | null;
+    additional_images_override?: string[];
+    is_visible_shop?: boolean;
+    is_visible_home?: boolean;
+    sort_order?: number | null;
+    created_at?: string;
+  }
+  
+  const ShopProductsManagement = () => {
+    const [products, setProducts] = useState<ShopProduct[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
+  
+    useEffect(() => {
+      loadProducts();
+    }, []);
+  
   const loadProducts = async () => {
     try {
-      setLoading(true);
-
-      // 1. Hämta från Printful via edge-funktion
-      const { data: printfulRes, error: printfulError } = await supabase.functions.invoke("fetch-printful-products");
-      if (printfulError) throw printfulError;
-
-      console.log("Raw Printful response:", printfulRes);
-
-      // Försök olika vägar i JSON-strukturen
-      const rawProducts =
-        printfulRes?.result ||
-        printfulRes?.data?.result ||
-        printfulRes?.data?.products ||
-        printfulRes?.products ||
-        printfulRes ||
-        [];
-
-      if (!Array.isArray(rawProducts)) {
-        console.warn("Printful response is not an array:", rawProducts);
-      }
-
-      // 2. Hämta overrides från supabase
-      const { data: overrides, error: supabaseError } = await supabase.from("shop_products").select("*");
-      if (supabaseError) throw supabaseError;
-
-      // 3. Mappa och merge:a
-      const merged: ShopProduct[] = (rawProducts as any[]).map((p) => {
-        const override = overrides?.find((o) => String(o.printful_id) === String(p.id));
-        return {
-          id: String(p.id),
-          printful_id: String(p.id),
-          title: override?.title_override || p.name || p.title || "Untitled",
-          description: override?.description_override || p.description || "",
-          price: override?.price_override || parseFloat(p.retail_price) || 0,
-          currency: p.currency || "EUR",
-          image_url: override?.main_image_override || p.thumbnail_url || "/placeholder.svg",
-          is_visible_shop: override?.is_visible_shop ?? true,
-          is_visible_home: override?.is_visible_home ?? false,
-          sort_order: override?.sort_order ?? null,
-          ...override,
-        };
-      });
-
-      console.log("Merged products:", merged);
-      setProducts(merged);
+      const { data, error } = await supabase.functions.invoke('fetch-printful-products');
+  
+      console.log("Printful raw response:", data, error);
+  
+      if (error) throw error;
+  
+      // många gånger ligger produkter under data.result
+      const products = data?.result || data?.products || data || [];
+      console.log("Extracted products:", products);
+  
+      setProducts(products);
     } catch (error) {
-      console.error("Error loading products:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive",
-      });
+      console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
     }
