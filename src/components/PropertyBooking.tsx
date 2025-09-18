@@ -26,52 +26,49 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
 
           {/* Booking Content */}
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Calendar Section */}
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Availability</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <PropertyCalendarOptimized
-                    propertyId={property.id}
-                    basePrice={property.price_per_night || 0}
-                    currency={property.currency}
-                    mode="guest"
-                    onDateSelect={(dates) => {
-                      setSelectedCheckIn(dates.checkIn);
-                      setSelectedCheckOut(dates.checkOut);
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Booking Form */}
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="text-2xl font-bold">
-                      {(property.price_per_night || 0).toLocaleString()} {property.currency}
-                    </span>
-                    <span className="text-sm text-muted-foreground">per night</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BookingForm 
-                    propertyId={property.id}
-                    propertyTitle={property.title}
-                    pricePerNight={property.price_per_night}
-                    currency={property.currency}
-                    maxGuests={property.max_guests}
-                    checkIn={selectedCheckIn}
-                    checkOut={selectedCheckOut}
-                  />
-                </CardContent>
-              </Card>
-            </div>
+            {/* Kalendern till vänster */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Availability</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PropertyCalendarOptimized
+                  propertyId={property.id}
+                  basePrice={property.price_per_night || 0}
+                  currency={property.currency}
+                  mode="guest"
+                  onDateSelect={(dates) => {
+                    setSelectedCheckIn(dates.checkIn);
+                    setSelectedCheckOut(dates.checkOut);
+                  }}
+                />
+              </CardContent>
+            </Card>
+          
+            {/* Formuläret till höger */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="text-2xl font-bold">
+                    {(property.price_per_night || 0).toLocaleString()} {property.currency}
+                  </span>
+                  <span className="text-sm text-muted-foreground">per night</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BookingForm 
+                  propertyId={property.id}
+                  propertyTitle={property.title}
+                  pricePerNight={property.price_per_night}
+                  currency={property.currency}
+                  maxGuests={property.max_guests}
+                  checkIn={selectedCheckIn}
+                  checkOut={selectedCheckOut}
+                />
+              </CardContent>
+            </Card>
           </div>
+
 
           {/* Pricing Information Below */}
           <div className="mt-8 space-y-6">
