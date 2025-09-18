@@ -44,6 +44,8 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                     pricePerNight={property.price_per_night}
                     currency={property.currency}
                     maxGuests={property.max_guests}
+                    checkIn={selectedCheckIn}
+                    checkOut={selectedCheckOut}
                   />
                 </CardContent>
               </Card>
