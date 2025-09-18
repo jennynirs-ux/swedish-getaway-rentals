@@ -145,7 +145,7 @@ const Shop = () => {
       {/* Header */}
       <section className="relative bg-gradient-to-r from-primary/10 to-secondary/10 py-20 pt-28 overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-70"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-100"
           style={{
             backgroundImage: `url(${forestHeroBg})`
           }}
