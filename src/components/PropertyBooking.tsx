@@ -12,6 +12,17 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
   const [selectedCheckIn, setSelectedCheckIn] = useState<Date | null>(null);
   const [selectedCheckOut, setSelectedCheckOut] = useState<Date | null>(null);
 
+  // ✅ Kalkylera antal nätter och totalpris live
+  const nights =
+    selectedCheckIn && selectedCheckOut
+      ? Math.ceil(
+          (selectedCheckOut.getTime() - selectedCheckIn.getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : 0;
+
+  const totalAmount = nights > 0 ? nights * (property.price_per_night || 0) : 0;
+
   return (
     <section id="booking-section" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -20,7 +31,8 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Book Your Stay</h2>
             <p className="text-xl text-muted-foreground">
-              Ready to experience the magic of {property.title}? Select your dates and send a booking request.
+              Ready to experience the magic of {property.title}? Select your
+              dates and send a booking request.
             </p>
           </div>
 
@@ -43,6 +55,34 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                   setSelectedCheckOut(dates.checkOut);
                 }}
               />
+
+              {/* ✅ Live summary */}
+              {nights > 0 && (
+                <div className="p-4 bg-accent rounded-lg shadow-sm">
+                  <div className="flex justify-between mb-2">
+                    <span>Check-in:</span>
+                    <span className="font-medium">
+                      {selectedCheckIn?.toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span>Check-out:</span>
+                    <span className="font-medium">
+                      {selectedCheckOut?.toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span>Number of nights:</span>
+                    <span className="font-medium">{nights}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Total:</span>
+                    <span>
+                      {totalAmount.toLocaleString()} {property.currency}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Booking Form */}
               <BookingForm
