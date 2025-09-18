@@ -1,15 +1,15 @@
 import React, { memo, useMemo, useCallback, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
-import type { DateRange } from 'react-day-picker';
 
 interface AvailabilityDate {
-  date: string;               // 'YYYY-MM-DD'
+  date: string;
   available: boolean;
   reason?: string;
-  seasonal_price?: number;    // e.g. 1500
+  seasonal_price?: number;
   minimum_nights?: number;
 }
 
@@ -21,162 +21,177 @@ interface PropertyCalendarOptimizedProps {
   mode?: 'guest' | 'admin';
 }
 
-const PropertyCalendarOptimized = memo(function PropertyCalendarOptimized({
-  propertyId,
-  basePrice,
-  currency,
-  onDateSelect,
-  mode = 'guest',
-}: PropertyCalendarOptimizedProps) {
-  const [range, setRange] = useState<DateRange | undefined>(undefined);
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
+const PropertyCalendarOptimized = memo(({ 
+  propertyId, 
+  basePrice, 
+  currency, 
+  onDateSelect, 
+  mode = 'guest' 
+}: PropertyCalendarOptimizedProps) => {
+  const today = new Date();
 
-  // Fetch availability (today → forward)
+  // Hämta tillgänglighet från supabase
   const availabilityQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from('availability')
       .select('date, available, reason, seasonal_price, minimum_nights')
       .eq('property_id', propertyId)
-      .gte('date', new Date().toISOString().split('T')[0])
+      .gte('date', today.toISOString().split('T')[0])
       .order('date');
 
     if (error) throw error;
     return { data, error: null };
-  }, [propertyId]);
+  }, [propertyId, today]);
 
   const { data: availability, loading } = useOptimizedQuery(
     `availability-${propertyId}`,
     availabilityQueryFn,
     {
-      cacheTime: 5 * 60 * 1000,
-      staleTime: 30 * 1000,
+      cacheTime: 5 * 60 * 1000, // 5 min
+      staleTime: 30 * 1000, // 30 sek
       enableRealtime: true,
       realtimeFilter: {
         event: '*',
         schema: 'public',
         table: 'availability',
-        filter: `property_id=eq.${propertyId}`,
-      },
+        filter: `property_id=eq.${propertyId}`
+      }
     }
   );
 
-  // Map for quick lookups
+  // Map för snabba lookups
   const availabilityMap = useMemo(() => {
-    const map = new Map<
-      string,
-      { available: boolean; price: number; minimumNights: number }
-    >();
-    (availability || []).forEach((item: AvailabilityDate) => {
-      map.set(item.date, {
-        available: item.available,
-        price: item.seasonal_price || basePrice,
-        minimumNights: item.minimum_nights || 1,
-      });
-    });
-    return map;
+    if (!availability) return new Map();
+
+    return new Map(
+      availability.map((item: AvailabilityDate) => [
+        item.date,
+        {
+          available: item.available,
+          reason: item.reason,
+          price: item.seasonal_price || basePrice,
+          minimumNights: item.minimum_nights || 1
+        }
+      ])
+    );
   }, [availability, basePrice]);
 
-  const isDateAvailable = useCallback(
-    (date: Date) => {
-      const key = date.toISOString().split('T')[0];
-      const info = availabilityMap.get(key);
-      // If no explicit record, assume available
-      return info ? info.available !== false : true;
-    },
-    [availabilityMap]
-  );
+  const isDateAvailable = useCallback((date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const info = availabilityMap.get(dateStr);
+    return info?.available !== false;
+  }, [availabilityMap]);
 
-  const getDatePrice = useCallback(
-    (date: Date) => {
-      const key = date.toISOString().split('T')[0];
-      const info = availabilityMap.get(key);
-      return info?.price ?? basePrice;
-    },
-    [availabilityMap, basePrice]
-  );
+  const getDatePrice = useCallback((date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const info = availabilityMap.get(dateStr);
+    return info?.price || basePrice;
+  }, [availabilityMap, basePrice]);
 
-  // Build disabled matchers
+  // Bygg disable-matchers
   const disabledMatchers = useMemo(() => {
-    const dates: Date[] = [];
+    const matchers: any[] = [{ before: today }];
+
     (availability || []).forEach((item: AvailabilityDate) => {
       if (!item.available) {
-        // Force midnight local to avoid TZ shift
         const d = new Date(item.date + 'T00:00:00');
-        dates.push(d);
+        matchers.push({ date: d });
       }
     });
-    // Also disable past dates
-    return [{ before: today }, ...dates];
+
+    return matchers;
   }, [availability, today]);
 
-  const handleSelect = (selected: DateRange | undefined) => {
-    setRange(selected);
-    onDateSelect?.({
-      checkIn: selected?.from ?? null,
-      checkOut: selected?.to ?? null,
-    });
+  // State för valt intervall
+  const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+
+  const handleSelect = (r: { from: Date | null; to: Date | null } | undefined) => {
+    setRange(r || { from: null, to: null });
+    if (onDateSelect) {
+      onDateSelect({
+        checkIn: r?.from || null,
+        checkOut: r?.to || null,
+      });
+    }
   };
 
-  // Loading skeleton (no card here—parent owns the wrapper)
   if (loading) {
-    return <div className="h-80 bg-muted animate-pulse rounded-lg" />;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Calendar...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 bg-muted animate-pulse rounded-lg" />
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="space-y-3">
-      <Calendar
-        mode="range"
-        selected={range}
-        onSelect={handleSelect}
-        disabled={disabledMatchers}
-        initialFocus
-        numberOfMonths={1}
-        className="rounded-md border"
-        // Keep the default Day (button) — only customize its content
-        components={{
-          DayContent: (props) => {
-            const date = props.date;
-            const available = isDateAvailable(date);
-            const price = getDatePrice(date);
-            const showPrice = mode === 'guest' && available && price !== basePrice;
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          Availability & Pricing
+          {mode === 'guest' && (
+            <Badge variant="secondary">{currency}</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Calendar
+          mode="range"
+          selected={range}
+          onSelect={handleSelect}
+          disabled={disabledMatchers}
+          initialFocus
+          numberOfMonths={1}
+          className="rounded-md border"
+          components={{
+            DayContent: (props) => {
+              const date = props.date;
+              const available = isDateAvailable(date);
+              const price = getDatePrice(date);
+              const showPrice = mode === "guest" && available && price !== basePrice;
 
-            return (
-              <div className="flex flex-col items-center leading-none">
-                <span className={available ? '' : 'line-through opacity-50'}>
-                  {date.getDate()}
-                </span>
-                {showPrice && (
-                  <span className="text-[10px] opacity-70 mt-0.5">
-                    {price}
+              return (
+                <div className="flex flex-col items-center leading-none">
+                  <span className={available ? "" : "line-through opacity-50"}>
+                    {date.getDate()}
                   </span>
-                )}
-              </div>
-            );
-          },
-        }}
-      />
+                  {showPrice && (
+                    <span className="text-[10px] opacity-70 mt-0.5">
+                      {price}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+          }}
+        />
 
-      {mode === 'guest' && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-primary/80" />
-            Available
+        {mode === 'guest' && (
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                Available
+              </span>
+              <span className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-muted-foreground" />
+                Unavailable
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Base rate: {basePrice} {currency}/night
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-destructive/80" />
-            Unavailable
-          </div>
-          <Badge variant="outline" className="border-dashed">
-            Base: {basePrice} {currency}/night
-          </Badge>
-        </div>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 });
+
+PropertyCalendarOptimized.displayName = 'PropertyCalendarOptimized';
 
 export default PropertyCalendarOptimized;
