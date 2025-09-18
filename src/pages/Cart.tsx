@@ -82,6 +82,9 @@ const CartPage = () => {
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
       if (data.url) {
+        // Store cart items in session for order completion
+        sessionStorage.setItem('checkout_items', JSON.stringify(items));
+        sessionStorage.setItem('checkout_shipping_cost', shippingCost.toString());
         window.open(data.url, '_blank');
       }
     } catch (error) {

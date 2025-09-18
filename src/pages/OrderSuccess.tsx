@@ -19,17 +19,22 @@ const OrderSuccess = () => {
 
   const handlePaymentSuccess = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('handle-payment-success', {
-        body: { session_id: sessionId }
+      const { data, error } = await supabase.functions.invoke('handle-order-success', {
+        body: { sessionId }
       });
 
       if (error) throw error;
       
       if (data.success) {
         setSuccess(true);
+        // Clear cart from session storage
+        sessionStorage.removeItem('checkout_items');
+        sessionStorage.removeItem('checkout_shipping_cost');
+        // Clear cart from localStorage
+        localStorage.removeItem('ng_cart');
       }
     } catch (error) {
-      console.error('Error processing payment:', error);
+      console.error('Error processing order:', error);
     } finally {
       setProcessing(false);
     }
