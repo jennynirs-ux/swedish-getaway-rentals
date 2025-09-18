@@ -26,7 +26,28 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
 
           {/* Booking Content */}
           <div className="grid lg:grid-cols-2 gap-8">
-          {/* Booking Form with Calendar */}
+            {/* Calendar Section */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Availability</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PropertyCalendarOptimized
+                    propertyId={property.id}
+                    basePrice={property.price_per_night || 0}
+                    currency={property.currency}
+                    mode="guest"
+                    onDateSelect={(dates) => {
+                      setSelectedCheckIn(dates.checkIn);
+                      setSelectedCheckOut(dates.checkOut);
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Booking Form */}
             <div>
               <Card>
                 <CardHeader>
@@ -50,104 +71,84 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Calendar Section */}
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Availability</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <PropertyCalendarOptimized
-                    propertyId={property.id}
-                    basePrice={property.price_per_night || 0}
-                    currency={property.currency}
-                    mode="guest"
-                    onDateSelect={(dates) => {
-                      setSelectedCheckIn(dates.checkIn);
-                      setSelectedCheckOut(dates.checkOut);
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
           </div>
 
           {/* Pricing Information Below */}
-          <div className="mt-8 space-y-6">{property.pricing_table && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pricing Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {property.pricing_table.off_season && (
-                      <div className="flex justify-between">
-                        <span>Off Season</span>
-                        <span className="font-semibold">
-                          {(property.pricing_table.off_season.price).toLocaleString()} {property.pricing_table.off_season.currency}/night
-                        </span>
-                      </div>
-                    )}
-                    {property.pricing_table.peak_season && (
-                      <div className="flex justify-between">
-                        <span>Peak Season</span>
-                        <span className="font-semibold">
-                          {(property.pricing_table.peak_season.price).toLocaleString()} {property.pricing_table.peak_season.currency}/night
-                        </span>
-                      </div>
-                    )}
-                    {property.pricing_table.holiday_periods && (
-                      <div className="flex justify-between">
-                        <span>Holiday Periods</span>
-                        <span className="font-semibold">
-                          {(property.pricing_table.holiday_periods.price).toLocaleString()} {property.pricing_table.holiday_periods.currency}/night
-                        </span>
-                      </div>
-                    )}
-                    {property.pricing_table.cleaning_fee && (
-                      <div className="flex justify-between">
-                        <span>Cleaning Fee</span>
-                        <span className="font-semibold">
-                          {(property.pricing_table.cleaning_fee.price).toLocaleString()} {property.pricing_table.cleaning_fee.currency}
-                        </span>
-                      </div>
-                    )}
-                    {property.pricing_table.minimum_stay && (
-                      <div className="flex justify-between">
-                        <span>Minimum Stay</span>
-                        <span className="font-semibold">{property.pricing_table.minimum_stay} nights</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Contact Information */}
-              {property.get_in_touch_info && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Get In Touch</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {property.get_in_touch_info.contact_email && (
-                      <div>
-                        <span className="font-medium">Email:</span>
-                        <p className="text-muted-foreground">{property.get_in_touch_info.contact_email}</p>
-                      </div>
-                    )}
-                    {property.get_in_touch_info.contact_phone && (
-                      <div>
-                        <span className="font-medium">Phone:</span>
-                        <p className="text-muted-foreground">{property.get_in_touch_info.contact_phone}</p>
-                      </div>
-                    )}
-                    <div className="pt-2 border-t">
-                      <p className="text-sm text-brown-600 font-medium">
-                        Fast Response: {property.contact_response_time || 'We typically respond to inquiries within 2 hours.'}
-                      </p>
+          <div className="mt-8 space-y-6">
+            {property.pricing_table && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pricing Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {property.pricing_table.off_season && (
+                    <div className="flex justify-between">
+                      <span>Off Season</span>
+                      <span className="font-semibold">
+                        {(property.pricing_table.off_season.price).toLocaleString()} {property.pricing_table.off_season.currency}/night
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+                  {property.pricing_table.peak_season && (
+                    <div className="flex justify-between">
+                      <span>Peak Season</span>
+                      <span className="font-semibold">
+                        {(property.pricing_table.peak_season.price).toLocaleString()} {property.pricing_table.peak_season.currency}/night
+                      </span>
+                    </div>
+                  )}
+                  {property.pricing_table.holiday_periods && (
+                    <div className="flex justify-between">
+                      <span>Holiday Periods</span>
+                      <span className="font-semibold">
+                        {(property.pricing_table.holiday_periods.price).toLocaleString()} {property.pricing_table.holiday_periods.currency}/night
+                      </span>
+                    </div>
+                  )}
+                  {property.pricing_table.cleaning_fee && (
+                    <div className="flex justify-between">
+                      <span>Cleaning Fee</span>
+                      <span className="font-semibold">
+                        {(property.pricing_table.cleaning_fee.price).toLocaleString()} {property.pricing_table.cleaning_fee.currency}
+                      </span>
+                    </div>
+                  )}
+                  {property.pricing_table.minimum_stay && (
+                    <div className="flex justify-between">
+                      <span>Minimum Stay</span>
+                      <span className="font-semibold">{property.pricing_table.minimum_stay} nights</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Contact Information */}
+            {property.get_in_touch_info && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Get In Touch</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {property.get_in_touch_info.contact_email && (
+                    <div>
+                      <span className="font-medium">Email:</span>
+                      <p className="text-muted-foreground">{property.get_in_touch_info.contact_email}</p>
+                    </div>
+                  )}
+                  {property.get_in_touch_info.contact_phone && (
+                    <div>
+                      <span className="font-medium">Phone:</span>
+                      <p className="text-muted-foreground">{property.get_in_touch_info.contact_phone}</p>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t">
+                    <p className="text-sm text-brown-600 font-medium">
+                      Fast Response: {property.contact_response_time || 'We typically respond to inquiries within 2 hours.'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>
