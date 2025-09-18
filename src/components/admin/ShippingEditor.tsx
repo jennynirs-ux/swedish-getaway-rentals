@@ -63,10 +63,13 @@ export const ShippingEditor = () => {
     try {
       const { error } = await supabase
         .from('platform_settings')
-        .upsert({
-          setting_key: 'shipping_settings',
-          setting_value: settings as any
-        });
+        .upsert(
+          {
+            setting_key: 'shipping_settings',
+            setting_value: settings as any
+          },
+          { onConflict: 'setting_key' }
+        );
 
       if (error) throw error;
 

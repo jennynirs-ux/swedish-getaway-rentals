@@ -38,22 +38,32 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Fetch all products from Printful store
+    // Fetch all products from Printful store (paginate all pages)
     logStep("Fetching products from Printful");
-    const printfulResponse = await fetch("https://api.printful.com/store/products", {
-      headers: {
-        "Authorization": `Bearer ${printfulToken}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const limit = 100; // Printful supports pagination, fetch up to 100 per page
+    let offset = 0;
+    const printfulProducts: any[] = [];
+    while (true) {
+      const url = `https://api.printful.com/store/products?offset=${offset}&limit=${limit}`;
+      const resp = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${printfulToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!printfulResponse.ok) {
-      throw new Error(`Printful API error: ${printfulResponse.status} ${printfulResponse.statusText}`);
+      if (!resp.ok) {
+        throw new Error(`Printful API error: ${resp.status} ${resp.statusText}`);
+      }
+
+      const data = await resp.json();
+      const batch = data.result || [];
+      logStep("Fetched batch from Printful", { batch: batch.length, offset });
+      if (batch.length === 0) break;
+      printfulProducts.push(...batch);
+      offset += batch.length;
+      if (batch.length < limit) break; // last page
     }
-
-    const printfulData = await printfulResponse.json();
-    const printfulProducts = printfulData.result || [];
-
 logStep("Fetched products from Printful", { count: printfulProducts.length });
 
     // If replace mode, clear existing products first

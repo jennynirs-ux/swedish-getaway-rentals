@@ -21,8 +21,11 @@ const CartPage = () => {
 
   useEffect(() => {
     fetchShippingSettings();
+  }, []);
+
+  useEffect(() => {
     calculateShipping();
-  }, [items, total]);
+  }, [shippingSettings, items, total]);
 
   const fetchShippingSettings = async () => {
     try {
