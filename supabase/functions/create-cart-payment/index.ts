@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { items, customerEmail } = await req.json();
+    const { items, customerEmail, shippingCost } = await req.json();
     if (!Array.isArray(items) || items.length === 0) throw new Error('No items provided');
 
     const supabase = createClient(
@@ -63,15 +63,29 @@ serve(async (req) => {
       });
     }
 
+    // Add shipping as a separate line item so total matches (admin settings)
+    if (typeof shippingCost === 'number' && shippingCost > 0) {
+      lineItems.push({
+        price_data: {
+          currency,
+          product_data: { name: 'Shipping' },
+          unit_amount: shippingCost,
+        },
+        quantity: 1,
+      });
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
 
     const session = await stripe.checkout.sessions.create({
       customer_email: customerEmail || undefined,
       line_items: lineItems,
       mode: 'payment',
+      shipping_address_collection: { allowed_countries: ['SE','NO','DK','FI','DE','GB','US','CA','NL','FR','ES','IT'] },
+      phone_number_collection: { enabled: true },
       success_url: `${req.headers.get('origin')}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/cart`,
-      metadata: { type: 'cart' }
+      metadata: { type: 'cart', items: JSON.stringify(items), shipping_cost: String(shippingCost || 0), currency }
     });
 
     return new Response(JSON.stringify({ url: session.url }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });

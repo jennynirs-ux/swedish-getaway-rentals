@@ -17,7 +17,16 @@ serve(async (req) => {
   }
 
   try {
-    logStep("Starting Printful sync");
+    // Read optional body to support hard replace mode
+    let replaceMode = false;
+    try {
+      const body = await req.json();
+      replaceMode = body?.mode === 'replace';
+    } catch (_) {
+      // no body provided
+    }
+
+    logStep("Starting Printful sync", { replaceMode });
 
     const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
     if (!printfulToken) {
@@ -45,7 +54,16 @@ serve(async (req) => {
     const printfulData = await printfulResponse.json();
     const printfulProducts = printfulData.result || [];
 
-    logStep("Fetched products from Printful", { count: printfulProducts.length });
+logStep("Fetched products from Printful", { count: printfulProducts.length });
+
+    // If replace mode, clear existing products first
+    if (replaceMode) {
+      logStep("Replace mode enabled - clearing existing products");
+      await supabase
+        .from('shop_products')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+    }
 
     // Get existing products from database
     const { data: existingProducts, error: fetchError } = await supabase
@@ -57,7 +75,7 @@ serve(async (req) => {
     }
 
     const existingProductMap = new Map(
-      existingProducts?.map(p => [p.printful_product_id, p]) || []
+      (replaceMode ? [] : (existingProducts?.map(p => [p.printful_product_id, p]) || []))
     );
 
     // Track which Printful products we've seen

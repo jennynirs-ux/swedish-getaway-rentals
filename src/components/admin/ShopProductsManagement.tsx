@@ -100,7 +100,8 @@ const ShopProductsManagement = ({
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke(
-        "sync-printful-products"
+        "sync-printful-products",
+        { body: { mode: "replace" } }
       );
 
       if (error) throw error;
