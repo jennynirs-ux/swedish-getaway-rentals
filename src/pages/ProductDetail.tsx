@@ -296,37 +296,22 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Size Selection */}
-            {variants.length > 0 && (
+            {/* Variant Selection */}
+            {variants.length > 1 && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Size *</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {variants.map((variant) => {
-                    const isSelected = selectedVariant === variant.id?.toString();
-                    const size = variant.name?.replace(/.*-\s*/, '') || variant.name; // Extract size from variant name
-                    return (
-                      <button
-                        key={variant.id}
-                        onClick={() => setSelectedVariant(variant.id?.toString())}
-                        className={`p-3 border rounded-lg text-center transition-colors ${
-                          isSelected 
-                            ? 'border-primary bg-primary text-primary-foreground' 
-                            : 'border-border hover:border-primary hover:bg-primary/10'
-                        }`}
-                      >
-                        <div className="font-medium">{size}</div>
-                        {variant.retail_price && (
-                          <div className="text-xs mt-1">
-                            {formatPrice(getVariantPrice(variant) || 0, product.currency)}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {!selectedVariant && (
-                  <p className="text-sm text-destructive mt-2">Please select a size to continue</p>
-                )}
+                <h3 className="text-lg font-semibold text-foreground mb-2">Options</h3>
+                <Select value={selectedVariant || ''} onValueChange={setSelectedVariant}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {variants.map((variant) => (
+                      <SelectItem key={variant.id} value={variant.id?.toString()}>
+                        {variant.name} {variant.retail_price && `- ${formatPrice(getVariantPrice(variant) || 0, product.currency)}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
@@ -352,7 +337,7 @@ const ProductDetail = () => {
               <CardContent className="p-6">
                 <Button
                    onClick={handleAddToCart}
-                   disabled={purchasing || (variants.length > 0 && !selectedVariant)}
+                   disabled={purchasing || (variants.length > 1 && !selectedVariant)}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg"
                   size="lg"
                 >
@@ -369,9 +354,9 @@ const ProductDetail = () => {
                   )}
                 </Button>
                 
-                {variants.length > 0 && !selectedVariant && (
+                {variants.length > 1 && !selectedVariant && (
                   <p className="text-sm text-muted-foreground mt-2 text-center">
-                    Please select a size to continue
+                    Please select an option to continue
                   </p>
                 )}
               </CardContent>
