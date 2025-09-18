@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
-import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 
 interface BookingFormProps {
   propertyId: string;
@@ -14,6 +13,8 @@ interface BookingFormProps {
   pricePerNight: number;
   currency: string;
   maxGuests: number;
+  checkIn?: Date | null;
+  checkOut?: Date | null;
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({
@@ -21,7 +22,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
   propertyTitle,
   pricePerNight,
   currency,
-  maxGuests
+  maxGuests,
+  checkIn,
+  checkOut
 }) => {
   const { createBooking, loading } = useBooking();
   const [formData, setFormData] = useState({
@@ -34,12 +37,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
     special_requests: ''
   });
 
+  // 🔹 Sync props (checkIn/checkOut) to formData
+  useEffect(() => {
+    if (checkIn) {
+      setFormData(prev => ({ ...prev, check_in_date: checkIn.toISOString().split('T')[0] }));
+    }
+    if (checkOut) {
+      setFormData(prev => ({ ...prev, check_out_date: checkOut.toISOString().split('T')[0] }));
+    }
+  }, [checkIn, checkOut]);
+
   const calculateTotalAmount = () => {
     if (!formData.check_in_date || !formData.check_out_date) return 0;
     
-    const checkIn = new Date(formData.check_in_date);
-    const checkOut = new Date(formData.check_out_date);
-    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    const ci = new Date(formData.check_in_date);
+    const co = new Date(formData.check_out_date);
+    const nights = Math.ceil((co.getTime() - ci.getTime()) / (1000 * 60 * 60 * 24));
     
     return nights > 0 ? nights * pricePerNight : 0;
   };
@@ -48,9 +61,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     e.preventDefault();
     
     const totalAmount = calculateTotalAmount();
-    if (totalAmount <= 0) {
-      return;
-    }
+    if (totalAmount <= 0) return;
 
     await createBooking({
       property_id: propertyId,
@@ -79,22 +90,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
   };
 
   const totalAmount = calculateTotalAmount();
-  const nights = formData.check_in_date && formData.check_out_date ? 
-    Math.ceil((new Date(formData.check_out_date).getTime() - new Date(formData.check_in_date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-
-  const handleDateSelect = (dates: { checkIn: Date | null; checkOut: Date | null }) => {
-    if (dates.checkIn) {
-      setFormData(prev => ({ ...prev, check_in_date: dates.checkIn!.toISOString().split('T')[0] }));
-    }
-    if (dates.checkOut) {
-      setFormData(prev => ({ ...prev, check_out_date: dates.checkOut!.toISOString().split('T')[0] }));
-    }
-  };
+  const nights = formData.check_in_date && formData.check_out_date 
+    ? Math.ceil((new Date(formData.check_out_date).getTime() - new Date(formData.check_in_date).getTime()) / (1000 * 60 * 60 * 24)) 
+    : 0;
 
   return (
     <div className="space-y-6">
-
-      {/* Booking Form */}
       <Card className="shadow-soft-shadow">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -131,93 +132,93 @@ const BookingForm: React.FC<BookingFormProps> = ({
               </div>
             </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
-            <Input 
-              id="number_of_guests"
-              name="number_of_guests"
-              type="number" 
-              min="1" 
-              max={maxGuests} 
-              value={formData.number_of_guests}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="guest_name">Your name</Label>
-            <Input 
-              id="guest_name"
-              name="guest_name"
-              placeholder="First and last name" 
-              value={formData.guest_name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="guest_email">Email address</Label>
-            <Input 
-              id="guest_email"
-              name="guest_email"
-              type="email" 
-              placeholder="your@email.com" 
-              value={formData.guest_email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="guest_phone">Phone number (optional)</Label>
-            <Input 
-              id="guest_phone"
-              name="guest_phone"
-              type="tel" 
-              placeholder="+46 XX XXX XX XX" 
-              value={formData.guest_phone}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="special_requests">Special requests</Label>
-            <Textarea 
-              id="special_requests"
-              name="special_requests"
-              placeholder="Any special requests or questions..." 
-              value={formData.special_requests}
-              onChange={handleChange}
-              rows={3}
-            />
-          </div>
-
-          {totalAmount > 0 && (
-            <div className="p-4 bg-accent rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <span>Number of nights:</span>
-                <span className="font-medium">{nights}</span>
-              </div>
-              <div className="flex justify-between items-center mb-2">
-                <span>Price per night:</span>
-                <span className="font-medium">{pricePerNight.toLocaleString()} {currency}</span>
-              </div>
-              <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
-                <span>Total:</span>
-                <span>{totalAmount.toLocaleString()} {currency}</span>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
+              <Input 
+                id="number_of_guests"
+                name="number_of_guests"
+                type="number" 
+                min="1" 
+                max={maxGuests} 
+                value={formData.number_of_guests}
+                onChange={handleChange}
+                required
+              />
             </div>
-          )}
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={loading || totalAmount <= 0}
-          >
-            {loading ? 'Sending...' : 'Send booking request'}
-          </Button>
+            <div className="space-y-2">
+              <Label htmlFor="guest_name">Your name</Label>
+              <Input 
+                id="guest_name"
+                name="guest_name"
+                placeholder="First and last name" 
+                value={formData.guest_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="guest_email">Email address</Label>
+              <Input 
+                id="guest_email"
+                name="guest_email"
+                type="email" 
+                placeholder="your@email.com" 
+                value={formData.guest_email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="guest_phone">Phone number (optional)</Label>
+              <Input 
+                id="guest_phone"
+                name="guest_phone"
+                type="tel" 
+                placeholder="+46 XX XXX XX XX" 
+                value={formData.guest_phone}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="special_requests">Special requests</Label>
+              <Textarea 
+                id="special_requests"
+                name="special_requests"
+                placeholder="Any special requests or questions..." 
+                value={formData.special_requests}
+                onChange={handleChange}
+                rows={3}
+              />
+            </div>
+
+            {totalAmount > 0 && (
+              <div className="p-4 bg-accent rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span>Number of nights:</span>
+                  <span className="font-medium">{nights}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span>Price per night:</span>
+                  <span className="font-medium">{pricePerNight.toLocaleString()} {currency}</span>
+                </div>
+                <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
+                  <span>Total:</span>
+                  <span>{totalAmount.toLocaleString()} {currency}</span>
+                </div>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || totalAmount <= 0}
+            >
+              {loading ? 'Sending...' : 'Send booking request'}
+            </Button>
           </form>
         </CardContent>
       </Card>
