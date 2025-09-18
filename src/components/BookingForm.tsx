@@ -93,14 +93,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Interactive Calendar */}
-        <PropertyCalendarOptimized
-          propertyId={propertyId}
-          basePrice={pricePerNight}
-          currency={currency}
-          onDateSelect={handleDateSelect}
-          mode="guest"
-        />
 
       {/* Booking Form */}
       <Card className="shadow-soft-shadow">
