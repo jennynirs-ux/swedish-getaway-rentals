@@ -30,7 +30,7 @@ const PropertyCalendarOptimized = memo(({
 }: PropertyCalendarOptimizedProps) => {
   const today = new Date();
 
-  // Hämta tillgänglighet från supabase
+  // Hämta tillgänglighet
   const availabilityQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from('availability')
@@ -47,8 +47,8 @@ const PropertyCalendarOptimized = memo(({
     `availability-${propertyId}`,
     availabilityQueryFn,
     {
-      cacheTime: 5 * 60 * 1000, // 5 min
-      staleTime: 30 * 1000, // 30 sek
+      cacheTime: 5 * 60 * 1000,
+      staleTime: 30 * 1000,
       enableRealtime: true,
       realtimeFilter: {
         event: '*',
@@ -59,18 +59,15 @@ const PropertyCalendarOptimized = memo(({
     }
   );
 
-  // Map för snabba lookups
+  // Map för lookup
   const availabilityMap = useMemo(() => {
     if (!availability) return new Map();
-
     return new Map(
       availability.map((item: AvailabilityDate) => [
         item.date,
         {
           available: item.available,
-          reason: item.reason,
           price: item.seasonal_price || basePrice,
-          minimumNights: item.minimum_nights || 1
         }
       ])
     );
@@ -88,29 +85,43 @@ const PropertyCalendarOptimized = memo(({
     return info?.price || basePrice;
   }, [availabilityMap, basePrice]);
 
-  // Bygg disable-matchers
+  // Samla disabled datum
   const disabledMatchers = useMemo(() => {
     const matchers: any[] = [{ before: today }];
-
     (availability || []).forEach((item: AvailabilityDate) => {
       if (!item.available) {
-        const d = new Date(item.date + 'T00:00:00');
-        matchers.push({ date: d });
+        matchers.push(new Date(item.date + 'T00:00:00'));
       }
     });
-
     return matchers;
   }, [availability, today]);
 
-  // State för valt intervall
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
 
   const handleSelect = (r: { from: Date | null; to: Date | null } | undefined) => {
-    setRange(r || { from: null, to: null });
+    if (!r) {
+      setRange({ from: null, to: null });
+      return;
+    }
+
+    // Blockera start eller slut på disabled datum
+    if (r.from && !isDateAvailable(r.from)) return;
+    if (r.to && !isDateAvailable(r.to)) return;
+
+    // Blockera intervall som korsar disabled datum
+    if (r.from && r.to) {
+      const d = new Date(r.from);
+      while (d <= r.to) {
+        if (!isDateAvailable(d)) return; // Hitta spärr -> avbryt
+        d.setDate(d.getDate() + 1);
+      }
+    }
+
+    setRange(r);
     if (onDateSelect) {
       onDateSelect({
-        checkIn: r?.from || null,
-        checkOut: r?.to || null,
+        checkIn: r.from || null,
+        checkOut: r.to || null,
       });
     }
   };
@@ -133,9 +144,7 @@ const PropertyCalendarOptimized = memo(({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           Availability & Pricing
-          {mode === 'guest' && (
-            <Badge variant="secondary">{currency}</Badge>
-          )}
+          {mode === 'guest' && <Badge variant="secondary">{currency}</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent>
