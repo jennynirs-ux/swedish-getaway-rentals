@@ -140,14 +140,6 @@ const PropertyCalendarOptimized = memo(({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          Availability & Pricing
-          {mode === 'guest' && <Badge variant="secondary">{currency}</Badge>}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
         <Calendar
           mode="range"
           selected={range}
