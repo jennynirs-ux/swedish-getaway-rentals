@@ -176,33 +176,33 @@ const HomepageProducts = memo(() => {
                   </div>
                 </Link>
 
-                <CardContent className="p-3 space-y-2">
-                  <Link to={`/product/${product.id}`}>
-                    <h3 className="text-sm font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
-                      {title}
-                    </h3>
-                  </Link>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="text-lg font-bold text-primary">
-                      {formatPrice(price, product.currency)}
-                    </div>
-
-                    <Button
-                      size="sm"
-                      onClick={() => handlePurchase(product)}
-                      disabled={purchasing === product.id}
-                      className="bg-primary hover:bg-primary/90 text-xs px-3 py-1"
-                    >
-                      {purchasing === product.id ? (
-                        <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full mr-1" />
-                      ) : (
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                      )}
-                      Buy Now
-                    </Button>
+              <CardContent className="p-3 space-y-2">
+                <Link to={`/product/${product.id}`}>
+                  <h3 className="text-sm font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
+                    {title}
+                  </h3>
+                </Link>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
+                  <div className="text-lg font-bold text-primary">
+                    {formatPrice(price, product.currency)}
                   </div>
-                </CardContent>
+                  
+                  <Button
+                    size="sm"
+                    onClick={() => handlePurchase(product)}
+                    disabled={purchasing === product.id}
+                    className="bg-primary hover:bg-primary/90 text-xs px-3 py-1 w-full sm:w-auto"
+                  >
+                    {purchasing === product.id ? (
+                      <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full mr-1" />
+                    ) : (
+                      <ShoppingCart className="w-3 h-3 mr-1" />
+                    )}
+                    Buy Now
+                  </Button>
+                </div>
+              </CardContent>
               </Card>
             );
           })}
