@@ -1,8 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useProperties } from "@/hooks/useProperties";
 import PropertyCard from "@/components/PropertyCard";
+import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
+import { supabase } from "@/integrations/supabase/client";
+import LazyImage from "@/components/LazyImage";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
@@ -17,8 +19,53 @@ import forestHeroBg from "@/assets/forest-hero-light.jpg";
 
 const bookCover = "/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png";
 
-const HomePage = () => {
-  const { properties, loading } = useProperties();
+// Memoized components for performance
+const MemoizedPropertyCard = memo(PropertyCard);
+const MemoizedHomepageProducts = memo(HomepageProducts);
+
+const HomePage = memo(() => {
+  // Optimized properties query with caching
+  const propertiesQueryFn = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('properties')
+      .select(`
+        id,
+        host_id,
+        title,
+        description,
+        location,
+        price_per_night,
+        currency,
+        max_guests,
+        bedrooms,
+        bathrooms,
+        hero_image_url,
+        gallery_images,
+        amenities,
+        amenities_data,
+        active
+      `)
+      .eq('active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  }, []);
+
+  const { data: properties = [], loading } = useOptimizedQuery(
+    'homepage-properties',
+    propertiesQueryFn,
+    {
+      cacheTime: 15 * 60 * 1000, // 15 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      enableRealtime: true,
+      realtimeFilter: {
+        event: '*',
+        schema: 'public',
+        table: 'properties'
+      }
+    }
+  );
 
   // Filters från sökkomponenten
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
@@ -70,10 +117,12 @@ const HomePage = () => {
       {/* Hero Section */}
       <header className="relative py-20 overflow-hidden">
         <div className="absolute inset-0">
-          <img
+          <LazyImage
             src={forestHeroBg}
             alt="Swedish forest background with sunlight through trees"
             className="w-full h-full object-cover"
+            priority={true}
+            loading="eager"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60"></div>
         </div>
@@ -113,7 +162,7 @@ const HomePage = () => {
           ) : filteredProperties.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {filteredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                <MemoizedPropertyCard key={property.id} property={property} />
               ))}
             </div>
           ) : (
@@ -140,7 +189,7 @@ const HomePage = () => {
               {/* Book Cover - Always Left */}
               <div className="col-span-4 flex justify-center lg:justify-start">
                 <div className="relative group">
-                  <img
+                  <LazyImage
                     src={bookCover}
                     alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs"
                     className="w-28 sm:w-32 md:w-40 lg:w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
@@ -254,7 +303,7 @@ const HomePage = () => {
       </section>
 
       {/* Featured Products Section */}
-      <HomepageProducts />
+      <MemoizedHomepageProducts />
 
       {/* Footer */}
       <footer className="py-16 border-t border-border bg-card">
@@ -306,6 +355,8 @@ const HomePage = () => {
       </footer>
     </div>
   );
-};
+});
+
+HomePage.displayName = 'HomePage';
 
 export default HomePage;

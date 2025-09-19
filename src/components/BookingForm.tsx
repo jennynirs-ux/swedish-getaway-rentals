@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 
 interface BookingFormProps {
   propertyId: string;
@@ -24,6 +25,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
   maxGuests
 }) => {
   const { createBooking, loading } = useBooking();
+  
+  // Enable real-time calendar updates when bookings are made
+  useBookingRealtime({
+    onBookingUpdate: (booking) => {
+      if (booking.property_id === propertyId && booking.status === 'confirmed') {
+        // Calendar will automatically refresh due to real-time subscription in PropertyCalendarOptimized
+        console.log('Booking confirmed for this property:', booking);
+      }
+    }
+  });
 
   const [formData, setFormData] = useState({
     guest_name: '',

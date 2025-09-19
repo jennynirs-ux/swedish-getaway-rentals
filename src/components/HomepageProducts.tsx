@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { memo, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
+import LazyImage from "@/components/LazyImage";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ShopProduct {
   id: string;
@@ -26,38 +29,56 @@ interface ShopProduct {
   printful_data?: any;
 }
 
-const HomepageProducts = () => {
-  const [products, setProducts] = useState<ShopProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+const HomepageProducts = memo(() => {
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  
+  // Optimized products query with caching
+  const productsQueryFn = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('shop_products')
+      .select(`
+        id,
+        title,
+        description,
+        price,
+        currency,
+        image_url,
+        custom_description,
+        custom_price,
+        title_override,
+        description_override,
+        price_override,
+        main_image_override,
+        is_visible_home,
+        is_visible_shop,
+        visible,
+        sort_order,
+        printful_data
+      `)
+      .eq('is_visible_home', true)
+      .eq('visible', true)
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(6);
 
-  useEffect(() => {
-    fetchFeaturedProducts();
+    if (error) throw error;
+    return { data: data || [], error: null };
   }, []);
 
-  const fetchFeaturedProducts = async () => {
-    try {
-      // First sync with Printful to get latest products
-      await supabase.functions.invoke('sync-printful-products');
-      
-      // Then fetch visible products for homepage (exactly 6 products)
-      const { data, error } = await supabase
-        .from('shop_products')
-        .select('*')
-        .eq('is_visible_home', true)
-        .eq('visible', true)
-        .order('sort_order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
+  const { data: products = [], loading } = useOptimizedQuery(
+    'homepage-products',
+    productsQueryFn,
+    {
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      staleTime: 3 * 60 * 1000, // 3 minutes
+      enableRealtime: true,
+      realtimeFilter: {
+        event: '*',
+        schema: 'public',
+        table: 'shop_products'
+      }
     }
-  };
+  );
 
   const handlePurchase = async (product: ShopProduct) => {
     setPurchasing(product.id);
@@ -103,7 +124,34 @@ const HomepageProducts = () => {
     return { title, description, price, imageUrl };
   };
 
-  if (loading || products.length === 0) {
+  if (loading) {
+    return (
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <Skeleton className="h-10 w-64 mx-auto mb-4" />
+            <Skeleton className="h-6 w-96 mx-auto" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="aspect-[4/3] w-full" />
+                <CardContent className="p-3 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex items-center justify-between pt-1">
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-8 w-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
     return null;
   }
 
@@ -127,10 +175,9 @@ const HomepageProducts = () => {
               <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm overflow-hidden">
                 <Link to={`/product/${product.id}`} className="block">
                   <div className="aspect-[4/3] overflow-hidden">
-                    <img
+                    <LazyImage
                       src={imageUrl || '/placeholder.svg'}
                       alt={title}
-                      loading="lazy"
                       className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
@@ -180,6 +227,8 @@ const HomepageProducts = () => {
       </div>
     </section>
   );
-};
+});
+
+HomepageProducts.displayName = 'HomepageProducts';
 
 export default HomepageProducts;

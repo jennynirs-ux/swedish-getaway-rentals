@@ -1,15 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import UnifiedAdmin from "@/components/admin/UnifiedAdmin";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 
-const Admin = () => {
+const Admin = memo(() => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Enable admin notifications for new bookings
+  useBookingRealtime({
+    enableAdminNotifications: true
+  });
 
   useEffect(() => {
     checkAdminAccess();
@@ -99,6 +105,8 @@ const Admin = () => {
       <UnifiedAdmin />
     </div>
   );
-};
+});
+
+Admin.displayName = 'Admin';
 
 export default Admin;
