@@ -21,28 +21,13 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
           </div>
 
           {/* Booking Form (includes calendar inside) */}
-          <div className="grid lg:grid-cols-1 gap-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="text-2xl font-bold">
-                    {(property.price_per_night || 0).toLocaleString()}{" "}
-                    {property.currency}
-                  </span>
-                  <span className="text-sm text-muted-foreground">per night</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BookingForm
-                  propertyId={property.id}
-                  propertyTitle={property.title}
-                  pricePerNight={property.price_per_night}
-                  currency={property.currency}
-                  maxGuests={property.max_guests}
-                />
-              </CardContent>
-            </Card>
-          </div>
+            <BookingForm
+              propertyId={property.id}
+              propertyTitle={property.title}
+              pricePerNight={property.price_per_night}
+              currency={property.currency}
+              maxGuests={property.max_guests}
+            />
 
           {/* Contact Information */}
           {property.get_in_touch_info && (
