@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-// Memoized components for better performance
+// Memoized components
 const MemoizedPropertyHero = memo(PropertyHero);
 const MemoizedPropertyGallery = memo(PropertyGallery);
 const MemoizedPropertyAmenities = memo(PropertyAmenities);
@@ -28,44 +28,36 @@ const PropertyPage = memo(() => {
   const navigate = useNavigate();
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
 
-  // Optimized property fetching with caching and real-time updates
   const propertyQueryFn = useCallback(async () => {
     let propertyId = id;
-    
-    // Handle legacy routes with optimized single queries
-    if (id === 'villa-hacken') {
+
+    // Legacy routes
+    if (id === "villa-hacken") {
       const { data: properties } = await supabase
-        .from('properties')
-        .select('id')
-        .ilike('title', '%villa%')
-        .eq('active', true)
+        .from("properties")
+        .select("id")
+        .ilike("title", "%villa%")
+        .eq("active", true)
         .limit(1)
         .single();
-      
-      if (properties) {
-        propertyId = properties.id;
-      }
-    } else if (id === 'lakehouse-getaway') {
+
+      if (properties) propertyId = properties.id;
+    } else if (id === "lakehouse-getaway") {
       const { data: properties } = await supabase
-        .from('properties')
-        .select('id')
-        .or('title.ilike.%lakehouse%,title.ilike.%lake%')
-        .eq('active', true)
+        .from("properties")
+        .select("id")
+        .or("title.ilike.%lakehouse%,title.ilike.%lake%")
+        .eq("active", true)
         .limit(1)
         .single();
-      
-      if (properties) {
-        propertyId = properties.id;
-      }
+
+      if (properties) propertyId = properties.id;
     }
 
-    if (!propertyId) {
-      throw new Error('Property not found');
-    }
+    if (!propertyId) throw new Error("Property not found");
 
-    // Optimized query with only necessary fields for initial load
     const { data, error } = await supabase
-      .from('properties')
+      .from("properties")
       .select(`
         id,
         host_id,
@@ -95,8 +87,8 @@ const PropertyPage = memo(() => {
         review_count,
         active
       `)
-      .eq('id', propertyId)
-      .eq('active', true)
+      .eq("id", propertyId)
+      .eq("active", true)
       .single();
 
     if (error) throw error;
@@ -107,13 +99,15 @@ const PropertyPage = memo(() => {
         amenities: Array.isArray(data.amenities) ? data.amenities : [],
         gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
         video_urls: Array.isArray(data.video_urls) ? data.video_urls : [],
-        gallery_metadata: Array.isArray(data.gallery_metadata) ? data.gallery_metadata as any[] : [],
-        video_metadata: Array.isArray(data.video_metadata) ? data.video_metadata as any[] : [],
-        amenities_data: Array.isArray(data.amenities_data) ? data.amenities_data as any[] : [],
-        guidebook_sections: Array.isArray(data.guidebook_sections) ? data.guidebook_sections as any[] : [],
-        special_highlights: Array.isArray(data.special_highlights) ? data.special_highlights as any[] : [],
-        footer_quick_links: Array.isArray(data.footer_quick_links) ? data.footer_quick_links as string[] : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
-        pricing_table: data.pricing_table as any
+        gallery_metadata: Array.isArray(data.gallery_metadata) ? (data.gallery_metadata as any[]) : [],
+        video_metadata: Array.isArray(data.video_metadata) ? (data.video_metadata as any[]) : [],
+        amenities_data: Array.isArray(data.amenities_data) ? (data.amenities_data as any[]) : [],
+        guidebook_sections: Array.isArray(data.guidebook_sections) ? (data.guidebook_sections as any[]) : [],
+        special_highlights: Array.isArray(data.special_highlights) ? (data.special_highlights as any[]) : [],
+        footer_quick_links: Array.isArray(data.footer_quick_links)
+          ? (data.footer_quick_links as string[])
+          : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
+        pricing_table: data.pricing_table as any,
       };
       return { data: mappedProperty, error: null };
     }
@@ -125,24 +119,22 @@ const PropertyPage = memo(() => {
     `property-${id}`,
     propertyQueryFn,
     {
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-      staleTime: 2 * 60 * 1000, // 2 minutes
+      cacheTime: 10 * 60 * 1000,
+      staleTime: 2 * 60 * 1000,
       enableRealtime: true,
       realtimeFilter: {
-        event: '*',
-        schema: 'public',
-        table: 'properties',
-        filter: `id=eq.${id}`
-      }
+        event: "*",
+        schema: "public",
+        table: "properties",
+        filter: `id=eq.${id}`,
+      },
     }
   );
 
-  // Memoized handlers for optimal performance
   const handleGuideOpen = useCallback(() => setIsGuideDialogOpen(true), []);
   const handleGuideClose = useCallback(() => setIsGuideDialogOpen(false), []);
-  const handleBackToHome = useCallback(() => navigate('/'), [navigate]);
+  const handleBackToHome = useCallback(() => navigate("/"), [navigate]);
 
-  // Memoized property content with error boundaries
   const propertyContent = useMemo(() => {
     if (!property) return null;
 
@@ -150,14 +142,12 @@ const PropertyPage = memo(() => {
       <>
         <MemoizedPropertyHero property={property} />
         <MemoizedPropertyGallery property={property} />
+        {/* ✅ Amenities placeras här, efter bilder men innan highlights */}
         <MemoizedPropertyAmenities property={property} />
-        <MemoizedPropertySpecialHighlights 
-          property={property}
-          onViewGuide={handleGuideOpen}
-        />
+        <MemoizedPropertySpecialHighlights property={property} onViewGuide={handleGuideOpen} />
         <MemoizedPropertyBooking property={property} />
         <MemoizedPropertyFooter property={property} />
-        
+
         <GuestGuideDialog
           isOpen={isGuideDialogOpen}
           onClose={handleGuideClose}
@@ -167,7 +157,6 @@ const PropertyPage = memo(() => {
     );
   }, [property, isGuideDialogOpen, handleGuideOpen, handleGuideClose]);
 
-  // Loading state with optimized skeleton
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -195,7 +184,6 @@ const PropertyPage = memo(() => {
     );
   }
 
-  // Error state with better UX
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -221,6 +209,6 @@ const PropertyPage = memo(() => {
   );
 });
 
-PropertyPage.displayName = 'PropertyPage';
+PropertyPage.displayName = "PropertyPage";
 
 export default PropertyPage;
