@@ -1,13 +1,13 @@
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
-import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
+import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import LazyImage from "@/components/LazyImage";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCart } from "@/hooks/useCart"; // 🔹 egen hook/context för kundvagn
+import { useCart } from "@/context/CartContext";
 
 interface ShopProduct {
   id: string;
@@ -30,13 +30,13 @@ interface ShopProduct {
 }
 
 const HomepageProducts = memo(() => {
+  const { addItem } = useCart();
   const navigate = useNavigate();
-  const { addToCart } = useCart(); // 🔹 hook för kundvagn
-  const [adding, setAdding] = useState<string | null>(null);
 
+  // Optimized products query with caching
   const productsQueryFn = useCallback(async () => {
     const { data, error } = await supabase
-      .from('shop_products')
+      .from("shop_products")
       .select(`
         id,
         title,
@@ -56,10 +56,10 @@ const HomepageProducts = memo(() => {
         sort_order,
         printful_data
       `)
-      .eq('is_visible_home', true)
-      .eq('visible', true)
-      .order('sort_order', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
+      .eq("is_visible_home", true)
+      .eq("visible", true)
+      .order("sort_order", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false })
       .limit(6);
 
     if (error) throw error;
@@ -67,52 +67,55 @@ const HomepageProducts = memo(() => {
   }, []);
 
   const { data: products = [], loading } = useOptimizedQuery(
-    'homepage-products',
+    "homepage-products",
     productsQueryFn,
     {
-      cacheTime: 10 * 60 * 1000,
-      staleTime: 3 * 60 * 1000,
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      staleTime: 3 * 60 * 1000, // 3 minutes
       enableRealtime: true,
       realtimeFilter: {
-        event: '*',
-        schema: 'public',
-        table: 'shop_products'
-      }
+        event: "*",
+        schema: "public",
+        table: "shop_products",
+      },
     }
   );
 
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
-      style: 'currency',
+    return new Intl.NumberFormat("sv-SE", {
+      style: "currency",
       currency: currency,
     }).format(price / 100);
   };
 
   const getDisplayData = (product: ShopProduct) => {
     const title = product.title_override || product.title;
-    const description = product.description_override || product.custom_description || product.description;
-    const price = product.price_override || product.custom_price || product.price;
+    const description =
+      product.description_override ||
+      product.custom_description ||
+      product.description;
+    const price =
+      product.price_override || product.custom_price || product.price;
     const imageUrl = product.main_image_override || product.image_url;
-    
+
     return { title, description, price, imageUrl };
   };
 
-  const handleAddToCart = (product: ShopProduct) => {
-    setAdding(product.id);
+  const handlePurchase = (product: ShopProduct) => {
     const { title, description, price, imageUrl } = getDisplayData(product);
 
-    addToCart({
-      id: product.id,
+    addItem({
+      productId: product.id,
       title,
       description,
       price,
       currency: product.currency,
-      imageUrl,
+      image: imageUrl,
       quantity: 1,
+      variantId: null, // 🔹 stöd för storlek/färg kan läggas senare
     });
 
-    setAdding(null);
-    navigate("/cart"); // 🔹 redirect till kundvagnen
+    navigate("/cart"); // 🔹 gå direkt till kundvagnen
   };
 
   if (loading) {
@@ -129,7 +132,7 @@ const HomepageProducts = memo(() => {
                 <Skeleton className="aspect-[4/3] w-full" />
                 <CardContent className="p-3 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex flex-col gap-2 pt-1">
                     <Skeleton className="h-6 w-16" />
                     <Skeleton className="h-8 w-20" />
                   </div>
@@ -150,21 +153,28 @@ const HomepageProducts = memo(() => {
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Nordic Essentials</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Nordic Essentials
+          </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Bring a piece of Nordic beauty home with our curated collection of authentic Swedish products.
+            Bring a piece of Nordic beauty home with our curated collection of
+            authentic Swedish products.
           </p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
           {products.map((product) => {
-            const { title, price, imageUrl } = getDisplayData(product);
+            const { title, description, price, imageUrl } = getDisplayData(product);
+
             return (
-              <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm overflow-hidden">
+              <Card
+                key={product.id}
+                className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm overflow-hidden"
+              >
                 <Link to={`/product/${product.id}`} className="block">
                   <div className="aspect-[4/3] overflow-hidden">
                     <LazyImage
-                      src={imageUrl || '/placeholder.svg'}
+                      src={imageUrl || "/placeholder.svg"}
                       alt={title}
                       className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                     />
@@ -182,17 +192,13 @@ const HomepageProducts = memo(() => {
                     <div className="text-lg font-bold text-primary">
                       {formatPrice(price, product.currency)}
                     </div>
+
                     <Button
                       size="sm"
-                      onClick={() => handleAddToCart(product)}
-                      disabled={adding === product.id}
+                      onClick={() => handlePurchase(product)}
                       className="bg-primary hover:bg-primary/90 text-xs px-3 py-1 w-full sm:w-auto"
                     >
-                      {adding === product.id ? (
-                        <div className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full mr-1" />
-                      ) : (
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                      )}
+                      <ShoppingCart className="w-3 h-3 mr-1" />
                       Buy Now
                     </Button>
                   </div>
@@ -206,6 +212,7 @@ const HomepageProducts = memo(() => {
           <Link to="/shop">
             <Button variant="outline" size="lg" className="group">
               View All Products
+              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>
