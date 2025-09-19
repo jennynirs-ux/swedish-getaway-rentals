@@ -69,17 +69,24 @@ const HomePage = memo(() => {
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
 
-  const availableAmenities = useMemo(() => {
+   const availableAmenities = useMemo(() => {
     const all = new Set<string>();
-    properties.forEach((p) => {
-      if (Array.isArray((p as any).amenities_data)) {
-        (p as any).amenities_data.forEach((a: any) => a?.title && all.add(String(a.title).toLowerCase()));
-      } else if (Array.isArray(p.amenities)) {
-        p.amenities.forEach((a) => a && all.add(String(a).toLowerCase()));
+  
+    (properties || []).forEach((p) => {
+      if (Array.isArray(p?.amenities_data)) {
+        p.amenities_data.forEach((a: any) => {
+          if (a?.title) all.add(String(a.title).toLowerCase());
+        });
+      } else if (Array.isArray(p?.amenities)) {
+        p.amenities.forEach((a: any) => {
+          if (a) all.add(String(a).toLowerCase());
+        });
       }
     });
+  
     return Array.from(all).sort();
   }, [properties]);
+
 
   const filteredProperties = useMemo(() => {
     if (!filters) return properties;
