@@ -73,23 +73,27 @@ const HomePage = memo(() => {
     const all = new Set<string>();
   
     (properties || []).forEach((p: any) => {
+      // Säkerställ att amenities_data är en array
       if (Array.isArray(p?.amenities_data)) {
         p.amenities_data.forEach((a: any) => {
-          if (a?.title) all.add(String(a.title).toLowerCase());
+          if (a?.title) {
+            all.add(String(a.title).toLowerCase());
+          }
         });
       }
   
+      // Säkerställ att amenities är en array
       if (Array.isArray(p?.amenities)) {
         p.amenities.forEach((a: any) => {
-          if (a) all.add(String(a).toLowerCase());
+          if (a) {
+            all.add(String(a).toLowerCase());
+          }
         });
       }
     });
   
     return Array.from(all).sort();
   }, [properties]);
-
-
 
   const filteredProperties = useMemo(() => {
     if (!filters) return properties;
