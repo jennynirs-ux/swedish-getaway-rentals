@@ -196,10 +196,11 @@ const HomePage = memo(() => {
             </h2>
       
             <div className="grid grid-cols-12 gap-6 items-start">
+              {/* Book Cover */}
               <div className="col-span-4 flex justify-center lg:justify-start">
                 <div className="relative group">
                   <LazyImage
-                    src={bookCover} // ✅ import används
+                    src={bookCover}
                     alt="När havet förändrade allt - When the Ocean Changed Everything by Jenny Nirs"
                     className="w-28 sm:w-32 md:w-40 lg:w-48 h-auto rounded-lg shadow-elegant transition-transform group-hover:scale-105"
                   />
@@ -207,6 +208,7 @@ const HomePage = memo(() => {
                 </div>
               </div>
       
+              {/* Book Info */}
               <div className="col-span-8 space-y-4">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-1">
@@ -220,14 +222,97 @@ const HomePage = memo(() => {
                     Swedish getaway. Available in both Swedish and English.
                   </p>
                 </div>
-
+      
                 {/* Reviews Carousel */}
-                {/* ... carousel-koden oförändrad ... */}
+                <div className="relative">
+                  <Carousel className="w-full max-w-full">
+                    <CarouselContent>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Patrik</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "A gripping and unforgettable story of survival and meaning that stays with you long after the last page."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Anna</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "A very gripping and captivating book. I read it straight through, couldn't stop reading..."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Per</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "An emotional journey that captured my heart. Jenny's storytelling is both beautiful and devastating."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+                          <div className="flex items-center mb-2">
+                            <div className="flex text-yellow-500 text-sm">
+                              {[1, 2, 3, 4, 5].map((i) => <span key={i}>★</span>)}
+                            </div>
+                            <span className="ml-2 text-sm text-muted-foreground">by Karl-olov</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground italic">
+                            "A masterpiece of Swedish literature. This book will resonate with readers long after finishing it."
+                          </p>
+                        </div>
+                      </CarouselItem>
+                    </CarouselContent>
+                    <CarouselPrevious className="hidden sm:flex -left-6 top-1/2 -translate-y-1/2" />
+                    <CarouselNext className="hidden sm:flex -right-6 top-1/2 -translate-y-1/2" />
+                  </Carousel>
+                </div>
+      
+                {/* Call to Action */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button asChild size="sm" className="flex-1">
+                    <a
+                      href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Order in Swedish
+                    </a>
+                  </Button>
+                  <Button variant="outline" asChild size="sm" className="flex-1">
+                    <a
+                      href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Order in English
+                    </a>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+
 
       {/* Featured Products Section */}
       <MemoizedHomepageProducts />
