@@ -31,8 +31,7 @@ interface ShopProduct {
 
 const HomepageProducts = memo(() => {
   const [purchasing, setPurchasing] = useState<string | null>(null);
-  
-  // Optimized products query with caching
+
   const productsQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from('shop_products')
@@ -69,8 +68,8 @@ const HomepageProducts = memo(() => {
     'homepage-products',
     productsQueryFn,
     {
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-      staleTime: 3 * 60 * 1000, // 3 minutes
+      cacheTime: 10 * 60 * 1000,
+      staleTime: 3 * 60 * 1000,
       enableRealtime: true,
       realtimeFilter: {
         event: '*',
@@ -92,7 +91,6 @@ const HomepageProducts = memo(() => {
       });
 
       if (error) throw error;
-      
       if (data.url) {
         window.open(data.url, '_blank');
       }
@@ -119,8 +117,8 @@ const HomepageProducts = memo(() => {
     const title = product.title_override || product.title;
     const description = product.description_override || product.custom_description || product.description;
     const price = product.price_override || product.custom_price || product.price;
-    const imageUrl = product.main_image_override || product.image_url;
-    
+    const imageUrl = product.main_image_override || product.image_url || "/placeholder.jpg"; // ✅ fallback
+
     return { title, description, price, imageUrl };
   };
 
@@ -128,10 +126,6 @@ const HomepageProducts = memo(() => {
     return (
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <Skeleton className="h-10 w-64 mx-auto mb-4" />
-            <Skeleton className="h-6 w-96 mx-auto" />
-          </div>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="overflow-hidden">
@@ -151,9 +145,7 @@ const HomepageProducts = memo(() => {
     );
   }
 
-  if (products.length === 0) {
-    return null;
-  }
+  if (products.length === 0) return null;
 
   return (
     <section className="py-20 bg-white">
@@ -167,34 +159,35 @@ const HomepageProducts = memo(() => {
           </p>
         </div>
 
-         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
           {products.map((product) => {
             const { title, description, price, imageUrl } = getDisplayData(product);
-            
+
             return (
               <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm overflow-hidden">
                 <Link to={`/product/${product.id}`} className="block">
                   <div className="aspect-[4/3] overflow-hidden">
                     <LazyImage
-                      src={imageUrl || '/placeholder.svg'}
+                      src={imageUrl}
+                      fallbackSrc="/placeholder.jpg"
                       alt={title}
                       className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                 </Link>
-                
+
                 <CardContent className="p-3 space-y-2">
                   <Link to={`/product/${product.id}`}>
                     <h3 className="text-sm font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
                       {title}
                     </h3>
                   </Link>
-                  
+
                   <div className="flex items-center justify-between pt-1">
                     <div className="text-lg font-bold text-primary">
                       {formatPrice(price, product.currency)}
                     </div>
-                    
+
                     <Button
                       size="sm"
                       onClick={() => handlePurchase(product)}
@@ -214,7 +207,6 @@ const HomepageProducts = memo(() => {
             );
           })}
         </div>
-
 
         <div className="text-center">
           <Link to="/shop">
