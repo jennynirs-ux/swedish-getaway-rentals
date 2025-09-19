@@ -1,28 +1,12 @@
-import { useState } from "react";
-import BookingForm from "./BookingForm";
-import PropertyCalendarOptimized from "./PropertyCalendarOptimized";
 import { Property } from "@/hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import BookingForm from "./BookingForm";
 
 interface PropertyBookingProps {
   property: Property;
 }
 
 const PropertyBooking = ({ property }: PropertyBookingProps) => {
-  const [selectedCheckIn, setSelectedCheckIn] = useState<Date | null>(null);
-  const [selectedCheckOut, setSelectedCheckOut] = useState<Date | null>(null);
-
-  // ✅ Kalkylera antal nätter och totalpris live
-  const nights =
-    selectedCheckIn && selectedCheckOut
-      ? Math.ceil(
-          (selectedCheckOut.getTime() - selectedCheckIn.getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
-      : 0;
-
-  const totalAmount = nights > 0 ? nights * (property.price_per_night || 0) : 0;
-
   return (
     <section id="booking-section" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -31,71 +15,127 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Book Your Stay</h2>
             <p className="text-xl text-muted-foreground">
-              Ready to experience the magic of {property.title}? Select your
-              dates and send a booking request.
+              Ready to experience the magic of {property.title}? Choose your
+              dates and complete your booking below.
             </p>
           </div>
 
-          {/* One single card with calendar + booking form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {(property.price_per_night || 0).toLocaleString()} {property.currency} / night
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              {/* Calendar */}
-              <PropertyCalendarOptimized
-                propertyId={property.id}
-                basePrice={property.price_per_night || 0}
-                currency={property.currency}
-                mode="guest"
-                onDateSelect={(dates) => {
-                  setSelectedCheckIn(dates.checkIn);
-                  setSelectedCheckOut(dates.checkOut);
-                }}
-              />
+          {/* Booking Form (includes calendar inside) */}
+          <div className="grid lg:grid-cols-1 gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="text-2xl font-bold">
+                    {(property.price_per_night || 0).toLocaleString()}{" "}
+                    {property.currency}
+                  </span>
+                  <span className="text-sm text-muted-foreground">per night</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BookingForm
+                  propertyId={property.id}
+                  propertyTitle={property.title}
+                  pricePerNight={property.price_per_night}
+                  currency={property.currency}
+                  maxGuests={property.max_guests}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-              {/* ✅ Live summary */}
-              {nights > 0 && (
-                <div className="p-4 bg-accent rounded-lg shadow-sm">
-                  <div className="flex justify-between mb-2">
-                    <span>Check-in:</span>
-                    <span className="font-medium">
-                      {selectedCheckIn?.toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span>Check-out:</span>
-                    <span className="font-medium">
-                      {selectedCheckOut?.toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span>Number of nights:</span>
-                    <span className="font-medium">{nights}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>Total:</span>
-                    <span>
-                      {totalAmount.toLocaleString()} {property.currency}
-                    </span>
-                  </div>
-                </div>
-              )}
+          {/* Pricing Information Below */}
+          {property.pricing_table && (
+            <div className="mt-8 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pricing Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {property.pricing_table.off_season && (
+                    <div className="flex justify-between">
+                      <span>Off Season</span>
+                      <span className="font-semibold">
+                        {property.pricing_table.off_season.price.toLocaleString()}{" "}
+                        {property.pricing_table.off_season.currency}/night
+                      </span>
+                    </div>
+                  )}
+                  {property.pricing_table.peak_season && (
+                    <div className="flex justify-between">
+                      <span>Peak Season</span>
+                      <span className="font-semibold">
+                        {property.pricing_table.peak_season.price.toLocaleString()}{" "}
+                        {property.pricing_table.peak_season.currency}/night
+                      </span>
+                    </div>
+                  )}
+                  {property.pricing_table.holiday_periods && (
+                    <div className="flex justify-between">
+                      <span>Holiday Periods</span>
+                      <span className="font-semibold">
+                        {property.pricing_table.holiday_periods.price.toLocaleString()}{" "}
+                        {property.pricing_table.holiday_periods.currency}/night
+                      </span>
+                    </div>
+                  )}
+                  {property.pricing_table.cleaning_fee && (
+                    <div className="flex justify-between">
+                      <span>Cleaning Fee</span>
+                      <span className="font-semibold">
+                        {property.pricing_table.cleaning_fee.price.toLocaleString()}{" "}
+                        {property.pricing_table.cleaning_fee.currency}
+                      </span>
+                    </div>
+                  )}
+                  {property.pricing_table.minimum_stay && (
+                    <div className="flex justify-between">
+                      <span>Minimum Stay</span>
+                      <span className="font-semibold">
+                        {property.pricing_table.minimum_stay} nights
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
-              {/* Booking Form */}
-              <BookingForm
-                propertyId={property.id}
-                propertyTitle={property.title}
-                pricePerNight={property.price_per_night}
-                currency={property.currency}
-                maxGuests={property.max_guests}
-                checkIn={selectedCheckIn}
-                checkOut={selectedCheckOut}
-              />
-            </CardContent>
-          </Card>
+          {/* Contact Information */}
+          {property.get_in_touch_info && (
+            <div className="mt-8 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Get In Touch</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {property.get_in_touch_info.contact_email && (
+                    <div>
+                      <span className="font-medium">Email:</span>
+                      <p className="text-muted-foreground">
+                        {property.get_in_touch_info.contact_email}
+                      </p>
+                    </div>
+                  )}
+                  {property.get_in_touch_info.contact_phone && (
+                    <div>
+                      <span className="font-medium">Phone:</span>
+                      <p className="text-muted-foreground">
+                        {property.get_in_touch_info.contact_phone}
+                      </p>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t">
+                    <p className="text-sm text-brown-600 font-medium">
+                      Fast Response:{" "}
+                      {property.contact_response_time ||
+                        "We typically respond to inquiries within 2 hours."}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </section>
