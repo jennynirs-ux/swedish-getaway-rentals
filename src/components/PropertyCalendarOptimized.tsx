@@ -126,72 +126,55 @@ const PropertyCalendarOptimized = memo(({
     }
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Loading Calendar...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 bg-muted animate-pulse rounded-lg" />
-        </CardContent>
-      </Card>
-    );
-  }
-
+if (loading) {
   return (
-        <Calendar
-          mode="range"
-          selected={range}
-          onSelect={handleSelect}
-          disabled={disabledMatchers}
-          initialFocus
-          numberOfMonths={1}
-          className="rounded-md border"
-          components={{
-            DayContent: (props) => {
-              const date = props.date;
-              const available = isDateAvailable(date);
-              const price = getDatePrice(date);
-              const showPrice = mode === "guest" && available && price !== basePrice;
-
-              return (
-                <div className="flex flex-col items-center leading-none">
-                  <span className={available ? "" : "line-through opacity-50"}>
-                    {date.getDate()}
-                  </span>
-                  {showPrice && (
-                    <span className="text-[10px] opacity-70 mt-0.5">
-                      {price}
-                    </span>
-                  )}
-                </div>
-              );
-            }
-          }}
-        />
-
-        {mode === 'guest' && (
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-primary" />
-                Available
-              </span>
-              <span className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-muted-foreground" />
-                Unavailable
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Base rate: {basePrice} {currency}/night
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div>
+      <p>Loading Calendar...</p>
+      <div className="h-80 bg-muted animate-pulse rounded-lg" />
+    </div>
   );
-});
+}
+
+return (
+  <div>
+    <Calendar
+      mode="range"
+      selected={range}
+      onSelect={handleSelect}
+      disabled={disabledMatchers}
+      initialFocus
+      numberOfMonths={1}
+      className="rounded-md border"
+      components={{
+        DayContent: (props) => {
+          const date = props.date;
+          const available = isDateAvailable(date);
+          const price = getDatePrice(date);
+          const showPrice = mode === "guest" && available && price !== basePrice;
+
+          return (
+            <div className="flex flex-col items-center leading-none">
+              <span className={available ? "" : "line-through opacity-50"}>
+                {date.getDate()}
+              </span>
+              {showPrice && (
+                <span className="text-[10px] opacity-70 mt-0.5">
+                  {price}
+                </span>
+              )}
+            </div>
+          );
+        }
+      }}
+    />
+
+    {mode === 'guest' && (
+      <div className="mt-4 text-xs text-muted-foreground">
+        Base rate: {basePrice} {currency}/night
+      </div>
+    )}
+  </div>
+);
 
 PropertyCalendarOptimized.displayName = 'PropertyCalendarOptimized';
 
