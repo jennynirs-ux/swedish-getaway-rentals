@@ -1,5 +1,7 @@
 import React, { memo, useMemo, useCallback, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,7 +30,7 @@ const PropertyCalendarOptimized = memo(({
 }: PropertyCalendarOptimizedProps) => {
   const today = new Date();
 
-  // Hämta availability
+  // Hämta tillgänglighet
   const availabilityQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from('availability')
@@ -57,7 +59,7 @@ const PropertyCalendarOptimized = memo(({
     }
   );
 
-  // Gör lookup-map
+  // Map för lookup
   const availabilityMap = useMemo(() => {
     if (!availability) return new Map();
     return new Map(
@@ -83,7 +85,7 @@ const PropertyCalendarOptimized = memo(({
     return info?.price || basePrice;
   }, [availabilityMap, basePrice]);
 
-  // Markera disabled datum
+  // Samla disabled datum
   const disabledMatchers = useMemo(() => {
     const matchers: any[] = [{ before: today }];
     (availability || []).forEach((item: AvailabilityDate) => {
@@ -102,15 +104,15 @@ const PropertyCalendarOptimized = memo(({
       return;
     }
 
-    // Blockera val av otillgängliga datum
+    // Blockera start eller slut på disabled datum
     if (r.from && !isDateAvailable(r.from)) return;
     if (r.to && !isDateAvailable(r.to)) return;
 
-    // Blockera intervall som korsar otillgängliga datum
+    // Blockera intervall som korsar disabled datum
     if (r.from && r.to) {
       const d = new Date(r.from);
       while (d <= r.to) {
-        if (!isDateAvailable(d)) return;
+        if (!isDateAvailable(d)) return; // Hitta spärr -> avbryt
         d.setDate(d.getDate() + 1);
       }
     }
@@ -126,46 +128,76 @@ const PropertyCalendarOptimized = memo(({
 
   if (loading) {
     return (
-      <div>
-        <p>Loading Calendar...</p>
-        <div className="h-80 bg-muted animate-pulse rounded-lg" />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Calendar...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 bg-muted animate-pulse rounded-lg" />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <Calendar
-        mode="range"
-        selected={range}
-        onSelect={handleSelect}
-        disabled={disabledMatchers}
-        initialFocus
-        numberOfMonths={1}
-        className="rounded-md border"
-        components={{
-          DayContent: (props) => {
-            const date = props.date;
-            const available = isDateAvailable(date);
-            const price = getDatePrice(date);
-            const showPrice = mode === "guest" && available && price !== basePrice;
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          Availability & Pricing
+          {mode === 'guest' && <Badge variant="secondary">{currency}</Badge>}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Calendar
+          mode="range"
+          selected={range}
+          onSelect={handleSelect}
+          disabled={disabledMatchers}
+          initialFocus
+          numberOfMonths={1}
+          className="rounded-md border"
+          components={{
+            DayContent: (props) => {
+              const date = props.date;
+              const available = isDateAvailable(date);
+              const price = getDatePrice(date);
+              const showPrice = mode === "guest" && available && price !== basePrice;
 
-            return (
-              <div className="flex flex-col items-center leading-none">
-                <span className={available ? "" : "line-through opacity-50"}>
-                  {date.getDate()}
-                </span>
-                {showPrice && (
-                  <span className="text-[10px] opacity-70 mt-0.5">
-                    {price}
+              return (
+                <div className="flex flex-col items-center leading-none">
+                  <span className={available ? "" : "line-through opacity-50"}>
+                    {date.getDate()}
                   </span>
-                )}
-              </div>
-            );
-          }
-        }}
-      />
-    </div>
+                  {showPrice && (
+                    <span className="text-[10px] opacity-70 mt-0.5">
+                      {price}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+          }}
+        />
+
+        {mode === 'guest' && (
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                Available
+              </span>
+              <span className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-muted-foreground" />
+                Unavailable
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Base rate: {basePrice} {currency}/night
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 });
 
