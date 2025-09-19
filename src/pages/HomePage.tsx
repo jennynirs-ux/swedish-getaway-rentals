@@ -74,16 +74,17 @@ const HomePage = memo(() => {
   const availableAmenities = useMemo(() => {
     const all = new Set<string>();
   
-    (properties ?? []).forEach((p) => {
-      if (Array.isArray(p?.amenities_data)) {
-        (p.amenities_data ?? []).forEach((a: any) => {
-          if (a?.title) all.add(String(a.title).toLowerCase());
-        });
-      } else if (Array.isArray(p?.amenities)) {
-        (p.amenities ?? []).forEach((a) => {
-          if (a) all.add(String(a).toLowerCase());
-        });
-      }
+    (properties ?? []).forEach((p: any) => {
+      const amenitiesData = Array.isArray(p?.amenities_data) ? p.amenities_data : [];
+      const amenities = Array.isArray(p?.amenities) ? p.amenities : [];
+  
+      amenitiesData.forEach((a: any) => {
+        if (a?.title) all.add(String(a.title).toLowerCase());
+      });
+  
+      amenities.forEach((a: any) => {
+        if (a) all.add(String(a).toLowerCase());
+      });
     });
   
     return Array.from(all).sort();
