@@ -44,63 +44,6 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
             </Card>
           </div>
 
-          {/* Pricing Information Below */}
-          {property.pricing_table && (
-            <div className="mt-8 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pricing Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {property.pricing_table.off_season && (
-                    <div className="flex justify-between">
-                      <span>Off Season</span>
-                      <span className="font-semibold">
-                        {property.pricing_table.off_season.price.toLocaleString()}{" "}
-                        {property.pricing_table.off_season.currency}/night
-                      </span>
-                    </div>
-                  )}
-                  {property.pricing_table.peak_season && (
-                    <div className="flex justify-between">
-                      <span>Peak Season</span>
-                      <span className="font-semibold">
-                        {property.pricing_table.peak_season.price.toLocaleString()}{" "}
-                        {property.pricing_table.peak_season.currency}/night
-                      </span>
-                    </div>
-                  )}
-                  {property.pricing_table.holiday_periods && (
-                    <div className="flex justify-between">
-                      <span>Holiday Periods</span>
-                      <span className="font-semibold">
-                        {property.pricing_table.holiday_periods.price.toLocaleString()}{" "}
-                        {property.pricing_table.holiday_periods.currency}/night
-                      </span>
-                    </div>
-                  )}
-                  {property.pricing_table.cleaning_fee && (
-                    <div className="flex justify-between">
-                      <span>Cleaning Fee</span>
-                      <span className="font-semibold">
-                        {property.pricing_table.cleaning_fee.price.toLocaleString()}{" "}
-                        {property.pricing_table.cleaning_fee.currency}
-                      </span>
-                    </div>
-                  )}
-                  {property.pricing_table.minimum_stay && (
-                    <div className="flex justify-between">
-                      <span>Minimum Stay</span>
-                      <span className="font-semibold">
-                        {property.pricing_table.minimum_stay} nights
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
           {/* Contact Information */}
           {property.get_in_touch_info && (
             <div className="mt-8 space-y-6">
