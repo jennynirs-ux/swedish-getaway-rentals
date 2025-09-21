@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Property } from "@/hooks/useProperties";
 import { AmenityDialog } from "@/components/AmenityDialog";
 import { 
@@ -47,21 +47,41 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return Home;
   };
 
-  // Prepare amenities data - use new amenities_data structure if available
-  const amenitiesData: AmenityData[] = property.amenities_data?.slice(0, 8).map(amenity => ({
-    icon: getAmenityIcon(amenity.icon),
-    title: amenity.title,
-    tagline: amenity.tagline,
-    description: amenity.description,
-    image_url: amenity.image_url,
-    features: amenity.features || []
-  })) || (property.amenities || []).slice(0, 8).map((amenity, index) => ({
-    icon: getAmenityIcon(amenity),
-    title: amenity,
-    tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
-    description: property.amenities_descriptions?.[amenity] || `Experience premium ${amenity.toLowerCase()} facilities during your stay at our property.`,
-    features: []
-  }));
+  // Combine amenities from both amenities_data and amenities arrays
+  const amenitiesData: AmenityData[] = useMemo(() => {
+    const allAmenities: AmenityData[] = [];
+    
+    // Add from amenities_data if it exists
+    if (property.amenities_data && Array.isArray(property.amenities_data) && property.amenities_data.length > 0) {
+      const dataAmenities = property.amenities_data.map((amenity: any) => ({
+        icon: getAmenityIcon(amenity.name || amenity.title || ''),
+        title: amenity.title || amenity.name || '',
+        tagline: amenity.tagline || amenity.description || '',
+        description: amenity.description || '',
+        image_url: amenity.image_url,
+        features: amenity.features || []
+      }));
+      allAmenities.push(...dataAmenities);
+    }
+    
+    // Add from amenities array (avoid duplicates)
+    if (property.amenities && property.amenities.length > 0) {
+      const existingTitles = new Set(allAmenities.map(a => a.title.toLowerCase()));
+      const basicAmenities = property.amenities
+        .filter((amenity: string) => !existingTitles.has(amenity.toLowerCase()))
+        .map((amenity: string) => ({
+          icon: getAmenityIcon(amenity),
+          title: amenity,
+          tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
+          description: property.amenities_descriptions?.[amenity] || `Experience premium ${amenity.toLowerCase()} facilities during your stay at our property.`,
+          image_url: undefined,
+          features: []
+        }));
+      allAmenities.push(...basicAmenities);
+    }
+    
+    return allAmenities.slice(0, 8);
+  }, [property.amenities_data, property.amenities, property.amenities_descriptions]);
 
   const handleAmenityClick = (amenity: AmenityData) => {
     setSelectedAmenity(amenity);
@@ -87,9 +107,16 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
             </p>
           </div>
 
-          {/* Amenities Grid - First 8 amenities */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {amenitiesData.map((amenity, index) => (
+          {/* Check if amenities exist */}
+          {amenitiesData.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">
+                No amenities listed for this property yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {amenitiesData.map((amenity, index) => (
               <div 
                 key={index} 
                 className="text-center p-6 rounded-lg bg-background hover:bg-muted/50 transition-all duration-300 cursor-pointer group hover:scale-105"
@@ -107,8 +134,9 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
                   {amenity.tagline}
                 </p>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

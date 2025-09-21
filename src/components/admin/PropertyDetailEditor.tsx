@@ -384,6 +384,17 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
             />
           </TabsContent>
 
+          <TabsContent value="pricing">
+            <div className="space-y-6">
+              <PropertyPricingRules propertyId={propertyId} />
+              <PropertySpecialPricing 
+                propertyId={propertyId} 
+                basePrice={property?.price_per_night || 0}
+                currency={property?.currency || 'SEK'}
+              />
+            </div>
+          </TabsContent>
+
           <TabsContent value="calendar">
             {property && (
               <PropertyCalendarWidget

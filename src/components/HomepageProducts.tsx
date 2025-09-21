@@ -107,7 +107,6 @@ const HomepageProducts = memo(() => {
     addItem({
       productId: product.id,
       title,
-      description,
       price,
       currency: product.currency,
       image: imageUrl,

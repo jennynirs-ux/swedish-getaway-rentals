@@ -1,6 +1,6 @@
 import { Property } from "@/hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import BookingForm from "./BookingForm";
+import BookingForm from "./BookingFormEnhanced";
 
 interface PropertyBookingProps {
   property: Property;

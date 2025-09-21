@@ -65,7 +65,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
     await createBooking({
       property_id: propertyId,
-      total_amount: totalAmount,
+      total_amount: pricingCalculation.total,
       check_in_date: checkIn?.toISOString().split('T')[0],
       check_out_date: checkOut?.toISOString().split('T')[0],
       ...formData

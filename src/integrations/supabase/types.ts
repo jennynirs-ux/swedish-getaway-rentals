@@ -579,6 +579,53 @@ export type Database = {
           },
         ]
       }
+      properties_pricing_rules: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          is_active: boolean
+          is_per_night: boolean
+          name: string
+          price: number
+          property_id: string
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          is_per_night?: boolean
+          name: string
+          price: number
+          property_id: string
+          rule_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          is_per_night?: boolean
+          name?: string
+          price?: number
+          property_id?: string
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_pricing_rules_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_audit_log: {
         Row: {
           action: string
