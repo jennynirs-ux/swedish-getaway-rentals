@@ -50,7 +50,7 @@ const PropertyPricingRules: React.FC<PropertyPricingRulesProps> = ({ propertyId 
         .order('created_at');
 
       if (error) throw error;
-      setRules(data || []);
+      setRules((data || []) as PricingRule[]);
     } catch (error) {
       console.error('Error loading pricing rules:', error);
     }

@@ -49,7 +49,7 @@ export const usePricingRules = (propertyId: string) => {
         .order('rule_type');
 
       if (error) throw error;
-      setRules(data || []);
+      setRules((data || []) as PricingRule[]);
     } catch (error) {
       console.error('Error loading pricing rules:', error);
     } finally {

@@ -15,6 +15,8 @@ import { AmenitiesEditor } from "./AmenitiesEditor";
 import { GuidebookEditor } from "./GuidebookEditor";
 import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
 import { AirbnbSyncManager } from "./AirbnbSyncManager";
+import PropertyPricingRules from "@/components/PropertyPricingRules";
+import PropertySpecialPricing from "./PropertySpecialPricing";
 
 interface Property {
   id: string;
