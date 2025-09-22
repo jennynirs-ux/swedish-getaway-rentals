@@ -10,6 +10,7 @@ import PropertyDetailEditor from "./PropertyDetailEditor";
 import HostManagement from "./HostManagement";
 import { ContentEditor } from "./ContentEditor";
 import { ShippingEditor } from "./ShippingEditor";
+import PricingManagement from "./PricingManagement";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -72,8 +73,25 @@ const UnifiedAdmin = () => {
         </TabsContent>
 
         <TabsContent value="rentals" className="space-y-6">
-          <PropertiesManagement />
-          <BookingsManagement />
+          <Tabs defaultValue="properties" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="properties">Properties</TabsTrigger>
+              <TabsTrigger value="bookings">Bookings</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="properties">
+              <PropertiesManagement />
+            </TabsContent>
+            
+            <TabsContent value="bookings">
+              <BookingsManagement />
+            </TabsContent>
+            
+            <TabsContent value="pricing">
+              <PricingManagement />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="hosts" className="space-y-6">

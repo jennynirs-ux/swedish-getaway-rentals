@@ -208,6 +208,7 @@ const HostDashboard = () => {
         <TabsList>
           <TabsTrigger value="properties">Properties</TabsTrigger>
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="properties" className="space-y-6">
@@ -244,6 +245,36 @@ const HostDashboard = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="pricing" className="space-y-6">
+          <h2 className="text-xl font-semibold">Pricing Management</h2>
+          {properties.length > 0 ? (
+            <div className="space-y-6">
+              {properties.map((property) => (
+                <Card key={property.id}>
+                  <CardHeader>
+                    <CardTitle>{property.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      onClick={() => setEditingPropertyId(property.id)}
+                      className="mb-4"
+                    >
+                      Manage Pricing & Calendar
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      Base price: {(property.price_per_night / 100).toLocaleString()} SEK/night
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No properties found. Create a property first.</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="bookings" className="space-y-6">
