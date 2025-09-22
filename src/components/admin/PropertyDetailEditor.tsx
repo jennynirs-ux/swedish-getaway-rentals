@@ -230,7 +230,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">
               <Settings className="h-4 w-4 mr-2" />
               Basic
@@ -249,7 +249,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
             </TabsTrigger>
             <TabsTrigger value="calendar">
               <Calendar className="h-4 w-4 mr-2" />
-              Calendar
+              Calendar & Pricing
             </TabsTrigger>
             <TabsTrigger value="sync">
               <Upload className="h-4 w-4 mr-2" />
@@ -386,7 +386,8 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
             />
           </TabsContent>
 
-          <TabsContent value="pricing">
+
+          <TabsContent value="calendar" className="space-y-6">
             <div className="space-y-6">
               <PropertyPricingRules propertyId={propertyId} />
               <PropertySpecialPricing 
@@ -394,18 +395,15 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                 basePrice={property?.price_per_night || 0}
                 currency={property?.currency || 'SEK'}
               />
+              {property && (
+                <PropertyCalendarWidget
+                  propertyId={property.id}
+                  basePrice={parseInt(form.price_per_night) || 0}
+                  currency={form.currency}
+                  mode="admin"
+                />
+              )}
             </div>
-          </TabsContent>
-
-          <TabsContent value="calendar">
-            {property && (
-              <PropertyCalendarWidget
-                propertyId={property.id}
-                basePrice={parseInt(form.price_per_night) || 0}
-                currency={form.currency}
-                mode="admin"
-              />
-            )}
           </TabsContent>
 
           <TabsContent value="sync">

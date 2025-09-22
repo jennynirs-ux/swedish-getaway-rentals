@@ -27,6 +27,7 @@ interface Booking {
   properties: {
     title: string;
     host_id: string;
+    currency?: string;
   };
 }
 
@@ -68,7 +69,7 @@ const HostDashboard = () => {
         .from('bookings')
         .select(`
           *,
-          properties!inner(title, host_id)
+          properties!inner(title, host_id, currency)
         `)
         .eq('properties.host_id', profile.id);
 
@@ -233,7 +234,7 @@ const HostDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">{property.location}</p>
-                  <p className="font-semibold">{(property.price_per_night / 100).toLocaleString()} SEK/night</p>
+                  <p className="font-semibold">{(property.price_per_night / 100).toLocaleString()} {property.currency}/night</p>
                   <Button 
                     className="w-full mt-4" 
                     variant="outline"
@@ -263,9 +264,9 @@ const HostDashboard = () => {
                     >
                       Manage Pricing & Calendar
                     </Button>
-                    <p className="text-sm text-muted-foreground">
-                      Base price: {(property.price_per_night / 100).toLocaleString()} SEK/night
-                    </p>
+                     <p className="text-sm text-muted-foreground">
+                       Base price: {(property.price_per_night / 100).toLocaleString()} {property.currency}/night
+                     </p>
                   </CardContent>
                 </Card>
               ))}
@@ -294,7 +295,7 @@ const HostDashboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">{(booking.total_amount / 100).toLocaleString()} SEK</p>
+                      <p className="font-semibold">{(booking.total_amount / 100).toLocaleString()} {booking.properties.currency || 'SEK'}</p>
                       <div className={`px-2 py-1 rounded text-xs ${
                         booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
                         booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
