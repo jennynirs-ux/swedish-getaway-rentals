@@ -20,18 +20,20 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const {
-      propertyId,
-      checkInDate,
-      checkOutDate,
+    const { 
+      propertyId, 
+      checkInDate, 
+      checkOutDate, 
       numberOfGuests,
       guestName,
       guestEmail,
       guestPhone,
       specialRequests,
+      totalAmount // 👈 ta emot direkt från frontend
     } = await req.json();
+    
+    logStep("Request data received", { propertyId, checkInDate, checkOutDate, numberOfGuests, totalAmount });
 
-    logStep("Request data received", { propertyId, checkInDate, checkOutDate, numberOfGuests });
 
     // Security logging
     const clientIP = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
