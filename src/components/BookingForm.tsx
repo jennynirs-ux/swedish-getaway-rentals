@@ -62,26 +62,39 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (totalAmount <= 0) return;
-
-    await createBooking({
-      property_id: propertyId,
-      total_amount: totalAmount,
-      check_in_date: checkIn?.toISOString().split('T')[0],
-      check_out_date: checkOut?.toISOString().split('T')[0],
-      ...formData
-    });
-
-    // Reset form
-    setFormData({
-      guest_name: '',
-      guest_email: '',
-      guest_phone: '',
-      number_of_guests: 2,
-      special_requests: ''
-    });
-    setCheckIn(null);
-    setCheckOut(null);
+  
+    try {
+      await createBooking({
+        property_id: propertyId,
+        total_amount: totalAmount,
+        currency, // ✅ skickas med
+        check_in_date: checkIn?.toISOString().split("T")[0],
+        check_out_date: checkOut?.toISOString().split("T")[0],
+        guest_name: formData.guest_name,
+        guest_email: formData.guest_email,
+        guest_phone: formData.guest_phone,
+        number_of_guests: formData.number_of_guests,
+        special_requests: formData.special_requests,
+        status: "pending", // ✅ default status
+        stripe_payment_intent_id: null, // ✅ tills betalning hanteras
+        user_id: null, // ✅ eller supabase.auth.user()?.id
+      });
+  
+      // Reset form
+      setFormData({
+        guest_name: "",
+        guest_email: "",
+        guest_phone: "",
+        number_of_guests: 2,
+        special_requests: "",
+      });
+      setCheckIn(null);
+      setCheckOut(null);
+    } catch (err) {
+      console.error("Booking failed:", err);
+    }
   };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
