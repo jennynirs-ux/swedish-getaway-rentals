@@ -1,83 +1,69 @@
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/hooks/useProperties";
-import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
+import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import PropertyNavigation from "@/components/PropertyNavigation";
 import PropertyHero from "@/components/PropertyHero";
-import PropertyGallery from "@/components/PropertyGallery";
-import PropertyAmenities from "@/components/PropertyAmenities";
-import PropertySpecialHighlights from "@/components/PropertySpecialHighlights";
-import PropertyBooking from "@/components/PropertyBooking";
-import PropertyFooter from "@/components/PropertyFooter";
-import GuestGuideDialog from "@/components/GuestGuideDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import GuestGuideDialog from "@/components/GuestGuideDialog";
 
-// Memoized components for better performance
-const MemoizedPropertyHero = memo(PropertyHero);
-const MemoizedPropertyGallery = memo(PropertyGallery);
-const MemoizedPropertyAmenities = memo(PropertyAmenities);
-const MemoizedPropertySpecialHighlights = memo(PropertySpecialHighlights);
-const MemoizedPropertyBooking = memo(PropertyBooking);
-const MemoizedPropertyFooter = memo(PropertyFooter);
+// Lazy-loaded heavy components
+const PropertyGallery = lazy(() => import("@/components/PropertyGallery"));
+const PropertyAmenities = lazy(() => import("@/components/PropertyAmenities"));
+const PropertySpecialHighlights = lazy(() => import("@/components/PropertySpecialHighlights"));
+const PropertyBooking = lazy(() => import("@/components/PropertyBooking"));
+const PropertyFooter = lazy(() => import("@/components/PropertyFooter"));
 
 const PropertyPage = memo(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
 
-  // Optimized property fetching with caching and real-time updates
-  const propertyQueryFn = useCallback(async () => {
-    let propertyId = id;
-    
-    // Handle legacy routes with optimized single queries
-    if (id === 'villa-hacken') {
-      const { data: properties } = await supabase
-        .from('properties')
-        .select('id')
-        .ilike('title', '%villa%')
-        .eq('active', true)
-        .limit(1)
-        .single();
-      
-      if (properties) {
-        propertyId = properties.id;
-      }
-    } else if (id === 'lakehouse-getaway') {
-      const { data: properties } = await supabase
-        .from('properties')
-        .select('id')
-        .or('title.ilike.%lakehouse%,title.ilike.%lake%')
-        .eq('active', true)
-        .limit(1)
-        .single();
-      
-      if (properties) {
-        propertyId = properties.id;
-      }
-    }
-
-    if (!propertyId) {
-      throw new Error('Property not found');
-    }
-
-    // Optimized query with only necessary fields for initial load
+  /** Light query for fast first load */
+  const propertyLightQueryFn = useCallback(async () => {
     const { data, error } = await supabase
-      .from('properties')
+      .from("properties")
       .select(`
         id,
-        host_id,
         title,
-        description,
         location,
         price_per_night,
         currency,
         max_guests,
-        bedrooms,
-        bathrooms,
         hero_image_url,
+        tagline_line1,
+        tagline_line2,
+        review_rating,
+        review_count,
+        active
+      `)
+      .eq("id", id)
+      .eq("active", true)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  }, [id]);
+
+  const { data: lightProperty, loading, error } = useOptimizedQuery(
+    `property-light-${id}`,
+    propertyLightQueryFn,
+    {
+      cacheTime: 10 * 60 * 1000,
+      staleTime: 2 * 60 * 1000,
+      enableRealtime: false,
+    }
+  );
+
+  /** Heavy query (gallery, amenities, etc.) */
+  const propertyHeavyQueryFn = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("properties")
+      .select(`
+        id,
         gallery_images,
         video_urls,
         amenities,
@@ -88,86 +74,53 @@ const PropertyPage = memo(() => {
         get_in_touch_info,
         footer_quick_links,
         gallery_metadata,
-        video_metadata,
-        tagline_line1,
-        tagline_line2,
-        review_rating,
-        review_count,
-        active
+        video_metadata
       `)
-      .eq('id', propertyId)
-      .eq('active', true)
+      .eq("id", id)
+      .eq("active", true)
       .single();
 
     if (error) throw error;
-
-    if (data) {
-      const mappedProperty: Property = {
-        ...data,
-        amenities: Array.isArray(data.amenities) ? data.amenities : [],
-        gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
-        video_urls: Array.isArray(data.video_urls) ? data.video_urls : [],
-        gallery_metadata: Array.isArray(data.gallery_metadata) ? data.gallery_metadata as any[] : [],
-        video_metadata: Array.isArray(data.video_metadata) ? data.video_metadata as any[] : [],
-        amenities_data: Array.isArray(data.amenities_data) ? data.amenities_data as any[] : [],
-        guidebook_sections: Array.isArray(data.guidebook_sections) ? data.guidebook_sections as any[] : [],
-        special_highlights: Array.isArray(data.special_highlights) ? data.special_highlights as any[] : [],
-        footer_quick_links: Array.isArray(data.footer_quick_links) ? data.footer_quick_links as string[] : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
-        pricing_table: data.pricing_table as any
-      };
-      return { data: mappedProperty, error: null };
-    }
-
-    return { data: null, error: null };
+    return { data, error: null };
   }, [id]);
 
-  const { data: property, loading, error } = useOptimizedQuery(
-    `property-${id}`,
-    propertyQueryFn,
+  const { data: heavyProperty } = useOptimizedQuery(
+    `property-heavy-${id}`,
+    propertyHeavyQueryFn,
     {
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-      staleTime: 2 * 60 * 1000, // 2 minutes
-      enableRealtime: true,
-      realtimeFilter: {
-        event: '*',
-        schema: 'public',
-        table: 'properties',
-        filter: `id=eq.${id}`
-      }
+      cacheTime: 10 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      enableRealtime: false,
     }
   );
 
-  // Memoized handlers for optimal performance
   const handleGuideOpen = useCallback(() => setIsGuideDialogOpen(true), []);
   const handleGuideClose = useCallback(() => setIsGuideDialogOpen(false), []);
-  const handleBackToHome = useCallback(() => navigate('/'), [navigate]);
+  const handleBackToHome = useCallback(() => navigate("/"), [navigate]);
 
-  // Memoized property content with error boundaries
-  const propertyContent = useMemo(() => {
-    if (!property) return null;
+  /** Merge light + heavy query results */
+  const property = useMemo(() => {
+    if (!lightProperty) return null;
 
-    return (
-      <>
-        <MemoizedPropertyHero property={property} />
-        <MemoizedPropertyGallery property={property} />
-        <MemoizedPropertyAmenities property={property} />
-        <MemoizedPropertySpecialHighlights 
-          property={property}
-          onViewGuide={handleGuideOpen}
-        />
-        <MemoizedPropertyBooking property={property} />
-        <MemoizedPropertyFooter property={property} />
-        
-        <GuestGuideDialog
-          isOpen={isGuideDialogOpen}
-          onClose={handleGuideClose}
-          property={property}
-        />
-      </>
-    );
-  }, [property, isGuideDialogOpen, handleGuideOpen, handleGuideClose]);
+    return {
+      ...lightProperty,
+      ...heavyProperty,
+      amenities: Array.isArray(heavyProperty?.amenities) ? heavyProperty?.amenities : [],
+      gallery_images: Array.isArray(heavyProperty?.gallery_images) ? heavyProperty?.gallery_images : [],
+      video_urls: Array.isArray(heavyProperty?.video_urls) ? heavyProperty?.video_urls : [],
+      gallery_metadata: Array.isArray(heavyProperty?.gallery_metadata) ? heavyProperty?.gallery_metadata : [],
+      video_metadata: Array.isArray(heavyProperty?.video_metadata) ? heavyProperty?.video_metadata : [],
+      amenities_data: Array.isArray(heavyProperty?.amenities_data) ? heavyProperty?.amenities_data : [],
+      guidebook_sections: Array.isArray(heavyProperty?.guidebook_sections) ? heavyProperty?.guidebook_sections : [],
+      special_highlights: Array.isArray(heavyProperty?.special_highlights) ? heavyProperty?.special_highlights : [],
+      footer_quick_links: Array.isArray(heavyProperty?.footer_quick_links)
+        ? heavyProperty?.footer_quick_links
+        : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
+      pricing_table: heavyProperty?.pricing_table ?? null,
+    } as Property;
+  }, [lightProperty, heavyProperty]);
 
-  // Loading state with optimized skeleton
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -176,33 +129,25 @@ const PropertyPage = memo(() => {
           <Skeleton className="w-full h-full" />
         </div>
         <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <Skeleton className="h-32" />
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Skeleton key={i} className="h-24" />
-                ))}
-              </div>
-            </div>
-            <div className="space-y-6">
-              <Skeleton className="h-64" />
-              <Skeleton className="h-32" />
-            </div>
-          </div>
+          <Skeleton className="h-10 w-1/3 mb-6" />
+          <Skeleton className="h-32 w-full mb-6" />
+          <Skeleton className="h-64 w-full" />
         </div>
       </div>
     );
   }
 
-  // Error state with better UX
-  if (error) {
+  // Error state
+  if (error || !property) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Property Not Found</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Property Not Found
+          </h1>
           <p className="text-muted-foreground mb-6">
-            The property you're looking for doesn't exist or is no longer available.
+            The property you're looking for doesn't exist or is no longer
+            available.
           </p>
           <Button onClick={handleBackToHome} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -213,14 +158,41 @@ const PropertyPage = memo(() => {
     );
   }
 
+  // Render content
   return (
     <div className="min-h-screen bg-background">
       <PropertyNavigation />
-      {propertyContent}
+      <PropertyHero property={property} />
+
+      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+        <PropertyGallery property={property} />
+      </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+        <PropertyAmenities property={property} />
+      </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+        <PropertySpecialHighlights property={property} onViewGuide={handleGuideOpen} />
+      </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+        <PropertyBooking property={property} />
+      </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-20 w-full" />}>
+        <PropertyFooter property={property} />
+      </Suspense>
+
+      <GuestGuideDialog
+        isOpen={isGuideDialogOpen}
+        onClose={handleGuideClose}
+        property={property}
+      />
     </div>
   );
 });
 
-PropertyPage.displayName = 'PropertyPage';
+PropertyPage.displayName = "PropertyPage";
 
 export default PropertyPage;
