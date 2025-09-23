@@ -59,7 +59,7 @@ export const useBooking = () => {
       }
 
       // Create Stripe Connect payment session
-      const { data, error } = await supabase.functions.invoke('create-booking-payment-connect', {
+      const { data, error } = await supabase.functions.invoke('create-booking-payment', {
         body: {
           propertyId: bookingData.property_id,
           checkInDate: bookingData.check_in_date,
