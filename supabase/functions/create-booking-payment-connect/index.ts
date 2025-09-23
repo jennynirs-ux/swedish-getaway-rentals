@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[BOOKING-PAYMENT-CONNECT] ${step}${detailsStr}`);
 };
 
@@ -20,15 +20,15 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { 
-      propertyId, 
-      checkInDate, 
-      checkOutDate, 
+    const {
+      propertyId,
+      checkInDate,
+      checkOutDate,
       numberOfGuests,
       guestName,
       guestEmail,
       guestPhone,
-      specialRequests 
+      specialRequests,
     } = await req.json();
 
     logStep("Request data received", { propertyId, checkInDate, checkOutDate, numberOfGuests });
@@ -36,7 +36,7 @@ serve(async (req) => {
     // Security logging
     const clientIP = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     const userAgent = req.headers.get("user-agent") || "unknown";
-    logStep(`Booking payment request from IP: ${clientIP}, User-Agent: ${userAgent}, Email: ${guestEmail}`);
+    logStep("Booking request meta", { clientIP, userAgent, guestEmail });
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -44,39 +44,39 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    // Get user if authenticated
-    let user = null;
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data } = await supabaseClient.auth.getUser(token);
-      user = data.user;
-      logStep("User authenticated", { userId: user?.id });
-    }
-
-    // Get property details including host info
+    // Get property details (left join to allow missing profile)
     const { data: property, error: propertyError } = await supabaseClient
-      .from('properties')
-      .select(`
+      .from("properties")
+      .select(
+        `
         *,
-        profiles!inner(stripe_connect_account_id, commission_rate)
-      `)
-      .eq('id', propertyId)
-      .eq('active', true)
-      .single();
+        profiles(stripe_connect_account_id, commission_rate)
+      `
+      )
+      .eq("id", propertyId)
+      .eq("active", true)
+      .maybeSingle();
 
-    if (propertyError || !property) {
-      logStep("Property not found", { propertyId, error: propertyError });
-      throw new Error('Property not found or inactive');
+    if (propertyError) {
+      logStep("Property query error", { propertyError });
     }
 
-    logStep("Property found", { 
-      propertyTitle: property.title,
+    if (!property) {
+      logStep("Property not found or inactive", { propertyId });
+      return new Response(
+        JSON.stringify({ error: "Property not found or inactive", propertyId }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+      );
+    }
+
+    logStep("Property found", {
+      title: property.title,
+      currency: property.currency,
       hostConnectAccount: property.profiles?.stripe_connect_account_id,
-      commissionRate: property.profiles?.commission_rate
+      commissionRate: property.profiles?.commission_rate,
     });
 
-    // Calculate dates and total
+    // Calculate dates and amounts
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
     const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
@@ -84,8 +84,8 @@ serve(async (req) => {
 
     logStep("Booking calculation", { nights, pricePerNight: property.price_per_night, totalAmount });
 
-    // Calculate commission split
-    const commissionRate = property.profiles?.commission_rate || 10.00;
+    // Commission split
+    const commissionRate = property.profiles?.commission_rate || 10.0;
     const platformCommission = Math.ceil(totalAmount * (commissionRate / 100));
     const hostAmount = totalAmount - platformCommission;
 
@@ -93,10 +93,10 @@ serve(async (req) => {
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
+      apiVersion: "2022-11-15", // stabil version
     });
 
-    // Check for existing customer
+    // Reuse Stripe customer if exists
     let customerId;
     if (guestEmail) {
       const customers = await stripe.customers.list({ email: guestEmail, limit: 1 });
@@ -106,20 +106,22 @@ serve(async (req) => {
       }
     }
 
-    // Prepare line items
-    const lineItems = [{
-      price_data: {
-        currency: property.currency.toLowerCase(),
-        product_data: {
-          name: `${property.title} - ${nights} night${nights > 1 ? 's' : ''}`,
-          description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
+    // Stripe requires amounts in öre/cent
+    const lineItems = [
+      {
+        price_data: {
+          currency: property.currency?.toLowerCase() || "sek",
+          product_data: {
+            name: `${property.title} - ${nights} night${nights > 1 ? "s" : ""}`,
+            description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
+          },
+          unit_amount: totalAmount * 100, // 👈 öre
         },
-        unit_amount: totalAmount,
+        quantity: 1,
       },
-      quantity: 1,
-    }];
+    ];
 
-    // Create checkout session with application fee for commission
+    // Session config
     const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : guestEmail,
@@ -128,33 +130,31 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/property/${propertyId}`,
       metadata: {
-        type: 'booking',
+        type: "booking",
         propertyId,
         checkInDate,
         checkOutDate,
         numberOfGuests: numberOfGuests.toString(),
         guestName,
         guestEmail,
-        guestPhone: guestPhone || '',
-        specialRequests: specialRequests || '',
-        userId: user?.id || '',
+        guestPhone: guestPhone || "",
+        specialRequests: specialRequests || "",
         hostAmount: hostAmount.toString(),
         platformCommission: platformCommission.toString(),
-        commissionRate: commissionRate.toString()
-      }
+        commissionRate: commissionRate.toString(),
+      },
     };
 
-    // Add Stripe Connect configuration if host has connected account
     if (property.profiles?.stripe_connect_account_id) {
       sessionConfig.payment_intent_data = {
-        application_fee_amount: platformCommission,
+        application_fee_amount: platformCommission * 100, // 👈 öre
         transfer_data: {
           destination: property.profiles.stripe_connect_account_id,
         },
       };
-      logStep("Stripe Connect configured", { 
+      logStep("Stripe Connect configured", {
         destination: property.profiles.stripe_connect_account_id,
-        applicationFee: platformCommission 
+        applicationFee: platformCommission,
       });
     }
 
@@ -165,7 +165,6 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in create-booking-payment-connect", { message: errorMessage });
