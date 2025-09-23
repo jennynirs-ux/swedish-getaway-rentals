@@ -22,17 +22,51 @@ const PropertyPage = memo(() => {
   const navigate = useNavigate();
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
 
-  /** Light query for fast first load */
+  /** Resolve legacy routes → actual property id */
+  const resolvePropertyId = useCallback(async (incomingId: string) => {
+    let propertyId = incomingId;
+
+    if (incomingId === "villa-hacken") {
+      const { data } = await supabase
+        .from("properties")
+        .select("id")
+        .ilike("title", "%villa%")
+        .eq("active", true)
+        .limit(1)
+        .single();
+      if (data) propertyId = data.id;
+    } else if (incomingId === "lakehouse-getaway") {
+      const { data } = await supabase
+        .from("properties")
+        .select("id")
+        .or("title.ilike.%lakehouse%,title.ilike.%lake%")
+        .eq("active", true)
+        .limit(1)
+        .single();
+      if (data) propertyId = data.id;
+    }
+
+    return propertyId;
+  }, []);
+
+  /** Light query: fast initial load + covers PropertyCard needs */
   const propertyLightQueryFn = useCallback(async () => {
+    let propertyId = await resolvePropertyId(id!);
+
     const { data, error } = await supabase
       .from("properties")
       .select(`
         id,
+        host_id,
         title,
+        description,
         location,
         price_per_night,
         currency,
+        bedrooms,
+        bathrooms,
         max_guests,
+        amenities,
         hero_image_url,
         tagline_line1,
         tagline_line2,
@@ -40,13 +74,13 @@ const PropertyPage = memo(() => {
         review_count,
         active
       `)
-      .eq("id", id)
+      .eq("id", propertyId)
       .eq("active", true)
       .single();
 
     if (error) throw error;
     return { data, error: null };
-  }, [id]);
+  }, [id, resolvePropertyId]);
 
   const { data: lightProperty, loading, error } = useOptimizedQuery(
     `property-light-${id}`,
@@ -58,7 +92,7 @@ const PropertyPage = memo(() => {
     }
   );
 
-  /** Heavy query (gallery, amenities, etc.) */
+  /** Heavy query: gallery, video, highlights, guidebook, footer */
   const propertyHeavyQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from("properties")
@@ -66,7 +100,6 @@ const PropertyPage = memo(() => {
         id,
         gallery_images,
         video_urls,
-        amenities,
         amenities_data,
         guidebook_sections,
         special_highlights,
@@ -105,16 +138,16 @@ const PropertyPage = memo(() => {
     return {
       ...lightProperty,
       ...heavyProperty,
-      amenities: Array.isArray(heavyProperty?.amenities) ? heavyProperty?.amenities : [],
-      gallery_images: Array.isArray(heavyProperty?.gallery_images) ? heavyProperty?.gallery_images : [],
-      video_urls: Array.isArray(heavyProperty?.video_urls) ? heavyProperty?.video_urls : [],
-      gallery_metadata: Array.isArray(heavyProperty?.gallery_metadata) ? heavyProperty?.gallery_metadata : [],
-      video_metadata: Array.isArray(heavyProperty?.video_metadata) ? heavyProperty?.video_metadata : [],
-      amenities_data: Array.isArray(heavyProperty?.amenities_data) ? heavyProperty?.amenities_data : [],
-      guidebook_sections: Array.isArray(heavyProperty?.guidebook_sections) ? heavyProperty?.guidebook_sections : [],
-      special_highlights: Array.isArray(heavyProperty?.special_highlights) ? heavyProperty?.special_highlights : [],
+      amenities: Array.isArray(lightProperty?.amenities) ? lightProperty.amenities : [],
+      gallery_images: Array.isArray(heavyProperty?.gallery_images) ? heavyProperty.gallery_images : [],
+      video_urls: Array.isArray(heavyProperty?.video_urls) ? heavyProperty.video_urls : [],
+      gallery_metadata: Array.isArray(heavyProperty?.gallery_metadata) ? heavyProperty.gallery_metadata : [],
+      video_metadata: Array.isArray(heavyProperty?.video_metadata) ? heavyProperty.video_metadata : [],
+      amenities_data: Array.isArray(heavyProperty?.amenities_data) ? heavyProperty.amenities_data : [],
+      guidebook_sections: Array.isArray(heavyProperty?.guidebook_sections) ? heavyProperty.guidebook_sections : [],
+      special_highlights: Array.isArray(heavyProperty?.special_highlights) ? heavyProperty.special_highlights : [],
       footer_quick_links: Array.isArray(heavyProperty?.footer_quick_links)
-        ? heavyProperty?.footer_quick_links
+        ? heavyProperty.footer_quick_links
         : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
       pricing_table: heavyProperty?.pricing_table ?? null,
     } as Property;
