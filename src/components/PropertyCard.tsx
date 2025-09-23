@@ -10,7 +10,6 @@ import {
   TreePine, 
   Waves,
   Anchor,
-  Calendar,
   Bed,
   Bath,
   Sparkles,
@@ -34,10 +33,10 @@ import {
   Sun,
   Wind
 } from "lucide-react";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-interface Property {
+export interface PropertyCardData {
   id: string;
   title: string;
   description: string;
@@ -49,20 +48,21 @@ interface Property {
   max_guests: number;
   amenities: string[];
   hero_image_url: string;
-  gallery_images: string[];
   active: boolean;
   host_id: string;
+  review_rating?: number;
+  review_count?: number;
 }
 
 interface PropertyCardProps {
-  property: Property;
+  property: PropertyCardData;
   onFavoriteToggle?: (propertyId: string) => void;
   isFavorite?: boolean;
   showFullDescription?: boolean;
   size?: "default" | "large";
 }
 
-const PropertyCard = ({ 
+const PropertyCard = memo(({ 
   property, 
   onFavoriteToggle, 
   isFavorite = false, 
@@ -73,38 +73,34 @@ const PropertyCard = ({
   const { toast } = useToast();
 
   // Always use dynamic property routes
-  const getPropertyRoute = (property: Property) => {
-    return `/property/${property.id}`;
-  };
+  const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
 
   const getAmenityIcon = (amenity: string) => {
     const lower = amenity.toLowerCase();
-  
-    if (lower.includes('wifi') || lower.includes('internet')) return <Wifi className="w-4 h-4" />;
-    if (lower.includes('parking') || lower.includes('garage')) return <Car className="w-4 h-4" />;
-    if (lower.includes('coffee')) return <Coffee className="w-4 h-4" />;
-    if (lower.includes('kitchen')) return <UtensilsCrossed className="w-4 h-4" />;
-    if (lower.includes('boat') || lower.includes('canoe') || lower.includes('kayak')) return <Anchor className="w-4 h-4" />;
-    if (lower.includes('dining') || lower.includes('restaurant')) return <Utensils className="w-4 h-4" />;
-    if (lower.includes('jacuzzi') || lower.includes('spa') || lower.includes('hot tub')) return <Sparkles className="w-4 h-4" />;
-    if (lower.includes('pool') || lower.includes('swimming')) return <Droplets className="w-4 h-4" />;
-    if (lower.includes('forest') || lower.includes('nature')) return <TreePine className="w-4 h-4" />;
-    if (lower.includes('mountain') || lower.includes('view')) return <Mountain className="w-4 h-4" />;
-    if (lower.includes('bedroom') || lower.includes('bed')) return <Bed className="w-4 h-4" />;
-    if (lower.includes('bathroom') || lower.includes('bath')) return <Bath className="w-4 h-4" />;
-    if (lower.includes('guest') || lower.includes('people')) return <Users className="w-4 h-4" />;
-    if (lower.includes('fireplace') || lower.includes('fire')) return <Flame className="w-4 h-4" />;
-    if (lower.includes('lake access') || lower.includes('ocean access')) return <Waves className="w-4 h-4" />;
-    if (lower.includes('heating') || lower.includes('warm')) return <Thermometer className="w-4 h-4" />;
-    if (lower.includes('ac') || lower.includes('air') || lower.includes('cooling')) return <Snowflake className="w-4 h-4" />;
-    if (lower.includes('tv') || lower.includes('television')) return <Tv className="w-4 h-4" />;
-    if (lower.includes('gym') || lower.includes('fitness')) return <Dumbbell className="w-4 h-4" />;
-    if (lower.includes('pet') || lower.includes('dog')) return <PawPrint className="w-4 h-4" />;
-    if (lower.includes('smoking')) return <Cigarette className="w-4 h-4" />;
-    if (lower.includes('outdoor') || lower.includes('sun')) return <Sun className="w-4 h-4" />;
-    if (lower.includes('wind') || lower.includes('fan')) return <Wind className="w-4 h-4" />;
-    if (lower.includes('romantic')) return <HeartHandshake className="w-4 h-4" />;
-  
+    if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="w-4 h-4" />;
+    if (lower.includes("parking") || lower.includes("garage")) return <Car className="w-4 h-4" />;
+    if (lower.includes("coffee")) return <Coffee className="w-4 h-4" />;
+    if (lower.includes("kitchen")) return <UtensilsCrossed className="w-4 h-4" />;
+    if (lower.includes("boat") || lower.includes("canoe") || lower.includes("kayak")) return <Anchor className="w-4 h-4" />;
+    if (lower.includes("dining") || lower.includes("restaurant")) return <Utensils className="w-4 h-4" />;
+    if (lower.includes("jacuzzi") || lower.includes("spa") || lower.includes("hot tub")) return <Sparkles className="w-4 h-4" />;
+    if (lower.includes("pool") || lower.includes("swimming")) return <Droplets className="w-4 h-4" />;
+    if (lower.includes("forest") || lower.includes("nature")) return <TreePine className="w-4 h-4" />;
+    if (lower.includes("mountain") || lower.includes("view")) return <Mountain className="w-4 h-4" />;
+    if (lower.includes("bedroom") || lower.includes("bed")) return <Bed className="w-4 h-4" />;
+    if (lower.includes("bathroom") || lower.includes("bath")) return <Bath className="w-4 h-4" />;
+    if (lower.includes("guest") || lower.includes("people")) return <Users className="w-4 h-4" />;
+    if (lower.includes("fireplace") || lower.includes("fire")) return <Flame className="w-4 h-4" />;
+    if (lower.includes("lake access") || lower.includes("ocean access")) return <Waves className="w-4 h-4" />;
+    if (lower.includes("heating") || lower.includes("warm")) return <Thermometer className="w-4 h-4" />;
+    if (lower.includes("ac") || lower.includes("air") || lower.includes("cooling")) return <Snowflake className="w-4 h-4" />;
+    if (lower.includes("tv") || lower.includes("television")) return <Tv className="w-4 h-4" />;
+    if (lower.includes("gym") || lower.includes("fitness")) return <Dumbbell className="w-4 h-4" />;
+    if (lower.includes("pet") || lower.includes("dog")) return <PawPrint className="w-4 h-4" />;
+    if (lower.includes("smoking")) return <Cigarette className="w-4 h-4" />;
+    if (lower.includes("outdoor") || lower.includes("sun")) return <Sun className="w-4 h-4" />;
+    if (lower.includes("wind") || lower.includes("fan")) return <Wind className="w-4 h-4" />;
+    if (lower.includes("romantic")) return <HeartHandshake className="w-4 h-4" />;
     return <Home className="w-4 h-4" />;
   };
 
@@ -137,33 +133,38 @@ const PropertyCard = ({
   };
 
   const cardHeight = size === "large" ? "h-80" : "h-64";
-  const cardClass = size === "large" 
-    ? "overflow-hidden hover-scale shadow-elegant group cursor-pointer" 
-    : "overflow-hidden hover-scale group cursor-pointer";
+  const cardClass =
+    size === "large"
+      ? "overflow-hidden hover-scale shadow-elegant group cursor-pointer"
+      : "overflow-hidden hover-scale group cursor-pointer";
 
   return (
     <Link to={getPropertyRoute(property)} className="block">
       <Card className={cardClass}>
         <div className={`relative ${cardHeight}`}>
           {/* Image */}
-          <img 
-            src={property.hero_image_url || '/placeholder.svg'} 
-            alt={property.title} 
+          <img
+            src={property.hero_image_url || "/placeholder.svg"}
+            alt={property.title}
+            loading="lazy"
             className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-              imageLoading ? 'blur-sm' : ''
+              imageLoading ? "blur-sm" : ""
             }`}
             onLoad={() => setImageLoading(false)}
           />
-          
+
           {/* Image Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          
+
           {/* Top Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
-            <Badge className="bg-primary text-primary-foreground shadow-md">
-              <Star className="w-3 h-3 mr-1 fill-current" />
-              5.0
-            </Badge>
+            {property.review_rating && (
+              <Badge className="bg-primary text-primary-foreground shadow-md">
+                <Star className="w-3 h-3 mr-1 fill-current" />
+                {property.review_rating.toFixed(1)}{" "}
+                {property.review_count ? `(${property.review_count})` : ""}
+              </Badge>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -180,19 +181,22 @@ const PropertyCard = ({
               size="sm"
               variant="secondary"
               className={`h-8 w-8 p-0 backdrop-blur-sm hover:bg-white/30 ${
-                isFavorite ? 'bg-red-500/80 text-white' : 'bg-white/20'
+                isFavorite ? "bg-red-500/80 text-white" : "bg-white/20"
               }`}
               onClick={handleFavorite}
             >
-              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current text-white' : 'text-white'}`} />
+              <Heart className={`h-4 w-4 ${isFavorite ? "fill-current text-white" : "text-white"}`} />
             </Button>
           </div>
 
           {/* Property Type Badge */}
           <div className="absolute bottom-4 left-4">
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
-              {property.title.toLowerCase().includes('villa') ? 'Villa' :
-               property.title.toLowerCase().includes('lakehouse') ? 'Lakehouse' : 'Property'}
+              {property.title.toLowerCase().includes("villa")
+                ? "Villa"
+                : property.title.toLowerCase().includes("lakehouse")
+                ? "Lakehouse"
+                : "Property"}
             </Badge>
           </div>
         </div>
@@ -205,7 +209,7 @@ const PropertyCard = ({
               </h3>
               <div className="flex items-center text-muted-foreground text-sm mt-1">
                 <MapPin className="w-4 h-4 mr-1" />
-                {property.location || 'Sverige'}
+                {property.location || "Sverige"}
               </div>
             </div>
           </div>
@@ -214,10 +218,11 @@ const PropertyCard = ({
         <CardContent className="pt-0">
           {/* Description */}
           <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-            {showFullDescription 
-              ? property.description 
-              : `${property.description?.substring(0, 120)}...`
-            }
+            {showFullDescription
+              ? property.description
+              : property.description
+              ? `${property.description.substring(0, 120)}...`
+              : ""}
           </p>
 
           {/* Property Details */}
@@ -254,8 +259,8 @@ const PropertyCard = ({
           {/* Price and CTA */}
           <div className="flex items-center justify-between">
             <div>
-               <span className="text-2xl font-bold text-foreground">
-                 {(property.price_per_night || 0).toLocaleString()} {property.currency}
+              <span className="text-2xl font-bold text-foreground">
+                {(property.price_per_night || 0).toLocaleString()} {property.currency}
               </span>
               <span className="text-muted-foreground text-sm ml-1">/night</span>
             </div>
@@ -267,6 +272,8 @@ const PropertyCard = ({
       </Card>
     </Link>
   );
-};
+});
+
+PropertyCard.displayName = "PropertyCard";
 
 export default PropertyCard;
