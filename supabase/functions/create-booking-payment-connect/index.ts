@@ -20,85 +20,75 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { 
-      propertyId, 
-      checkInDate, 
-      checkOutDate, 
+    const {
+      propertyId,
+      checkInDate,
+      checkOutDate,
       numberOfGuests,
       guestName,
       guestEmail,
       guestPhone,
       specialRequests,
-      totalAmount // 👈 ta emot direkt från frontend
+      totalAmount, // 👈 kommer från BookingFormEnhanced i öre/cent
+      currency
     } = await req.json();
-    
-    logStep("Request data received", { propertyId, checkInDate, checkOutDate, numberOfGuests, totalAmount });
 
+    logStep("Request data received", { propertyId, checkInDate, checkOutDate, numberOfGuests, totalAmount, currency });
 
-    // Security logging
-    const clientIP = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
-    const userAgent = req.headers.get("user-agent") || "unknown";
-    logStep("Booking request meta", { clientIP, userAgent, guestEmail });
-
-    // Create Supabase client
+    // Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    // Get property details (left join to allow missing profile)
-    const { data: property, error: propertyError } = await supabaseClient
-      .from("properties")
-      .select(
-        `
-        *,
-        profiles(stripe_connect_account_id, commission_rate)
-      `
-      )
-      .eq("id", propertyId)
-      .eq("active", true)
-      .maybeSingle();
-
-    if (propertyError) {
-      logStep("Property query error", { propertyError });
+    // Kolla användare (om auth-token skickas med)
+    let user = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data } = await supabaseClient.auth.getUser(token);
+      user = data.user;
+      logStep("User authenticated", { userId: user?.id });
     }
 
-    if (!property) {
-      logStep("Property not found or inactive", { propertyId });
-      return new Response(
-        JSON.stringify({ error: "Property not found or inactive", propertyId }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
-      );
+    // Hämta property med hostens Stripe-konto
+    const { data: property, error: propertyError } = await supabaseClient
+      .from("properties")
+      .select(`
+        id, title, currency,
+        profiles!inner(stripe_connect_account_id, commission_rate)
+      `)
+      .eq("id", propertyId)
+      .eq("active", true)
+      .single();
+
+    if (propertyError || !property) {
+      logStep("Property not found", { propertyId, error: propertyError });
+      return new Response(JSON.stringify({ error: "Property not found or inactive" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404,
+      });
     }
 
     logStep("Property found", {
-      title: property.title,
-      currency: property.currency,
+      propertyTitle: property.title,
       hostConnectAccount: property.profiles?.stripe_connect_account_id,
       commissionRate: property.profiles?.commission_rate,
     });
 
-    // Calculate dates and amounts
-    const checkIn = new Date(checkInDate);
-    const checkOut = new Date(checkOutDate);
-    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-    const totalAmount = nights * property.price_per_night;
-
-    logStep("Booking calculation", { nights, pricePerNight: property.price_per_night, totalAmount });
-
-    // Commission split
-    const commissionRate = property.profiles?.commission_rate || 10.0;
+    // Kommission
+    const commissionRate = property.profiles?.commission_rate || 10;
     const platformCommission = Math.ceil(totalAmount * (commissionRate / 100));
     const hostAmount = totalAmount - platformCommission;
 
     logStep("Commission calculation", { commissionRate, platformCommission, hostAmount });
 
-    // Initialize Stripe
+    // Stripe init
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2022-11-15", // stabil version
+      apiVersion: "2025-08-27.basil",
     });
 
-    // Reuse Stripe customer if exists
+    // Customer
     let customerId;
     if (guestEmail) {
       const customers = await stripe.customers.list({ email: guestEmail, limit: 1 });
@@ -108,20 +98,22 @@ serve(async (req) => {
       }
     }
 
-    // Stripe requires amounts in öre/cent
-    const lineItems = [{
-      price_data: {
-        currency: property.currency.toLowerCase(),
-        product_data: {
-          name: `${property.title}`,
-          description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
+    // Stripe line item
+    const lineItems = [
+      {
+        price_data: {
+          currency: (currency || property.currency || "sek").toLowerCase(),
+          product_data: {
+            name: `${property.title}`,
+            description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
+          },
+          unit_amount: totalAmount, // 👈 direkt från frontend
         },
-        unit_amount: totalAmount, // 👈 direkt från frontend
+        quantity: 1,
       },
-      quantity: 1,
-    }];
+    ];
 
-    // Session config
+    // Stripe checkout session config
     const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : guestEmail,
@@ -139,15 +131,17 @@ serve(async (req) => {
         guestEmail,
         guestPhone: guestPhone || "",
         specialRequests: specialRequests || "",
+        userId: user?.id || "",
         hostAmount: hostAmount.toString(),
         platformCommission: platformCommission.toString(),
         commissionRate: commissionRate.toString(),
       },
     };
 
+    // Stripe Connect payout
     if (property.profiles?.stripe_connect_account_id) {
       sessionConfig.payment_intent_data = {
-        application_fee_amount: platformCommission * 100, // 👈 öre
+        application_fee_amount: platformCommission,
         transfer_data: {
           destination: property.profiles.stripe_connect_account_id,
         },
@@ -158,6 +152,7 @@ serve(async (req) => {
       });
     }
 
+    // Skapa Stripe session
     const session = await stripe.checkout.sessions.create(sessionConfig);
     logStep("Stripe session created", { sessionId: session.id, sessionUrl: session.url });
 
