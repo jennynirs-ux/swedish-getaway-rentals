@@ -4,7 +4,10 @@ import BookingForm from "./BookingFormEnhanced";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
+
+// Lazy load chat component to improve initial page load
+const BookingChat = lazy(() => import("./BookingChat").then(module => ({ default: module.BookingChat })));
 
 interface PropertyBookingProps {
   property: Property;
@@ -75,15 +78,21 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                           Message Host
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[90vh]">
+                        <DialogContent className="max-w-4xl max-h-[90vh]">
                         <DialogHeader>
                           <DialogTitle>Contact Host</DialogTitle>
                         </DialogHeader>
-                        <div className="text-center py-8 text-muted-foreground">
-                          <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Chat is available after booking confirmation</p>
-                          <p className="text-sm">You'll receive chat access details in your booking confirmation</p>
-                        </div>
+                        <Suspense fallback={
+                          <div className="flex justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          </div>
+                        }>
+                          <div className="text-center py-8 text-muted-foreground">
+                            <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>Chat is available after booking confirmation</p>
+                            <p className="text-sm">You'll receive chat access details in your booking confirmation</p>
+                          </div>
+                        </Suspense>
                       </DialogContent>
                     </Dialog>
                   </div>

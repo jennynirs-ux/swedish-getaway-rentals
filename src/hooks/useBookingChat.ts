@@ -183,6 +183,7 @@ export const useBookingChatList = () => {
 
       if (!profile) return;
 
+      // Optimized single query with aggregated data
       let query = supabase
         .from('bookings')
         .select(`
@@ -192,9 +193,16 @@ export const useBookingChatList = () => {
           guest_email,
           check_in_date,
           check_out_date,
-          properties!inner(title, host_id)
+          properties!inner(title, host_id),
+          booking_messages(
+            message,
+            created_at,
+            read_by_host,
+            sender_type
+          )
         `)
-        .eq('status', 'confirmed');
+        .eq('status', 'confirmed')
+        .limit(50);
 
       // Filter by host if not admin
       if (!profile.is_admin && profile.is_host) {
@@ -205,36 +213,29 @@ export const useBookingChatList = () => {
 
       if (error) throw error;
 
-      // Get unread message counts
-      const chatInfos: BookingChatInfo[] = [];
-      
-      for (const booking of bookings || []) {
-        const { data: messages } = await supabase
-          .from('booking_messages')
-          .select('message, created_at, read_by_host')
-          .eq('booking_id', booking.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
+      // Process data efficiently
+      const chatInfos: BookingChatInfo[] = (bookings || []).map(booking => {
+        const messages = (booking as any).booking_messages || [];
+        const sortedMessages = messages.sort((a: any, b: any) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        
+        const unreadCount = messages.filter((msg: any) => 
+          !msg.read_by_host && msg.sender_type !== 'host'
+        ).length;
 
-        const unreadCount = await supabase
-          .from('booking_messages')
-          .select('id', { count: 'exact' })
-          .eq('booking_id', booking.id)
-          .eq('read_by_host', false)
-          .neq('sender_type', 'host');
-
-        chatInfos.push({
+        return {
           booking_id: booking.id,
-          property_title: booking.properties.title,
+          property_title: (booking as any).properties.title,
           guest_name: booking.guest_name,
           guest_email: booking.guest_email,
           check_in_date: booking.check_in_date,
           check_out_date: booking.check_out_date,
-          unread_count: unreadCount.count || 0,
-          last_message: messages?.[0]?.message,
-          last_message_at: messages?.[0]?.created_at
-        });
-      }
+          unread_count: unreadCount,
+          last_message: sortedMessages[0]?.message,
+          last_message_at: sortedMessages[0]?.created_at
+        };
+      });
 
       setChats(chatInfos);
     } catch (error) {
