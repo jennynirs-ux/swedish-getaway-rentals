@@ -109,19 +109,17 @@ serve(async (req) => {
     }
 
     // Stripe requires amounts in öre/cent
-    const lineItems = [
-      {
-        price_data: {
-          currency: property.currency?.toLowerCase() || "sek",
-          product_data: {
-            name: `${property.title} - ${nights} night${nights > 1 ? "s" : ""}`,
-            description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
-          },
-          unit_amount: totalAmount * 100, // 👈 öre
+    const lineItems = [{
+      price_data: {
+        currency: property.currency.toLowerCase(),
+        product_data: {
+          name: `${property.title}`,
+          description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
         },
-        quantity: 1,
+        unit_amount: totalAmount, // 👈 direkt från frontend
       },
-    ];
+      quantity: 1,
+    }];
 
     // Session config
     const sessionConfig: any = {
