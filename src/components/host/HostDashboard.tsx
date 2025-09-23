@@ -9,6 +9,7 @@ import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import { BookingChatList } from "../BookingChatList";
 
 interface HostStats {
   total_properties: number;
@@ -240,6 +241,7 @@ const HostDashboard = () => {
           <TabsList>
             <TabsTrigger value="properties">Properties</TabsTrigger>
             <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
           </TabsList>
 
@@ -300,6 +302,10 @@ const HostDashboard = () => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="messages" className="space-y-6">
+            <BookingChatList />
           </TabsContent>
 
           {/* bookings och pricing flikarna förblir som tidigare */}

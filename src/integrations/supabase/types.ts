@@ -55,6 +55,56 @@ export type Database = {
           },
         ]
       }
+      booking_messages: {
+        Row: {
+          attachment_url: string | null
+          booking_id: string
+          created_at: string
+          id: string
+          message: string
+          message_type: string
+          read_by_guest: boolean
+          read_by_host: boolean
+          sender_id: string | null
+          sender_type: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          booking_id: string
+          created_at?: string
+          id?: string
+          message: string
+          message_type?: string
+          read_by_guest?: boolean
+          read_by_host?: boolean
+          sender_id?: string | null
+          sender_type: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          booking_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          message_type?: string
+          read_by_guest?: boolean
+          read_by_host?: boolean
+          sender_id?: string | null
+          sender_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           check_in_date: string

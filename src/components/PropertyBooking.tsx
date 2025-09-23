@@ -1,12 +1,18 @@
 import { Property } from "@/hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import BookingForm from "./BookingFormEnhanced";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { MessageCircle } from "lucide-react";
+import { useState } from "react";
 
 interface PropertyBookingProps {
   property: Property;
 }
 
 const PropertyBooking = ({ property }: PropertyBookingProps) => {
+  const [showChat, setShowChat] = useState(false);
+  
   return (
     <section id="booking-section" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -59,6 +65,27 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
                       {property.contact_response_time ||
                         "We typically respond to inquiries within 2 hours."}
                     </p>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <Dialog open={showChat} onOpenChange={setShowChat}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Message Host
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[90vh]">
+                        <DialogHeader>
+                          <DialogTitle>Contact Host</DialogTitle>
+                        </DialogHeader>
+                        <div className="text-center py-8 text-muted-foreground">
+                          <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Chat is available after booking confirmation</p>
+                          <p className="text-sm">You'll receive chat access details in your booking confirmation</p>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </CardContent>
               </Card>
