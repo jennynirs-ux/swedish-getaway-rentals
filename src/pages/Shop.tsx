@@ -146,35 +146,35 @@ const Shop = () => {
     <div className="min-h-screen bg-background">
       <MainNavigation showBackButton currentPage="shop" />
 
-    {/* Header */}
-    <section className="relative py-20 pt-28 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${forestHeroBg})` }}
-      />
-      <div className="absolute inset-0 bg-black/40"></div>
-      <div className="container mx-auto px-4 text-center relative z-10">
-        <h1 className="text-4xl md:text-6xl font-bold !text-white mb-6">
-          Nordic Store
-        </h1>
-        <p className="text-2xl !text-white max-w-3xl mx-auto">
-          Discover unique Nordic-inspired products that bring the beauty of
-          Scandinavia to your home.
-        </p>
-    
-        {/* Search Bar */}
-        <div className="max-w-md mx-auto relative mt-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white/20 text-white placeholder:text-white/70"
-          />
+      {/* Header */}
+      <section className="relative py-20 pt-28 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${forestHeroBg})` }}
+        />
+        {/* ❌ Ingen overlay/filter */}
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            Nordic Store
+          </h1>
+          <p className="text-2xl text-white max-w-3xl mx-auto">
+            Discover unique Nordic-inspired products that bring the beauty of
+            Scandinavia to your home.
+          </p>
+
+          {/* Search Bar */}
+          <div className="max-w-md mx-auto relative mt-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-black/40 text-white placeholder:text-white"
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
       {/* Products Grid */}
       <section className="py-16">
