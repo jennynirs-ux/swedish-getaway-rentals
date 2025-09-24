@@ -152,8 +152,8 @@ const Shop = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-background/60"></div>
         <div className="container mx-auto px-4 text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Nordic Store</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">Nordic Store</h1>
+          <p className="text-2xl text-white/90 max-w-3xl mx-auto">
             Discover unique Nordic-inspired products that bring the beauty of Scandinavia to your home.
           </p>
           
