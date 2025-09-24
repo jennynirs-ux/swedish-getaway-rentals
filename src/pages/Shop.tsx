@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Star, Loader2, Search, Filter } from "lucide-react";
+import { ShoppingCart, Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -50,8 +49,10 @@ const Shop = () => {
       const filtered = products.filter(product => {
         const { title, description } = getDisplayData(product);
         const searchText = searchTerm.toLowerCase();
-        return title.toLowerCase().includes(searchText) || 
-               description.toLowerCase().includes(searchText);
+        return (
+          title.toLowerCase().includes(searchText) ||
+          description.toLowerCase().includes(searchText)
+        );
       });
       setFilteredProducts(filtered);
     }
@@ -59,20 +60,19 @@ const Shop = () => {
 
   const fetchProducts = async () => {
     try {
-      // Fetch visible products from shop_products table
       const { data, error } = await supabase
-        .from('shop_products')
-        .select('*')
-        .eq('is_visible_shop', true)
-        .eq('visible', true)
-        .order('sort_order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false });
+        .from("shop_products")
+        .select("*")
+        .eq("is_visible_shop", true)
+        .eq("visible", true)
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setProducts(data || []);
       setFilteredProducts(data || []);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
       toast({
         title: "Error",
         description: "Failed to load products. Please try again.",
@@ -87,17 +87,17 @@ const Shop = () => {
     setPurchasing(product.id);
     try {
       const { title, price, imageUrl } = getDisplayData(product);
-      addItem({ 
-        productId: product.id, 
-        title, 
-        price, 
-        currency: product.currency, 
-        quantity: 1, 
-        image: imageUrl 
+      addItem({
+        productId: product.id,
+        title,
+        price,
+        currency: product.currency,
+        quantity: 1,
+        image: imageUrl,
       });
-      toast({ title: 'Added to cart', description: title });
+      toast({ title: "Added to cart", description: title });
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      console.error("Error adding to cart:", error);
       toast({
         title: "Error",
         description: "Failed to add to cart.",
@@ -109,18 +109,22 @@ const Shop = () => {
   };
 
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
-      style: 'currency',
+    return new Intl.NumberFormat("sv-SE", {
+      style: "currency",
       currency: currency,
     }).format(price / 100);
   };
 
   const getDisplayData = (product: ShopProduct) => {
     const title = product.title_override || product.title;
-    const description = product.description_override || product.custom_description || product.description;
-    const price = product.price_override || product.custom_price || product.price;
+    const description =
+      product.description_override ||
+      product.custom_description ||
+      product.description;
+    const price =
+      product.price_override || product.custom_price || product.price;
     const imageUrl = product.main_image_override || product.image_url;
-    
+
     return { title, description, price, imageUrl };
   };
 
@@ -141,31 +145,34 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation showBackButton currentPage="shop" />
-      
+
       {/* Header */}
-      <section className="relative bg-gradient-to-r from-primary/10 to-secondary/10 py-20 pt-28 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-100"
+      <section className="relative py-20 pt-28 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url(${forestHeroBg})`
+            backgroundImage: `url(${forestHeroBg})`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-background/60"></div>
+        <div className="absolute inset-0 bg-black/40"></div>
         <div className="container mx-auto px-4 text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">Nordic Store</h1>
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            Nordic Store
+          </h1>
           <p className="text-2xl text-white/90 max-w-3xl mx-auto">
-            Discover unique Nordic-inspired products that bring the beauty of Scandinavia to your home.
+            Discover unique Nordic-inspired products that bring the beauty of
+            Scandinavia to your home.
           </p>
-          
+
           {/* Search Bar */}
-          <div className="max-w-md mx-auto relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <div className="max-w-md mx-auto relative mt-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 w-4 h-4" />
             <Input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-background/50 backdrop-blur-sm"
+              className="pl-10 bg-white/20 text-white placeholder:text-white/70"
             />
           </div>
         </div>
@@ -181,37 +188,42 @@ const Shop = () => {
                 {searchTerm ? "No products found" : "No products found"}
               </h3>
               <p className="text-muted-foreground">
-                {searchTerm ? "Try adjusting your search terms" : "No products found. Click Sync with Printful to import your products."}
+                {searchTerm
+                  ? "Try adjusting your search terms"
+                  : "No products found. Click Sync with Printful to import your products."}
               </p>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold text-foreground">
-                  {searchTerm ? `Search Results (${filteredProducts.length})` : `All Products (${filteredProducts.length})`}
+                  {searchTerm
+                    ? `Search Results (${filteredProducts.length})`
+                    : `All Products (${filteredProducts.length})`}
                 </h2>
               </div>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredProducts.map(product => {
-                  const { title, description, price, imageUrl } = getDisplayData(product);
-              
+                {filteredProducts.map((product) => {
+                  const { title, description, price, imageUrl } =
+                    getDisplayData(product);
+
                   return (
-                    <Card 
-                      key={product.id} 
+                    <Card
+                      key={product.id}
                       className="group hover:shadow-md transition-all duration-300 overflow-hidden border"
                     >
                       <Link to={`/product/${product.id}`} className="block">
                         <div className="aspect-[4/3] overflow-hidden bg-muted">
-                          <img 
-                            src={imageUrl || '/placeholder.svg'} 
-                            alt={title} 
+                          <img
+                            src={imageUrl || "/placeholder.svg"}
+                            alt={title}
                             loading="lazy"
-                            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300" 
+                            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
                       </Link>
-                      
+
                       <CardHeader className="p-3 pb-1">
                         <Link to={`/product/${product.id}`}>
                           <CardTitle className="text-sm font-semibold line-clamp-2 hover:text-primary transition-colors">
@@ -219,23 +231,23 @@ const Shop = () => {
                           </CardTitle>
                         </Link>
                       </CardHeader>
-                      
+
                       <CardContent className="px-3 pb-3 space-y-2">
                         <p className="text-muted-foreground text-xs line-clamp-2">
                           {description}
                         </p>
-                        
+
                         <div className="flex items-center justify-between">
                           <div className="text-base font-bold text-primary">
                             {formatPrice(price, product.currency)}
                           </div>
-                          
-                           <Button 
-                             onClick={() => handleAddToCart(product)} 
-                             disabled={purchasing === product.id} 
-                             size="sm"
-                             className="text-xs px-2"
-                           >
+
+                          <Button
+                            onClick={() => handleAddToCart(product)}
+                            disabled={purchasing === product.id}
+                            size="sm"
+                            className="text-xs px-2"
+                          >
                             {purchasing === product.id ? (
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                             ) : (
@@ -249,8 +261,6 @@ const Shop = () => {
                   );
                 })}
               </div>
-
-
             </>
           )}
         </div>
