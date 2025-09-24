@@ -5,14 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, DollarSign, Calendar, Plus, HelpCircle } from "lucide-react";
+import { useHostProperties } from "@/hooks/useHostProperties";
+import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingChatList } from "../BookingChatList";
 import MainNavigation from "@/components/MainNavigation";
-import { useHostProperties } from "@/hooks/useHostProperties";
-import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
-
-// 🔥 Importera PropertyCard (samma som på HomePage)
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 
 interface HostStats {
@@ -58,9 +56,11 @@ const HostDashboard = () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
+        console.log("No user found, redirecting to auth");
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
+
       setUser(userData.user);
 
       const { data: profile } = await supabase
@@ -95,10 +95,9 @@ const HostDashboard = () => {
       const monthlyBookings = bookingsData.filter(
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
-      const monthlyRevenue = monthlyBookings.reduce(
-        (sum, booking) => sum + booking.total_amount * 0.9,
-        0
-      );
+      const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
+        return sum + booking.total_amount * 0.9;
+      }, 0);
 
       setStats({
         total_properties: propertiesCount || 0,
@@ -141,6 +140,7 @@ const HostDashboard = () => {
           location: "",
           description: "",
           hero_image_url: "",
+          currency: "SEK",
         })
         .select()
         .single();
@@ -182,9 +182,7 @@ const HostDashboard = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground">Host Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your properties and bookings
-            </p>
+            <p className="text-muted-foreground mt-2">Manage your properties and bookings</p>
           </div>
 
           {/* Stats Cards */}
@@ -216,10 +214,7 @@ const HostDashboard = () => {
                       <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>
-                        This shows your estimated monthly revenue after
-                        commission.
-                      </p>
+                      <p>This shows your estimated monthly revenue after commission.</p>
                     </TooltipContent>
                   </Tooltip>
                 </CardTitle>
@@ -250,6 +245,7 @@ const HostDashboard = () => {
               <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
 
+            {/* ✅ Uppdaterad Properties-tab med PropertyCard */}
             <TabsContent value="properties" className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Your Properties</h2>
@@ -259,16 +255,11 @@ const HostDashboard = () => {
                 </Button>
               </div>
 
-              {/* ✅ Här används samma PropertyCard som på HomePage */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                 {properties.length === 0 ? (
                   <div className="text-center py-16 col-span-full">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      No properties yet
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Create your first property to get started.
-                    </p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No properties yet</h3>
+                    <p className="text-muted-foreground">Create your first property to get started.</p>
                   </div>
                 ) : (
                   properties.map((p: PropertyCardData) => (
@@ -289,6 +280,8 @@ const HostDashboard = () => {
             <TabsContent value="messages" className="space-y-6">
               <BookingChatList />
             </TabsContent>
+
+            {/* bookings & pricing-tabbar lämnas som tidigare */}
           </Tabs>
 
           {editingPropertyId && (
