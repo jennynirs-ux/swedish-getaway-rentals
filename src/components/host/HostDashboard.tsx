@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +9,11 @@ import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingChatList } from "../BookingChatList";
 import MainNavigation from "@/components/MainNavigation";
-import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
+
+// 🔥 Importera PropertyCard (samma som på HomePage)
+import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 
 interface HostStats {
   total_properties: number;
@@ -56,11 +58,9 @@ const HostDashboard = () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
-        console.log("No user found, redirecting to auth");
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
-
       setUser(userData.user);
 
       const { data: profile } = await supabase
@@ -95,9 +95,10 @@ const HostDashboard = () => {
       const monthlyBookings = bookingsData.filter(
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
-      const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + booking.total_amount * 0.9;
-      }, 0);
+      const monthlyRevenue = monthlyBookings.reduce(
+        (sum, booking) => sum + booking.total_amount * 0.9,
+        0
+      );
 
       setStats({
         total_properties: propertiesCount || 0,
@@ -181,7 +182,9 @@ const HostDashboard = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground">Host Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Manage your properties and bookings</p>
+            <p className="text-muted-foreground mt-2">
+              Manage your properties and bookings
+            </p>
           </div>
 
           {/* Stats Cards */}
@@ -213,7 +216,10 @@ const HostDashboard = () => {
                       <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>This shows your estimated monthly revenue after commission.</p>
+                      <p>
+                        This shows your estimated monthly revenue after
+                        commission.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </CardTitle>
@@ -253,29 +259,36 @@ const HostDashboard = () => {
                 </Button>
               </div>
 
-              {/* Use PropertyCard just like on HomePage */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {properties.map((p: PropertyCardData) => (
-                  <PropertyCard
-                    key={p.id}
-                    property={{
-                      ...p,
-                      hero_image_url: p.hero_image_url || "/placeholder.jpg",
-                      description: p.description || "",
-                      currency: p.currency || "SEK",
-                    }}
-                    size="default"
-                    showFullDescription={false}
-                  />
-                ))}
+              {/* ✅ Här används samma PropertyCard som på HomePage */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                {properties.length === 0 ? (
+                  <div className="text-center py-16 col-span-full">
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      No properties yet
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Create your first property to get started.
+                    </p>
+                  </div>
+                ) : (
+                  properties.map((p: PropertyCardData) => (
+                    <PropertyCard
+                      key={p.id}
+                      property={{
+                        ...p,
+                        hero_image_url: p.hero_image_url || "/placeholder.jpg",
+                        description: p.description || "",
+                        currency: p.currency || "SEK",
+                      }}
+                    />
+                  ))
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="messages" className="space-y-6">
               <BookingChatList />
             </TabsContent>
-
-            {/* bookings och pricing tabs kan byggas vidare */}
           </Tabs>
 
           {editingPropertyId && (
@@ -295,4 +308,4 @@ const HostDashboard = () => {
   );
 };
 
-export default memo(HostDashboard);
+export default HostDashboard;
