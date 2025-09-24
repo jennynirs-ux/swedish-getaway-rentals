@@ -154,10 +154,10 @@ const Shop = () => {
         />
         {/* ❌ Ingen overlay/filter */}
         <div className="container mx-auto px-4 text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold header-title mb-6">
             Nordic Store
           </h1>
-          <p className="text-2xl text-white max-w-3xl mx-auto">
+          <p className="text-2xl header-subtitle max-w-3xl mx-auto">
             Discover unique Nordic-inspired products that bring the beauty of
             Scandinavia to your home.
           </p>
