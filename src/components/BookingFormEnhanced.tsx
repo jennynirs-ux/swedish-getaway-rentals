@@ -243,7 +243,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     }}
                   />
                   <Label htmlFor={service.id} className="text-sm">
-                    {service.name} - {Math.round(service.price / 100)} {service.currency}
+                    {service.name} - {service.price.toLocaleString()} {service.currency}
                     {service.is_per_night ? ' per night' : ' one-time fee'}
                   </Label>
                 </div>
@@ -270,29 +270,29 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <div className="space-y-1 text-sm">
                  <div className="flex justify-between">
                    <span>Accommodation ({pricingCalculation.nights} nights)</span>
-                   <span>{(pricingCalculation.breakdown.accommodation / 100).toLocaleString()} {currency}</span>
+                   <span>{pricingCalculation.breakdown.accommodation.toLocaleString()} {currency}</span>
                  </div>
                  {pricingCalculation.breakdown.extraGuests > 0 && (
                    <div className="flex justify-between">
                      <span>Extra guests</span>
-                     <span>{(pricingCalculation.breakdown.extraGuests / 100).toLocaleString()} {currency}</span>
+                     <span>{pricingCalculation.breakdown.extraGuests.toLocaleString()} {currency}</span>
                    </div>
                  )}
                  {pricingCalculation.breakdown.cleaning > 0 && (
                    <div className="flex justify-between">
                      <span>Cleaning fee</span>
-                     <span>{(pricingCalculation.breakdown.cleaning / 100).toLocaleString()} {currency}</span>
+                     <span>{pricingCalculation.breakdown.cleaning.toLocaleString()} {currency}</span>
                    </div>
                  )}
                  {pricingCalculation.breakdown.services > 0 && (
                    <div className="flex justify-between">
                      <span>Extra services</span>
-                     <span>{(pricingCalculation.breakdown.services / 100).toLocaleString()} {currency}</span>
+                     <span>{pricingCalculation.breakdown.services.toLocaleString()} {currency}</span>
                    </div>
                  )}
                  <div className="border-t pt-1 flex justify-between font-semibold">
                    <span>Total</span>
-                   <span>{(pricingCalculation.total / 100).toLocaleString()} {currency}</span>
+                   <span>{pricingCalculation.total.toLocaleString()} {currency}</span>
                  </div>
               </div>
             </div>
@@ -304,7 +304,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full" 
             disabled={pricingCalculation.total === 0 || loading}
           >
-            {loading ? 'Processing...' : `Book Now (${pricingCalculation.total > 0 ? `${(pricingCalculation.total / 100).toLocaleString()} ${currency}` : 'Select dates'})`}
+            {loading ? 'Processing...' : `Book Now (${pricingCalculation.total > 0 ? `${pricingCalculation.total.toLocaleString()} ${currency}` : 'Select dates'})`}
           </Button>
         </form>
       </CardContent>

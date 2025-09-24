@@ -29,7 +29,7 @@ serve(async (req) => {
       guestEmail,
       guestPhone,
       specialRequests,
-      totalAmount, // 👈 kommer från BookingFormEnhanced i öre/cent
+      totalAmount,
       currency
     } = await req.json();
 
@@ -55,8 +55,8 @@ serve(async (req) => {
     const { data: property, error: propertyError } = await supabaseClient
       .from("properties")
       .select(`
-        id, title, currency,
-        profiles!inner(stripe_connect_account_id, commission_rate)
+        id, title, currency, host_id,
+        profiles!properties_host_id_fkey(stripe_connect_account_id, commission_rate)
       `)
       .eq("id", propertyId)
       .eq("active", true)
@@ -107,7 +107,7 @@ serve(async (req) => {
             name: `${property.title}`,
             description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
           },
-          unit_amount: totalAmount, // 👈 direkt från frontend
+          unit_amount: totalAmount,
         },
         quantity: 1,
       },
