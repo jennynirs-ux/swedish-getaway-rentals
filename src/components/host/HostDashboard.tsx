@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { BookingChatList } from "../BookingChatList";
+import MainNavigation from "@/components/MainNavigation";
 
 interface HostStats {
   total_properties: number;
@@ -36,6 +38,8 @@ interface Booking {
 }
 
 const HostDashboard = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<HostStats>({
     total_properties: 0,
     total_bookings: 0,
@@ -51,13 +55,19 @@ const HostDashboard = () => {
 
   const fetchHostStats = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        console.log('No user found, redirecting to auth');
+        navigate('/auth?redirect=/host-dashboard');
+        return;
+      }
+      
+      setUser(userData.user);
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_id', user.user.id)
+        .eq('user_id', userData.user.id)
         .single();
 
       if (!profile) return;
@@ -171,15 +181,27 @@ const HostDashboard = () => {
 
   useEffect(() => {
     fetchHostStats();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Loading your dashboard...</h2>
+            <p className="text-muted-foreground">Please wait while we fetch your data</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <TooltipProvider>
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+      <TooltipProvider>
+        <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Host Dashboard</h1>
           <p className="text-muted-foreground mt-2">
@@ -322,8 +344,9 @@ const HostDashboard = () => {
             }}
           />
         )}
-      </div>
-    </TooltipProvider>
+        </div>
+      </TooltipProvider>
+    </div>
   );
 };
 

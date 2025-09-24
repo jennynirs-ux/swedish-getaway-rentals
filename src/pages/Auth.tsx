@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
+import MainNavigation from "@/components/MainNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
 
@@ -15,8 +16,10 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -25,9 +28,13 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect if user is logged in
         if (session?.user) {
-          navigate('/');
+          // User is logged in, redirect based on the original intent
+          if (redirectTo === '/host-dashboard') {
+            navigate('/host-dashboard');
+          } else {
+            navigate(redirectTo);
+          }
         }
       }
     );
@@ -38,134 +45,182 @@ const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        navigate('/');
+        // User is already logged in, redirect
+        if (redirectTo === '/host-dashboard') {
+          navigate('/host-dashboard');
+        } else {
+          navigate(redirectTo);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError(null);
 
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      toast.success('Check your email for the confirmation link!');
+    } catch (error: any) {
       setError(error.message);
-    } else {
-      setError("Check your email for the confirmation link!");
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      toast.success('Successfully signed in!');
+    } catch (error: any) {
       setError(error.message);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
+  // If user is already logged in, show loading while redirecting
+  if (user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Redirecting...</h2>
+          <p className="text-muted-foreground">Taking you to your destination</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Nordic Getaways</CardTitle>
-          <CardDescription>
-            Logga in eller skapa konto för att hantera bokningar
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+      
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-md mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center text-2xl">
+                {redirectTo === '/host-dashboard' ? 'Sign in to become a Host' : 'Welcome'}
+              </CardTitle>
+              {redirectTo === '/host-dashboard' && (
+                <p className="text-center text-muted-foreground mt-2">
+                  Create an account to access your host dashboard and start listing your property.
+                </p>
+              )}
+            </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Logga in</TabsTrigger>
-              <TabsTrigger value="signup">Skapa konto</TabsTrigger>
-            </TabsList>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
             
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-post</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Lösenord</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Loggar in..." : "Logga in"}
-                </Button>
-              </form>
-            </TabsContent>
+                <TabsContent value="signin">
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div>
+                      <Label htmlFor="signin-email">Email</Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="signin-password">Password</Label>
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    {error && (
+                      <div className="text-destructive text-sm">{error}</div>
+                    )}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? 'Signing In...' : 'Sign In'}
+                    </Button>
+                  </form>
+                </TabsContent>
             
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">E-post</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Lösenord</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Skapar konto..." : "Skapa konto"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-          
-          {error && (
-            <Alert className="mt-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div>
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        placeholder="••••••••"
+                        minLength={6}
+                      />
+                    </div>
+                    {error && (
+                      <div className="text-destructive text-sm">{error}</div>
+                    )}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? 'Creating Account...' : 'Create Account'}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
