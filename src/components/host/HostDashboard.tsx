@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, DollarSign, Calendar, Plus, HelpCircle } from "lucide-react";
-import { useHostProperties } from "@/hooks/useHostProperties";
-import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingChatList } from "../BookingChatList";
 import MainNavigation from "@/components/MainNavigation";
-import PropertyCard from "@/components/PropertyCard";
+import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
+import { useHostProperties } from "@/hooks/useHostProperties";
+import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
 
 interface HostStats {
   total_properties: number;
@@ -44,7 +44,7 @@ const HostDashboard = () => {
     total_properties: 0,
     total_bookings: 0,
     monthly_revenue: 0,
-    pending_bookings: 0
+    pending_bookings: 0,
   });
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,9 +56,11 @@ const HostDashboard = () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
+        console.log("No user found, redirecting to auth");
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
+
       setUser(userData.user);
 
       const { data: profile } = await supabase
@@ -101,7 +103,7 @@ const HostDashboard = () => {
         total_properties: propertiesCount || 0,
         total_bookings: totalBookings,
         monthly_revenue: monthlyRevenue,
-        pending_bookings: pendingBookings
+        pending_bookings: pendingBookings,
       });
 
       setBookings(bookingsData || []);
@@ -137,7 +139,7 @@ const HostDashboard = () => {
           max_guests: 2,
           location: "",
           description: "",
-          hero_image_url: ""
+          hero_image_url: "",
         })
         .select()
         .single();
@@ -179,9 +181,7 @@ const HostDashboard = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground">Host Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your properties and bookings
-            </p>
+            <p className="text-muted-foreground mt-2">Manage your properties and bookings</p>
           </div>
 
           {/* Stats Cards */}
@@ -253,11 +253,17 @@ const HostDashboard = () => {
                 </Button>
               </div>
 
+              {/* Use PropertyCard just like on HomePage */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {properties.map((property) => (
+                {properties.map((p: PropertyCardData) => (
                   <PropertyCard
-                    key={property.id}
-                    property={property}
+                    key={p.id}
+                    property={{
+                      ...p,
+                      hero_image_url: p.hero_image_url || "/placeholder.jpg",
+                      description: p.description || "",
+                      currency: p.currency || "SEK",
+                    }}
                     size="default"
                     showFullDescription={false}
                   />
@@ -268,6 +274,8 @@ const HostDashboard = () => {
             <TabsContent value="messages" className="space-y-6">
               <BookingChatList />
             </TabsContent>
+
+            {/* bookings och pricing tabs kan byggas vidare */}
           </Tabs>
 
           {editingPropertyId && (
@@ -287,4 +295,4 @@ const HostDashboard = () => {
   );
 };
 
-export default HostDashboard;
+export default memo(HostDashboard);
