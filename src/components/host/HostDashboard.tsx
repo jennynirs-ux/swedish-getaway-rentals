@@ -26,7 +26,7 @@ const formatMoneyMajor = (amountMajor: number, currency?: string) =>
     style: "currency",
     currency: currency || "SEK",
     maximumFractionDigits: 0,
-  }).format(amountMajor);
+  }).format(amountMajor || 0);
 
 // Format: tar emot öre/cent (minor units) och visar i kronor
 const formatMoneyFromMinor = (amountMinor: number, currency?: string) =>
@@ -370,7 +370,7 @@ const HostDashboard = () => {
 
                         <div className="flex items-center gap-2">
                           <p className="font-semibold">
-                            {formatMoneyMajor(nightPriceKr, property.currency)} /night
+                            {formatMoneyMajor(property.price_per_night, property.currency)} /night
                           </p>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -381,6 +381,7 @@ const HostDashboard = () => {
                             </TooltipContent>
                           </Tooltip>
                         </div>
+
 
                         <Button
                           className="w-full mt-4"
