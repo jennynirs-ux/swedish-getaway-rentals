@@ -190,4 +190,12 @@
   .guide-section-card:hover {
     @apply border-primary/20 shadow-lg;
   }
+
+  .header-title {
+    color: #fff !important;
+  }
+  
+  .header-subtitle {
+    color: rgba(255,255,255,0.9) !important;
+  }
 }
