@@ -16,6 +16,7 @@ import MainNavigation from "@/components/MainNavigation";
 interface HostStats {
   total_properties: number;
   total_bookings: number;
+  /** ⚠️ Sparas i MINOR units (öre/cent) pga Stripe/bookings.total_amount */
   monthly_revenue: number;
   pending_bookings: number;
 }
@@ -26,6 +27,7 @@ interface Booking {
   guest_email: string;
   check_in_date: string;
   check_out_date: string;
+  /** Stripe/bokningar: normalt i MINOR units (öre) */
   total_amount: number;
   status: string;
   created_at: string;
@@ -37,14 +39,36 @@ interface Booking {
   };
 }
 
+/* ---------- Money utils ---------- */
+/** Property-priser i KRONOR (major units) */
+const formatMoneyMajor = (amount: number | null | undefined, currency?: string) => {
+  const a = typeof amount === "number" ? amount : 0;
+  return new Intl.NumberFormat("sv-SE", {
+    style: "currency",
+    currency: currency || "SEK",
+    maximumFractionDigits: 0,
+  }).format(a);
+};
+
+/** Bookings/Stripe i ÖRE (minor units) → konvertera till kronor för visning */
+const formatMoneyMinor = (amountMinor: number | null | undefined, currency?: string) => {
+  const minor = typeof amountMinor === "number" ? amountMinor : 0;
+  const major = minor / 100;
+  return new Intl.NumberFormat("sv-SE", {
+    style: "currency",
+    currency: currency || "SEK",
+    maximumFractionDigits: 0,
+  }).format(major);
+};
+
 const HostDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<HostStats>({
     total_properties: 0,
     total_bookings: 0,
-    monthly_revenue: 0,
-    pending_bookings: 0
+    monthly_revenue: 0, // i öre
+    pending_bookings: 0,
   });
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,19 +76,10 @@ const HostDashboard = () => {
 
   const { properties, refetch: refetchProperties } = useHostProperties();
 
-  // ✅ Format function for all prices
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat("sv-SE", {
-      style: "currency",
-      currency: currency || "SEK",
-    }).format(price);
-  };
-
   const fetchHostStats = async () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
-        console.log("No user found, redirecting to auth");
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
@@ -99,18 +114,21 @@ const HostDashboard = () => {
       const totalBookings = bookingsData.length;
       const pendingBookings = bookingsData.filter((b) => b.status === "pending").length;
 
+      // Summera confirmed bokningar denna månad
       const currentMonth = new Date().toISOString().slice(0, 7);
       const monthlyBookings = bookingsData.filter(
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
-      const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + booking.total_amount * 0.9;
+
+      // total_amount är i ÖRE → behåll i öre här, ta 90% om plattformsavgift
+      const monthlyRevenueMinor = monthlyBookings.reduce((sum, b) => {
+        return sum + Math.round(b.total_amount * 0.9);
       }, 0);
 
       setStats({
         total_properties: propertiesCount || 0,
         total_bookings: totalBookings,
-        monthly_revenue: monthlyRevenue,
+        monthly_revenue: monthlyRevenueMinor, // i öre
         pending_bookings: pendingBookings,
       });
 
@@ -140,7 +158,9 @@ const HostDashboard = () => {
         .insert({
           title: "New Property",
           host_id: profile.id,
+          // ⚠️ Sätts i KRONOR (major units)
           price_per_night: 1000,
+          currency: "SEK",
           active: false,
           bedrooms: 1,
           bathrooms: 1,
@@ -148,7 +168,6 @@ const HostDashboard = () => {
           location: "",
           description: "",
           hero_image_url: "",
-          currency: "SEK",
         })
         .select()
         .single();
@@ -194,6 +213,7 @@ const HostDashboard = () => {
 
   useEffect(() => {
     fetchHostStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   if (loading) {
@@ -231,6 +251,7 @@ const HostDashboard = () => {
                 <div className="text-2xl font-bold">{stats.total_properties}</div>
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -240,6 +261,7 @@ const HostDashboard = () => {
                 <div className="text-2xl font-bold">{stats.total_bookings}</div>
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -256,11 +278,13 @@ const HostDashboard = () => {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
+                {/* stats.monthly_revenue är i ÖRE → visa i kr */}
                 <div className="text-2xl font-bold">
-                  {formatPrice(stats.monthly_revenue, "SEK")}
+                  {formatMoneyMinor(stats.monthly_revenue, "SEK")}
                 </div>
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Bookings</CardTitle>
@@ -318,6 +342,7 @@ const HostDashboard = () => {
                           <span className="text-muted-foreground text-sm">No hero image</span>
                         </div>
                       )}
+
                       <Input
                         type="file"
                         accept="image/*"
@@ -326,10 +351,13 @@ const HostDashboard = () => {
                         }
                         className="mb-4"
                       />
+
                       <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
+
                       <div className="flex items-center gap-2">
+                        {/* ✅ price_per_night är i KRONOR (major units), ingen division */}
                         <p className="font-semibold">
-                          {formatPrice(property.price_per_night, property.currency)} /night
+                          {formatMoneyMajor(property.price_per_night, property.currency)} /night
                         </p>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -340,6 +368,7 @@ const HostDashboard = () => {
                           </TooltipContent>
                         </Tooltip>
                       </div>
+
                       <Button
                         className="w-full mt-4"
                         variant="outline"
