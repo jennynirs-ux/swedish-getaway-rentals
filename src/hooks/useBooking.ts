@@ -68,7 +68,9 @@ export const useBooking = () => {
           guestName: bookingData.guest_name,
           guestEmail: bookingData.guest_email,
           guestPhone: bookingData.guest_phone,
-          specialRequests: bookingData.special_requests
+          specialRequests: bookingData.special_requests,
+          totalAmount: bookingData.total_amount,
+          currency: bookingData.currency
         }
       });
 

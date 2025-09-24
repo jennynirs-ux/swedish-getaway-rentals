@@ -67,17 +67,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
       await createBooking({
         property_id: propertyId,
         total_amount: totalAmount,
-        currency, // ✅ skickas med
+        currency,
         check_in_date: checkIn?.toISOString().split("T")[0],
         check_out_date: checkOut?.toISOString().split("T")[0],
         guest_name: formData.guest_name,
         guest_email: formData.guest_email,
         guest_phone: formData.guest_phone,
         number_of_guests: formData.number_of_guests,
-        special_requests: formData.special_requests,
-        status: "pending", // ✅ default status
-        stripe_payment_intent_id: null, // ✅ tills betalning hanteras
-        user_id: null, // ✅ eller supabase.auth.user()?.id
+        special_requests: formData.special_requests
       });
   
       // Reset form

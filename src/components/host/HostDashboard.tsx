@@ -223,7 +223,7 @@ const HostDashboard = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(stats.monthly_revenue / 100).toLocaleString()} SEK</div>
+              <div className="text-2xl font-bold">{Math.round(stats.monthly_revenue / 100).toLocaleString()} SEK</div>
             </CardContent>
           </Card>
           <Card>

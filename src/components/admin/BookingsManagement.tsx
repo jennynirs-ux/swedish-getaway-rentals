@@ -223,7 +223,7 @@ const BookingsManagement = () => {
                   </TableCell>
                   <TableCell>{booking.number_of_guests}</TableCell>
                   <TableCell>{calculateNights(booking.check_in_date, booking.check_out_date)}</TableCell>
-                  <TableCell className="font-medium">{booking.total_amount.toLocaleString()} SEK</TableCell>
+                  <TableCell className="font-medium">{(booking.total_amount / 100).toLocaleString()} SEK</TableCell>
                   <TableCell>{getStatusBadge(booking.status)}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -300,10 +300,10 @@ const BookingsManagement = () => {
                                 </div>
                                 <div className="space-y-2">
                                   <Label className="text-sm font-medium">Betalning</Label>
-                                  <div className="flex items-center gap-2">
-                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-medium">{selectedBooking.total_amount.toLocaleString()} SEK</span>
-                                  </div>
+                                   <div className="flex items-center gap-2">
+                                     <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                     <span className="font-medium">{(selectedBooking.total_amount / 100).toLocaleString()} SEK</span>
+                                   </div>
                                   <div>{getStatusBadge(selectedBooking.status)}</div>
                                 </div>
                               </div>
