@@ -13,10 +13,39 @@ import { Input } from "@/components/ui/input";
 import { BookingChatList } from "../BookingChatList";
 import MainNavigation from "@/components/MainNavigation";
 
+/* -------------------------------------------------
+   PRIS-HJÄLPARE
+   ------------------------------------------------- */
+
+// Sätt denna till false om du VET att properties.price_per_night är i kronor i DB.
+const PRICE_IS_MINOR_UNITS = true; // true = öre/cent i DB, false = kronor
+
+// Format: visar belopp i kronor (major units)
+const formatMoneyMajor = (amountMajor: number, currency?: string) =>
+  new Intl.NumberFormat("sv-SE", {
+    style: "currency",
+    currency: currency || "SEK",
+    maximumFractionDigits: 0,
+  }).format(amountMajor);
+
+// Format: tar emot öre/cent (minor units) och visar i kronor
+const formatMoneyFromMinor = (amountMinor: number, currency?: string) =>
+  formatMoneyMajor((amountMinor || 0) / 100, currency);
+
+// Normaliserar property.price_per_night till KRONOR för visning
+const getNightPriceInKronor = (raw: number | null | undefined) => {
+  const v = Number(raw || 0);
+  return PRICE_IS_MINOR_UNITS ? v / 100 : v;
+};
+
+/* -------------------------------------------------
+   TYPES
+   ------------------------------------------------- */
+
 interface HostStats {
   total_properties: number;
   total_bookings: number;
-  /** ⚠️ Sparas i MINOR units (öre/cent) pga Stripe/bookings.total_amount */
+  // sparas i öre pga Stripe/bookings
   monthly_revenue: number;
   pending_bookings: number;
 }
@@ -27,8 +56,7 @@ interface Booking {
   guest_email: string;
   check_in_date: string;
   check_out_date: string;
-  /** Stripe/bokningar: normalt i MINOR units (öre) */
-  total_amount: number;
+  total_amount: number; // öre
   status: string;
   created_at: string;
   properties: {
@@ -39,27 +67,9 @@ interface Booking {
   };
 }
 
-/* ---------- Money utils ---------- */
-/** Property-priser i KRONOR (major units) */
-const formatMoneyMajor = (amount: number | null | undefined, currency?: string) => {
-  const a = typeof amount === "number" ? amount : 0;
-  return new Intl.NumberFormat("sv-SE", {
-    style: "currency",
-    currency: currency || "SEK",
-    maximumFractionDigits: 0,
-  }).format(a);
-};
-
-/** Bookings/Stripe i ÖRE (minor units) → konvertera till kronor för visning */
-const formatMoneyMinor = (amountMinor: number | null | undefined, currency?: string) => {
-  const minor = typeof amountMinor === "number" ? amountMinor : 0;
-  const major = minor / 100;
-  return new Intl.NumberFormat("sv-SE", {
-    style: "currency",
-    currency: currency || "SEK",
-    maximumFractionDigits: 0,
-  }).format(major);
-};
+/* -------------------------------------------------
+   COMPONENT
+   ------------------------------------------------- */
 
 const HostDashboard = () => {
   const navigate = useNavigate();
@@ -67,7 +77,7 @@ const HostDashboard = () => {
   const [stats, setStats] = useState<HostStats>({
     total_properties: 0,
     total_bookings: 0,
-    monthly_revenue: 0, // i öre
+    monthly_revenue: 0, // öre
     pending_bookings: 0,
   });
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -83,7 +93,6 @@ const HostDashboard = () => {
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
-
       setUser(userData.user);
 
       const { data: profile } = await supabase
@@ -101,12 +110,10 @@ const HostDashboard = () => {
 
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
-        .select(
-          `
+        .select(`
           *,
           properties!inner(title, host_id, currency, hero_image_url)
-        `
-        )
+        `)
         .eq("properties.host_id", profile.id);
 
       if (bookingsError) throw bookingsError;
@@ -114,21 +121,22 @@ const HostDashboard = () => {
       const totalBookings = bookingsData.length;
       const pendingBookings = bookingsData.filter((b) => b.status === "pending").length;
 
-      // Summera confirmed bokningar denna månad
+      // Summera denna månad
       const currentMonth = new Date().toISOString().slice(0, 7);
       const monthlyBookings = bookingsData.filter(
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
 
-      // total_amount är i ÖRE → behåll i öre här, ta 90% om plattformsavgift
-      const monthlyRevenueMinor = monthlyBookings.reduce((sum, b) => {
-        return sum + Math.round(b.total_amount * 0.9);
-      }, 0);
+      // total_amount i öre → 90% till värd, behåll som öre här
+      const monthlyRevenueMinor = monthlyBookings.reduce(
+        (sum, b) => sum + Math.round((b.total_amount || 0) * 0.9),
+        0
+      );
 
       setStats({
         total_properties: propertiesCount || 0,
         total_bookings: totalBookings,
-        monthly_revenue: monthlyRevenueMinor, // i öre
+        monthly_revenue: monthlyRevenueMinor,
         pending_bookings: pendingBookings,
       });
 
@@ -153,13 +161,16 @@ const HostDashboard = () => {
 
       if (!profile) return;
 
+      // OBS: lämna detta som du själv vill lagra i DB (kr eller öre).
+      // Om du lagrar i öre, sätt t.ex. 100000 för 1000 kr som start.
+      const DEFAULT_PRICE = PRICE_IS_MINOR_UNITS ? 100000 : 1000;
+
       const { data, error } = await supabase
         .from("properties")
         .insert({
           title: "New Property",
           host_id: profile.id,
-          // ⚠️ Sätts i KRONOR (major units)
-          price_per_night: 1000,
+          price_per_night: DEFAULT_PRICE,
           currency: "SEK",
           active: false,
           bedrooms: 1,
@@ -213,7 +224,6 @@ const HostDashboard = () => {
 
   useEffect(() => {
     fetchHostStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   if (loading) {
@@ -240,7 +250,7 @@ const HostDashboard = () => {
             <p className="text-muted-foreground mt-2">Manage your properties and bookings</p>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -278,9 +288,9 @@ const HostDashboard = () => {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {/* stats.monthly_revenue är i ÖRE → visa i kr */}
+                {/* monthly_revenue i öre → visa i kr */}
                 <div className="text-2xl font-bold">
-                  {formatMoneyMinor(stats.monthly_revenue, "SEK")}
+                  {formatMoneyFromMinor(stats.monthly_revenue, "SEK")}
                 </div>
               </CardContent>
             </Card>
@@ -314,72 +324,75 @@ const HostDashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {properties.map((property) => (
-                  <Card key={property.id} className="cursor-pointer hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex justify-between items-start">
-                        <span>{property.title}</span>
-                        <div
-                          className={`px-2 py-1 rounded text-xs ${
-                            property.active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {property.active ? "Active" : "Inactive"}
-                        </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {property.hero_image_url ? (
-                        <img
-                          src={property.hero_image_url}
-                          alt={property.title}
-                          className="w-full h-40 object-cover rounded mb-2"
+                {properties.map((property) => {
+                  // Visa alltid i kronor i kortet
+                  const nightPriceKr = getNightPriceInKronor(property.price_per_night);
+
+                  return (
+                    <Card key={property.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <CardTitle className="flex justify-between items-start">
+                          <span>{property.title}</span>
+                          <div
+                            className={`px-2 py-1 rounded text-xs ${
+                              property.active
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {property.active ? "Active" : "Inactive"}
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {property.hero_image_url ? (
+                          <img
+                            src={property.hero_image_url}
+                            alt={property.title}
+                            className="w-full h-40 object-cover rounded mb-2"
+                          />
+                        ) : (
+                          <div className="w-full h-40 bg-muted flex items-center justify-center rounded mb-2">
+                            <span className="text-muted-foreground text-sm">No hero image</span>
+                          </div>
+                        )}
+
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            e.target.files && uploadHeroImage(property.id, e.target.files[0])
+                          }
+                          className="mb-4"
                         />
-                      ) : (
-                        <div className="w-full h-40 bg-muted flex items-center justify-center rounded mb-2">
-                          <span className="text-muted-foreground text-sm">No hero image</span>
+
+                        <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
+
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">
+                            {formatMoneyMajor(nightPriceKr, property.currency)} /night
+                          </p>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Set a competitive base price. You can adjust per date in Pricing & Calendar.</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
-                      )}
 
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          e.target.files && uploadHeroImage(property.id, e.target.files[0])
-                        }
-                        className="mb-4"
-                      />
-
-                      <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
-
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold">
-                          {/* property.price_per_night sparas i öre → dela på 100 för att visa i kr */}
-                          {formatMoneyMajor(property.price_per_night / 100, property.currency)} /night
-                        </p>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Set a competitive base price. You can adjust per date in Pricing & Calendar.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-
-
-                      <Button
-                        className="w-full mt-4"
-                        variant="outline"
-                        onClick={() => setEditingPropertyId(property.id)}
-                      >
-                        Edit Property
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <Button
+                          className="w-full mt-4"
+                          variant="outline"
+                          onClick={() => setEditingPropertyId(property.id)}
+                        >
+                          Edit Property
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </TabsContent>
 
