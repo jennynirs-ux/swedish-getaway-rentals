@@ -37,6 +37,34 @@ interface Booking {
   };
 }
 
+// Wrapper: använder PropertyCard men lägger till Edit-knapp
+const HostPropertyCard = ({
+  property,
+  onEdit,
+}: {
+  property: PropertyCardData;
+  onEdit: (id: string) => void;
+}) => {
+  return (
+    <div className="relative">
+      <PropertyCard property={property} />
+      <div className="absolute top-2 right-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit(property.id);
+          }}
+        >
+          Edit
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const HostDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -49,6 +77,7 @@ const HostDashboard = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  const [creatingProperty, setCreatingProperty] = useState(false);
 
   const { properties, refetch: refetchProperties } = useHostProperties();
 
@@ -140,7 +169,6 @@ const HostDashboard = () => {
           location: "",
           description: "",
           hero_image_url: "",
-          currency: "SEK",
         })
         .select()
         .single();
@@ -245,7 +273,6 @@ const HostDashboard = () => {
               <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
 
-            {/* ✅ Uppdaterad Properties-tab med PropertyCard */}
             <TabsContent value="properties" className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Your Properties</h2>
@@ -258,12 +285,16 @@ const HostDashboard = () => {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                 {properties.length === 0 ? (
                   <div className="text-center py-16 col-span-full">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">No properties yet</h3>
-                    <p className="text-muted-foreground">Create your first property to get started.</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      No properties yet
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Create your first property to get started.
+                    </p>
                   </div>
                 ) : (
                   properties.map((p: PropertyCardData) => (
-                    <PropertyCard
+                    <HostPropertyCard
                       key={p.id}
                       property={{
                         ...p,
@@ -271,6 +302,7 @@ const HostDashboard = () => {
                         description: p.description || "",
                         currency: p.currency || "SEK",
                       }}
+                      onEdit={setEditingPropertyId}
                     />
                   ))
                 )}
@@ -281,7 +313,7 @@ const HostDashboard = () => {
               <BookingChatList />
             </TabsContent>
 
-            {/* bookings & pricing-tabbar lämnas som tidigare */}
+            {/* bookings och pricing flikarna kan behållas som de är */}
           </Tabs>
 
           {editingPropertyId && (
