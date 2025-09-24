@@ -355,9 +355,9 @@ const HostDashboard = () => {
                       <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
 
                       <div className="flex items-center gap-2">
-                        {/* ✅ price_per_night är i KRONOR (major units), ingen division */}
                         <p className="font-semibold">
-                          {formatMoneyMajor(property.price_per_night, property.currency)} /night
+                          {/* property.price_per_night sparas i öre → dela på 100 för att visa i kr */}
+                          {formatMoneyMajor(property.price_per_night / 100, property.currency)} /night
                         </p>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -368,6 +368,7 @@ const HostDashboard = () => {
                           </TooltipContent>
                         </Tooltip>
                       </div>
+
 
                       <Button
                         className="w-full mt-4"
