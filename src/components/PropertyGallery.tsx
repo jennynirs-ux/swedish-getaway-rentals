@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Property } from "@/hooks/useProperties";
 import { MediaDialog } from "@/components/MediaDialog";
 
@@ -14,7 +14,7 @@ interface MediaItem {
   alt?: string;
 }
 
-const PropertyGallery = ({ property }: PropertyGalleryProps) => {
+const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
