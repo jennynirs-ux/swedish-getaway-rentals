@@ -105,6 +105,7 @@ const PropertyPage = memo(() => {
         amenities_data,
         guidebook_sections,
         special_highlights,
+        featured_amenities,
         pricing_table,
         get_in_touch_info,
         footer_quick_links,
@@ -148,6 +149,7 @@ const PropertyPage = memo(() => {
       amenities_data: Array.isArray(heavyProperty?.amenities_data) ? heavyProperty.amenities_data : [],
       guidebook_sections: Array.isArray(heavyProperty?.guidebook_sections) ? heavyProperty.guidebook_sections : [],
       special_highlights: Array.isArray(heavyProperty?.special_highlights) ? heavyProperty.special_highlights : [],
+      featured_amenities: Array.isArray(heavyProperty?.featured_amenities) ? heavyProperty.featured_amenities : [],
       footer_quick_links: Array.isArray(heavyProperty?.footer_quick_links)
         ? heavyProperty.footer_quick_links
         : ["Photo Gallery", "Amenities", "Book Now", "Contact"],

@@ -1,38 +1,58 @@
 import { Button } from "@/components/ui/button";
 import { Property } from "@/hooks/useProperties";
-import { BookOpen, Sparkles, Mountain, Flame } from "lucide-react";
+import { BookOpen, Sparkles, Mountain, Flame, Wifi, Car, Coffee, Utensils, Waves, TreePine, Home, Bed, Bath, Users, UtensilsCrossed, Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake } from "lucide-react";
 
 interface PropertySpecialHighlightsProps {
   property: Property;
   onViewGuide: () => void;
 }
 
-interface Highlight {
+interface AmenityData {
+  icon: string;
   title: string;
+  tagline: string;
   description: string;
-  icon?: string;
+  image_url?: string;
+  features?: string[];
 }
 
 const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHighlightsProps) => {
-  // Icon mapping for special highlights
-  const getHighlightIcon = (iconName?: string) => {
+  // Icon mapping for amenities
+  const getAmenityIcon = (iconName?: string) => {
     switch (iconName?.toLowerCase()) {
-      case 'mountain':
-        return Mountain;
-      case 'flame':
-        return Flame;
-      case 'sparkles':
-      default:
-        return Sparkles;
+      case 'wifi': return Wifi;
+      case 'parking': return Car;
+      case 'coffee': return Coffee;
+      case 'dining': return Utensils;
+      case 'sauna': return Waves;
+      case 'nature': return TreePine;
+      case 'view': return Mountain;
+      case 'home': return Home;
+      case 'bed': return Bed;
+      case 'bath': return Bath;
+      case 'guests': return Users;
+      case 'fire': return Flame;
+      case 'kitchen': return UtensilsCrossed;
+      case 'heating': return Thermometer;
+      case 'security': return Shield;
+      case 'tv': return Tv;
+      case 'fitness': return Dumbbell;
+      case 'pets': return PawPrint;
+      case 'cooling': return Snowflake;
+      default: return Sparkles;
     }
   };
 
-  const highlights = (property.special_highlights as Highlight[]) || [];
+  // Get featured amenities from the property
+  const featuredAmenities = (property.featured_amenities as AmenityData[]) || [];
+  const allAmenities = (property.amenities_data as AmenityData[]) || [];
+  
+  // Filter amenities based on featured selection (by title match)
+  const displayAmenities = featuredAmenities.length > 0 
+    ? featuredAmenities.slice(0, 3)
+    : allAmenities.slice(0, 3);
 
-  // Take only first 3 highlights for the row display
-  const displayHighlights = highlights.slice(0, 3);
-
-  if (!displayHighlights.length) {
+  if (!displayAmenities.length) {
     return null;
   }
   return (
@@ -46,17 +66,17 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
 
           {/* Special Highlights Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {displayHighlights.map((highlight, index) => {
-              const IconComponent = getHighlightIcon(highlight.icon);
+            {displayAmenities.map((amenity, index) => {
+              const IconComponent = getAmenityIcon(amenity.icon);
               
               return (
                 <div key={index} className="text-center group">
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
                     <IconComponent className="h-10 w-10 text-primary" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4">{highlight.title}</h3>
+                  <h3 className="text-2xl font-bold mb-4">{amenity.title}</h3>
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    {highlight.description}
+                    {amenity.description}
                   </p>
                 </div>
               );

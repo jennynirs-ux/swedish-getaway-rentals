@@ -38,6 +38,7 @@ export interface Property {
   availability_text?: string;
   introduction_text?: string;
   special_highlights?: { title: string; description: string; icon?: string }[];
+  featured_amenities?: { icon: string; title: string; tagline: string; description: string; image_url?: string; features?: string[] }[];
   pricing_table?: {
     off_season: { price: number; currency: string };
     peak_season: { price: number; currency: string };

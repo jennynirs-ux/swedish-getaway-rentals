@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { Settings, Image, Star, BookOpen, Calendar, Upload } from "lucide-react";
 import { GalleryMetadataEditor } from "./GalleryMetadataEditor";
 import { AmenitiesEditor } from "./AmenitiesEditor";
+import { FeaturedAmenitiesSelector } from "./FeaturedAmenitiesSelector";
 import { GuidebookEditor } from "./GuidebookEditor";
 import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
 import { AirbnbSyncManager } from "./AirbnbSyncManager";
@@ -61,6 +62,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     gallery_images: [] as string[],
     gallery_metadata: [] as { title: string; description: string; alt: string }[],
     guidebook_sections: [] as any[],
+    featured_amenities: [] as any[],
     tagline_line1: "",
     tagline_line2: "",
     review_rating: "5.0",
@@ -126,6 +128,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         gallery_images: data.gallery_images || [],
         gallery_metadata: galleryMetadata,
         guidebook_sections: (data as any).guidebook_sections || [],
+        featured_amenities: (data as any).featured_amenities || [],
         tagline_line1: (data as any).tagline_line1 || "",
         tagline_line2: (data as any).tagline_line2 || "",
         review_rating: ((data as any).review_rating || 5.0).toString(),
@@ -158,6 +161,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         max_guests: parseInt(form.max_guests) || 4,
         amenities: form.amenities,
         amenities_data: form.amenities_data,
+        featured_amenities: form.featured_amenities,
         hero_image_url: form.hero_image_url,
         gallery_images: form.gallery_images,
         gallery_metadata: form.gallery_metadata,
@@ -363,11 +367,21 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
             />
           </TabsContent>
 
-          <TabsContent value="amenities">
+          <TabsContent value="amenities" className="space-y-6">
             <AmenitiesEditor
               amenities={form.amenities_data}
               onChange={(amenities) => {
                 setForm(prev => ({ ...prev, amenities_data: amenities }));
+              }}
+              onSave={handleSave}
+              saving={saving}
+            />
+            
+            <FeaturedAmenitiesSelector
+              amenities={form.amenities_data}
+              featuredAmenities={form.featured_amenities || []}
+              onChange={(featured) => {
+                setForm(prev => ({ ...prev, featured_amenities: featured }));
               }}
               onSave={handleSave}
               saving={saving}

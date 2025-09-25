@@ -515,6 +515,7 @@ export type Database = {
           created_at: string
           currency: string
           description: string | null
+          featured_amenities: Json | null
           footer_quick_links: Json | null
           gallery_images: string[] | null
           gallery_metadata: Json | null
@@ -554,6 +555,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          featured_amenities?: Json | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
@@ -593,6 +595,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          featured_amenities?: Json | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
