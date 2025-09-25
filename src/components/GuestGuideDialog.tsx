@@ -1,101 +1,55 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Property } from "@/hooks/useProperties";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Share2, Download } from "lucide-react";
+import { Share2, Download, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  MapPin,
-  Wifi,
-  Clock,
-  Phone,
-  Mail,
-  LogOut,
-  Shield,
-  Heart,
-  Home,
-  Utensils,
-  Settings,
-  Mountain,
-  Flag,
-} from "lucide-react";
 
+// Guide section interface
+interface GuideSection {
+  id: string;
+  title: string;
+  icon?: string;
+  logo?: string;
+  content?: string;
+  image_url?: string;
+}
+
+// Props
 interface GuestGuideDialogProps {
   isOpen: boolean;
   onClose: () => void;
   property: Property;
 }
 
-interface GuideSection {
-  id: string;
-  title: string;
-  content?: string;
-  image_url?: string;
-  icon?: string;
-  data?: any;
-}
-
-const fixedSections: GuideSection[] = [
-  { id: "home", title: "Home", icon: "home" },
-  { id: "directions", title: "Directions", icon: "map" },
-  { id: "stop", title: "Stop on the way", icon: "map" },
-  { id: "checkin", title: "Check-in", icon: "clock" },
-  { id: "wifi", title: "Wi-Fi", icon: "wifi" },
-  { id: "kitchen", title: "Kitchen", icon: "utensils" },
-  { id: "howthingswork", title: "How things work", icon: "settings" },
-  { id: "places", title: "Places to visit", icon: "mountain" },
-  { id: "customs", title: "Swedish customs", icon: "flag" },
-  { id: "rules", title: "House rules", icon: "shield" },
-  { id: "checkout", title: "Check-out", icon: "log-out" },
-  { id: "story", title: "Host Story", icon: "heart" },
-];
-
-// Map icon string → actual Lucide icon
-const getSectionIcon = (iconName?: string) => {
-  switch (iconName) {
-    case "map":
-      return MapPin;
-    case "wifi":
-      return Wifi;
-    case "clock":
-      return Clock;
-    case "phone":
-      return Phone;
-    case "mail":
-      return Mail;
-    case "log-out":
-      return LogOut;
-    case "shield":
-      return Shield;
-    case "heart":
-      return Heart;
-    case "utensils":
-      return Utensils;
-    case "settings":
-      return Settings;
-    case "mountain":
-      return Mountain;
-    case "flag":
-      return Flag;
-    case "home":
-    default:
-      return Home;
-  }
-};
-
 const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) => {
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Merge fixed sections with host’s saved content
+  // Fasta sektioner med default rubrik + text + logga
+  const fixedSections: GuideSection[] = [
+    { id: "home", title: "Welcome Home", logo: "/icons/home.svg", content: "Welcome to our property! We’re excited to host you." },
+    { id: "directions", title: "Directions", logo: "/icons/map.svg", content: "How to reach us and parking instructions." },
+    { id: "stop", title: "Stop on the way", logo: "/icons/stop.svg", content: "Recommended places to stop on your journey here." },
+    { id: "checkin", title: "Check-in", logo: "/icons/checkin.svg", content: "Check-in time: 15:00. Contact us if you need early check-in." },
+    { id: "wifi", title: "Wi-Fi", logo: "/icons/wifi.svg", content: "Network: Guest_Wifi\nPassword: Welcome2024" },
+    { id: "kitchen", title: "Kitchen", logo: "/icons/kitchen.svg", content: "Everything you need to know about using the kitchen." },
+    { id: "howthingswork", title: "How things work", logo: "/icons/settings.svg", content: "Instructions for appliances, heating, etc." },
+    { id: "places", title: "Places to visit", logo: "/icons/places.svg", content: "Discover local attractions and must-see spots." },
+    { id: "customs", title: "Swedish customs", logo: "/icons/customs.svg", content: "Get to know Swedish traditions and customs." },
+    { id: "rules", title: "House Rules", logo: "/icons/rules.svg", content: "Respect quiet hours. No smoking inside. No parties." },
+    { id: "checkout", title: "Check-out", logo: "/icons/checkout.svg", content: "Check-out time: 11:00. Please follow the checklist." },
+    { id: "story", title: "Host Story", logo: "/icons/story.svg", content: "Learn more about your hosts and our story." },
+  ];
+
+  // Merge hostens custom content från DB
   const customSections = (property.guidebook_sections as GuideSection[]) || [];
-  const allSections = fixedSections.map((section) => {
-    const custom = customSections.find((s) => s.id === section.id);
+  const allSections = fixedSections.map(section => {
+    const custom = customSections.find(s => s.id === section.id);
     return {
       ...section,
-      content: custom?.content || "Coming soon...",
-      image_url: custom?.image_url,
-      data: custom?.data,
+      content: custom?.content || section.content,
+      image_url: custom?.image_url || section.image_url,
     };
   });
 
@@ -119,18 +73,16 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   };
 
   const exportToPDF = () => {
-    toast({ title: "PDF Export", description: "PDF export feature coming soon!" });
+    toast({ title: "PDF Export", description: "PDF export coming soon!" });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] flex p-0">
-        {/* Sidebar menu */}
-        <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
+        {/* Sidebar med loggor */}
+        <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6">
           {allSections.map((section, index) => {
-            const IconComponent = getSectionIcon(section.icon);
             const isActive = activeIndex === index;
-
             return (
               <button
                 key={section.id}
@@ -141,44 +93,40 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
                     : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
                 }`}
               >
-                <IconComponent className="h-7 w-7" />
+                {section.logo ? (
+                  <img src={section.logo} alt={section.title} className="h-8 w-8 object-contain" />
+                ) : (
+                  <span className="text-lg">{section.title[0]}</span>
+                )}
               </button>
             );
           })}
         </div>
 
-        {/* Content area */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6">
-          <DialogHeader className="mb-6 flex justify-between items-center">
-            <div>
-              <DialogTitle className="text-3xl font-bold">
-                {allSections[activeIndex].title}
-              </DialogTitle>
-              <p className="text-muted-foreground">{property.title}</p>
-            </div>
+          <DialogHeader className="mb-6 flex items-center justify-between">
+            <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
             <div className="flex gap-3">
               <Button variant="outline" size="sm" onClick={shareGuide} className="gap-2">
-                <Share2 className="h-4 w-4" />
-                Share
+                <Share2 className="h-4 w-4" /> Share
               </Button>
               <Button variant="outline" size="sm" onClick={exportToPDF} className="gap-2">
-                <Download className="h-4 w-4" />
-                PDF
+                <Download className="h-4 w-4" /> PDF
               </Button>
             </div>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {allSections[activeIndex].image_url && (
-              <img
-                src={allSections[activeIndex].image_url}
-                alt={allSections[activeIndex].title}
-                className="w-full h-56 object-cover rounded-lg"
-              />
-            )}
-            <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
-              {allSections[activeIndex].content}
-            </div>
+          {allSections[activeIndex].image_url && (
+            <img
+              src={allSections[activeIndex].image_url}
+              alt={allSections[activeIndex].title}
+              className="w-full h-48 object-cover rounded-lg mb-6"
+            />
+          )}
+
+          <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap leading-relaxed">
+            {allSections[activeIndex].content}
           </div>
         </div>
       </DialogContent>
