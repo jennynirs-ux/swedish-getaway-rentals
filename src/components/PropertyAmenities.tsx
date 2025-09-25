@@ -47,28 +47,36 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return Home;
   };
 
-  // Combine amenities from both amenities_data and amenities arrays
+  // Combine amenities from both amenities_data and amenities arrays, excluding featured ones
   const amenitiesData: AmenityData[] = useMemo(() => {
     const allAmenities: AmenityData[] = [];
     
+    // Get featured amenities titles for filtering
+    const featuredTitles = new Set((property.featured_amenities || []).map((amenity: any) => amenity.title?.toLowerCase()));
+    
     // Add from amenities_data if it exists
     if (property.amenities_data && Array.isArray(property.amenities_data) && property.amenities_data.length > 0) {
-      const dataAmenities = property.amenities_data.map((amenity: any) => ({
-        icon: getAmenityIcon(amenity.name || amenity.title || ''),
-        title: amenity.title || amenity.name || '',
-        tagline: amenity.tagline || amenity.description || '',
-        description: amenity.description || '',
-        image_url: amenity.image_url,
-        features: amenity.features || []
-      }));
+      const dataAmenities = property.amenities_data
+        .filter((amenity: any) => !featuredTitles.has((amenity.title || amenity.name || '').toLowerCase()))
+        .map((amenity: any) => ({
+          icon: getAmenityIcon(amenity.name || amenity.title || ''),
+          title: amenity.title || amenity.name || '',
+          tagline: amenity.tagline || amenity.description || '',
+          description: amenity.description || '',
+          image_url: amenity.image_url,
+          features: amenity.features || []
+        }));
       allAmenities.push(...dataAmenities);
     }
     
-    // Add from amenities array (avoid duplicates)
+    // Add from amenities array (avoid duplicates and featured ones)
     if (property.amenities && property.amenities.length > 0) {
       const existingTitles = new Set(allAmenities.map(a => a.title.toLowerCase()));
       const basicAmenities = property.amenities
-        .filter((amenity: string) => !existingTitles.has(amenity.toLowerCase()))
+        .filter((amenity: string) => 
+          !existingTitles.has(amenity.toLowerCase()) && 
+          !featuredTitles.has(amenity.toLowerCase())
+        )
         .map((amenity: string) => ({
           icon: getAmenityIcon(amenity),
           title: amenity,
@@ -81,7 +89,7 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     }
     
     return allAmenities.slice(0, 8);
-  }, [property.amenities_data, property.amenities, property.amenities_descriptions]);
+  }, [property.amenities_data, property.amenities, property.amenities_descriptions, property.featured_amenities]);
 
   const handleAmenityClick = (amenity: AmenityData) => {
     setSelectedAmenity(amenity);

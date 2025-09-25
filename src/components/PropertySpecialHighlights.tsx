@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Property } from "@/hooks/useProperties";
-import { BookOpen, Sparkles, Mountain, Flame, Wifi, Car, Coffee, Utensils, Waves, TreePine, Home, Bed, Bath, Users, UtensilsCrossed, Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake } from "lucide-react";
+import { BookOpen, Sparkles, Mountain, Flame, Wifi, Car, Coffee, Utensils, Waves, TreePine, Home, Bed, Bath, Users, UtensilsCrossed, Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake, LucideIcon } from "lucide-react";
+import { AmenityDialog } from "@/components/AmenityDialog";
 
 interface PropertySpecialHighlightsProps {
   property: Property;
@@ -17,6 +19,15 @@ interface AmenityData {
 }
 
 const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHighlightsProps) => {
+  const [selectedAmenity, setSelectedAmenity] = useState<{
+    icon: LucideIcon;
+    title: string;
+    tagline: string;
+    description: string;
+    image_url?: string;
+    features?: string[];
+  } | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   // Icon mapping for amenities
   const getAmenityIcon = (iconName?: string) => {
     switch (iconName?.toLowerCase()) {
@@ -52,6 +63,15 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
     ? featuredAmenities.slice(0, 3)
     : allAmenities.slice(0, 3);
 
+  const handleAmenityClick = (amenity: AmenityData) => {
+    const IconComponent = getAmenityIcon(amenity.icon);
+    setSelectedAmenity({
+      ...amenity,
+      icon: IconComponent
+    });
+    setIsDialogOpen(true);
+  };
+
   if (!displayAmenities.length) {
     return null;
   }
@@ -70,7 +90,11 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
               const IconComponent = getAmenityIcon(amenity.icon);
               
               return (
-                <div key={index} className="text-center group">
+                <div 
+                  key={index} 
+                  className="text-center group cursor-pointer"
+                  onClick={() => handleAmenityClick(amenity)}
+                >
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
                     <IconComponent className="h-10 w-10 text-primary" />
                   </div>
@@ -96,6 +120,13 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
           </div>
         </div>
       </div>
+
+      {/* Amenity Detail Dialog */}
+      <AmenityDialog 
+        amenity={selectedAmenity}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+      />
     </section>
   );
 };
