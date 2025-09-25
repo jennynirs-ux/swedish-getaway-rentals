@@ -120,22 +120,27 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl bg-[#fdf7f2] p-0 flex flex-col md:flex-row h-[90vh]">
         {/* Sidebar */}
-        <div className="md:w-64 w-full bg-white/60 border-r border-muted/20 flex md:flex-col overflow-x-auto md:overflow-y-auto p-4 gap-3">
+        <div className="md:w-28 w-full bg-white/70 border-r border-muted/20 flex md:flex-col items-center md:items-stretch overflow-x-auto md:overflow-y-auto p-4 gap-4">
           {allSections.map((section) => {
             const Icon = getSectionIcon(section.icon);
             return (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id!)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition ${
-                  activeSection === section.id
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:bg-muted/20"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {section.title}
-              </button>
+              <Tooltip key={section.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setActiveSection(section.id!)}
+                    className={`flex items-center justify-center w-16 h-16 rounded-full transition ${
+                      activeSection === section.id
+                        ? "bg-primary text-white shadow-lg"
+                        : "bg-muted text-muted-foreground hover:bg-primary/10"
+                    }`}
+                  >
+                    <Icon className="h-7 w-7" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-sm">
+                  {section.title}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>
