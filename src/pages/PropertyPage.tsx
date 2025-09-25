@@ -94,6 +94,8 @@ const PropertyPage = memo(() => {
 
   /** Heavy query: gallery, video, highlights, guidebook, footer */
   const propertyHeavyQueryFn = useCallback(async () => {
+    let propertyId = await resolvePropertyId(id!);
+
     const { data, error } = await supabase
       .from("properties")
       .select(`
@@ -109,13 +111,13 @@ const PropertyPage = memo(() => {
         gallery_metadata,
         video_metadata
       `)
-      .eq("id", id)
+      .eq("id", propertyId)
       .eq("active", true)
       .single();
 
     if (error) throw error;
     return { data, error: null };
-  }, [id]);
+  }, [id, resolvePropertyId]);
 
   const { data: heavyProperty } = useOptimizedQuery(
     `property-heavy-${id}`,
