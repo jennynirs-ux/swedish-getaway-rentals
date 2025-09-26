@@ -43,7 +43,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
 
   // Fasta sektioner med fallback
   const fixedSections: GuideSection[] = [
-    { id: "home", title: "Welcome Home", icon: "home", content: "Welcome to our property! We’re excited to host you." },
+    { id: "home", title: "Welcome!", icon: "home", content: "Welcome to our property! We’re excited to host you." },
     { id: "directions", title: "Directions", icon: "directions", content: "How to reach us and parking instructions." },
     { id: "stop", title: "Stop on the way", icon: "stop", content: "Recommended places to stop on your journey here." },
     { id: "checkin", title: "Check-in", icon: "checkin", content: "Check-in time: 15:00. Contact us if you need early check-in." },
@@ -124,7 +124,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           <DialogHeader className="mb-6">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
-              <div className="flex gap-2 absolute top-4 right-4">
+              <div className="flex gap-2 absolute top-4 right-14">
                 <Button variant="outline" size="icon" onClick={shareGuide}>
                   <Share2 className="h-4 w-4" />
                 </Button>
