@@ -5,11 +5,10 @@ import { useState } from "react";
 import { Share2, Download, Home, MapPin, Coffee, Wifi, Settings, Landmark, BookOpen, LogOut, Info, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Guide section interface
 interface GuideSection {
   id: string;
   title: string;
-  icon: keyof typeof iconMap;   // 👈 ikonnyckel
+  icon: keyof typeof iconMap;
   content?: string;
   image_url?: string;
 }
@@ -20,7 +19,6 @@ interface GuestGuideDialogProps {
   property: Property;
 }
 
-// Alla ikoner på ett ställe
 const iconMap = {
   home: Home,
   directions: MapPin,
@@ -40,7 +38,6 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Fasta sektioner
   const fixedSections: GuideSection[] = [
     { id: "home", title: "Welcome Home", icon: "home", content: "Welcome to our property! We’re excited to host you." },
     { id: "directions", title: "Directions", icon: "directions", content: "How to reach us and parking instructions." },
@@ -56,7 +53,6 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     { id: "story", title: "Host Story", icon: "story", content: "Learn more about your hosts and our story." },
   ];
 
-  // Merge custom content från DB
   const customSections = (property.guidebook_sections as GuideSection[]) || [];
   const allSections = fixedSections.map(section => {
     const custom = customSections.find(s => s.id === section.id);
@@ -68,7 +64,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   });
 
   const shareGuide = async () => {
-    const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
+    const guideUrl = `${window.location.origin}/property/${property.id}?guide=true`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -92,12 +88,12 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] flex p-0">
-        {/* Sidebar */}
-        <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6">
+      <DialogContent className="max-w-6xl h-[90vh] flex p-0 relative">
+        {/* Sidebar med scroll */}
+        <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
           {allSections.map((section, index) => {
             const isActive = activeIndex === index;
-            const Icon = iconMap[section.icon]; // 👈 plocka rätt ikon
+            const Icon = iconMap[section.icon];
             return (
               <button
                 key={section.id}
@@ -115,18 +111,20 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-6">
-          <DialogHeader className="mb-6 flex items-center justify-between">
+        <div className="flex-1 overflow-y-auto px-8 py-6 relative">
+          <DialogHeader className="mb-6">
             <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
-            <div className="flex gap-3">
-              <Button variant="outline" size="sm" onClick={shareGuide} className="gap-2">
-                <Share2 className="h-4 w-4" /> Share
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportToPDF} className="gap-2">
-                <Download className="h-4 w-4" /> PDF
-              </Button>
-            </div>
           </DialogHeader>
+
+          {/* Små knappar i hörnet */}
+          <div className="absolute top-4 right-12 flex gap-2">
+            <Button variant="outline" size="icon" onClick={shareGuide}>
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={exportToPDF}>
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
 
           {allSections[activeIndex].image_url && (
             <img
