@@ -49,7 +49,7 @@ const PropertyPage = memo(() => {
     return propertyId;
   }, []);
 
-  /** Light query: fast initial load */
+  /** Light query */
   const propertyLightQueryFn = useCallback(async () => {
     let propertyId = await resolvePropertyId(id!);
 
@@ -92,7 +92,7 @@ const PropertyPage = memo(() => {
     }
   );
 
-  /** Heavy query: gallery, highlights, guidebook, footer */
+  /** Heavy query */
   const propertyHeavyQueryFn = useCallback(async () => {
     let propertyId = await resolvePropertyId(id!);
 
@@ -134,7 +134,7 @@ const PropertyPage = memo(() => {
   const handleGuideClose = useCallback(() => setIsGuideDialogOpen(false), []);
   const handleBackToHome = useCallback(() => navigate("/"), [navigate]);
 
-  /** Merge light + heavy query results */
+  /** Merge queries */
   const property = useMemo(() => {
     if (!lightProperty) return null;
 
@@ -157,7 +157,7 @@ const PropertyPage = memo(() => {
     } as Property;
   }, [lightProperty, heavyProperty]);
 
-  // Loading state
+  // Loading
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -174,17 +174,14 @@ const PropertyPage = memo(() => {
     );
   }
 
-  // Error state
+  // Error
   if (error || !property) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            Property Not Found
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Property Not Found</h1>
           <p className="text-muted-foreground mb-6">
-            The property you're looking for doesn't exist or is no longer
-            available.
+            The property you're looking for doesn't exist or is no longer available.
           </p>
           <Button onClick={handleBackToHome} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -195,7 +192,7 @@ const PropertyPage = memo(() => {
     );
   }
 
-  // Render content
+  // Render
   return (
     <div className="min-h-screen bg-background">
       <PropertyNavigation />
@@ -213,13 +210,13 @@ const PropertyPage = memo(() => {
         <PropertySpecialHighlights property={property} />
       </Suspense>
 
-      <div className="container mx-auto px-4 my-8 text-center">
+      {/* Guest Guide Button */}
+      <div className="container mx-auto px-4 my-12 flex justify-center">
         <Button
-          variant="outline"
           onClick={handleGuideOpen}
-          className="flex items-center gap-2 text-sm font-medium px-6 py-3 rounded-lg border hover:bg-muted transition"
+          className="bg-amber-800 hover:bg-amber-900 text-white text-base font-semibold px-8 py-4 rounded-lg shadow-md transition"
         >
-          <BookOpen className="w-4 h-4" />
+          <BookOpen className="w-5 h-5 mr-2" />
           View Complete Guest Guide
         </Button>
       </div>
