@@ -90,23 +90,24 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
 
   const loadDashboardStats = async () => {
     try {
+      // Basstatistik från din RPC
       const { data: basicStats, error: statsError } = await supabase.rpc("get_dashboard_stats");
       if (statsError) throw statsError;
-
-      // Count ALL products
+  
+      // ✅ Count ALL products
       const { count: totalProductsCount, error: productsCountError } = await supabase
         .from("shop_products")
         .select("*", { count: "exact", head: true })
         .eq("visible", true);
       if (productsCountError) throw productsCountError;
-
-      // Count ALL orders
+  
+      // ✅ Count ALL orders
       const { count: totalOrdersCount, error: ordersCountError } = await supabase
         .from("orders")
         .select("*", { count: "exact", head: true });
       if (ordersCountError) throw ordersCountError;
-
-      // Recent properties
+  
+      // ✅ Recent properties
       const { data: properties, error: propertiesError } = await supabase
         .from("properties")
         .select("id, title, hero_image_url, price_per_night, currency")
@@ -114,8 +115,8 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
         .order("created_at", { ascending: false })
         .limit(4);
       if (propertiesError) throw propertiesError;
-
-      // Recent products
+  
+      // ✅ Recent products
       const { data: products, error: productsError } = await supabase
         .from("shop_products")
         .select("id, title, title_override, image_url, main_image_override, price, price_override, currency")
@@ -123,29 +124,29 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
         .order("created_at", { ascending: false })
         .limit(4);
       if (productsError) throw productsError;
-
-      // Recent bookings
+  
+      // ✅ Recent bookings
       const { data: bookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("id, guest_name, property_id, check_in_date, total_amount, currency, status")
         .order("created_at", { ascending: false })
         .limit(5);
       if (bookingsError) throw bookingsError;
-
-      // Recent orders
+  
+      // ✅ Recent orders
       const { data: orders, error: ordersError } = await supabase
         .from("orders")
         .select("id, customer_name, total_amount, currency, status, created_at")
         .order("created_at", { ascending: false })
         .limit(5);
       if (ordersError) throw ordersError;
-
-      // Monthly shop stats
+  
+      // ✅ Monthly stats
       const currentMonth = new Date();
       currentMonth.setDate(1);
       const monthlyOrders = orders?.filter(order => new Date(order.created_at) >= currentMonth) || [];
       const shopRevenue = orders?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
-
+  
       const statsData = basicStats as any;
       setStats({
         active_rentals: statsData?.active_rentals || 0,
@@ -153,12 +154,12 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
         upcoming_bookings: statsData?.upcoming_bookings || 0,
         unread_messages: statsData?.unread_messages || 0,
         monthly_revenue: statsData?.monthly_revenue || 0,
-        total_products: totalProductsCount || 0, // ✅ korrekt
-        total_orders: totalOrdersCount || 0,     // ✅ korrekt
+        total_products: totalProductsCount ?? 0, // 👈 använder null-coalescing
+        total_orders: totalOrdersCount ?? 0,     // 👈 använder null-coalescing
         monthly_orders: monthlyOrders.length,
         shop_revenue: shopRevenue,
       });
-
+  
       setRecentProperties(properties || []);
       setRecentProducts(products || []);
       setRecentBookings(bookings || []);
