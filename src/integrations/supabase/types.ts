@@ -217,6 +217,110 @@ export type Database = {
           },
         ]
       }
+      coupon_usages: {
+        Row: {
+          booking_id: string | null
+          coupon_id: string
+          discount_amount: number
+          id: string
+          order_id: string | null
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          coupon_id: string
+          discount_amount: number
+          id?: string
+          order_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          coupon_id?: string
+          discount_amount?: number
+          id?: string
+          order_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usages_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string
+          currency: string | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          maximum_discount_amount: number | null
+          minimum_amount: number | null
+          name: string
+          property_id: string | null
+          updated_at: string | null
+          usage_limit: number | null
+          usage_rules: Json | null
+          used_count: number | null
+          valid_from: string | null
+          valid_until: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by: string
+          currency?: string | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          maximum_discount_amount?: number | null
+          minimum_amount?: number | null
+          name: string
+          property_id?: string | null
+          updated_at?: string | null
+          usage_limit?: number | null
+          usage_rules?: Json | null
+          used_count?: number | null
+          valid_from?: string | null
+          valid_until: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string
+          currency?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          maximum_discount_amount?: number | null
+          minimum_amount?: number | null
+          name?: string
+          property_id?: string | null
+          updated_at?: string | null
+          usage_limit?: number | null
+          usage_rules?: Json | null
+          used_count?: number | null
+          valid_from?: string | null
+          valid_until?: string
+        }
+        Relationships: []
+      }
       guest_messages: {
         Row: {
           created_at: string
@@ -446,10 +550,16 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           commission_rate: number | null
           created_at: string
+          date_of_birth: string | null
+          display_name: string | null
           email: string | null
           full_name: string | null
+          guest_rating: number | null
+          guest_review_count: number | null
           host_application_date: string | null
           host_approved: boolean
           host_business_name: string | null
@@ -458,16 +568,27 @@ export type Database = {
           id: string
           is_admin: boolean
           is_host: boolean
+          location: string | null
           phone: string | null
+          provider: string | null
+          provider_id: string | null
           stripe_connect_account_id: string | null
+          total_stays: number | null
           updated_at: string
           user_id: string
+          verified: boolean | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           commission_rate?: number | null
           created_at?: string
+          date_of_birth?: string | null
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
+          guest_rating?: number | null
+          guest_review_count?: number | null
           host_application_date?: string | null
           host_approved?: boolean
           host_business_name?: string | null
@@ -476,16 +597,27 @@ export type Database = {
           id?: string
           is_admin?: boolean
           is_host?: boolean
+          location?: string | null
           phone?: string | null
+          provider?: string | null
+          provider_id?: string | null
           stripe_connect_account_id?: string | null
+          total_stays?: number | null
           updated_at?: string
           user_id: string
+          verified?: boolean | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           commission_rate?: number | null
           created_at?: string
+          date_of_birth?: string | null
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
+          guest_rating?: number | null
+          guest_review_count?: number | null
           host_application_date?: string | null
           host_approved?: boolean
           host_business_name?: string | null
@@ -494,10 +626,15 @@ export type Database = {
           id?: string
           is_admin?: boolean
           is_host?: boolean
+          location?: string | null
           phone?: string | null
+          provider?: string | null
+          provider_id?: string | null
           stripe_connect_account_id?: string | null
+          total_stays?: number | null
           updated_at?: string
           user_id?: string
+          verified?: boolean | null
         }
         Relationships: []
       }
@@ -679,6 +816,54 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          booking_id: string
+          comment: string | null
+          created_at: string | null
+          id: string
+          is_published: boolean | null
+          moderated_at: string | null
+          moderated_by: string | null
+          moderation_status: string | null
+          rating: number
+          review_type: string
+          reviewee_id: string
+          reviewer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_status?: string | null
+          rating: number
+          review_type: string
+          reviewee_id: string
+          reviewer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_status?: string | null
+          rating?: number
+          review_type?: string
+          reviewee_id?: string
+          reviewer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_audit_log: {
         Row: {
           action: string
@@ -844,6 +1029,20 @@ export type Database = {
       is_user_admin_safe: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      validate_coupon: {
+        Args: {
+          booking_amount?: number
+          coupon_code: string
+          property_id_param?: string
+          user_id_param?: string
+        }
+        Returns: {
+          coupon_id: string
+          discount_amount: number
+          message: string
+          valid: boolean
+        }[]
       }
       validate_password_strength: {
         Args: { password: string }
