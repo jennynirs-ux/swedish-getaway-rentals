@@ -2,47 +2,61 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Property } from "@/hooks/useProperties";
 import { useState } from "react";
-import { Share2, Download, Heart } from "lucide-react";
+import { Share2, Download, Home, MapPin, Coffee, Wifi, Settings, Landmark, BookOpen, LogOut, Info, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Guide section interface
 interface GuideSection {
   id: string;
   title: string;
-  icon?: string;
-  logo?: string;
+  icon: keyof typeof iconMap;   // 👈 ikonnyckel
   content?: string;
   image_url?: string;
 }
 
-// Props
 interface GuestGuideDialogProps {
   isOpen: boolean;
   onClose: () => void;
   property: Property;
 }
 
+// Alla ikoner på ett ställe
+const iconMap = {
+  home: Home,
+  directions: MapPin,
+  stop: Landmark,
+  checkin: Info,
+  wifi: Wifi,
+  kitchen: Coffee,
+  howthingswork: Settings,
+  places: BookOpen,
+  customs: Landmark,
+  rules: Info,
+  checkout: LogOut,
+  story: User,
+};
+
 const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) => {
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Fasta sektioner med default rubrik + text + logga
+  // Fasta sektioner
   const fixedSections: GuideSection[] = [
-    { id: "home", title: "Welcome Home", logo: "/icons/home.svg", content: "Welcome to our property! We’re excited to host you." },
-    { id: "directions", title: "Directions", logo: "/icons/map.svg", content: "How to reach us and parking instructions." },
-    { id: "stop", title: "Stop on the way", logo: "/icons/stop.svg", content: "Recommended places to stop on your journey here." },
-    { id: "checkin", title: "Check-in", logo: "/icons/checkin.svg", content: "Check-in time: 15:00. Contact us if you need early check-in." },
-    { id: "wifi", title: "Wi-Fi", logo: "/icons/wifi.svg", content: "Network: Guest_Wifi\nPassword: Welcome2024" },
-    { id: "kitchen", title: "Kitchen", logo: "/icons/kitchen.svg", content: "Everything you need to know about using the kitchen." },
-    { id: "howthingswork", title: "How things work", logo: "/icons/settings.svg", content: "Instructions for appliances, heating, etc." },
-    { id: "places", title: "Places to visit", logo: "/icons/places.svg", content: "Discover local attractions and must-see spots." },
-    { id: "customs", title: "Swedish customs", logo: "/icons/customs.svg", content: "Get to know Swedish traditions and customs." },
-    { id: "rules", title: "House Rules", logo: "/icons/rules.svg", content: "Respect quiet hours. No smoking inside. No parties." },
-    { id: "checkout", title: "Check-out", logo: "/icons/checkout.svg", content: "Check-out time: 11:00. Please follow the checklist." },
-    { id: "story", title: "Host Story", logo: "/icons/story.svg", content: "Learn more about your hosts and our story." },
+    { id: "home", title: "Welcome Home", icon: "home", content: "Welcome to our property! We’re excited to host you." },
+    { id: "directions", title: "Directions", icon: "directions", content: "How to reach us and parking instructions." },
+    { id: "stop", title: "Stop on the way", icon: "stop", content: "Recommended places to stop on your journey here." },
+    { id: "checkin", title: "Check-in", icon: "checkin", content: "Check-in time: 15:00. Contact us if you need early check-in." },
+    { id: "wifi", title: "Wi-Fi", icon: "wifi", content: "Network: Guest_Wifi\nPassword: Welcome2024" },
+    { id: "kitchen", title: "Kitchen", icon: "kitchen", content: "Everything you need to know about using the kitchen." },
+    { id: "howthingswork", title: "How things work", icon: "howthingswork", content: "Instructions for appliances, heating, etc." },
+    { id: "places", title: "Places to visit", icon: "places", content: "Discover local attractions and must-see spots." },
+    { id: "customs", title: "Swedish customs", icon: "customs", content: "Get to know Swedish traditions and customs." },
+    { id: "rules", title: "House Rules", icon: "rules", content: "Respect quiet hours. No smoking inside. No parties." },
+    { id: "checkout", title: "Check-out", icon: "checkout", content: "Check-out time: 11:00. Please follow the checklist." },
+    { id: "story", title: "Host Story", icon: "story", content: "Learn more about your hosts and our story." },
   ];
 
-  // Merge hostens custom content från DB
+  // Merge custom content från DB
   const customSections = (property.guidebook_sections as GuideSection[]) || [];
   const allSections = fixedSections.map(section => {
     const custom = customSections.find(s => s.id === section.id);
@@ -79,10 +93,11 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] flex p-0">
-        {/* Sidebar med loggor */}
+        {/* Sidebar */}
         <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6">
           {allSections.map((section, index) => {
             const isActive = activeIndex === index;
+            const Icon = iconMap[section.icon]; // 👈 plocka rätt ikon
             return (
               <button
                 key={section.id}
@@ -93,11 +108,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
                     : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
                 }`}
               >
-                {section.logo ? (
-                  <img src={section.logo} alt={section.title} className="h-8 w-8 object-contain" />
-                ) : (
-                  <span className="text-lg">{section.title[0]}</span>
-                )}
+                <Icon className="h-6 w-6" />
               </button>
             );
           })}
