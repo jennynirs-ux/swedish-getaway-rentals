@@ -93,7 +93,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
         <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
           {allSections.map((section, index) => {
             const isActive = activeIndex === index;
-            const Icon = iconMap[section.icon];
+            const Icon = iconMap[section.icon] || Info; // ✅ fallback
             return (
               <button
                 key={section.id}
