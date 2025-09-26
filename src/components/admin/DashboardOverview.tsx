@@ -324,8 +324,6 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
   </div>
 );
 
-    </div>
-  );
 };
 
 export default DashboardOverview;
