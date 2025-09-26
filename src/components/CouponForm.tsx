@@ -1,0 +1,234 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface CouponFormProps {
+  propertyId?: string;
+  onSubmitted?: () => void;
+}
+
+const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
+  const [formData, setFormData] = useState({
+    code: '',
+    name: '',
+    description: '',
+    discount_type: 'percentage' as 'percentage' | 'fixed',
+    discount_value: '',
+    minimum_amount: '',
+    maximum_discount_amount: '',
+    valid_until: '',
+    usage_limit: '',
+    is_active: true
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.code || !formData.name || !formData.discount_value || !formData.valid_until) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("You must be logged in to create a coupon");
+
+      const { error } = await supabase
+        .from('coupons')
+        .insert({
+          code: formData.code.toUpperCase(),
+          name: formData.name,
+          description: formData.description || null,
+          discount_type: formData.discount_type,
+          discount_value: parseFloat(formData.discount_value),
+          minimum_amount: formData.minimum_amount ? parseInt(formData.minimum_amount) : null,
+          maximum_discount_amount: formData.maximum_discount_amount ? parseInt(formData.maximum_discount_amount) : null,
+          valid_until: formData.valid_until,
+          usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : null,
+          property_id: propertyId || null,
+          created_by: user.id,
+          is_active: formData.is_active
+        });
+
+      if (error) throw error;
+
+      toast.success("Coupon created successfully!");
+      setFormData({
+        code: '',
+        name: '',
+        description: '',
+        discount_type: 'percentage',
+        discount_value: '',
+        minimum_amount: '',
+        maximum_discount_amount: '',
+        valid_until: '',
+        usage_limit: '',
+        is_active: true
+      });
+      onSubmitted?.();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Create {propertyId ? 'Property' : 'Global'} Coupon
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="code">Coupon Code *</Label>
+              <Input
+                id="code"
+                value={formData.code}
+                onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                placeholder="SUMMER2024"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="name">Coupon Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Summer Discount"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="A special summer discount for our guests"
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="discount_type">Discount Type *</Label>
+              <Select
+                value={formData.discount_type}
+                onValueChange={(value: 'percentage' | 'fixed') => 
+                  setFormData(prev => ({ ...prev, discount_type: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                  <SelectItem value="fixed">Fixed Amount</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="discount_value">
+                Discount Value * {formData.discount_type === 'percentage' ? '(%)' : '(SEK)'}
+              </Label>
+              <Input
+                id="discount_value"
+                type="number"
+                value={formData.discount_value}
+                onChange={(e) => setFormData(prev => ({ ...prev, discount_value: e.target.value }))}
+                placeholder={formData.discount_type === 'percentage' ? '10' : '500'}
+                min="0"
+                step={formData.discount_type === 'percentage' ? '0.1' : '1'}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="minimum_amount">Minimum Amount (SEK)</Label>
+              <Input
+                id="minimum_amount"
+                type="number"
+                value={formData.minimum_amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, minimum_amount: e.target.value }))}
+                placeholder="1000"
+                min="0"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="maximum_discount_amount">Maximum Discount (SEK)</Label>
+              <Input
+                id="maximum_discount_amount"
+                type="number"
+                value={formData.maximum_discount_amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, maximum_discount_amount: e.target.value }))}
+                placeholder="500"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="valid_until">Valid Until *</Label>
+              <Input
+                id="valid_until"
+                type="datetime-local"
+                value={formData.valid_until}
+                onChange={(e) => setFormData(prev => ({ ...prev, valid_until: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="usage_limit">Usage Limit</Label>
+              <Input
+                id="usage_limit"
+                type="number"
+                value={formData.usage_limit}
+                onChange={(e) => setFormData(prev => ({ ...prev, usage_limit: e.target.value }))}
+                placeholder="100"
+                min="1"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+            />
+            <Label htmlFor="is_active">Active</Label>
+          </div>
+
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating..." : "Create Coupon"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default CouponForm;

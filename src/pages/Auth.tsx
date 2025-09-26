@@ -84,6 +84,48 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      setError(error.message);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      setError(error.message);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -176,6 +218,36 @@ const Auth = () => {
                     >
                       {loading ? 'Signing In...' : 'Sign In'}
                     </Button>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleGoogleSignIn}
+                        disabled={loading}
+                      >
+                        Google
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleFacebookSignIn}
+                        disabled={loading}
+                      >
+                        Facebook
+                      </Button>
+                    </div>
                   </form>
                 </TabsContent>
             
@@ -214,6 +286,36 @@ const Auth = () => {
                     >
                       {loading ? 'Creating Account...' : 'Create Account'}
                     </Button>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleGoogleSignIn}
+                        disabled={loading}
+                      >
+                        Google
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleFacebookSignIn}
+                        disabled={loading}
+                      >
+                        Facebook
+                      </Button>
+                    </div>
                   </form>
                 </TabsContent>
               </Tabs>

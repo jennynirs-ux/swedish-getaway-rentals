@@ -23,6 +23,7 @@ import Gallery from "./pages/Gallery";
 import Amenities from "./pages/Amenities";
 import Contact from "./pages/Contact";
 import BookNow from "./pages/BookNow";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => {
             <Route path="/amenities" element={<Amenities />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/book-now" element={<BookNow />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </TooltipProvider>

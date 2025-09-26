@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ShoppingBag, User } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MainNavigationProps {
   showBackButton?: boolean;
@@ -10,11 +12,26 @@ interface MainNavigationProps {
 
 const MainNavigation = ({ showBackButton = false, currentPage }: MainNavigationProps) => {
   const location = useLocation();
+  const [user, setUser] = useState<any>(null);
   
   // Hide shop/cart buttons on property pages
   const isPropertyPage = location.pathname.includes('/villa-') || 
                          location.pathname.includes('/lakehouse-') || 
                          location.pathname.includes('/property/');
+
+  useEffect(() => {
+    // Check if user is authenticated
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   
   return (
     <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
@@ -60,6 +77,29 @@ const MainNavigation = ({ showBackButton = false, currentPage }: MainNavigationP
                 <span className="sm:hidden">Cart</span>
               </Button>
             </Link>
+            {user ? (
+              <Link to="/profile">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
+                >
+                  <User className="w-4 h-4 mr-1 md:mr-2" />
+                  <span className="hidden sm:inline">Profile</span>
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
+                >
+                  <span className="hidden sm:inline">Sign In</span>
+                  <span className="sm:hidden">Sign In</span>
+                </Button>
+              </Link>
+            )}
           </div>
         )}
       </div>
