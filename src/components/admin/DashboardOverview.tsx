@@ -210,7 +210,122 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
 
   return (
     <div className="space-y-6">
-      {/* ... Resten av dina cards och komponenter (oförändrade) */}
+      return (
+  <div className="space-y-6">
+    {/* Overview Cards */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Active Rentals</CardTitle>
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.active_rentals}</div>
+          <p className="text-xs text-muted-foreground">Properties available</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.total_bookings}</div>
+          <p className="text-xs text-muted-foreground">{stats.upcoming_bookings} upcoming</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Shop Products</CardTitle>
+          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.total_products}</div>
+          <p className="text-xs text-muted-foreground">Active products</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.total_orders}</div>
+          <p className="text-xs text-muted-foreground">{stats.monthly_orders} this month</p>
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* Revenue Cards */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Rental Revenue</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(stats.monthly_revenue)}</div>
+          <p className="text-xs text-muted-foreground">This month from bookings</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Shop Revenue</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(stats.shop_revenue)}</div>
+          <p className="text-xs text-muted-foreground">Total from shop orders</p>
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* Recent Properties */}
+    {recentProperties.length > 0 && (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Properties</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {recentProperties.map((p) => (
+              <div key={p.id} className="border rounded-lg p-3">
+                <img src={p.hero_image_url || "/placeholder.svg"} alt={p.title} className="w-full h-32 object-cover rounded-md mb-2" />
+                <h4 className="font-medium text-sm">{p.title}</h4>
+                <p className="text-xs text-muted-foreground">{formatCurrency(p.price_per_night * 100)} / night</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
+    {/* Recent Products */}
+    {recentProducts.length > 0 && (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Products</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {recentProducts.map((prod) => (
+              <div key={prod.id} className="border rounded-lg p-3">
+                <img src={prod.main_image_override || prod.image_url || "/placeholder.svg"} alt={prod.title_override || prod.title} className="w-full h-32 object-cover rounded-md mb-2" />
+                <h4 className="font-medium text-sm">{prod.title_override || prod.title}</h4>
+                <p className="text-xs text-muted-foreground">{formatCurrency(prod.price_override || prod.price)}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )}
+  </div>
+);
+
     </div>
   );
 };
