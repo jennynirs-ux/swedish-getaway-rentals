@@ -2,42 +2,46 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Property } from "@/hooks/useProperties";
 import { useState } from "react";
-import { Share2, Download, Home, MapPin, Coffee, Wifi, Settings, Landmark, BookOpen, LogOut, Info, User } from "lucide-react";
+import { Share2, Download, Home, MapPin, Coffee, Wifi, Settings, BookOpen, Heart, LogOut, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Guide section interface
 interface GuideSection {
   id: string;
   title: string;
-  icon: keyof typeof iconMap;
+  icon?: string;
   content?: string;
   image_url?: string;
 }
 
+// Props
 interface GuestGuideDialogProps {
   isOpen: boolean;
   onClose: () => void;
   property: Property;
 }
 
-const iconMap = {
+// Ikon-map
+const iconMap: Record<string, any> = {
   home: Home,
   directions: MapPin,
-  stop: Landmark,
-  checkin: Info,
+  stop: Coffee,
+  checkin: BookOpen,
   wifi: Wifi,
   kitchen: Coffee,
   howthingswork: Settings,
-  places: BookOpen,
-  customs: Landmark,
+  places: MapPin,
+  customs: BookOpen,
   rules: Info,
   checkout: LogOut,
-  story: User,
+  story: Heart,
 };
 
 const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) => {
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // Fasta sektioner med fallback
   const fixedSections: GuideSection[] = [
     { id: "home", title: "Welcome Home", icon: "home", content: "Welcome to our property! We’re excited to host you." },
     { id: "directions", title: "Directions", icon: "directions", content: "How to reach us and parking instructions." },
@@ -53,9 +57,12 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     { id: "story", title: "Host Story", icon: "story", content: "Learn more about your hosts and our story." },
   ];
 
-  const customSections = (property.guidebook_sections as GuideSection[]) || [];
+  // Säkerställ att vi alltid har en array
+  const customSections = Array.isArray(property?.guidebook_sections) ? property.guidebook_sections : [];
+
+  // Merge fixed + custom
   const allSections = fixedSections.map(section => {
-    const custom = customSections.find(s => s.id === section.id);
+    const custom = customSections.find((s: GuideSection) => s.id === section.id);
     return {
       ...section,
       content: custom?.content || section.content,
@@ -64,19 +71,19 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   });
 
   const shareGuide = async () => {
-    const guideUrl = `${window.location.origin}/property/${property.id}?guide=true`;
-    if (navigator.share) {
-      try {
+    const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
+    try {
+      if (navigator.share) {
         await navigator.share({
           title: `${property.title} - Guest Guide`,
           text: `Complete guest guide for ${property.title}`,
           url: guideUrl,
         });
-      } catch {
+      } else {
         await navigator.clipboard.writeText(guideUrl);
         toast({ title: "Link copied!", description: "Guest guide link copied to clipboard." });
       }
-    } else {
+    } catch {
       await navigator.clipboard.writeText(guideUrl);
       toast({ title: "Link copied!", description: "Guest guide link copied to clipboard." });
     }
@@ -88,12 +95,13 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] flex p-0 relative">
-        {/* Sidebar med scroll */}
+      <DialogContent className="max-w-6xl h-[90vh] flex p-0">
+        {/* Sidebar med ikoner (scrollbar om många) */}
         <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
           {allSections.map((section, index) => {
             const isActive = activeIndex === index;
-            const Icon = iconMap[section.icon] || Info; // ✅ fallback
+            const Icon = section.icon && iconMap[section.icon] ? iconMap[section.icon] : Info;
+
             return (
               <button
                 key={section.id}
@@ -112,19 +120,20 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6 relative">
+          {/* Header med actions */}
           <DialogHeader className="mb-6">
-            <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
+              <div className="flex gap-2 absolute top-4 right-4">
+                <Button variant="outline" size="icon" onClick={shareGuide}>
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={exportToPDF}>
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </DialogHeader>
-
-          {/* Små knappar i hörnet */}
-          <div className="absolute top-4 right-12 flex gap-2">
-            <Button variant="outline" size="icon" onClick={shareGuide}>
-              <Share2 className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={exportToPDF}>
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
 
           {allSections[activeIndex].image_url && (
             <img
