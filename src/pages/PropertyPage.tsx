@@ -7,7 +7,7 @@ import PropertyNavigation from "@/components/PropertyNavigation";
 import PropertyHero from "@/components/PropertyHero";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
 
 // Lazy-loaded heavy components
@@ -92,7 +92,7 @@ const PropertyPage = memo(() => {
     }
   );
 
-  /** Heavy query: gallery, video, highlights, guidebook, footer */
+  /** Heavy query: gallery, highlights, guidebook, footer */
   const propertyHeavyQueryFn = useCallback(async () => {
     let propertyId = await resolvePropertyId(id!);
 
@@ -209,21 +209,20 @@ const PropertyPage = memo(() => {
         <PropertyAmenities property={property} />
       </Suspense>
 
-      {/* Always visible guidebook button */}
-      <div className="container mx-auto px-4 py-8">
+      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+        <PropertySpecialHighlights property={property} />
+      </Suspense>
+
+      <div className="container mx-auto px-4 my-8 text-center">
         <Button
           variant="outline"
           onClick={handleGuideOpen}
-          className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border border-muted-foreground hover:bg-muted transition"
+          className="flex items-center gap-2 text-sm font-medium px-6 py-3 rounded-lg border hover:bg-muted transition"
         >
           <BookOpen className="w-4 h-4" />
           View Complete Guest Guide
         </Button>
       </div>
-
-      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
-        <PropertySpecialHighlights property={property} onViewGuide={handleGuideOpen} />
-      </Suspense>
 
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <PropertyBooking property={property} />
