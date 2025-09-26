@@ -49,7 +49,7 @@ const PropertyPage = memo(() => {
     return propertyId;
   }, []);
 
-  /** Light query: fast initial load + covers PropertyCard needs */
+  /** Light query: fast initial load */
   const propertyLightQueryFn = useCallback(async () => {
     let propertyId = await resolvePropertyId(id!);
 
@@ -208,6 +208,16 @@ const PropertyPage = memo(() => {
       <Suspense fallback={<Skeleton className="h-32 w-full" />}>
         <PropertyAmenities property={property} />
       </Suspense>
+
+      {/* Always visible guidebook button */}
+      <div className="container mx-auto px-4 py-8">
+        <Button
+          onClick={handleGuideOpen}
+          className="w-full sm:w-auto bg-primary text-white"
+        >
+          Open Guest Guide
+        </Button>
+      </div>
 
       <Suspense fallback={<Skeleton className="h-24 w-full" />}>
         <PropertySpecialHighlights property={property} onViewGuide={handleGuideOpen} />
