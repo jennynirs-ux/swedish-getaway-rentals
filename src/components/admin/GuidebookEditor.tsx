@@ -23,11 +23,10 @@ import {
   Heart,
   Package,
   FileText,
-  Apple,
-  Wine,
-  Beer,
-  CupSoda,
   Trash2,
+  Square,
+  Circle,
+  SquareStack,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,6 +53,7 @@ interface GuidebookEditorProps {
   propertyTitle?: string;
 }
 
+// Förifyllda sektioner
 const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "home",
@@ -75,21 +75,14 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content: "🛻 By Car: Enter the property address in Google Maps.\n🚆 By Public Transport: Take bus 123 to Example Station.",
+        content: "Get here by car: Follow E20, exit Lerum. Parking at the house.\n\nGet here by public transport: Train to Lerum, then local bus.",
       },
-    ],
-  },
-  {
-    id: "stop",
-    icon: Coffee,
-    title: "Stop on the way",
-    blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Grocery store ICA Kvantum – 5 min away",
-          "Buy firewood at the local gas station",
+          "Stop on the way: ICA Kvantum – groceries",
+          "Stop on the way: Local gas station – firewood",
         ],
       },
     ],
@@ -102,7 +95,7 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content: "Check-in time: 15:00. Parking is available in front of the house. Keys are in the lockbox – code will be sent before arrival.",
+        content: "Check-in time is 15:00.\nKeys are available via Yale Doorman code (sent before arrival).\nParking available next to the property.",
       },
     ],
   },
@@ -125,27 +118,23 @@ const FIXED_SECTIONS: GuidebookSection[] = [
     blocks: [
       {
         id: crypto.randomUUID(),
-        type: "list",
-        items: [
-          "Dishwasher tablets under the sink",
-          "Coffee machine: press the silver button",
-          "Oven: use top-right knob for temperature",
-        ],
+        type: "text",
+        content: "Fully equipped kitchen with oven, stove, fridge, freezer, dishwasher, and coffee maker.",
       },
     ],
   },
   {
     id: "howthingswork",
     icon: Cog,
-    title: "How things work",
+    title: "How Things Work",
     blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Oven – turn knob to the right, set temperature",
-          "Coffee maker – add water, insert filter, press power",
-          "Heating – thermostat in hallway, adjust by degrees",
+          "Oven – press ON and select program",
+          "Coffee maker – fill with water, add filter and coffee",
+          "Heating – controlled via Google Nest",
         ],
       },
     ],
@@ -158,19 +147,19 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content: "Did you know that we can be fined if not recycling right in Sweden?\nPlease sort your trash carefully.",
+        content: "We can be fined if trash is not sorted correctly. Please recycle carefully.",
       },
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Plastic – use yellow bags (Icon: Package)",
-          "Paper & Cardboard – blue bin (Icon: FileText)",
-          "Food Waste – brown bag (Icon: Apple)",
-          "Glass (Clear) – white bin (Icon: Wine)",
-          "Glass (Colored) – green bin (Icon: Beer)",
-          "Metal – grey bin (Icon: CupSoda)",
-          "Other Waste – black bin (Icon: Trash2)",
+          "Plastic – yellow bags (Package icon)",
+          "Paper & cardboard – blue bin (FileText icon)",
+          "Food waste – brown bag (Utensils icon)",
+          "Glass (clear) – white bin (Circle icon)",
+          "Glass (colored) – green bin (Square icon)",
+          "Metal – grey bin (SquareStack icon)",
+          "Other waste – black bin (Trash2 icon)",
         ],
       },
     ],
@@ -178,14 +167,15 @@ const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "places",
     icon: Landmark,
-    title: "Places to visit",
+    title: "Places to Visit",
     blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Restaurants – Example Bistro, Seafood Place",
-          "Attractions – Old Town, Castle Hill",
+          "Restaurants – Villa Belparc",
+          "Nature – Delsjön Nature Reserve",
+          "Museums – Universeum, Gothenburg",
         ],
       },
     ],
@@ -193,15 +183,17 @@ const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "customs",
     icon: BookOpen,
-    title: "Swedish customs",
+    title: "Swedish Customs",
     blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Take off shoes indoors",
-          "Fika – coffee & cinnamon bun",
-          "Card is king – cash is rare",
+          "Fika – coffee and a cinnamon bun",
+          "No shoes indoors – bring socks or slippers",
+          "Card is king – cash is rarely used",
+          "Quiet culture – respect personal space",
+          "Alcohol – strong drinks only at Systembolaget",
         ],
       },
     ],
@@ -209,15 +201,15 @@ const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "rules",
     icon: Shield,
-    title: "House rules",
+    title: "House Rules",
     blocks: [
       {
         id: crypto.randomUUID(),
-        type: "checkbox",
+        type: "list",
         items: [
+          "Respect quiet hours",
           "No smoking indoors",
-          "No loud parties",
-          "Respect quiet hours 22–07",
+          "No parties",
         ],
       },
     ],
@@ -230,17 +222,18 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content: "Check-out time: 11:00. Please follow the checklist before leaving.",
+        content: "Check-out time is 11:00. Please follow the checklist.",
       },
       {
         id: crypto.randomUUID(),
         type: "checkbox",
         items: [
-          "Remove bed linens and place in laundry room",
+          "Put furniture back in place",
+          "Empty trash bins and bring to recycling",
+          "Remove bed linens and place in laundry",
           "Load and start dishwasher",
           "Empty fridge and freezer",
-          "Take out all trash and recycling",
-          "Close windows and lock all doors",
+          "Close windows and lock doors",
         ],
       },
     ],
@@ -253,7 +246,7 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content: "We are a local family who loves sharing our home with guests. Thank you for choosing us!",
+        content: "We started hosting in 2020 with the goal of sharing our love for the Swedish countryside.",
       },
     ],
   },
@@ -267,12 +260,10 @@ export const GuidebookEditor = ({
   propertyTitle = "Property",
 }: GuidebookEditorProps) => {
   const { toast } = useToast();
-
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
     sections.length > 0 ? sections : FIXED_SECTIONS
   );
 
-  // --- Helpers
   const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
     const newSections = localSections.map((s) =>
       s.id === id ? { ...s, ...updated } : s
@@ -293,38 +284,6 @@ export const GuidebookEditor = ({
     updateSection(sectionId, { blocks: [...section.blocks, block] });
   };
 
-  const removeBlock = (sectionId: string, blockId: string) => {
-    const section = localSections.find((s) => s.id === sectionId);
-    if (!section) return;
-    updateSection(sectionId, {
-      blocks: section.blocks.filter((b) => b.id !== blockId),
-    });
-  };
-
-  const updateBlock = (
-    sectionId: string,
-    blockId: string,
-    changes: Partial<GuidebookBlock>
-  ) => {
-    const section = localSections.find((s) => s.id === sectionId);
-    if (!section) return;
-    updateSection(sectionId, {
-      blocks: section.blocks.map((b) =>
-        b.id === blockId ? { ...b, ...changes } : b
-      ),
-    });
-  };
-
-  const addBlockItem = (sectionId: string, blockId: string) => {
-    const section = localSections.find((s) => s.id === sectionId);
-    if (!section) return;
-    updateSection(sectionId, {
-      blocks: section.blocks.map((b) =>
-        b.id === blockId ? { ...b, items: [...(b.items || []), ""] } : b
-      ),
-    });
-  };
-
   const updateBlockItem = (
     sectionId: string,
     blockId: string,
@@ -336,29 +295,10 @@ export const GuidebookEditor = ({
     updateSection(sectionId, {
       blocks: section.blocks.map((b) =>
         b.id === blockId
-          ? {
-              ...b,
-              items: b.items?.map((it, i) => (i === index ? value : it)),
-            }
+          ? { ...b, items: b.items?.map((it, i) => (i === index ? value : it)) }
           : b
       ),
     });
-  };
-
-  // --- Actions
-  const handleSave = async () => {
-    if (onSave) {
-      try {
-        await onSave();
-        toast({ title: "Success", description: "Guest guide saved successfully" });
-      } catch {
-        toast({
-          title: "Error",
-          description: "Failed to save guest guide",
-          variant: "destructive",
-        });
-      }
-    }
   };
 
   return (
@@ -369,9 +309,6 @@ export const GuidebookEditor = ({
           <Label className="text-base font-medium">
             Guest Guide for {propertyTitle}
           </Label>
-          <p className="text-sm text-muted-foreground">
-            Fill in the guidebook information for your guests
-          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -386,7 +323,7 @@ export const GuidebookEditor = ({
             <Button
               variant="default"
               size="sm"
-              onClick={handleSave}
+              onClick={onSave}
               disabled={saving}
             >
               <Save className="h-4 w-4 mr-2" />
@@ -396,7 +333,7 @@ export const GuidebookEditor = ({
         </div>
       </div>
 
-      {/* Section editors */}
+      {/* Sections */}
       {localSections.map((section) => {
         const Icon = section.icon;
         return (
@@ -407,118 +344,47 @@ export const GuidebookEditor = ({
                 {section.title}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               {section.blocks.map((block) => (
-                <div
-                  key={block.id}
-                  className="border rounded p-3 space-y-2 bg-muted/10"
-                >
+                <div key={block.id} className="mb-4">
                   {block.type === "text" && (
-                    <Textarea
-                      value={block.content}
-                      onChange={(e) =>
-                        updateBlock(section.id, block.id, {
-                          content: e.target.value,
-                        })
-                      }
-                      placeholder="Write text..."
-                      rows={3}
-                    />
+                    <Textarea defaultValue={block.content} rows={3} />
                   )}
-
-                  {(block.type === "list" || block.type === "checkbox") && (
-                    <div className="space-y-2">
-                      {block.items?.map((item, i) => (
+                  {block.type === "list" &&
+                    block.items?.map((item, i) => (
+                      <Input
+                        key={i}
+                        defaultValue={item}
+                        onChange={(e) =>
+                          updateBlockItem(section.id, block.id, i, e.target.value)
+                        }
+                      />
+                    ))}
+                  {block.type === "checkbox" &&
+                    block.items?.map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input type="checkbox" className="w-4 h-4" />
                         <Input
-                          key={i}
-                          value={item}
+                          defaultValue={item}
                           onChange={(e) =>
-                            updateBlockItem(
-                              section.id,
-                              block.id,
-                              i,
-                              e.target.value
-                            )
+                            updateBlockItem(section.id, block.id, i, e.target.value)
                           }
-                          placeholder={`Item ${i + 1}`}
                         />
-                      ))}
-                      <Button
-                        size="sm"
-                        onClick={() => addBlockItem(section.id, block.id)}
-                      >
-                        Add Item
-                      </Button>
-                    </div>
-                  )}
-
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeBlock(section.id, block.id)}
-                  >
-                    Remove Block
-                  </Button>
+                      </div>
+                    ))}
+                  <div className="flex gap-2 mt-2">
+                    <Button size="sm" onClick={() => addBlock(section.id, "text")}>
+                      Add Text Block
+                    </Button>
+                    <Button size="sm" onClick={() => addBlock(section.id, "list")}>
+                      Add List
+                    </Button>
+                    <Button size="sm" onClick={() => addBlock(section.id, "checkbox")}>
+                      Add Checklist
+                    </Button>
+                  </div>
                 </div>
               ))}
-
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => addBlock(section.id, "text")}>
-                  Add Text Block
-                </Button>
-                <Button size="sm" onClick={() => addBlock(section.id, "list")}>
-                  Add Bullet List
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => addBlock(section.id, "checkbox")}
-                >
-                  Add Checkbox List
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Image (optional)</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      document
-                        .getElementById(`section-image-${section.id}`)
-                        ?.click()
-                    }
-                  >
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Upload
-                  </Button>
-                  <input
-                    id={`section-image-${section.id}`}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = () =>
-                          updateSection(section.id, {
-                            image_url: reader.result as string,
-                          });
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                </div>
-                {section.image_url && (
-                  <img
-                    src={section.image_url}
-                    alt={section.title}
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
-                )}
-              </div>
             </CardContent>
           </Card>
         );
