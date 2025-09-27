@@ -4,17 +4,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, Download, Share, Image as ImageIcon, Home, MapPin, Coffee, Key, Wifi, Utensils, Cog, Landmark, BookOpen, Shield, LogOut, Heart } from "lucide-react";
+import {
+  Save,
+  Download,
+  Share,
+  Image as ImageIcon,
+  Home,
+  MapPin,
+  Coffee,
+  Key,
+  Wifi,
+  Utensils,
+  Cog,
+  Landmark,
+  BookOpen,
+  Shield,
+  LogOut,
+  Heart,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+
+interface GuidebookBlock {
+  id: string;
+  type: "text" | "list" | "checkbox";
+  content?: string;
+  items?: string[];
+}
 
 interface GuidebookSection {
   id: string;
   icon: React.ElementType;
   title: string;
-  type?: "text" | "list" | "checkbox";
-  content?: string;
-  items?: string[];
+  blocks: GuidebookBlock[];
   image_url?: string;
 }
 
@@ -26,7 +47,7 @@ interface GuidebookEditorProps {
   propertyTitle?: string;
 }
 
-const FIXED_SECTIONS: Omit<GuidebookSection, "content">[] = [
+const FIXED_SECTIONS: Omit<GuidebookSection, "blocks">[] = [
   { id: "home", icon: Home, title: "Home" },
   { id: "directions", icon: MapPin, title: "Directions" },
   { id: "stop", icon: Coffee, title: "Stop on the way" },
@@ -53,49 +74,85 @@ export const GuidebookEditor = ({
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
     FIXED_SECTIONS.map((s) => ({
       ...s,
-      type: sections.find((sec) => sec.id === s.id)?.type || "text",
-      content: sections.find((sec) => sec.id === s.id)?.content || "",
-      items: sections.find((sec) => sec.id === s.id)?.items || [],
+      blocks: sections.find((sec) => sec.id === s.id)?.blocks || [],
       image_url: sections.find((sec) => sec.id === s.id)?.image_url,
     }))
   );
 
-  const updateSection = (id: string, field: keyof GuidebookSection, value: any) => {
-    const updated = localSections.map((s) =>
-      s.id === id ? { ...s, [field]: value } : s
+  // 🔹 Helpers för block-hantering
+  const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
+    const newSections = localSections.map((s) =>
+      s.id === id ? { ...s, ...updated } : s
     );
-    setLocalSections(updated);
-    onChange(updated);
+    setLocalSections(newSections);
+    onChange(newSections);
   };
 
-  const addItem = (id: string) => {
-    const updated = localSections.map((s) =>
-      s.id === id ? { ...s, items: [...(s.items || []), ""] } : s
-    );
-    setLocalSections(updated);
-    onChange(updated);
+  const addBlock = (sectionId: string, type: "text" | "list" | "checkbox") => {
+    const block: GuidebookBlock = {
+      id: crypto.randomUUID(),
+      type,
+      content: "",
+      items: type !== "text" ? [] : undefined,
+    };
+    const section = localSections.find((s) => s.id === sectionId);
+    if (!section) return;
+    updateSection(sectionId, { blocks: [...section.blocks, block] });
   };
 
-  const updateItem = (id: string, index: number, value: string) => {
-    const updated = localSections.map((s) =>
-      s.id === id
-        ? { ...s, items: s.items?.map((item, i) => (i === index ? value : item)) }
-        : s
-    );
-    setLocalSections(updated);
-    onChange(updated);
+  const removeBlock = (sectionId: string, blockId: string) => {
+    const section = localSections.find((s) => s.id === sectionId);
+    if (!section) return;
+    updateSection(sectionId, {
+      blocks: section.blocks.filter((b) => b.id !== blockId),
+    });
   };
 
-  const removeItem = (id: string, index: number) => {
-    const updated = localSections.map((s) =>
-      s.id === id
-        ? { ...s, items: s.items?.filter((_, i) => i !== index) }
-        : s
-    );
-    setLocalSections(updated);
-    onChange(updated);
+  const updateBlock = (
+    sectionId: string,
+    blockId: string,
+    changes: Partial<GuidebookBlock>
+  ) => {
+    const section = localSections.find((s) => s.id === sectionId);
+    if (!section) return;
+    updateSection(sectionId, {
+      blocks: section.blocks.map((b) =>
+        b.id === blockId ? { ...b, ...changes } : b
+      ),
+    });
   };
 
+  const addBlockItem = (sectionId: string, blockId: string) => {
+    const section = localSections.find((s) => s.id === sectionId);
+    if (!section) return;
+    updateSection(sectionId, {
+      blocks: section.blocks.map((b) =>
+        b.id === blockId ? { ...b, items: [...(b.items || []), ""] } : b
+      ),
+    });
+  };
+
+  const updateBlockItem = (
+    sectionId: string,
+    blockId: string,
+    index: number,
+    value: string
+  ) => {
+    const section = localSections.find((s) => s.id === sectionId);
+    if (!section) return;
+    updateSection(sectionId, {
+      blocks: section.blocks.map((b) =>
+        b.id === blockId
+          ? {
+              ...b,
+              items: b.items?.map((it, i) => (i === index ? value : it)),
+            }
+          : b
+      ),
+    });
+  };
+
+  // 🔹 Actions
   const handleSave = async () => {
     if (onSave) {
       try {
@@ -104,7 +161,7 @@ export const GuidebookEditor = ({
           title: "Success",
           description: "Guest guide saved successfully",
         });
-      } catch (error) {
+      } catch {
         toast({
           title: "Error",
           description: "Failed to save guest guide",
@@ -137,17 +194,29 @@ export const GuidebookEditor = ({
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-base font-medium">Guest Guide for {propertyTitle}</Label>
+          <Label className="text-base font-medium">
+            Guest Guide for {propertyTitle}
+          </Label>
           <p className="text-sm text-muted-foreground">
             Fill in the guidebook information for your guests
           </p>
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={generateShareableLink}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={generateShareableLink}
+          >
             <Share className="h-4 w-4 mr-2" />
             Share Link
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={exportToPDF}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={exportToPDF}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export PDF
           </Button>
@@ -166,7 +235,7 @@ export const GuidebookEditor = ({
         </div>
       </div>
 
-      {/* Fixed section editors */}
+      {/* Section editors */}
       {localSections.map((section) => {
         const Icon = section.icon;
         return (
@@ -178,59 +247,75 @@ export const GuidebookEditor = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Content type selector */}
-              <div className="space-y-2">
-                <Label>Content Type</Label>
-                <Select
-                  value={section.type}
-                  onValueChange={(val) => updateSection(section.id, "type", val)}
+              {section.blocks.map((block) => (
+                <div
+                  key={block.id}
+                  className="border rounded p-3 space-y-2 bg-muted/10"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="list">Bullet List</SelectItem>
-                    <SelectItem value="checkbox">Checkbox List</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  {block.type === "text" && (
+                    <Textarea
+                      value={block.content}
+                      onChange={(e) =>
+                        updateBlock(section.id, block.id, {
+                          content: e.target.value,
+                        })
+                      }
+                      placeholder="Write text..."
+                      rows={3}
+                    />
+                  )}
 
-              {/* Render content editor based on type */}
-              {section.type === "text" && (
-                <div className="space-y-2">
-                  <Label>Content</Label>
-                  <Textarea
-                    value={section.content}
-                    onChange={(e) => updateSection(section.id, "content", e.target.value)}
-                    placeholder={`Write content for ${section.title}`}
-                    rows={4}
-                  />
-                </div>
-              )}
-
-              {(section.type === "list" || section.type === "checkbox") && (
-                <div className="space-y-2">
-                  <Label>Items</Label>
-                  {section.items?.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        value={item}
-                        onChange={(e) => updateItem(section.id, i, e.target.value)}
-                        placeholder={`Item ${i + 1}`}
-                      />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(section.id, i)}>
-                        Remove
+                  {(block.type === "list" || block.type === "checkbox") && (
+                    <div className="space-y-2">
+                      {block.items?.map((item, i) => (
+                        <Input
+                          key={i}
+                          value={item}
+                          onChange={(e) =>
+                            updateBlockItem(
+                              section.id,
+                              block.id,
+                              i,
+                              e.target.value
+                            )
+                          }
+                          placeholder={`Item ${i + 1}`}
+                        />
+                      ))}
+                      <Button
+                        size="sm"
+                        onClick={() => addBlockItem(section.id, block.id)}
+                      >
+                        Add Item
                       </Button>
                     </div>
-                  ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => addItem(section.id)}>
-                    Add Item
+                  )}
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => removeBlock(section.id, block.id)}
+                  >
+                    Remove Block
                   </Button>
                 </div>
-              )}
+              ))}
 
-              {/* Image upload */}
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => addBlock(section.id, "text")}>
+                  Add Text Block
+                </Button>
+                <Button size="sm" onClick={() => addBlock(section.id, "list")}>
+                  Add Bullet List
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => addBlock(section.id, "checkbox")}
+                >
+                  Add Checkbox List
+                </Button>
+              </div>
+
               <div className="space-y-2">
                 <Label>Image (optional)</Label>
                 <div className="flex gap-2">
@@ -239,7 +324,9 @@ export const GuidebookEditor = ({
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      document.getElementById(`section-image-${section.id}`)?.click()
+                      document
+                        .getElementById(`section-image-${section.id}`)
+                        ?.click()
                     }
                   >
                     <ImageIcon className="h-4 w-4 mr-2" />
@@ -255,7 +342,9 @@ export const GuidebookEditor = ({
                       if (file) {
                         const reader = new FileReader();
                         reader.onload = () =>
-                          updateSection(section.id, "image_url", reader.result as string);
+                          updateSection(section.id, {
+                            image_url: reader.result as string,
+                          });
                         reader.readAsDataURL(file);
                       }
                     }}
