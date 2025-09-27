@@ -25,7 +25,7 @@ import {
   FileText,
   Apple,
   Wine,
-  Can,
+  CupSoda,
   Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -60,7 +60,7 @@ const RECYCLING_ICONS: Record<string, React.ElementType> = {
   paper: FileText,
   food: Apple,
   glass: Wine,
-  metal: Can,
+  metal: CupSoda,
   other: Trash2,
 };
 
