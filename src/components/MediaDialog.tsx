@@ -28,6 +28,18 @@ export const MediaDialog = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // ✅ säker sträng
+  const safeString = (val: unknown, fallback = ""): string => {
+    if (typeof val === "string") return val;
+    if (val == null) return fallback;
+    try {
+      return String(val);
+    } catch {
+      return fallback;
+    }
+  };
+
+  // 🔄 reset index när dialog öppnas på nytt
   useEffect(() => {
     if (isOpen) {
       setCurrentIndex(initialIndex);
@@ -75,43 +87,48 @@ export const MediaDialog = ({
           </Button>
 
           {/* Main media container */}
-          <div className="flex-1 relative flex items-center justify-center p-2 sm:p-4">
+          <div className="flex-1 relative flex items-center justify-center p-4">
             {/* Navigation arrows */}
             {media.length > 1 && (
               <>
                 <Button
                   variant="ghost"
                   size="lg"
-                  className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white border-none"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white border-none"
                   onClick={prevMedia}
                 >
-                  <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+                  <ChevronLeft className="h-8 w-8" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="lg"
-                  className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white border-none"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white border-none"
                   onClick={nextMedia}
                 >
-                  <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
+                  <ChevronRight className="h-8 w-8" />
                 </Button>
               </>
             )}
 
             {/* Media content */}
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="max-w-full max-h-full flex items-center justify-center">
               {currentItem.type === "image" ? (
                 <img
-                  src={currentItem.url}
-                  alt={currentItem.alt || currentItem.title || ""}
-                  className="w-auto h-auto max-h-[85vh] max-w-full object-contain rounded-lg"
+                  src={safeString(currentItem.url)}
+                  alt={safeString(
+                    currentItem.alt || currentItem.title,
+                    "Property photo"
+                  )}
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                  style={{ maxHeight: "calc(95vh - 150px)" }}
                 />
               ) : (
-                <div className="relative flex items-center justify-center w-full h-full">
+                <div className="relative flex items-center justify-center">
                   <video
                     ref={videoRef}
-                    src={currentItem.url}
-                    className="w-auto h-auto max-h-[85vh] max-w-full object-contain rounded-lg"
+                    src={safeString(currentItem.url)}
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    style={{ maxHeight: "calc(95vh - 150px)" }}
                     controls
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
@@ -133,31 +150,35 @@ export const MediaDialog = ({
             </div>
           </div>
 
-          {/* Bottom info and thumbnails */}
+          {/* Bottom info and navigation */}
           <div className="bg-black/80 p-4 space-y-4">
+            {/* Title and description */}
             {(currentItem.title || currentItem.description) && (
               <div className="text-center text-white">
                 {currentItem.title && (
                   <h3 className="text-lg font-semibold mb-2">
-                    {currentItem.title}
+                    {safeString(currentItem.title)}
                   </h3>
                 )}
                 {currentItem.description && (
-                  <p className="text-sm text-white/80">{currentItem.description}</p>
+                  <p className="text-sm text-white/80">
+                    {safeString(currentItem.description)}
+                  </p>
                 )}
               </div>
             )}
 
+            {/* Thumbnail navigation */}
             {media.length > 1 && (
               <div className="flex justify-center space-x-2 overflow-x-auto">
                 {media.map((item, index) => (
                   <button
-                    key={index}
+                    key={`thumb-${index}`}
                     onClick={() => {
                       setCurrentIndex(index);
                       setIsPlaying(false);
                     }}
-                    className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg border-2 overflow-hidden transition-all ${
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
                       index === currentIndex
                         ? "border-white"
                         : "border-transparent hover:border-white/50"
@@ -165,12 +186,17 @@ export const MediaDialog = ({
                   >
                     {item.type === "image" ? (
                       <img
-                        src={item.url}
-                        alt={item.alt || `Media ${index + 1}`}
+                        src={safeString(item.url)}
+                        alt={safeString(item.alt, `Media ${index + 1}`)}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="relative w-full h-full bg-gray-800 flex items-center justify-center">
+                        <video
+                          src={safeString(item.url)}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
                         <Play className="absolute h-4 w-4 text-white" />
                       </div>
                     )}
@@ -179,6 +205,7 @@ export const MediaDialog = ({
               </div>
             )}
 
+            {/* Counter */}
             {media.length > 1 && (
               <div className="text-center text-sm text-white/60">
                 {currentIndex + 1} of {media.length}
