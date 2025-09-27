@@ -47,20 +47,118 @@ interface GuidebookEditorProps {
   propertyTitle?: string;
 }
 
-const FIXED_SECTIONS: Omit<GuidebookSection, "blocks">[] = [
-  { id: "home", icon: Home, title: "Home" },
-  { id: "directions", icon: MapPin, title: "Directions" },
-  { id: "stop", icon: Coffee, title: "Stop on the way" },
-  { id: "checkin", icon: Key, title: "Check in" },
-  { id: "wifi", icon: Wifi, title: "Wi-Fi" },
-  { id: "kitchen", icon: Utensils, title: "Kitchen" },
-  { id: "howthingswork", icon: Cog, title: "How things work" },
-  { id: "places", icon: Landmark, title: "Places to visit" },
-  { id: "customs", icon: BookOpen, title: "Swedish customs" },
-  { id: "rules", icon: Shield, title: "House rules" },
-  { id: "checkout", icon: LogOut, title: "Check out" },
-  { id: "hoststory", icon: Heart, title: "Host Story" },
+const FIXED_SECTIONS: GuidebookSection[] = [
+  {
+    id: "home",
+    icon: Home,
+    title: "Welcome Home",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "Welcome to our property! We’re excited to host you." }
+    ]
+  },
+  {
+    id: "directions",
+    icon: MapPin,
+    title: "Directions",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "🚗 Get here by car" },
+      { id: crypto.randomUUID(), type: "text", content: "🚌 Get here by public transportation" },
+      { id: crypto.randomUUID(), type: "list", items: ["Stop on the way – ICA Kvantum", "Buy firewood – Macks Ved"] }
+    ]
+  },
+  {
+    id: "checkin",
+    icon: Key,
+    title: "Check-in",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "Check-in time: 15:00" },
+      { id: crypto.randomUUID(), type: "text", content: "How to get the key" },
+      { id: crypto.randomUUID(), type: "text", content: "Parking instructions" }
+    ]
+  },
+  {
+    id: "wifi",
+    icon: Wifi,
+    title: "Wi-Fi",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "Network: Guest_Wifi" },
+      { id: crypto.randomUUID(), type: "text", content: "Password: Welcome2024" }
+    ]
+  },
+  {
+    id: "howthingswork",
+    icon: Cog,
+    title: "How things work",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "Oven – instructions here" },
+      { id: crypto.randomUUID(), type: "text", content: "Coffee machine – instructions here" }
+    ]
+  },
+  {
+    id: "waste",
+    icon: Shield,
+    title: "Waste & Recycling",
+    blocks: [
+      { id: crypto.randomUUID(), type: "list", items: ["Plastic – green bin", "Glass – recycling station", "Pant – ICA Kvantum"] }
+    ]
+  },
+  {
+    id: "places",
+    icon: Landmark,
+    title: "Places to visit",
+    blocks: [
+      { id: crypto.randomUUID(), type: "list", items: ["Restaurant – Local Bistro", "Sight – National Park", "Activity – Kayak rental"] }
+    ]
+  },
+  {
+    id: "customs",
+    icon: BookOpen,
+    title: "Swedish customs",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "☕ Swedish Fika – A Swedish ritual with coffee and pastry." },
+      { id: crypto.randomUUID(), type: "text", content: "👟 No Shoes Indoors – Always remove shoes in homes." },
+      { id: crypto.randomUUID(), type: "text", content: "💳 Card is King – Cash is rarely used in Sweden." }
+    ]
+  },
+  {
+    id: "rules",
+    icon: Shield,
+    title: "House Rules",
+    blocks: [
+      { id: crypto.randomUUID(), type: "list", items: ["No smoking indoors", "Respect quiet hours 22:00–07:00", "No parties"] }
+    ]
+  },
+  {
+    id: "checkout",
+    icon: LogOut,
+    title: "Check-out",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "Check-out time: 11:00" },
+      {
+        id: crypto.randomUUID(),
+        type: "checkbox",
+        items: [
+          "Put furniture back in place",
+          "Empty all trash bins and bring waste to recycling",
+          "Remove bed linens and put in laundry room",
+          "Run dishwasher",
+          "Return borrowed items",
+          "Close all windows and turn off lights",
+          "Lock all doors"
+        ]
+      }
+    ]
+  },
+  {
+    id: "hoststory",
+    icon: Heart,
+    title: "Host Story",
+    blocks: [
+      { id: crypto.randomUUID(), type: "text", content: "Write a personal note about the house and hosts." }
+    ]
+  }
 ];
+
 
 export const GuidebookEditor = ({
   sections,
