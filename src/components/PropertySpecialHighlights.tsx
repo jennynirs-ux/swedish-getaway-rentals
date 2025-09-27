@@ -61,8 +61,8 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
   const featuredAmenities = (property.featured_amenities as AmenityData[]) || [];
   const allAmenities = (property.amenities_data as AmenityData[]) || [];
   const displayAmenities = featuredAmenities.length > 0 
-    ? featuredAmenities.slice(0, 3)
-    : allAmenities.slice(0, 3);
+    ? featuredAmenities.slice(0, 4)
+    : allAmenities.slice(0, 4);
 
   const handleAmenityClick = (amenity: AmenityData) => {
     const IconComponent = getAmenityIcon(amenity.icon);
@@ -76,7 +76,7 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
   if (!displayAmenities.length) return null;
 
   return (
-    <section className="py-16 bg-amber-900">
+    <section className="py-16 bg-primary">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Titel */}
@@ -84,23 +84,21 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
             What Makes {property.title} Special
           </h2>
 
-          {/* Highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {/* Ikoner på rad */}
+          <div className="flex flex-wrap justify-center gap-8 mb-12">
             {displayAmenities.map((amenity, index) => {
               const IconComponent = getAmenityIcon(amenity.icon);
               return (
                 <div 
                   key={index} 
-                  className="text-center group cursor-pointer"
+                  className="text-center group cursor-pointer w-40"
                   onClick={() => handleAmenityClick(amenity)}
                 >
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-6 group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-4 group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
                     <IconComponent className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-white">{amenity.title}</h3>
-                  <p className="text-lg text-white/80 leading-relaxed">
-                    {amenity.description}
-                  </p>
+                  <h3 className="text-xl font-semibold text-white mb-2">{amenity.title}</h3>
+                  <p className="text-sm text-white/80">{amenity.tagline}</p>
                 </div>
               );
             })}
@@ -111,7 +109,7 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
             <Button 
               size="lg" 
               onClick={onViewGuide}
-              className="text-lg px-8 py-6 bg-white text-amber-900 hover:bg-white/90"
+              className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90"
             >
               <BookOpen className="h-5 w-5 mr-2" />
               View Complete Guest Guide
