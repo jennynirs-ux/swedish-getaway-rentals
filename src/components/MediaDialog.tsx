@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X, Play, Pause } from "lucide-react";
@@ -28,25 +28,6 @@ export const MediaDialog = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // ✅ säker sträng
-  const safeString = (val: unknown, fallback = ""): string => {
-    if (typeof val === "string") return val;
-    if (val == null) return fallback;
-    try {
-      return String(val);
-    } catch {
-      return fallback;
-    }
-  };
-
-  // 🔄 reset index när dialog öppnas på nytt
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentIndex(initialIndex);
-      setIsPlaying(false);
-    }
-  }, [isOpen, initialIndex]);
-
   const currentItem = media[currentIndex];
 
   const nextMedia = () => {
@@ -74,7 +55,7 @@ export const MediaDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0 bg-black border-none">
+      <DialogContent className="w-full max-w-5xl h-auto max-h-[90vh] p-0 bg-black border-none rounded-lg">
         <div className="relative w-full h-full flex flex-col">
           {/* Close button */}
           <Button
@@ -87,7 +68,7 @@ export const MediaDialog = ({
           </Button>
 
           {/* Main media container */}
-          <div className="flex-1 relative flex items-center justify-center p-4">
+          <div className="flex-1 relative flex items-center justify-center p-4 overflow-hidden">
             {/* Navigation arrows */}
             {media.length > 1 && (
               <>
@@ -111,24 +92,19 @@ export const MediaDialog = ({
             )}
 
             {/* Media content */}
-            <div className="max-w-full max-h-full flex items-center justify-center">
+            <div className="max-w-full max-h-[75vh] flex items-center justify-center">
               {currentItem.type === "image" ? (
                 <img
-                  src={safeString(currentItem.url)}
-                  alt={safeString(
-                    currentItem.alt || currentItem.title,
-                    "Property photo"
-                  )}
-                  className="max-w-full max-h-full object-contain rounded-lg"
-                  style={{ maxHeight: "calc(95vh - 150px)" }}
+                  src={currentItem.url}
+                  alt={currentItem.alt || currentItem.title || ""}
+                  className="max-w-full max-h-[75vh] object-contain rounded-lg"
                 />
               ) : (
                 <div className="relative flex items-center justify-center">
                   <video
                     ref={videoRef}
-                    src={safeString(currentItem.url)}
-                    className="max-w-full max-h-full object-contain rounded-lg"
-                    style={{ maxHeight: "calc(95vh - 150px)" }}
+                    src={currentItem.url}
+                    className="max-w-full max-h-[75vh] object-contain rounded-lg"
                     controls
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
@@ -157,12 +133,12 @@ export const MediaDialog = ({
               <div className="text-center text-white">
                 {currentItem.title && (
                   <h3 className="text-lg font-semibold mb-2">
-                    {safeString(currentItem.title)}
+                    {currentItem.title}
                   </h3>
                 )}
                 {currentItem.description && (
                   <p className="text-sm text-white/80">
-                    {safeString(currentItem.description)}
+                    {currentItem.description}
                   </p>
                 )}
               </div>
@@ -173,7 +149,7 @@ export const MediaDialog = ({
               <div className="flex justify-center space-x-2 overflow-x-auto">
                 {media.map((item, index) => (
                   <button
-                    key={`thumb-${index}`}
+                    key={index}
                     onClick={() => {
                       setCurrentIndex(index);
                       setIsPlaying(false);
@@ -186,14 +162,14 @@ export const MediaDialog = ({
                   >
                     {item.type === "image" ? (
                       <img
-                        src={safeString(item.url)}
-                        alt={safeString(item.alt, `Media ${index + 1}`)}
+                        src={item.url}
+                        alt={item.alt || `Media ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="relative w-full h-full bg-gray-800 flex items-center justify-center">
                         <video
-                          src={safeString(item.url)}
+                          src={item.url}
                           className="w-full h-full object-cover"
                           muted
                         />
