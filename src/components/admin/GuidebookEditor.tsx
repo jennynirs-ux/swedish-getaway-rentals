@@ -21,13 +21,13 @@ import {
   Shield,
   LogOut,
   Heart,
-  Trash2,
   Package,
   FileText,
   Apple,
   Wine,
   Beer,
   CupSoda,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -47,14 +47,13 @@ interface GuidebookSection {
 }
 
 interface GuidebookEditorProps {
-  sections: GuidebookSection[];
+  sections?: GuidebookSection[];
   onChange: (sections: GuidebookSection[]) => void;
   onSave?: () => Promise<void>;
   saving?: boolean;
   propertyTitle?: string;
 }
 
-// 🔹 Förifyllda sektioner
 const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "home",
@@ -64,8 +63,7 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content:
-          "Welcome to our property! We are excited to host you. Here you will find all information you need for your stay.",
+        content: "Welcome to our property! We’re excited to host you.",
       },
     ],
   },
@@ -77,15 +75,21 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content: "How to reach us and parking instructions.",
+        content: "🛻 By Car: Enter the property address in Google Maps.\n🚆 By Public Transport: Take bus 123 to Example Station.",
       },
+    ],
+  },
+  {
+    id: "stop",
+    icon: Coffee,
+    title: "Stop on the way",
+    blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "By car – detailed driving directions from the nearest highway",
-          "By public transportation – train/bus instructions",
-          "Stop on the way – ICA Kvantum for groceries, gas station for fuel, wood available near the station",
+          "Grocery store ICA Kvantum – 5 min away",
+          "Buy firewood at the local gas station",
         ],
       },
     ],
@@ -98,8 +102,7 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content:
-          "Check-in time: 15:00. Contact us if you need early check-in. The key will be in the lockbox by the entrance. Parking is available in front of the property.",
+        content: "Check-in time: 15:00. Parking is available in front of the house. Keys are in the lockbox – code will be sent before arrival.",
       },
     ],
   },
@@ -124,9 +127,9 @@ const FIXED_SECTIONS: GuidebookSection[] = [
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Dishwasher – tabs are under the sink",
-          "Oven – turn the knob and press start",
-          "Coffee machine – instructions next to the machine",
+          "Dishwasher tablets under the sink",
+          "Coffee machine: press the silver button",
+          "Oven: use top-right knob for temperature",
         ],
       },
     ],
@@ -134,15 +137,15 @@ const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "howthingswork",
     icon: Cog,
-    title: "How Things Work",
+    title: "How things work",
     blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Oven – instructions with temperature settings",
-          "Coffee maker – how to fill water and insert filter",
-          "Heating system – thermostat in the hallway",
+          "Oven – turn knob to the right, set temperature",
+          "Coffee maker – add water, insert filter, press power",
+          "Heating – thermostat in hallway, adjust by degrees",
         ],
       },
     ],
@@ -155,20 +158,19 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content:
-          "Did you know that we can be fined if not recycling right in Sweden? Please sort your trash properly. Bags can be found under the kitchen sink.",
+        content: "Did you know that we can be fined if not recycling right in Sweden?\nPlease sort your trash carefully.",
       },
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Plastic – bottles, containers, wrapping (Package icon)",
-          "Paper – newspapers, cardboard, cartons (FileText icon)",
-          "Food waste – leftovers, peels, coffee grounds (Apple icon)",
-          "Glass (clear) – transparent bottles/jars (Wine icon)",
-          "Glass (colored) – green, brown, blue glass (Beer icon)",
-          "Metal – cans, foil, trays (CupSoda icon)",
-          "Other – residual waste (Trash2 icon)",
+          "Plastic – use yellow bags (Icon: Package)",
+          "Paper & Cardboard – blue bin (Icon: FileText)",
+          "Food Waste – brown bag (Icon: Apple)",
+          "Glass (Clear) – white bin (Icon: Wine)",
+          "Glass (Colored) – green bin (Icon: Beer)",
+          "Metal – grey bin (Icon: CupSoda)",
+          "Other Waste – black bin (Icon: Trash2)",
         ],
       },
     ],
@@ -176,15 +178,14 @@ const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "places",
     icon: Landmark,
-    title: "Places to Visit",
+    title: "Places to visit",
     blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Restaurants – local favorites with links",
-          "Attractions – must-see spots in the area",
-          "Activities – hiking, swimming, local tours",
+          "Restaurants – Example Bistro, Seafood Place",
+          "Attractions – Old Town, Castle Hill",
         ],
       },
     ],
@@ -192,16 +193,15 @@ const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "customs",
     icon: BookOpen,
-    title: "Swedish Customs",
+    title: "Swedish customs",
     blocks: [
       {
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "Fika – enjoy coffee and a cinnamon bun",
-          "Shoes – always take off shoes indoors",
-          "Alcohol – strong alcohol only at Systembolaget",
-          "Card is king – very few places accept cash",
+          "Take off shoes indoors",
+          "Fika – coffee & cinnamon bun",
+          "Card is king – cash is rare",
         ],
       },
     ],
@@ -209,15 +209,15 @@ const FIXED_SECTIONS: GuidebookSection[] = [
   {
     id: "rules",
     icon: Shield,
-    title: "House Rules",
+    title: "House rules",
     blocks: [
       {
         id: crypto.randomUUID(),
-        type: "list",
+        type: "checkbox",
         items: [
-          "Respect quiet hours",
-          "No smoking inside",
-          "No parties",
+          "No smoking indoors",
+          "No loud parties",
+          "Respect quiet hours 22–07",
         ],
       },
     ],
@@ -230,19 +230,17 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content:
-          "Check-out time is 11:00. Please follow this checklist before leaving:",
+        content: "Check-out time: 11:00. Please follow the checklist before leaving.",
       },
       {
         id: crypto.randomUUID(),
         type: "checkbox",
         items: [
-          "General areas – put furniture back, empty trash bins",
-          "Bedrooms – remove linens, place towels in washing machine",
-          "Bathrooms – empty bins, check for personal items",
-          "Kitchen – start dishwasher, empty fridge/freezer",
-          "Pool – use net to clean, put cover back on",
-          "Final steps – return borrowed items, close windows, turn off lights, lock doors",
+          "Remove bed linens and place in laundry room",
+          "Load and start dishwasher",
+          "Empty fridge and freezer",
+          "Take out all trash and recycling",
+          "Close windows and lock all doors",
         ],
       },
     ],
@@ -255,15 +253,14 @@ const FIXED_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content:
-          "We started hosting because we love sharing our home and area with guests. We hope you feel welcome and enjoy your stay!",
+        content: "We are a local family who loves sharing our home with guests. Thank you for choosing us!",
       },
     ],
   },
 ];
 
 export const GuidebookEditor = ({
-  sections,
+  sections = [],
   onChange,
   onSave,
   saving = false,
@@ -272,13 +269,10 @@ export const GuidebookEditor = ({
   const { toast } = useToast();
 
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
-    FIXED_SECTIONS.map((s) => {
-      const existing = sections.find((sec) => sec.id === s.id);
-      return existing ? { ...s, ...existing } : s;
-    })
+    sections.length > 0 ? sections : FIXED_SECTIONS
   );
 
-  // 🔹 Helpers
+  // --- Helpers
   const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
     const newSections = localSections.map((s) =>
       s.id === id ? { ...s, ...updated } : s
@@ -351,15 +345,12 @@ export const GuidebookEditor = ({
     });
   };
 
-  // 🔹 Actions
+  // --- Actions
   const handleSave = async () => {
     if (onSave) {
       try {
         await onSave();
-        toast({
-          title: "Success",
-          description: "Guest guide saved successfully",
-        });
+        toast({ title: "Success", description: "Guest guide saved successfully" });
       } catch {
         toast({
           title: "Error",
@@ -368,24 +359,6 @@ export const GuidebookEditor = ({
         });
       }
     }
-  };
-
-  const generateShareableLink = () => {
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/property-guide/${propertyTitle}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      toast({
-        title: "Link copied!",
-        description: "Shareable guest guide link copied to clipboard",
-      });
-    });
-  };
-
-  const exportToPDF = () => {
-    toast({
-      title: "PDF Export",
-      description: "PDF export functionality will be implemented",
-    });
   };
 
   return (
@@ -401,27 +374,16 @@ export const GuidebookEditor = ({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={generateShareableLink}
-          >
+          <Button variant="outline" size="sm">
             <Share className="h-4 w-4 mr-2" />
             Share Link
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={exportToPDF}
-          >
+          <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export PDF
           </Button>
           {onSave && (
             <Button
-              type="button"
               variant="default"
               size="sm"
               onClick={handleSave}
