@@ -92,19 +92,19 @@ export const MediaDialog = ({
             )}
 
             {/* Media content */}
-            <div className="max-w-full max-h-[70vh] flex items-center justify-center">
+            <div className="max-w-full max-h-[65vh] flex items-center justify-center">
               {currentItem.type === "image" ? (
                 <img
                   src={currentItem.url}
                   alt={currentItem.alt || currentItem.title || ""}
-                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                  className="max-w-full max-h-[65vh] object-contain rounded-lg"
                 />
               ) : (
                 <div className="relative flex items-center justify-center">
                   <video
                     ref={videoRef}
                     src={currentItem.url}
-                    className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                    className="max-w-full max-h-[65vh] object-contain rounded-lg"
                     controls
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
@@ -126,10 +126,11 @@ export const MediaDialog = ({
             </div>
           </div>
 
-          {/* Bottom info and navigation */}
-          <div className="bg-black/80 p-3 space-y-3 text-center">
+          {/* Bottom info and thumbnails */}
+          <div className="bg-black/80 p-3 space-y-3">
+            {/* Title and description */}
             {(currentItem.title || currentItem.description) && (
-              <div className="text-white">
+              <div className="text-center text-white">
                 {currentItem.title && (
                   <h3 className="text-base font-semibold mb-1">
                     {currentItem.title}
@@ -143,9 +144,46 @@ export const MediaDialog = ({
               </div>
             )}
 
+            {/* Thumbnail navigation */}
+            {media.length > 1 && (
+              <div className="flex justify-center space-x-2 overflow-x-auto pb-1">
+                {media.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setCurrentIndex(index);
+                      setIsPlaying(false);
+                    }}
+                    className={`flex-shrink-0 w-14 h-14 rounded-lg border-2 overflow-hidden transition-all ${
+                      index === currentIndex
+                        ? "border-white"
+                        : "border-transparent hover:border-white/50"
+                    }`}
+                  >
+                    {item.type === "image" ? (
+                      <img
+                        src={item.url}
+                        alt={item.alt || `Media ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="relative w-full h-full bg-gray-800 flex items-center justify-center">
+                        <video
+                          src={item.url}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
+                        <Play className="absolute h-4 w-4 text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Counter */}
             {media.length > 1 && (
-              <div className="text-xs text-white/60">
+              <div className="text-center text-xs text-white/60">
                 {currentIndex + 1} of {media.length}
               </div>
             )}
