@@ -120,7 +120,7 @@ logStep("Fetched products from Printful", { count: printfulProducts.length });
       }
 
       // Prepare all mockup images
-      const allImages = [];
+      const allImages: string[] = [];
       
       // Add main product image
       if (printfulProduct.thumbnail_url) {
@@ -238,8 +238,9 @@ logStep("Fetched products from Printful", { count: printfulProducts.length });
     });
 
   } catch (error) {
-    logStep("ERROR during sync", { message: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR during sync", { message: errorMessage });
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

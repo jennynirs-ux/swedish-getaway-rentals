@@ -2,14 +2,31 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
+// Secure CORS configuration - replace with your domain in production
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://bbuutvozqfzbsnllsiai.supabase.co",
+  "https://stuga-escapes.lovable.app"
+];
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "*", // This will be validated per request
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 serve(async (req) => {
+  // Validate origin for security
+  const origin = req.headers.get("origin");
+  const validOrigin = origin && allowedOrigins.includes(origin);
+  const headers = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": validOrigin ? origin : allowedOrigins[0]
+  };
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers });
   }
 
   try {
@@ -80,21 +97,22 @@ serve(async (req) => {
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     console.error("Error creating booking payment:", error);
     
     // Don't expose internal error details to client
-    const isValidationError = error.message.includes('Missing required field') || 
-                             error.message.includes('Invalid email') || 
-                             error.message.includes('Invalid amount');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isValidationError = errorMessage.includes('Missing required field') || 
+                             errorMessage.includes('Invalid email') || 
+                             errorMessage.includes('Invalid amount');
     
-    const clientError = isValidationError ? error.message : "Payment processing failed. Please try again.";
+    const clientError = isValidationError ? errorMessage : "Payment processing failed. Please try again.";
     
     return new Response(JSON.stringify({ error: clientError }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
       status: isValidationError ? 400 : 500,
     });
   }

@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import DOMPurify from "dompurify";
 
 interface ContactFormProps {
   propertyId?: string;
@@ -16,6 +18,26 @@ interface ContactFormProps {
 const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmän förfrågan' }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  
+  // Input validation schema
+  const contactSchema = z.object({
+    name: z.string()
+      .min(2, "Name must be at least 2 characters")
+      .max(100, "Name must be less than 100 characters"),
+    email: z.string()
+      .email("Invalid email address")
+      .max(255, "Email must be less than 255 characters"),
+    phone: z.string()
+      .optional()
+      .refine((val) => !val || /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val), "Invalid phone number"),
+    subject: z.string()
+      .min(1, "Subject is required")
+      .max(200, "Subject must be less than 200 characters"),
+    message: z.string()
+      .min(10, "Message must be at least 10 characters")
+      .max(5000, "Message must be less than 5000 characters")
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,19 +46,52 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
     message: ''
   });
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    try {
+      const sanitizedData = {
+        name: DOMPurify.sanitize(formData.name.trim()),
+        email: DOMPurify.sanitize(formData.email.trim()),
+        phone: formData.phone ? DOMPurify.sanitize(formData.phone.trim()) : '',
+        subject: DOMPurify.sanitize(formData.subject.trim()),
+        message: DOMPurify.sanitize(formData.message.trim())
+      };
+      
+      contactSchema.parse(sanitizedData);
+      setValidationErrors({});
+      return sanitizedData;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0] as string] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+      }
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const validatedData = validateForm();
+    if (!validatedData) return;
+
     setLoading(true);
 
     try {
       const { error } = await supabase
         .from('guest_messages')
         .insert([{
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          subject: formData.subject,
-          message: formData.message,
+          name: validatedData.name,
+          email: validatedData.email,
+          phone: validatedData.phone,
+          subject: validatedData.subject,
+          message: validatedData.message,
           property_id: propertyId || null
         }]);
 
@@ -55,6 +110,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
         subject: subject,
         message: ''
       });
+      setValidationErrors({});
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -69,6 +125,16 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -90,9 +156,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               type="text"
               value={formData.name}
               onChange={handleChange}
+              maxLength={100}
               required
               placeholder="Ditt fullständiga namn"
+              className={validationErrors.name ? "border-destructive" : ""}
             />
+            {validationErrors.name && (
+              <p className="text-destructive text-sm">{validationErrors.name}</p>
+            )}
           </div>
 
           <div>
@@ -103,9 +174,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               type="email"
               value={formData.email}
               onChange={handleChange}
+              maxLength={255}
               required
               placeholder="din@email.com"
+              className={validationErrors.email ? "border-destructive" : ""}
             />
+            {validationErrors.email && (
+              <p className="text-destructive text-sm">{validationErrors.email}</p>
+            )}
           </div>
 
           <div>
@@ -116,8 +192,13 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               type="tel"
               value={formData.phone}
               onChange={handleChange}
+              maxLength={15}
               placeholder="+46 XX XXX XX XX"
+              className={validationErrors.phone ? "border-destructive" : ""}
             />
+            {validationErrors.phone && (
+              <p className="text-destructive text-sm">{validationErrors.phone}</p>
+            )}
           </div>
 
           <div>
@@ -128,9 +209,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               type="text"
               value={formData.subject}
               onChange={handleChange}
+              maxLength={200}
               required
               placeholder="Vad gäller din förfrågan?"
+              className={validationErrors.subject ? "border-destructive" : ""}
             />
+            {validationErrors.subject && (
+              <p className="text-destructive text-sm">{validationErrors.subject}</p>
+            )}
           </div>
 
           <div>
@@ -140,10 +226,15 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               name="message"
               value={formData.message}
               onChange={handleChange}
+              maxLength={5000}
               required
               rows={4}
               placeholder="Beskriv din förfrågan eller frågor..."
+              className={validationErrors.message ? "border-destructive" : ""}
             />
+            {validationErrors.message && (
+              <p className="text-destructive text-sm">{validationErrors.message}</p>
+            )}
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>

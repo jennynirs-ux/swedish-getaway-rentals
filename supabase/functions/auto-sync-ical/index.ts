@@ -62,7 +62,7 @@ serve(async (req) => {
         }
       } catch (error) {
         errorCount++;
-        logStep("Error syncing feed", { feedId: feed.id, error: error.message });
+        logStep("Error syncing feed", { feedId: feed.id, error: error instanceof Error ? error.message : String(error) });
       }
 
       // Add a small delay between syncs to avoid overwhelming external services

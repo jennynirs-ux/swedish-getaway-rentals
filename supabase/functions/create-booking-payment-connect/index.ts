@@ -70,14 +70,15 @@ serve(async (req) => {
       });
     }
 
+    const profileData = property.profiles as any;
     logStep("Property found", {
       propertyTitle: property.title,
-      hostConnectAccount: property.profiles?.stripe_connect_account_id,
-      commissionRate: property.profiles?.commission_rate,
+      hostConnectAccount: profileData?.stripe_connect_account_id,
+      commissionRate: profileData?.commission_rate,
     });
 
     // Kommission
-    const commissionRate = property.profiles?.commission_rate || 10;
+    const commissionRate = profileData?.commission_rate || 10;
     const platformCommission = Math.ceil(totalAmount * (commissionRate / 100));
     const hostAmount = totalAmount - platformCommission;
 
@@ -139,15 +140,15 @@ serve(async (req) => {
     };
 
     // Stripe Connect payout
-    if (property.profiles?.stripe_connect_account_id) {
+    if (profileData?.stripe_connect_account_id) {
       sessionConfig.payment_intent_data = {
         application_fee_amount: platformCommission,
         transfer_data: {
-          destination: property.profiles.stripe_connect_account_id,
+          destination: profileData.stripe_connect_account_id,
         },
       };
       logStep("Stripe Connect configured", {
-        destination: property.profiles.stripe_connect_account_id,
+        destination: profileData.stripe_connect_account_id,
         applicationFee: platformCommission,
       });
     }

@@ -997,6 +997,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_enhanced_rate_limit: {
+        Args: {
+          action_type: string
+          identifier: string
+          max_requests?: number
+          progressive_backoff?: boolean
+          window_minutes?: number
+        }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           identifier: string
@@ -1017,6 +1027,10 @@ export type Database = {
       get_dashboard_stats: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      is_admin_secure: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
       is_admin_user: {
         Args: { user_id: string }

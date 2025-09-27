@@ -145,8 +145,9 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    logStep("ERROR creating Printful order", { message: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR creating Printful order", { message: errorMessage });
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
