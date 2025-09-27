@@ -76,30 +76,29 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
   if (!displayAmenities.length) return null;
 
   return (
-    <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/10">
-      <div className="container mx-auto px-6">
+    <section className="py-16 bg-amber-900">
+      <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Titel */}
-          <h2 className="text-4xl md:text-5xl font-extrabold text-center mb-16 text-amber-900 relative">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-white">
             What Makes {property.title} Special
-            <span className="block w-24 h-1 bg-amber-600 mx-auto mt-4 rounded-full"></span>
           </h2>
 
           {/* Highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {displayAmenities.map((amenity, index) => {
               const IconComponent = getAmenityIcon(amenity.icon);
               return (
                 <div 
                   key={index} 
-                  className="p-8 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 text-center cursor-pointer group"
+                  className="text-center group cursor-pointer"
                   onClick={() => handleAmenityClick(amenity)}
                 >
-                  <div className="flex items-center justify-center w-20 h-20 bg-amber-100 rounded-full mx-auto mb-6 group-hover:bg-amber-200 transition">
-                    <IconComponent className="h-10 w-10 text-amber-700" />
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-6 group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
+                    <IconComponent className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-amber-900">{amenity.title}</h3>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  <h3 className="text-2xl font-bold mb-4 text-white">{amenity.title}</h3>
+                  <p className="text-lg text-white/80 leading-relaxed">
                     {amenity.description}
                   </p>
                 </div>
@@ -112,7 +111,7 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
             <Button 
               size="lg" 
               onClick={onViewGuide}
-              className="text-lg px-10 py-6 rounded-full bg-amber-800 hover:bg-amber-900 text-white shadow-lg"
+              className="text-lg px-8 py-6 bg-white text-amber-900 hover:bg-white/90"
             >
               <BookOpen className="h-5 w-5 mr-2" />
               View Complete Guest Guide
