@@ -21,19 +21,19 @@ import {
   Shield,
   LogOut,
   Heart,
+  Trash2,
   Package,
   FileText,
   Apple,
   Wine,
+  Beer,
   CupSoda,
-  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// 🔹 Typdefinitioner
 interface GuidebookBlock {
   id: string;
-  type: "text" | "list" | "checkbox" | "custom-recycling";
+  type: "text" | "list" | "checkbox";
   content?: string;
   items?: string[];
 }
@@ -54,31 +54,212 @@ interface GuidebookEditorProps {
   propertyTitle?: string;
 }
 
-// 🔹 Ikoner för recycling
-const RECYCLING_ICONS: Record<string, React.ElementType> = {
-  plastic: Package,
-  paper: FileText,
-  food: Apple,
-  glass: Wine,
-  metal: CupSoda,
-  other: Trash2,
-};
-
-// 🔹 Fasta sektioner (med förslag på blocks)
-const FIXED_SECTIONS: Omit<GuidebookSection, "blocks">[] = [
-  { id: "home", icon: Home, title: "Welcome Home" },
-  { id: "directions", icon: MapPin, title: "Directions" },
-  { id: "stop", icon: Coffee, title: "Stop on the way" },
-  { id: "checkin", icon: Key, title: "Check in" },
-  { id: "wifi", icon: Wifi, title: "Wi-Fi" },
-  { id: "kitchen", icon: Utensils, title: "Kitchen" },
-  { id: "howthingswork", icon: Cog, title: "How things work" },
-  { id: "places", icon: Landmark, title: "Places to visit" },
-  { id: "customs", icon: BookOpen, title: "Swedish customs" },
-  { id: "rules", icon: Shield, title: "House rules" },
-  { id: "waste", icon: Package, title: "Waste & Recycling" },
-  { id: "checkout", icon: LogOut, title: "Check out" },
-  { id: "hoststory", icon: Heart, title: "Host Story" },
+// 🔹 Förifyllda sektioner
+const FIXED_SECTIONS: GuidebookSection[] = [
+  {
+    id: "home",
+    icon: Home,
+    title: "Welcome Home",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content:
+          "Welcome to our property! We are excited to host you. Here you will find all information you need for your stay.",
+      },
+    ],
+  },
+  {
+    id: "directions",
+    icon: MapPin,
+    title: "Directions",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content: "How to reach us and parking instructions.",
+      },
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "By car – detailed driving directions from the nearest highway",
+          "By public transportation – train/bus instructions",
+          "Stop on the way – ICA Kvantum for groceries, gas station for fuel, wood available near the station",
+        ],
+      },
+    ],
+  },
+  {
+    id: "checkin",
+    icon: Key,
+    title: "Check-in",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content:
+          "Check-in time: 15:00. Contact us if you need early check-in. The key will be in the lockbox by the entrance. Parking is available in front of the property.",
+      },
+    ],
+  },
+  {
+    id: "wifi",
+    icon: Wifi,
+    title: "Wi-Fi",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content: "Network: Guest_Wifi\nPassword: Welcome2024",
+      },
+    ],
+  },
+  {
+    id: "kitchen",
+    icon: Utensils,
+    title: "Kitchen",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "Dishwasher – tabs are under the sink",
+          "Oven – turn the knob and press start",
+          "Coffee machine – instructions next to the machine",
+        ],
+      },
+    ],
+  },
+  {
+    id: "howthingswork",
+    icon: Cog,
+    title: "How Things Work",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "Oven – instructions with temperature settings",
+          "Coffee maker – how to fill water and insert filter",
+          "Heating system – thermostat in the hallway",
+        ],
+      },
+    ],
+  },
+  {
+    id: "waste",
+    icon: Trash2,
+    title: "Waste & Recycling",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content:
+          "Did you know that we can be fined if not recycling right in Sweden? Please sort your trash properly. Bags can be found under the kitchen sink.",
+      },
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "Plastic – bottles, containers, wrapping (Package icon)",
+          "Paper – newspapers, cardboard, cartons (FileText icon)",
+          "Food waste – leftovers, peels, coffee grounds (Apple icon)",
+          "Glass (clear) – transparent bottles/jars (Wine icon)",
+          "Glass (colored) – green, brown, blue glass (Beer icon)",
+          "Metal – cans, foil, trays (CupSoda icon)",
+          "Other – residual waste (Trash2 icon)",
+        ],
+      },
+    ],
+  },
+  {
+    id: "places",
+    icon: Landmark,
+    title: "Places to Visit",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "Restaurants – local favorites with links",
+          "Attractions – must-see spots in the area",
+          "Activities – hiking, swimming, local tours",
+        ],
+      },
+    ],
+  },
+  {
+    id: "customs",
+    icon: BookOpen,
+    title: "Swedish Customs",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "Fika – enjoy coffee and a cinnamon bun",
+          "Shoes – always take off shoes indoors",
+          "Alcohol – strong alcohol only at Systembolaget",
+          "Card is king – very few places accept cash",
+        ],
+      },
+    ],
+  },
+  {
+    id: "rules",
+    icon: Shield,
+    title: "House Rules",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "Respect quiet hours",
+          "No smoking inside",
+          "No parties",
+        ],
+      },
+    ],
+  },
+  {
+    id: "checkout",
+    icon: LogOut,
+    title: "Check-out",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content:
+          "Check-out time is 11:00. Please follow this checklist before leaving:",
+      },
+      {
+        id: crypto.randomUUID(),
+        type: "checkbox",
+        items: [
+          "General areas – put furniture back, empty trash bins",
+          "Bedrooms – remove linens, place towels in washing machine",
+          "Bathrooms – empty bins, check for personal items",
+          "Kitchen – start dishwasher, empty fridge/freezer",
+          "Pool – use net to clean, put cover back on",
+          "Final steps – return borrowed items, close windows, turn off lights, lock doors",
+        ],
+      },
+    ],
+  },
+  {
+    id: "hoststory",
+    icon: Heart,
+    title: "Host Story",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content:
+          "We started hosting because we love sharing our home and area with guests. We hope you feel welcome and enjoy your stay!",
+      },
+    ],
+  },
 ];
 
 export const GuidebookEditor = ({
@@ -91,11 +272,10 @@ export const GuidebookEditor = ({
   const { toast } = useToast();
 
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
-    FIXED_SECTIONS.map((s) => ({
-      ...s,
-      blocks: sections.find((sec) => sec.id === s.id)?.blocks || [],
-      image_url: sections.find((sec) => sec.id === s.id)?.image_url,
-    }))
+    FIXED_SECTIONS.map((s) => {
+      const existing = sections.find((sec) => sec.id === s.id);
+      return existing ? { ...s, ...existing } : s;
+    })
   );
 
   // 🔹 Helpers
@@ -107,25 +287,13 @@ export const GuidebookEditor = ({
     onChange(newSections);
   };
 
-  const addBlock = (sectionId: string, type: GuidebookBlock["type"]) => {
+  const addBlock = (sectionId: string, type: "text" | "list" | "checkbox") => {
     const block: GuidebookBlock = {
       id: crypto.randomUUID(),
       type,
-      content: type === "text" ? "" : undefined,
-      items: type === "list" || type === "checkbox" ? [""] : undefined,
+      content: "",
+      items: type !== "text" ? [] : undefined,
     };
-
-    if (type === "custom-recycling") {
-      block.items = [
-        "Plastic – bottles, packaging",
-        "Paper – newspapers, cardboard",
-        "Food waste – leftovers, coffee grounds",
-        "Glass – bottles and jars",
-        "Metal – tins, cans, foil",
-        "Other waste – things that cannot be recycled",
-      ];
-    }
-
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, { blocks: [...section.blocks, block] });
@@ -233,11 +401,21 @@ export const GuidebookEditor = ({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={generateShareableLink}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={generateShareableLink}
+          >
             <Share className="h-4 w-4 mr-2" />
             Share Link
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={exportToPDF}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={exportToPDF}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export PDF
           </Button>
@@ -269,20 +447,23 @@ export const GuidebookEditor = ({
             </CardHeader>
             <CardContent className="space-y-4">
               {section.blocks.map((block) => (
-                <div key={block.id} className="border rounded p-3 space-y-2 bg-muted/10">
-                  {/* 🔹 Text Block */}
+                <div
+                  key={block.id}
+                  className="border rounded p-3 space-y-2 bg-muted/10"
+                >
                   {block.type === "text" && (
                     <Textarea
                       value={block.content}
                       onChange={(e) =>
-                        updateBlock(section.id, block.id, { content: e.target.value })
+                        updateBlock(section.id, block.id, {
+                          content: e.target.value,
+                        })
                       }
                       placeholder="Write text..."
                       rows={3}
                     />
                   )}
 
-                  {/* 🔹 List or Checkbox */}
                   {(block.type === "list" || block.type === "checkbox") && (
                     <div className="space-y-2">
                       {block.items?.map((item, i) => (
@@ -290,42 +471,21 @@ export const GuidebookEditor = ({
                           key={i}
                           value={item}
                           onChange={(e) =>
-                            updateBlockItem(section.id, block.id, i, e.target.value)
+                            updateBlockItem(
+                              section.id,
+                              block.id,
+                              i,
+                              e.target.value
+                            )
                           }
                           placeholder={`Item ${i + 1}`}
                         />
                       ))}
-                      <Button size="sm" onClick={() => addBlockItem(section.id, block.id)}>
+                      <Button
+                        size="sm"
+                        onClick={() => addBlockItem(section.id, block.id)}
+                      >
                         Add Item
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* 🔹 Custom Recycling Block */}
-                  {block.type === "custom-recycling" && (
-                    <div className="space-y-2">
-                      {block.items?.map((item, i) => {
-                        // Kolla vilken ikon vi ska använda
-                        const key = Object.keys(RECYCLING_ICONS).find((k) =>
-                          item.toLowerCase().includes(k)
-                        ) as keyof typeof RECYCLING_ICONS;
-                        const RecyclingIcon = key ? RECYCLING_ICONS[key] : Trash2;
-
-                        return (
-                          <div key={i} className="flex items-center gap-2">
-                            <RecyclingIcon className="h-5 w-5 text-primary flex-shrink-0" />
-                            <Input
-                              value={item}
-                              onChange={(e) =>
-                                updateBlockItem(section.id, block.id, i, e.target.value)
-                              }
-                              placeholder={`Recycling item ${i + 1}`}
-                            />
-                          </div>
-                        );
-                      })}
-                      <Button size="sm" onClick={() => addBlockItem(section.id, block.id)}>
-                        Add Recycling Item
                       </Button>
                     </div>
                   )}
@@ -342,22 +502,19 @@ export const GuidebookEditor = ({
 
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => addBlock(section.id, "text")}>
-                  Add Text
+                  Add Text Block
                 </Button>
                 <Button size="sm" onClick={() => addBlock(section.id, "list")}>
-                  Add List
+                  Add Bullet List
                 </Button>
-                <Button size="sm" onClick={() => addBlock(section.id, "checkbox")}>
-                  Add Checklist
+                <Button
+                  size="sm"
+                  onClick={() => addBlock(section.id, "checkbox")}
+                >
+                  Add Checkbox List
                 </Button>
-                {section.id === "waste" && (
-                  <Button size="sm" onClick={() => addBlock(section.id, "custom-recycling")}>
-                    Add Recycling Block
-                  </Button>
-                )}
               </div>
 
-              {/* 🔹 Image upload */}
               <div className="space-y-2">
                 <Label>Image (optional)</Label>
                 <div className="flex gap-2">
@@ -366,7 +523,9 @@ export const GuidebookEditor = ({
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      document.getElementById(`section-image-${section.id}`)?.click()
+                      document
+                        .getElementById(`section-image-${section.id}`)
+                        ?.click()
                     }
                   >
                     <ImageIcon className="h-4 w-4 mr-2" />
@@ -382,7 +541,9 @@ export const GuidebookEditor = ({
                       if (file) {
                         const reader = new FileReader();
                         reader.onload = () =>
-                          updateSection(section.id, { image_url: reader.result as string });
+                          updateSection(section.id, {
+                            image_url: reader.result as string,
+                          });
                         reader.readAsDataURL(file);
                       }
                     }}
