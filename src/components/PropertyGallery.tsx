@@ -68,10 +68,10 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
                 className="group relative overflow-hidden rounded-lg aspect-[4/3] cursor-pointer"
                 onClick={() => openDialog(index)}
               >
-                <img 
-                  src={media.url} 
-                  alt={media.alt || media.title} 
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                <img
+                  src={media.url}
+                  alt={media.alt || media.title}
+                  className="max-h-[90vh] max-w-[95vw] object-contain mx-auto rounded-lg"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="absolute bottom-4 left-4 text-white">
