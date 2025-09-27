@@ -7,7 +7,7 @@ import PropertyNavigation from "@/components/PropertyNavigation";
 import PropertyHero from "@/components/PropertyHero";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
 
 // Lazy-loaded heavy components
@@ -207,19 +207,9 @@ const PropertyPage = memo(() => {
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-24 w-full" />}>
-        <PropertySpecialHighlights property={property} />
+        {/* Skickar in onViewGuide så knappen i highlights fungerar */}
+        <PropertySpecialHighlights property={property} onViewGuide={handleGuideOpen} />
       </Suspense>
-
-      {/* Guest Guide Button */}
-      <div className="container mx-auto px-4 my-12 flex justify-center">
-        <Button
-          onClick={handleGuideOpen}
-          className="bg-amber-800 hover:bg-amber-900 text-white text-base font-semibold px-8 py-4 rounded-lg shadow-md transition"
-        >
-          <BookOpen className="w-5 h-5 mr-2" />
-          View Complete Guest Guide
-        </Button>
-      </div>
 
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <PropertyBooking property={property} />
