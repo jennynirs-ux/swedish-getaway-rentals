@@ -21,10 +21,13 @@ import {
   Shield,
   LogOut,
   Heart,
-  CreditCard,
-  Wine,
-  Footprints,
-  PawPrint,
+  Trash2,
+  Plus,
+  Recycle,
+  Package,
+  FileText,
+  GlassWater,
+  UtensilsCrossed,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,14 +47,14 @@ interface GuidebookSection {
 }
 
 interface GuidebookEditorProps {
-  sections: GuidebookSection[];
+  sections?: GuidebookSection[];
   onChange: (sections: GuidebookSection[]) => void;
   onSave?: () => Promise<void>;
   saving?: boolean;
   propertyTitle?: string;
 }
 
-// 🔹 Fördefinierade sektioner med lucide-ikoner och startinnehåll
+// 🔹 Fördefinierade sektioner med startinnehåll
 const DEFAULT_SECTIONS: GuidebookSection[] = [
   {
     id: "home",
@@ -61,8 +64,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
       {
         id: crypto.randomUUID(),
         type: "text",
-        content:
-          "Welcome to our property! We’re excited to host you. We hope you enjoy the house, the surroundings, and the Swedish nature.",
+        content: "Welcome to our property! We’re excited to host you.",
       },
     ],
   },
@@ -71,16 +73,8 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: MapPin,
     title: "Directions",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "text",
-        content: "By car: Take E6 exit 89 and follow signs towards Lerum. Parking is available in front of the house.",
-      },
-      {
-        id: crypto.randomUUID(),
-        type: "text",
-        content: "By public transportation: Train to Lerum station, then bus 290 towards Skövde. Get off at Häcken stop.",
-      },
+      { id: crypto.randomUUID(), type: "text", content: "Get here by car – full instructions provided before arrival." },
+      { id: crypto.randomUUID(), type: "text", content: "Get here by public transportation – nearest bus stop and train station info." },
     ],
   },
   {
@@ -92,10 +86,8 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
         id: crypto.randomUUID(),
         type: "list",
         items: [
-          "ICA Kvantum – nearest grocery store",
-          "Mackens Ved – firewood",
-          "Systembolaget – wine & spirits (20+)",
-          "Circle K – fuel station",
+          "🛒 Grocery store: ICA Kvantum",
+          "🪵 Firewood: Available at Q8 station",
         ],
       },
     ],
@@ -106,8 +98,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     title: "Check-in",
     blocks: [
       { id: crypto.randomUUID(), type: "text", content: "Check-in time: 15:00" },
-      { id: crypto.randomUUID(), type: "text", content: "Keys are in the lockbox by the entrance (code sent before arrival)." },
-      { id: crypto.randomUUID(), type: "text", content: "Parking: Use designated spots. Do not block neighbors." },
+      { id: crypto.randomUUID(), type: "text", content: "Parking info and key instructions will be sent before arrival." },
     ],
   },
   {
@@ -115,8 +106,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Wifi,
     title: "Wi-Fi",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Network: Guest_Wifi" },
-      { id: crypto.randomUUID(), type: "text", content: "Password: Welcome2024" },
+      { id: crypto.randomUUID(), type: "text", content: "Network: Guest_Wifi\nPassword: Welcome2024" },
     ],
   },
   {
@@ -124,12 +114,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Utensils,
     title: "Kitchen",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "text",
-        content:
-          "The kitchen is fully equipped with oven, stove, fridge, freezer, dishwasher, coffee machine, and toaster.",
-      },
+      { id: crypto.randomUUID(), type: "text", content: "Fully equipped kitchen with dishwasher, oven, and coffee machine." },
     ],
   },
   {
@@ -137,10 +122,38 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Cog,
     title: "How things work",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Oven: Turn knob to 200°C and press power." },
-      { id: crypto.randomUUID(), type: "text", content: "Coffee machine: Fill water, add filter & coffee, press start." },
-      { id: crypto.randomUUID(), type: "text", content: "Dishwasher: Use eco program. Do not put pans or wooden tools inside." },
-      { id: crypto.randomUUID(), type: "text", content: "Heating: Use thermostat. Keep windows closed." },
+      { id: crypto.randomUUID(), type: "text", content: "Oven – press power + select program." },
+      { id: crypto.randomUUID(), type: "text", content: "Coffee machine – fill water and press start." },
+    ],
+  },
+  {
+    id: "waste",
+    icon: Recycle,
+    title: "Waste & Recycling",
+    blocks: [
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content:
+          "Did you know that we can be fined if not recycling right in Sweden?\n\nPlease sort your trash into the following categories:",
+      },
+      {
+        id: crypto.randomUUID(),
+        type: "list",
+        items: [
+          "Plastic (🛍) – bottles, packaging",
+          "Paper (📄) – newspapers, cartons",
+          "Glass (🥂) – bottles, jars (separate by color if bins are marked)",
+          "Metal (🥫) – cans, foil, metal lids",
+          "Food waste (🍎) – use the green bags provided",
+        ],
+      },
+      {
+        id: crypto.randomUUID(),
+        type: "text",
+        content:
+          "Bring full bags to the recycling station at ICA Kvantum.\nExtra bags are stored under the kitchen sink.\n🔗 Official recycling guide available at Avfall Sverige.",
+      },
     ],
   },
   {
@@ -148,15 +161,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Landmark,
     title: "Places to visit",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "list",
-        items: [
-          "Restaurants: Sjömagasinet (seafood), Lerum Brasserie (local dishes)",
-          "Nature: Lerum Nature Reserve, nearby lakes",
-          "City: Gothenburg – 20 min by train",
-        ],
-      },
+      { id: crypto.randomUUID(), type: "list", items: ["Restaurants", "Nature & hiking", "Beaches", "Cultural spots"] },
     ],
   },
   {
@@ -164,12 +169,9 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: BookOpen,
     title: "Swedish customs",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Fika: A Swedish ritual. Coffee (or tea) with a cinnamon bun or pastry." },
-      { id: crypto.randomUUID(), type: "text", content: "No shoes indoors: Always remove shoes in Swedish homes." },
-      { id: crypto.randomUUID(), type: "text", content: "Card is king: Cash is rare. Cards and Swish are accepted everywhere." },
-      { id: crypto.randomUUID(), type: "text", content: "Alcohol: Strong drinks sold only at Systembolaget (20+)." },
-      { id: crypto.randomUUID(), type: "text", content: "Right to roam (Allemansrätten): Hike, swim, and pick berries freely." },
-      { id: crypto.randomUUID(), type: "text", content: "Wildlife: Drive carefully, especially at dawn/dusk. Moose and deer are common." },
+      { id: crypto.randomUUID(), type: "text", content: "Take off your shoes indoors." },
+      { id: crypto.randomUUID(), type: "text", content: "Fika – Swedish coffee break tradition." },
+      { id: crypto.randomUUID(), type: "text", content: "Card is king – cash is rarely used." },
     ],
   },
   {
@@ -177,11 +179,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Shield,
     title: "House Rules",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "checkbox",
-        items: ["No smoking indoors", "No parties or loud music", "Respect quiet hours after 22:00", "Pets only by request"],
-      },
+      { id: crypto.randomUUID(), type: "checkbox", items: ["No smoking indoors", "Respect quiet hours", "No parties or events"] },
     ],
   },
   {
@@ -189,19 +187,16 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: LogOut,
     title: "Check-out",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Check-out time: 11:00" },
+      { id: crypto.randomUUID(), type: "text", content: "Check-out time: 11:00 AM" },
       {
         id: crypto.randomUUID(),
         type: "checkbox",
         items: [
-          "Put furniture back in place",
-          "Empty trash & recycling",
-          "Remove bed linens and place in laundry room",
-          "Start dishwasher",
-          "Empty fridge & freezer",
-          "Close all windows & doors",
-          "Turn off all lights",
-          "Lock all doors",
+          "Put furniture back in original place",
+          "Remove all used bed linens",
+          "Start the dishwasher",
+          "Empty trash bins",
+          "Close windows and lock all doors",
         ],
       },
     ],
@@ -211,12 +206,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Heart,
     title: "Host Story",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "text",
-        content:
-          "We bought this house in 2020 and renovated it with love. Our goal is to share the beauty of Swedish nature and hospitality with you.",
-      },
+      { id: crypto.randomUUID(), type: "text", content: "We’re a small family who loves hosting guests at our summerhouse." },
     ],
   },
 ];
@@ -229,50 +219,82 @@ export const GuidebookEditor = ({
   propertyTitle = "Property",
 }: GuidebookEditorProps) => {
   const { toast } = useToast();
-  const [localSections, setLocalSections] = useState<GuidebookSection[]>(sections.length ? sections : DEFAULT_SECTIONS);
 
-  // 🔹 Section & Block Helpers
+  const [localSections, setLocalSections] = useState<GuidebookSection[]>(
+    sections?.length ? sections : DEFAULT_SECTIONS
+  );
+
+  // 🔹 Helpers
   const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
-    const newSections = localSections.map((s) => (s.id === id ? { ...s, ...updated } : s));
+    const newSections = localSections.map((s) =>
+      s.id === id ? { ...s, ...updated } : s
+    );
     setLocalSections(newSections);
     onChange(newSections);
   };
 
   const addBlock = (sectionId: string, type: "text" | "list" | "checkbox") => {
-    const block: GuidebookBlock = { id: crypto.randomUUID(), type, content: "", items: type !== "text" ? [] : undefined };
+    const block: GuidebookBlock = {
+      id: crypto.randomUUID(),
+      type,
+      content: "",
+      items: type !== "text" ? [] : undefined,
+    };
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, { blocks: [...section.blocks, block] });
   };
 
-  const updateBlock = (sectionId: string, blockId: string, changes: Partial<GuidebookBlock>) => {
+  const removeBlock = (sectionId: string, blockId: string) => {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
-    updateSection(sectionId, { blocks: section.blocks.map((b) => (b.id === blockId ? { ...b, ...changes } : b)) });
+    updateSection(sectionId, {
+      blocks: section.blocks.filter((b) => b.id !== blockId),
+    });
+  };
+
+  const updateBlock = (
+    sectionId: string,
+    blockId: string,
+    changes: Partial<GuidebookBlock>
+  ) => {
+    const section = localSections.find((s) => s.id === sectionId);
+    if (!section) return;
+    updateSection(sectionId, {
+      blocks: section.blocks.map((b) =>
+        b.id === blockId ? { ...b, ...changes } : b
+      ),
+    });
   };
 
   const addBlockItem = (sectionId: string, blockId: string) => {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: section.blocks.map((b) => (b.id === blockId ? { ...b, items: [...(b.items || []), ""] } : b)),
-    });
-  };
-
-  const updateBlockItem = (sectionId: string, blockId: string, index: number, value: string) => {
-    const section = localSections.find((s) => s.id === sectionId);
-    if (!section) return;
-    updateSection(sectionId, {
       blocks: section.blocks.map((b) =>
-        b.id === blockId ? { ...b, items: b.items?.map((it, i) => (i === index ? value : it)) } : b
+        b.id === blockId ? { ...b, items: [...(b.items || []), ""] } : b
       ),
     });
   };
 
-  const removeBlock = (sectionId: string, blockId: string) => {
+  const updateBlockItem = (
+    sectionId: string,
+    blockId: string,
+    index: number,
+    value: string
+  ) => {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
-    updateSection(sectionId, { blocks: section.blocks.filter((b) => b.id !== blockId) });
+    updateSection(sectionId, {
+      blocks: section.blocks.map((b) =>
+        b.id === blockId
+          ? {
+              ...b,
+              items: b.items?.map((it, i) => (i === index ? value : it)),
+            }
+          : b
+      ),
+    });
   };
 
   // 🔹 Actions
@@ -280,40 +302,69 @@ export const GuidebookEditor = ({
     if (onSave) {
       try {
         await onSave();
-        toast({ title: "Success", description: "Guest guide saved successfully" });
+        toast({
+          title: "Success",
+          description: "Guest guide saved successfully",
+        });
       } catch {
-        toast({ title: "Error", description: "Failed to save guest guide", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Failed to save guest guide",
+          variant: "destructive",
+        });
       }
     }
   };
 
   const generateShareableLink = () => {
-    const shareUrl = `${window.location.origin}/property-guide/${propertyTitle}`;
-    navigator.clipboard.writeText(shareUrl).then(() =>
-      toast({ title: "Link copied!", description: "Shareable guest guide link copied to clipboard" })
-    );
+    const baseUrl = window.location.origin;
+    const shareUrl = `${baseUrl}/property-guide/${propertyTitle}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        title: "Link copied!",
+        description: "Shareable guest guide link copied to clipboard",
+      });
+    });
   };
 
-  const exportToPDF = () => toast({ title: "PDF Export", description: "PDF export functionality will be implemented" });
+  const exportToPDF = () => {
+    toast({
+      title: "PDF Export",
+      description: "PDF export functionality will be implemented",
+    });
+  };
 
   return (
     <div className="space-y-6">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-base font-medium">Guest Guide for {propertyTitle}</Label>
-          <p className="text-sm text-muted-foreground">Fill in the guidebook information for your guests</p>
+          <Label className="text-base font-medium">
+            Guest Guide for {propertyTitle}
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Fill in the guidebook information for your guests
+          </p>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" size="sm" onClick={generateShareableLink}>
-            <Share className="h-4 w-4 mr-2" /> Share Link
+            <Share className="h-4 w-4 mr-2" />
+            Share Link
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={exportToPDF}>
-            <Download className="h-4 w-4 mr-2" /> Export PDF
+            <Download className="h-4 w-4 mr-2" />
+            Export PDF
           </Button>
           {onSave && (
-            <Button type="button" variant="default" size="sm" onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save Changes"}
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           )}
         </div>
@@ -326,7 +377,8 @@ export const GuidebookEditor = ({
           <Card key={section.id}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon className="h-5 w-5 text-primary" /> {section.title}
+                <Icon className="h-5 w-5 text-primary" />
+                {section.title}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -352,13 +404,17 @@ export const GuidebookEditor = ({
                         />
                       ))}
                       <Button size="sm" onClick={() => addBlockItem(section.id, block.id)}>
-                        Add Item
+                        <Plus className="h-4 w-4 mr-1" /> Add Item
                       </Button>
                     </div>
                   )}
 
-                  <Button size="sm" variant="destructive" onClick={() => removeBlock(section.id, block.id)}>
-                    Remove Block
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => removeBlock(section.id, block.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Remove Block
                   </Button>
                 </div>
               ))}
@@ -382,9 +438,12 @@ export const GuidebookEditor = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => document.getElementById(`section-image-${section.id}`)?.click()}
+                    onClick={() =>
+                      document.getElementById(`section-image-${section.id}`)?.click()
+                    }
                   >
-                    <ImageIcon className="h-4 w-4 mr-2" /> Upload
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Upload
                   </Button>
                   <input
                     id={`section-image-${section.id}`}
@@ -395,14 +454,21 @@ export const GuidebookEditor = ({
                       const file = e.target.files?.[0];
                       if (file) {
                         const reader = new FileReader();
-                        reader.onload = () => updateSection(section.id, { image_url: reader.result as string });
+                        reader.onload = () =>
+                          updateSection(section.id, {
+                            image_url: reader.result as string,
+                          });
                         reader.readAsDataURL(file);
                       }
                     }}
                   />
                 </div>
                 {section.image_url && (
-                  <img src={section.image_url} alt={section.title} className="w-32 h-32 object-cover rounded-md" />
+                  <img
+                    src={section.image_url}
+                    alt={section.title}
+                    className="w-32 h-32 object-cover rounded-md"
+                  />
                 )}
               </div>
             </CardContent>
