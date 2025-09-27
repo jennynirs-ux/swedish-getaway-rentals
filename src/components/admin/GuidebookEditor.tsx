@@ -21,13 +21,7 @@ import {
   Shield,
   LogOut,
   Heart,
-  Trash2,
-  Plus,
   Recycle,
-  Package,
-  FileText,
-  GlassWater,
-  UtensilsCrossed,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,18 +48,14 @@ interface GuidebookEditorProps {
   propertyTitle?: string;
 }
 
-// 🔹 Fördefinierade sektioner med startinnehåll
+// 🔹 Default-sektioner med förifyllt innehåll
 const DEFAULT_SECTIONS: GuidebookSection[] = [
   {
     id: "home",
     icon: Home,
-    title: "Welcome Home",
+    title: "Home",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "text",
-        content: "Welcome to our property! We’re excited to host you.",
-      },
+      { id: crypto.randomUUID(), type: "text", content: "Welcome to our property! We’re excited to host you." },
     ],
   },
   {
@@ -73,8 +63,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: MapPin,
     title: "Directions",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Get here by car – full instructions provided before arrival." },
-      { id: crypto.randomUUID(), type: "text", content: "Get here by public transportation – nearest bus stop and train station info." },
+      { id: crypto.randomUUID(), type: "text", content: "➡️ Get here by Car\n➡️ Get here by Public Transportation" },
     ],
   },
   {
@@ -82,14 +71,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Coffee,
     title: "Stop on the way",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "list",
-        items: [
-          "🛒 Grocery store: ICA Kvantum",
-          "🪵 Firewood: Available at Q8 station",
-        ],
-      },
+      { id: crypto.randomUUID(), type: "list", items: ["ICA Kvantum – groceries", "Gas station – fuel & snacks", "Local store – firewood"] },
     ],
   },
   {
@@ -97,8 +79,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Key,
     title: "Check-in",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Check-in time: 15:00" },
-      { id: crypto.randomUUID(), type: "text", content: "Parking info and key instructions will be sent before arrival." },
+      { id: crypto.randomUUID(), type: "text", content: "Check-in time is 15:00.\nYou will receive instructions for the key and parking before arrival." },
     ],
   },
   {
@@ -114,7 +95,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Utensils,
     title: "Kitchen",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Fully equipped kitchen with dishwasher, oven, and coffee machine." },
+      { id: crypto.randomUUID(), type: "text", content: "How to use the oven, coffee machine, and dishwasher." },
     ],
   },
   {
@@ -122,8 +103,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Cog,
     title: "How things work",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Oven – press power + select program." },
-      { id: crypto.randomUUID(), type: "text", content: "Coffee machine – fill water and press start." },
+      { id: crypto.randomUUID(), type: "list", items: ["Oven – press ON, then select program", "Coffee machine – add water & capsule", "Heating system – adjust thermostat"] },
     ],
   },
   {
@@ -131,29 +111,9 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Recycle,
     title: "Waste & Recycling",
     blocks: [
-      {
-        id: crypto.randomUUID(),
-        type: "text",
-        content:
-          "Did you know that we can be fined if not recycling right in Sweden?\n\nPlease sort your trash into the following categories:",
-      },
-      {
-        id: crypto.randomUUID(),
-        type: "list",
-        items: [
-          "Plastic (🛍) – bottles, packaging",
-          "Paper (📄) – newspapers, cartons",
-          "Glass (🥂) – bottles, jars (separate by color if bins are marked)",
-          "Metal (🥫) – cans, foil, metal lids",
-          "Food waste (🍎) – use the green bags provided",
-        ],
-      },
-      {
-        id: crypto.randomUUID(),
-        type: "text",
-        content:
-          "Bring full bags to the recycling station at ICA Kvantum.\nExtra bags are stored under the kitchen sink.\n🔗 Official recycling guide available at Avfall Sverige.",
-      },
+      { id: crypto.randomUUID(), type: "text", content: "Did you know that we can be fined if not recycling right in Sweden?\n\nPlease sort your trash carefully:" },
+      { id: crypto.randomUUID(), type: "checkbox", items: ["Plastic", "Paper", "Glass", "Metal", "Food waste"] },
+      { id: crypto.randomUUID(), type: "text", content: "Bring full bags to the recycling station at ICA Kvantum.\nExtra bags are under the kitchen sink.\n🔗 Recycling guide" },
     ],
   },
   {
@@ -161,7 +121,7 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Landmark,
     title: "Places to visit",
     blocks: [
-      { id: crypto.randomUUID(), type: "list", items: ["Restaurants", "Nature & hiking", "Beaches", "Cultural spots"] },
+      { id: crypto.randomUUID(), type: "list", items: ["Restaurants", "Sights", "Outdoor activities"] },
     ],
   },
   {
@@ -169,34 +129,33 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: BookOpen,
     title: "Swedish customs",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Take off your shoes indoors." },
-      { id: crypto.randomUUID(), type: "text", content: "Fika – Swedish coffee break tradition." },
-      { id: crypto.randomUUID(), type: "text", content: "Card is king – cash is rarely used." },
+      { id: crypto.randomUUID(), type: "text", content: "Take off shoes indoors.\nBe on time – punctuality is valued.\nCash is rare – card or Swish is king." },
     ],
   },
   {
     id: "rules",
     icon: Shield,
-    title: "House Rules",
+    title: "House rules",
     blocks: [
-      { id: crypto.randomUUID(), type: "checkbox", items: ["No smoking indoors", "Respect quiet hours", "No parties or events"] },
+      { id: crypto.randomUUID(), type: "list", items: ["Respect quiet hours", "No smoking indoors", "No parties"] },
     ],
   },
   {
     id: "checkout",
     icon: LogOut,
-    title: "Check-out",
+    title: "Check out",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "Check-out time: 11:00 AM" },
+      { id: crypto.randomUUID(), type: "text", content: "Check-out is by 11:00. Please follow the checklist:" },
       {
         id: crypto.randomUUID(),
         type: "checkbox",
         items: [
-          "Put furniture back in original place",
-          "Remove all used bed linens",
-          "Start the dishwasher",
-          "Empty trash bins",
-          "Close windows and lock all doors",
+          "Put furniture back in place",
+          "Remove linens & place in laundry",
+          "Start dishwasher",
+          "Empty fridge & freezer",
+          "Take out trash & recycling",
+          "Lock all doors & windows",
         ],
       },
     ],
@@ -206,13 +165,13 @@ const DEFAULT_SECTIONS: GuidebookSection[] = [
     icon: Heart,
     title: "Host Story",
     blocks: [
-      { id: crypto.randomUUID(), type: "text", content: "We’re a small family who loves hosting guests at our summerhouse." },
+      { id: crypto.randomUUID(), type: "text", content: "Our story as hosts and why we love this property." },
     ],
   },
 ];
 
 export const GuidebookEditor = ({
-  sections,
+  sections = [],
   onChange,
   onSave,
   saving = false,
@@ -221,13 +180,16 @@ export const GuidebookEditor = ({
   const { toast } = useToast();
 
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
-    sections?.length ? sections : DEFAULT_SECTIONS
+    (sections.length ? sections : DEFAULT_SECTIONS).map((s) => ({
+      ...s,
+      blocks: s.blocks || [], // ✅ säkerställ alltid array
+    }))
   );
 
   // 🔹 Helpers
   const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
     const newSections = localSections.map((s) =>
-      s.id === id ? { ...s, ...updated } : s
+      s.id === id ? { ...s, ...updated, blocks: updated.blocks || s.blocks || [] } : s
     );
     setLocalSections(newSections);
     onChange(newSections);
@@ -242,28 +204,22 @@ export const GuidebookEditor = ({
     };
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
-    updateSection(sectionId, { blocks: [...section.blocks, block] });
+    updateSection(sectionId, { blocks: [...(section.blocks || []), block] });
   };
 
   const removeBlock = (sectionId: string, blockId: string) => {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: section.blocks.filter((b) => b.id !== blockId),
+      blocks: (section.blocks || []).filter((b) => b.id !== blockId),
     });
   };
 
-  const updateBlock = (
-    sectionId: string,
-    blockId: string,
-    changes: Partial<GuidebookBlock>
-  ) => {
+  const updateBlock = (sectionId: string, blockId: string, changes: Partial<GuidebookBlock>) => {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: section.blocks.map((b) =>
-        b.id === blockId ? { ...b, ...changes } : b
-      ),
+      blocks: (section.blocks || []).map((b) => (b.id === blockId ? { ...b, ...changes } : b)),
     });
   };
 
@@ -271,27 +227,19 @@ export const GuidebookEditor = ({
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: section.blocks.map((b) =>
+      blocks: (section.blocks || []).map((b) =>
         b.id === blockId ? { ...b, items: [...(b.items || []), ""] } : b
       ),
     });
   };
 
-  const updateBlockItem = (
-    sectionId: string,
-    blockId: string,
-    index: number,
-    value: string
-  ) => {
+  const updateBlockItem = (sectionId: string, blockId: string, index: number, value: string) => {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: section.blocks.map((b) =>
+      blocks: (section.blocks || []).map((b) =>
         b.id === blockId
-          ? {
-              ...b,
-              items: b.items?.map((it, i) => (i === index ? value : it)),
-            }
+          ? { ...b, items: b.items?.map((it, i) => (i === index ? value : it)) }
           : b
       ),
     });
@@ -302,16 +250,9 @@ export const GuidebookEditor = ({
     if (onSave) {
       try {
         await onSave();
-        toast({
-          title: "Success",
-          description: "Guest guide saved successfully",
-        });
+        toast({ title: "Success", description: "Guest guide saved successfully" });
       } catch {
-        toast({
-          title: "Error",
-          description: "Failed to save guest guide",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "Failed to save guest guide", variant: "destructive" });
       }
     }
   };
@@ -339,12 +280,8 @@ export const GuidebookEditor = ({
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-base font-medium">
-            Guest Guide for {propertyTitle}
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Fill in the guidebook information for your guests
-          </p>
+          <Label className="text-base font-medium">Guest Guide for {propertyTitle}</Label>
+          <p className="text-sm text-muted-foreground">Fill in the guidebook information for your guests</p>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" size="sm" onClick={generateShareableLink}>
@@ -356,13 +293,7 @@ export const GuidebookEditor = ({
             Export PDF
           </Button>
           {onSave && (
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-            >
+            <Button type="button" variant="default" size="sm" onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Saving..." : "Save Changes"}
             </Button>
@@ -382,7 +313,7 @@ export const GuidebookEditor = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {section.blocks.map((block) => (
+              {section.blocks?.map((block) => (
                 <div key={block.id} className="border rounded p-3 space-y-2 bg-muted/10">
                   {block.type === "text" && (
                     <Textarea
@@ -404,31 +335,21 @@ export const GuidebookEditor = ({
                         />
                       ))}
                       <Button size="sm" onClick={() => addBlockItem(section.id, block.id)}>
-                        <Plus className="h-4 w-4 mr-1" /> Add Item
+                        Add Item
                       </Button>
                     </div>
                   )}
 
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeBlock(section.id, block.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" /> Remove Block
+                  <Button size="sm" variant="destructive" onClick={() => removeBlock(section.id, block.id)}>
+                    Remove Block
                   </Button>
                 </div>
               ))}
 
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => addBlock(section.id, "text")}>
-                  Add Text Block
-                </Button>
-                <Button size="sm" onClick={() => addBlock(section.id, "list")}>
-                  Add Bullet List
-                </Button>
-                <Button size="sm" onClick={() => addBlock(section.id, "checkbox")}>
-                  Add Checkbox List
-                </Button>
+                <Button size="sm" onClick={() => addBlock(section.id, "text")}>Add Text Block</Button>
+                <Button size="sm" onClick={() => addBlock(section.id, "list")}>Add Bullet List</Button>
+                <Button size="sm" onClick={() => addBlock(section.id, "checkbox")}>Add Checkbox List</Button>
               </div>
 
               <div className="space-y-2">
@@ -438,9 +359,7 @@ export const GuidebookEditor = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      document.getElementById(`section-image-${section.id}`)?.click()
-                    }
+                    onClick={() => document.getElementById(`section-image-${section.id}`)?.click()}
                   >
                     <ImageIcon className="h-4 w-4 mr-2" />
                     Upload
@@ -454,21 +373,14 @@ export const GuidebookEditor = ({
                       const file = e.target.files?.[0];
                       if (file) {
                         const reader = new FileReader();
-                        reader.onload = () =>
-                          updateSection(section.id, {
-                            image_url: reader.result as string,
-                          });
+                        reader.onload = () => updateSection(section.id, { image_url: reader.result as string });
                         reader.readAsDataURL(file);
                       }
                     }}
                   />
                 </div>
                 {section.image_url && (
-                  <img
-                    src={section.image_url}
-                    alt={section.title}
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
+                  <img src={section.image_url} alt={section.title} className="w-32 h-32 object-cover rounded-md" />
                 )}
               </div>
             </CardContent>
