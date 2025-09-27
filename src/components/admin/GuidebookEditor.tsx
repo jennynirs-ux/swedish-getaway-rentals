@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Save, Download, Share, Image as ImageIcon, Home, MapPin, Coffee, Key, Wifi, Utensils, Cog, Landmark, BookOpen, Shield, LogOut, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 interface GuidebookSection {
   id: string;
   icon: React.ElementType;
   title: string;
-  content: string;
+  type?: "text" | "list" | "checkbox";
+  content?: string;
+  items?: string[];
   image_url?: string;
 }
 
@@ -49,7 +53,9 @@ export const GuidebookEditor = ({
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
     FIXED_SECTIONS.map((s) => ({
       ...s,
+      type: sections.find((sec) => sec.id === s.id)?.type || "text",
       content: sections.find((sec) => sec.id === s.id)?.content || "",
+      items: sections.find((sec) => sec.id === s.id)?.items || [],
       image_url: sections.find((sec) => sec.id === s.id)?.image_url,
     }))
   );
@@ -57,6 +63,34 @@ export const GuidebookEditor = ({
   const updateSection = (id: string, field: keyof GuidebookSection, value: any) => {
     const updated = localSections.map((s) =>
       s.id === id ? { ...s, [field]: value } : s
+    );
+    setLocalSections(updated);
+    onChange(updated);
+  };
+
+  const addItem = (id: string) => {
+    const updated = localSections.map((s) =>
+      s.id === id ? { ...s, items: [...(s.items || []), ""] } : s
+    );
+    setLocalSections(updated);
+    onChange(updated);
+  };
+
+  const updateItem = (id: string, index: number, value: string) => {
+    const updated = localSections.map((s) =>
+      s.id === id
+        ? { ...s, items: s.items?.map((item, i) => (i === index ? value : item)) }
+        : s
+    );
+    setLocalSections(updated);
+    onChange(updated);
+  };
+
+  const removeItem = (id: string, index: number) => {
+    const updated = localSections.map((s) =>
+      s.id === id
+        ? { ...s, items: s.items?.filter((_, i) => i !== index) }
+        : s
     );
     setLocalSections(updated);
     onChange(updated);
@@ -144,18 +178,59 @@ export const GuidebookEditor = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Content type selector */}
               <div className="space-y-2">
-                <Label>Content</Label>
-                <Textarea
-                  value={section.content}
-                  onChange={(e) =>
-                    updateSection(section.id, "content", e.target.value)
-                  }
-                  placeholder={`Write content for ${section.title}`}
-                  rows={4}
-                />
+                <Label>Content Type</Label>
+                <Select
+                  value={section.type}
+                  onValueChange={(val) => updateSection(section.id, "type", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="list">Bullet List</SelectItem>
+                    <SelectItem value="checkbox">Checkbox List</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
+              {/* Render content editor based on type */}
+              {section.type === "text" && (
+                <div className="space-y-2">
+                  <Label>Content</Label>
+                  <Textarea
+                    value={section.content}
+                    onChange={(e) => updateSection(section.id, "content", e.target.value)}
+                    placeholder={`Write content for ${section.title}`}
+                    rows={4}
+                  />
+                </div>
+              )}
+
+              {(section.type === "list" || section.type === "checkbox") && (
+                <div className="space-y-2">
+                  <Label>Items</Label>
+                  {section.items?.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        value={item}
+                        onChange={(e) => updateItem(section.id, i, e.target.value)}
+                        placeholder={`Item ${i + 1}`}
+                      />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(section.id, i)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={() => addItem(section.id)}>
+                    Add Item
+                  </Button>
+                </div>
+              )}
+
+              {/* Image upload */}
               <div className="space-y-2">
                 <Label>Image (optional)</Label>
                 <div className="flex gap-2">
