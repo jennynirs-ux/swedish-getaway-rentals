@@ -1,175 +1,222 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Property } from "@/hooks/useProperties";
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { useProperties } from "@/hooks/useProperties";
-import { ArrowLeft, MapPin, Thermometer, Utensils, Shield, LogOut, Coffee } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GuideSectionDialog } from "@/components/GuideSectionDialog";
+import { 
+  Share2, 
+  Download, 
+  Home, 
+  MapPin, 
+  Wifi, 
+  BookOpen, 
+  Key, 
+  Info, 
+  LogOut, 
+  Heart, 
+  CheckSquare, 
+  Recycle, 
+  Apple, 
+  Package, 
+  Package2, 
+  Newspaper, 
+  Wine, 
+  Trash2
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-const PropertyGuide = () => {
-  const { id } = useParams();
-  const { properties, loading } = useProperties();
-  const [selectedSection, setSelectedSection] = useState<any>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+type SectionType = "text" | "list" | "checkbox";
 
-  const property = properties.find(p => p.id === id);
+interface GuideSection {
+  id: string;
+  title: string;
+  content?: string;        
+  items?: string[];        
+  type?: SectionType;
+  image_url?: string;
+  icon?: React.ElementType;
+}
 
-  const handleSectionClick = (section: any) => {
-    setSelectedSection(section);
-    setIsDialogOpen(true);
-  };
+interface GuestGuideDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  property: Property;
+}
 
-  const guideSections = [
-    {
-      icon: <MapPin className="w-8 h-8" />,
-      title: "Arriving",
-      description: "Everything you need to know about check-in and getting settled",
-      content: [
-        "Check-in time: 15:00 - 20:00",
-        "Access instructions will be sent via SMS",
-        "Parking available on-site",
-        "Welcome basket with local treats included"
-      ],
-      tips: [
-        "Contact us if arriving outside check-in hours",
-        "GPS coordinates will be provided for easy navigation"
-      ],
-      important: "Please respect quiet hours after 22:00"
-    },
-    {
-      icon: <Thermometer className="w-8 h-8" />,
-      title: "Sauna & Wellness",
-      description: "How to enjoy the authentic Swedish sauna experience",
-      content: [
-        "Traditional wood-fired sauna available",
-        "Sauna stones and water bucket provided",
-        "Fresh towels in the sauna room",
-        "Cool down area with comfortable seating"
-      ],
-      tips: [
-        "Allow 30-45 minutes for the sauna to heat up",
-        "Drink plenty of water before and after",
-        "Take breaks between sessions"
-      ],
-      important: "Never leave the sauna unattended when heated"
-    },
-    {
-      icon: <Coffee className="w-8 h-8" />,
-      title: "Kitchen & Dining",
-      description: "Fully equipped kitchen with everything you need",
-      content: [
-        "Modern appliances including dishwasher",
-        "Coffee machine and kettle",
-        "Complete cookware and dinnerware",
-        "Dining area with forest views"
-      ],
-      tips: [
-        "Local grocery store 10 minutes away",
-        "Restaurant recommendations in welcome guide",
-        "Outdoor dining area available"
-      ],
-      important: "Please clean dishes before departure"
-    },
-    {
-      icon: <Shield className="w-8 h-8" />,
-      title: "House Systems",
-      description: "Understanding heating, water, electricity and WiFi",
-      content: [
-        "Heating controlled via smart thermostat",
-        "Water heater provides hot water 24/7",
-        "High-speed WiFi throughout the property",
-        "Emergency contact numbers on refrigerator"
-      ],
-      tips: [
-        "Thermostat instructions in welcome folder",
-        "WiFi password on the router",
-        "Fuse box location marked clearly"
-      ],
-      important: "Report any technical issues immediately"
-    },
-    {
-      icon: <LogOut className="w-8 h-8" />,
-      title: "Check-out",
-      description: "Departure instructions and what to expect",
-      content: [
-        "Check-out time: 11:00",
-        "Leave keys in designated location",
-        "Strip beds and start dishwasher",
-        "Take any belongings and trash"
-      ],
-      tips: [
-        "Late check-out available upon request",
-        "Contact us if you've left anything behind"
-      ],
-      important: "Ensure all windows and doors are locked"
-    }
+const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) => {
+  const { toast } = useToast();
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Standardmallar (visas bara om editorn inte fyllt något)
+  const defaultSections: GuideSection[] = [
+    { id: "home", title: "Welcome Home", icon: Home, type: "text", content: "Welcome to our property! We’re excited to host you." },
+    { id: "directions", title: "Directions", icon: MapPin, type: "text", content: "How to reach us and parking instructions." },
+    { id: "wifi", title: "Wi-Fi", icon: Wifi, type: "list", items: ["Network: Guest_Wifi", "Password: Welcome2024"] },
+    { id: "checkin", title: "Check-in", icon: Key, type: "text", content: "Check-in time: 15:00. Contact us if you need early check-in." },
+    { id: "howthingswork", title: "How things work", icon: Info, type: "checkbox", items: ["Oven: press power + start", "Coffee maker: fill with water + press brew", "Heating: adjust thermostat in hallway"] },
+    { id: "places", title: "Places to visit", icon: BookOpen, type: "list", items: ["Local hiking trails", "Historic town center", "Beachfront promenade"] },
+    { id: "rules", title: "House Rules", icon: Heart, type: "list", items: ["Respect quiet hours", "No smoking inside", "No parties allowed"] },
+    { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox", items: ["Empty trash", "Return keys", "Close all windows"] },
+    { id: "recycling", title: "Recycling & Environment", icon: Recycle, type: "list", items: [
+      "Food waste → brown bin",
+      "Paper packaging → paper container",
+      "Plastic packaging → plastic container",
+      "Clear glass packaging → glass (clear)",
+      "Coloured glass packaging → glass (coloured)",
+      "Metal packaging → metal container",
+      "Residual waste → grey bin"
+    ] },
   ];
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
+  // Merge: editorn (property.guidebook_sections) prioriteras
+  const customSections = (property.guidebook_sections as GuideSection[]) || [];
+  const allSections = defaultSections.map(section => {
+    const custom = customSections.find(s => s.id === section.id);
+    return {
+      ...section,
+      ...custom, // redigerat innehåll vinner alltid
+      icon: section.icon, // behåll standardikonen
+    };
+  });
 
-  if (!property) {
-    return <div className="min-h-screen flex items-center justify-center">Property not found</div>;
-  }
+  const shareGuide = async () => {
+    const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${property.title} - Guest Guide`,
+          text: `Complete guest guide for ${property.title}`,
+          url: guideUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(guideUrl);
+        toast({ title: "Link copied!", description: "Guest guide link copied to clipboard." });
+      }
+    } catch {
+      await navigator.clipboard.writeText(guideUrl);
+      toast({ title: "Link copied!", description: "Guest guide link copied to clipboard." });
+    }
+  };
+
+  const exportToPDF = () => {
+    toast({ title: "PDF Export", description: "PDF export coming soon!" });
+  };
+
+  // Rendera sektioner
+  const renderSectionContent = (section: GuideSection) => {
+    const items = section.items;
+    const content = section.content;
+
+    // Specialfall: recycling
+    if (section.id === "recycling" && items) {
+      const getIconForItem = (item: string) => {
+        if (item.toLowerCase().includes("food")) return <Apple className="h-5 w-5 text-green-600" />;
+        if (item.toLowerCase().includes("paper")) return <Newspaper className="h-5 w-5 text-blue-600" />;
+        if (item.toLowerCase().includes("plastic")) return <Package className="h-5 w-5 text-pink-600" />;
+        if (item.toLowerCase().includes("clear glass")) return <Wine className="h-5 w-5 text-cyan-600" />;
+        if (item.toLowerCase().includes("coloured glass")) return <Wine className="h-5 w-5 text-purple-600" />;
+        if (item.toLowerCase().includes("metal")) return <Package2 className="h-5 w-5 text-gray-600" />;
+        if (item.toLowerCase().includes("residual")) return <Trash2 className="h-5 w-5 text-red-600" />;
+        return <Recycle className="h-5 w-5 text-primary" />;
+      };
+
+      return (
+        <div className="space-y-4">
+          <p className="text-muted-foreground">
+            In Sweden, proper recycling is required – otherwise fines may apply. Please use the correct bins:
+          </p>
+          <ul className="space-y-3">
+            {items.map((item, idx) => (
+              <li key={idx} className="flex items-center gap-3">
+                {getIconForItem(item)}
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    if (section.type === "list" && items) {
+      return (
+        <ul className="list-disc pl-5 space-y-2">
+          {items.map((item, idx) => <li key={idx}>{item}</li>)}
+        </ul>
+      );
+    }
+
+    if (section.type === "checkbox" && items) {
+      return (
+        <ul className="space-y-2">
+          {items.map((item, idx) => (
+            <li key={idx} className="flex items-center gap-2">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    return <p className="whitespace-pre-wrap">{content}</p>;
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link 
-              to={`/property/${id}`} 
-              className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Property
-            </Link>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl h-[90vh] flex p-0">
+        {/* Sidebar med ikoner */}
+        <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
+          {allSections.map((section, index) => {
+            const isActive = activeIndex === index;
+            const Icon = section.icon || Info;
+            return (
+              <button
+                key={section.id}
+                onClick={() => setActiveIndex(index)}
+                className={`p-3 rounded-xl transition-all duration-300 flex items-center justify-center ${
+                  isActive
+                    ? "bg-primary text-white shadow-md scale-110"
+                    : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                <Icon className="h-6 w-6" />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-8 py-6 relative">
+          <DialogHeader className="mb-6">
+            <div className="flex items-start justify-between">
+              <DialogTitle className="text-3xl font-bold">
+                {allSections[activeIndex].title}
+              </DialogTitle>
+              <div className="flex gap-2 mt-1">
+                <Button variant="outline" size="icon" onClick={shareGuide}>
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={exportToPDF}>
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {allSections[activeIndex].image_url && (
+            <img
+              src={allSections[activeIndex].image_url}
+              alt={allSections[activeIndex].title}
+              className="w-full h-48 object-cover rounded-lg mb-6"
+            />
+          )}
+
+          <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
+            {renderSectionContent(allSections[activeIndex])}
           </div>
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-display font-bold mb-6">
-            Guest Guide
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Everything you need to know for a perfect stay at {property.title}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {guideSections.map((section, index) => (
-            <Card 
-              key={index} 
-              className="cursor-pointer group hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-              onClick={() => handleSectionClick(section)}
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  {section.icon}
-                </div>
-                <CardTitle className="text-center text-xl font-display group-hover:text-primary transition-colors">
-                  {section.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center">
-                  {section.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <GuideSectionDialog
-          section={selectedSection}
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-        />
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default PropertyGuide;
+export default GuestGuideDialog;
