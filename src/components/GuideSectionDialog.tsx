@@ -1,9 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-  X, Apple, Package, Recycle, Newspaper, Wine, Package2, Trash2, 
-  Lightbulb, AlertTriangle 
-} from "lucide-react";
+import { X, Apple, Package, Recycle, Newspaper, Wine, Package2, Trash2 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 interface GuideSection {
@@ -99,7 +96,7 @@ export const GuideSectionDialog = ({ section, isOpen, onClose }: GuideSectionDia
           {section.tips && section.tips.length > 0 && (
             <div className="bg-accent/10 rounded-lg p-4">
               <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-accent" /> Tips
+                💡 Tips
               </h4>
               <div className="space-y-2">
                 {section.tips.map((tip, index) => (
@@ -116,7 +113,7 @@ export const GuideSectionDialog = ({ section, isOpen, onClose }: GuideSectionDia
           {section.important && section.important.length > 0 && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
               <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" /> Important
+                ⚠️ Important
               </h4>
               <div className="space-y-2">
                 {section.important.map((note, index) => (
