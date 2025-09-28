@@ -22,10 +22,6 @@ import {
   LogOut,
   Heart,
   Recycle,
-  Trash2,
-  Droplet,
-  GlassWater,
-  Package,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,7 +29,7 @@ interface GuidebookBlock {
   id: string;
   type: "text" | "list" | "checkbox";
   content?: string;
-  items?: string[];
+  items: string[];
 }
 
 interface GuidebookSection {
@@ -45,7 +41,7 @@ interface GuidebookSection {
 }
 
 interface GuidebookEditorProps {
-  sections?: GuidebookSection[]; // optional, default []
+  sections?: GuidebookSection[];
   onChange: (sections: GuidebookSection[]) => void;
   onSave?: () => Promise<void>;
   saving?: boolean;
@@ -77,16 +73,16 @@ export const GuidebookEditor = ({
 }: GuidebookEditorProps) => {
   const { toast } = useToast();
 
-  // Initiera alltid med blocks: [] och items: []
+  // Initiera alltid säkert
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
     FIXED_SECTIONS.map((s) => {
       const existing = sections.find((sec) => sec.id === s.id);
       return {
         ...s,
-        blocks: existing?.blocks?.map((b) => ({
+        blocks: (existing?.blocks || []).map((b) => ({
           ...b,
           items: b.items || [],
-        })) || [],
+        })),
         image_url: existing?.image_url,
       };
     })
@@ -106,18 +102,18 @@ export const GuidebookEditor = ({
       id: crypto.randomUUID(),
       type,
       content: "",
-      items: type !== "text" ? [] : undefined,
+      items: [],
     };
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
-    updateSection(sectionId, { blocks: [...(section.blocks || []), block] });
+    updateSection(sectionId, { blocks: [...section.blocks, block] });
   };
 
   const removeBlock = (sectionId: string, blockId: string) => {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: (section.blocks || []).filter((b) => b.id !== blockId),
+      blocks: section.blocks.filter((b) => b.id !== blockId),
     });
   };
 
@@ -129,7 +125,7 @@ export const GuidebookEditor = ({
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: (section.blocks || []).map((b) =>
+      blocks: section.blocks.map((b) =>
         b.id === blockId ? { ...b, ...changes } : b
       ),
     });
@@ -139,8 +135,8 @@ export const GuidebookEditor = ({
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: (section.blocks || []).map((b) =>
-        b.id === blockId ? { ...b, items: [...(b.items || []), ""] } : b
+      blocks: section.blocks.map((b) =>
+        b.id === blockId ? { ...b, items: [...b.items, ""] } : b
       ),
     });
   };
@@ -154,14 +150,9 @@ export const GuidebookEditor = ({
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
     updateSection(sectionId, {
-      blocks: (section.blocks || []).map((b) =>
+      blocks: section.blocks.map((b) =>
         b.id === blockId
-          ? {
-              ...b,
-              items: (b.items || []).map((it, i) =>
-                i === index ? value : it
-              ),
-            }
+          ? { ...b, items: b.items.map((it, i) => (i === index ? value : it)) }
           : b
       ),
     });
@@ -172,10 +163,7 @@ export const GuidebookEditor = ({
     if (onSave) {
       try {
         await onSave();
-        toast({
-          title: "Success",
-          description: "Guest guide saved successfully",
-        });
+        toast({ title: "Success", description: "Guest guide saved successfully" });
       } catch {
         toast({
           title: "Error",
@@ -184,24 +172,6 @@ export const GuidebookEditor = ({
         });
       }
     }
-  };
-
-  const generateShareableLink = () => {
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/property-guide/${propertyTitle}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      toast({
-        title: "Link copied!",
-        description: "Shareable guest guide link copied to clipboard",
-      });
-    });
-  };
-
-  const exportToPDF = () => {
-    toast({
-      title: "PDF Export",
-      description: "PDF export functionality will be implemented",
-    });
   };
 
   return (
@@ -217,10 +187,10 @@ export const GuidebookEditor = ({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={generateShareableLink}>
+          <Button variant="outline" size="sm">
             <Share className="h-4 w-4 mr-2" /> Share Link
           </Button>
-          <Button variant="outline" size="sm" onClick={exportToPDF}>
+          <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" /> Export PDF
           </Button>
           {onSave && (
@@ -239,7 +209,7 @@ export const GuidebookEditor = ({
       </div>
 
       {/* Section editors */}
-      {(localSections || []).map((section) => {
+      {localSections.map((section) => {
         const Icon = section.icon;
         return (
           <Card key={section.id}>
@@ -250,18 +220,13 @@ export const GuidebookEditor = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(section.blocks || []).map((block) => (
-                <div
-                  key={block.id}
-                  className="border rounded p-3 space-y-2 bg-muted/10"
-                >
+              {section.blocks.map((block) => (
+                <div key={block.id} className="border rounded p-3 space-y-2 bg-muted/10">
                   {block.type === "text" && (
                     <Textarea
                       value={block.content || ""}
                       onChange={(e) =>
-                        updateBlock(section.id, block.id, {
-                          content: e.target.value,
-                        })
+                        updateBlock(section.id, block.id, { content: e.target.value })
                       }
                       placeholder="Write text..."
                       rows={3}
@@ -270,25 +235,17 @@ export const GuidebookEditor = ({
 
                   {(block.type === "list" || block.type === "checkbox") && (
                     <div className="space-y-2">
-                      {(block.items || []).map((item, i) => (
+                      {block.items.map((item, i) => (
                         <Input
                           key={i}
                           value={item}
                           onChange={(e) =>
-                            updateBlockItem(
-                              section.id,
-                              block.id,
-                              i,
-                              e.target.value
-                            )
+                            updateBlockItem(section.id, block.id, i, e.target.value)
                           }
                           placeholder={`Item ${i + 1}`}
                         />
                       ))}
-                      <Button
-                        size="sm"
-                        onClick={() => addBlockItem(section.id, block.id)}
-                      >
+                      <Button size="sm" onClick={() => addBlockItem(section.id, block.id)}>
                         Add Item
                       </Button>
                     </div>
@@ -311,56 +268,9 @@ export const GuidebookEditor = ({
                 <Button size="sm" onClick={() => addBlock(section.id, "list")}>
                   Add Bullet List
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => addBlock(section.id, "checkbox")}
-                >
+                <Button size="sm" onClick={() => addBlock(section.id, "checkbox")}>
                   Add Checkbox List
                 </Button>
-              </div>
-
-              {/* Image upload */}
-              <div className="space-y-2">
-                <Label>Image (optional)</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      document
-                        .getElementById(`section-image-${section.id}`)
-                        ?.click()
-                    }
-                  >
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Upload
-                  </Button>
-                  <input
-                    id={`section-image-${section.id}`}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = () =>
-                          updateSection(section.id, {
-                            image_url: reader.result as string,
-                          });
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                </div>
-                {section.image_url && (
-                  <img
-                    src={section.image_url}
-                    alt={section.title}
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
-                )}
               </div>
             </CardContent>
           </Card>
