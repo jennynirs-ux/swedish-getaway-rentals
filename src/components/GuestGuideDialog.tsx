@@ -14,7 +14,13 @@ import {
   LogOut, 
   Heart, 
   CheckSquare, 
-  Recycle 
+  Recycle, 
+  Apple, 
+  Package, 
+  Package2, 
+  Newspaper, 
+  Wine, 
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,8 +29,8 @@ type SectionType = "text" | "list" | "checkbox";
 interface GuideSection {
   id: string;
   title: string;
-  content?: string;        // används om type = "text"
-  items?: string[];        // används för listor/checkboxar
+  content?: string;        
+  items?: string[];        
   type?: SectionType;
   image_url?: string;
   icon?: React.ElementType;
@@ -40,8 +46,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Fasta sektioner med direkt-ikoner
-  const fixedSections: GuideSection[] = [
+  // Standardmallar (visas bara om editorn inte fyllt något)
+  const defaultSections: GuideSection[] = [
     { id: "home", title: "Welcome Home", icon: Home, type: "text", content: "Welcome to our property! We’re excited to host you." },
     { id: "directions", title: "Directions", icon: MapPin, type: "text", content: "How to reach us and parking instructions." },
     { id: "wifi", title: "Wi-Fi", icon: Wifi, type: "list", items: ["Network: Guest_Wifi", "Password: Welcome2024"] },
@@ -50,19 +56,25 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     { id: "places", title: "Places to visit", icon: BookOpen, type: "list", items: ["Local hiking trails", "Historic town center", "Beachfront promenade"] },
     { id: "rules", title: "House Rules", icon: Heart, type: "list", items: ["Respect quiet hours", "No smoking inside", "No parties allowed"] },
     { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox", items: ["Empty trash", "Return keys", "Close all windows"] },
-    { id: "recycling", title: "Recycling & Environment", icon: Recycle, type: "list", items: ["Food waste → brown bin", "Paper packaging → paper container", "Plastic packaging → plastic container", "Clear glass packaging → glass (clear)", "Coloured glass packaging → glass (coloured)", "Metal packaging → metal container", "Residual waste → grey bin"] },
+    { id: "recycling", title: "Recycling & Environment", icon: Recycle, type: "list", items: [
+      "Food waste → brown bin",
+      "Paper packaging → paper container",
+      "Plastic packaging → plastic container",
+      "Clear glass packaging → glass (clear)",
+      "Coloured glass packaging → glass (coloured)",
+      "Metal packaging → metal container",
+      "Residual waste → grey bin"
+    ] },
   ];
 
+  // Merge: editorn (property.guidebook_sections) prioriteras
   const customSections = (property.guidebook_sections as GuideSection[]) || [];
-  const allSections = fixedSections.map(section => {
+  const allSections = defaultSections.map(section => {
     const custom = customSections.find(s => s.id === section.id);
     return {
       ...section,
-      content: custom?.content || section.content,
-      image_url: custom?.image_url || section.image_url,
-      items: custom?.items || section.items,
-      type: custom?.type || section.type || "text",
-      icon: section.icon, // behåll original ikon
+      ...custom, // redigerat innehåll vinner alltid
+      icon: section.icon, // behåll standardikonen
     };
   });
 
@@ -89,21 +101,53 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     toast({ title: "PDF Export", description: "PDF export coming soon!" });
   };
 
-  // Renderer för olika typer av sektioner
+  // Rendera sektioner
   const renderSectionContent = (section: GuideSection) => {
-    if (section.type === "list" && section.items) {
+    const items = section.items;
+    const content = section.content;
+
+    // Specialfall: recycling
+    if (section.id === "recycling" && items) {
+      const getIconForItem = (item: string) => {
+        if (item.toLowerCase().includes("food")) return <Apple className="h-5 w-5 text-green-600" />;
+        if (item.toLowerCase().includes("paper")) return <Newspaper className="h-5 w-5 text-blue-600" />;
+        if (item.toLowerCase().includes("plastic")) return <Package className="h-5 w-5 text-pink-600" />;
+        if (item.toLowerCase().includes("clear glass")) return <Wine className="h-5 w-5 text-cyan-600" />;
+        if (item.toLowerCase().includes("coloured glass")) return <Wine className="h-5 w-5 text-purple-600" />;
+        if (item.toLowerCase().includes("metal")) return <Package2 className="h-5 w-5 text-gray-600" />;
+        if (item.toLowerCase().includes("residual")) return <Trash2 className="h-5 w-5 text-red-600" />;
+        return <Recycle className="h-5 w-5 text-primary" />;
+      };
+
+      return (
+        <div className="space-y-4">
+          <p className="text-muted-foreground">
+            In Sweden, proper recycling is required – otherwise fines may apply. Please use the correct bins:
+          </p>
+          <ul className="space-y-3">
+            {items.map((item, idx) => (
+              <li key={idx} className="flex items-center gap-3">
+                {getIconForItem(item)}
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    if (section.type === "list" && items) {
       return (
         <ul className="list-disc pl-5 space-y-2">
-          {section.items.map((item, idx) => (
-            <li key={idx}>{item}</li>
-          ))}
+          {items.map((item, idx) => <li key={idx}>{item}</li>)}
         </ul>
       );
     }
-    if (section.type === "checkbox" && section.items) {
+
+    if (section.type === "checkbox" && items) {
       return (
         <ul className="space-y-2">
-          {section.items.map((item, idx) => (
+          {items.map((item, idx) => (
             <li key={idx} className="flex items-center gap-2">
               <CheckSquare className="h-4 w-4 text-primary" />
               <span>{item}</span>
@@ -112,7 +156,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
         </ul>
       );
     }
-    return <p className="whitespace-pre-wrap">{section.content}</p>;
+
+    return <p className="whitespace-pre-wrap">{content}</p>;
   };
 
   return (
@@ -141,7 +186,6 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6 relative">
-          {/* Header */}
           <DialogHeader className="mb-6">
             <div className="flex items-start justify-between">
               <DialogTitle className="text-3xl font-bold">
