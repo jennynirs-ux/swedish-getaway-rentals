@@ -1,163 +1,135 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Property } from "@/hooks/useProperties";
-import { useState } from "react";
-import { Share2, Download, Home, MapPin, Wifi, BookOpen, Key, Info, LogOut, Heart, CheckSquare } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-type SectionType = "text" | "list" | "checkbox";
+import { 
+  X, Apple, Package, Recycle, Newspaper, Wine, Package2, Trash2, 
+  Lightbulb, AlertTriangle 
+} from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface GuideSection {
-  id: string;
+  icon: LucideIcon;
   title: string;
-  content?: string; // används om type = "text"
-  items?: string[]; // används för listor/checkboxar
-  type?: SectionType;
-  image_url?: string;
-  icon?: React.ElementType;
+  description: string;
+  content: string[];
+  tips?: string[];
+  important?: string[];
 }
 
-interface GuestGuideDialogProps {
+interface GuideSectionDialogProps {
+  section: GuideSection | null;
   isOpen: boolean;
   onClose: () => void;
-  property: Property;
 }
 
-const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) => {
-  const { toast } = useToast();
-  const [activeIndex, setActiveIndex] = useState(0);
+export const GuideSectionDialog = ({ section, isOpen, onClose }: GuideSectionDialogProps) => {
+  if (!section) return null;
 
-  // Fasta sektioner
-  const fixedSections: GuideSection[] = [
-    { id: "home", title: "Welcome Home", icon: Home, type: "text", content: "Welcome to our property! We’re excited to host you." },
-    { id: "directions", title: "Directions", icon: MapPin, type: "text", content: "How to reach us and parking instructions." },
-    { id: "wifi", title: "Wi-Fi", icon: Wifi, type: "list", items: ["Network: Guest_Wifi", "Password: Welcome2024"] },
-    { id: "checkin", title: "Check-in", icon: Key, type: "text", content: "Check-in time: 15:00. Contact us if you need early check-in." },
-    { id: "howthingswork", title: "How things work", icon: Info, type: "checkbox", items: ["Oven: press power + start", "Coffee maker: fill with water + press brew", "Heating: adjust thermostat in hallway"] },
-    { id: "places", title: "Places to visit", icon: BookOpen, type: "list", items: ["Local hiking trails", "Historic town center", "Beachfront promenade"] },
-    { id: "rules", title: "House Rules", icon: Heart, type: "list", items: ["Respect quiet hours", "No smoking inside", "No parties allowed"] },
-    { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox", items: ["Empty trash", "Return keys", "Close all windows"] },
-  ];
-
-  const customSections = (property.guidebook_sections as GuideSection[]) || [];
-  const allSections = fixedSections.map(section => {
-    const custom = customSections.find(s => s.id === section.id);
-    return {
-      ...section,
-      content: custom?.content || section.content,
-      image_url: custom?.image_url || section.image_url,
-      items: custom?.items || section.items,
-      type: custom?.type || section.type || "text"
-    };
-  });
-
-  const shareGuide = async () => {
-    const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `${property.title} - Guest Guide`,
-          text: `Complete guest guide for ${property.title}`,
-          url: guideUrl,
-        });
-      } else {
-        await navigator.clipboard.writeText(guideUrl);
-        toast({ title: "Link copied!", description: "Guest guide link copied to clipboard." });
-      }
-    } catch {
-      await navigator.clipboard.writeText(guideUrl);
-      toast({ title: "Link copied!", description: "Guest guide link copied to clipboard." });
-    }
-  };
-
-  const exportToPDF = () => {
-    toast({ title: "PDF Export", description: "PDF export coming soon!" });
-  };
-
-  // Renderer för olika typer av sektioner
-  const renderSectionContent = (section: GuideSection) => {
-    if (section.type === "list" && section.items) {
-      return (
-        <ul className="list-disc pl-5 space-y-2">
-          {section.items.map((item, idx) => (
-            <li key={idx}>{item}</li>
-          ))}
-        </ul>
-      );
-    }
-    if (section.type === "checkbox" && section.items) {
-      return (
-        <ul className="space-y-2">
-          {section.items.map((item, idx) => (
-            <li key={idx} className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-primary" />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      );
-    }
-    return <p className="whitespace-pre-wrap">{section.content}</p>;
-  };
+  const IconComponent = section.icon;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] flex p-0">
-        {/* Sidebar med ikoner */}
-        <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
-          {allSections.map((section, index) => {
-            const isActive = activeIndex === index;
-            const Icon = section.icon || Info;
-            return (
-              <button
-                key={section.id}
-                onClick={() => setActiveIndex(index)}
-                className={`p-3 rounded-xl transition-all duration-300 flex items-center justify-center ${
-                  isActive
-                    ? "bg-primary text-white shadow-md scale-110"
-                    : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
-                }`}
-              >
-                <Icon className="h-6 w-6" />
-              </button>
-            );
-          })}
-        </div>
+      <DialogContent className="max-w-3xl w-full max-h-[90vh] overflow-y-auto bg-card">
+        <DialogHeader className="pb-6 flex flex-row items-center justify-between border-b border-border">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <IconComponent className="w-6 h-6 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl font-display font-bold text-foreground">
+              {section.title}
+            </DialogTitle>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0 hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
+        
+        <div className="py-6 space-y-6">
+          {/* Description */}
+          <p className="text-muted-foreground text-lg leading-relaxed">
+            {section.description}
+          </p>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-6 relative">
-          {/* Header */}
-          <DialogHeader className="mb-6">
-            <div className="flex items-start justify-between">
-              <DialogTitle className="text-3xl font-bold">
-                {allSections[activeIndex].title}
-              </DialogTitle>
-              <div className="flex gap-2 mt-1">
-                <Button variant="outline" size="icon" onClick={shareGuide}>
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={exportToPDF}>
-                  <Download className="h-4 w-4" />
-                </Button>
+          {/* Main Content */}
+          {section.content && section.content.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-foreground mb-4">Information</h4>
+              <div className="space-y-3">
+                {section.content.map((item, index) => {
+                  // Get appropriate icon for recycling section
+                  const getWasteIcon = () => {
+                    if (section.title === "Recycling & Environment") {
+                      if (item.includes("Food waste")) return Apple;
+                      if (item.includes("Paper packaging")) return Package;
+                      if (item.includes("Plastic packaging")) return Package2;
+                      if (item.includes("Newspapers")) return Newspaper;
+                      if (item.includes("Clear glass packaging")) return Wine;
+                      if (item.includes("Coloured glass packaging")) return Wine;
+                      if (item.includes("Metal packaging")) return Package;
+                      if (item.includes("Residual waste")) return Trash2;
+                      if (item.includes("Separate containers")) return Recycle;
+                    }
+                    return null;
+                  };
+                  
+                  const WasteIcon = getWasteIcon();
+                  
+                  return (
+                    <div key={index} className="flex items-start gap-3">
+                      {WasteIcon ? (
+                        <div className="w-6 h-6 text-primary mt-1 flex-shrink-0">
+                          <WasteIcon className="w-full h-full" />
+                        </div>
+                      ) : (
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                      )}
+                      <p className="text-muted-foreground leading-relaxed">{item}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </DialogHeader>
-
-          {allSections[activeIndex].image_url && (
-            <img
-              src={allSections[activeIndex].image_url}
-              alt={allSections[activeIndex].title}
-              className="w-full h-48 object-cover rounded-lg mb-6"
-            />
           )}
 
-          <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
-            {renderSectionContent(allSections[activeIndex])}
-          </div>
+          {/* Tips */}
+          {section.tips && section.tips.length > 0 && (
+            <div className="bg-accent/10 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-accent" /> Tips
+              </h4>
+              <div className="space-y-2">
+                {section.tips.map((tip, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                    <p className="text-muted-foreground text-sm leading-relaxed">{tip}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Important Notes */}
+          {section.important && section.important.length > 0 && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" /> Important
+              </h4>
+              <div className="space-y-2">
+                {section.important.map((note, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 bg-destructive rounded-full mt-2 flex-shrink-0" />
+                    <p className="text-muted-foreground text-sm leading-relaxed">{note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default GuestGuideDialog;
