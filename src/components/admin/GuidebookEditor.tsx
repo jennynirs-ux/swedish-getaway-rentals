@@ -100,10 +100,96 @@ const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
     { id: "h2", type: "text", title: "Coffee machine", content: "Fill with water, insert filter and coffee, press brew." },
   ],
   waste: [
-    { id: "wa1", type: "text", content: "In Sweden, we must recycle properly – fines may apply if not sorted." },
-    { id: "wa2", type: "list", title: "Sort your trash", items: ["Plastic → Yellow bin", "Paper → Blue bin", "Colored glass → Green bin", "Clear glass → White bin", "Metal → Grey bin", "Food waste → Brown bin (bags under sink)"] },
-    { id: "wa3", type: "text", content: "Bring full bags to the recycling station at ICA Kvantum." },
+    { 
+      id: "wa1", 
+      type: "text", 
+      title: "Why recycling matters", 
+      content: "WHEN WE ALL RECYCLE, WE ALL WIN. Materials can be reused to make new products. Food waste becomes biogas and biofertilizer, residual waste is turned into heat and electricity. Recycling saves energy and protects nature." 
+    },
+    { 
+      id: "wa2", 
+      type: "list", 
+      title: "Food Waste", 
+      items: [
+        "Fruit & vegetable scraps, tea bags, coffee grounds, eggshells, meat bones",
+        "A bit of kitchen paper is also fine",
+        "❌ Not food waste: plastic, cigarettes, flowers, candles"
+      ]
+    },
+    { 
+      id: "wa3", 
+      type: "list", 
+      title: "Plastic Packaging", 
+      items: [
+        "Bottles, bags, refill packs, plastic tubes, crisp packets, styrofoam",
+        "Empty and rinse packaging before recycling",
+        "❌ Not plastic packaging: toys, furniture, bulky waste"
+      ]
+    },
+    { 
+      id: "wa4", 
+      type: "list", 
+      title: "Paper Packaging", 
+      items: [
+        "Milk & juice cartons, pasta packs, shoeboxes, cardboard boxes, paper bags",
+        "Flatten cartons and fold boxes to save space",
+        "❌ Envelopes should go in household waste"
+      ]
+    },
+    { 
+      id: "wa5", 
+      type: "list", 
+      title: "Newspapers", 
+      items: [
+        "Daily/weekly newspapers, brochures, catalogues, magazines",
+        "Remove plastic wrap and stickers",
+        "❌ Not included: envelopes, bound books (goes to household waste)"
+      ]
+    },
+    { 
+      id: "wa6", 
+      type: "list", 
+      title: "Glass Packaging", 
+      items: [
+        "Clear glass bottles and jars → clear container",
+        "Coloured glass bottles and jars → coloured container",
+        "❌ Do not recycle porcelain, ceramics, light bulbs here"
+      ]
+    },
+    { 
+      id: "wa7", 
+      type: "list", 
+      title: "Metal Packaging", 
+      items: [
+        "Tin cans, bottle caps, lids, spray cans, empty paint tins",
+        "Fold in sharp lids for safety",
+        "❌ Tins with paint/glue residue → hazardous waste"
+      ]
+    },
+    { 
+      id: "wa8", 
+      type: "list", 
+      title: "Residual Waste", 
+      items: [
+        "Nappies, envelopes, dishcloths, snus, toothbrushes, hair",
+        "Nothing recyclable should go in residual waste",
+        "Hazardous waste and electrical items must be taken to recycling centres"
+      ]
+    },
+    { 
+      id: "wa9", 
+      type: "text", 
+      title: "Deposit system (Pant)", 
+      content: "Plastic bottles and aluminium cans with the Swedish deposit symbol must be returned at pant machines in grocery stores. Most become new bottles and cans; the rest is turned into packaging material. Find pant machines at: https://pantamera.nu"
+    },
+    { 
+      id: "wa10", 
+      type: "text", 
+      title: "More information", 
+      content: "Find your nearest recycling station and more guides at: www.sopor.nu"
+    }
   ],
+
   places: [
     { id: "p1", type: "list", title: "Restaurants", items: ["Pizzeria Napoli", "Hamnkrogen seafood", "Sushi & Wok Lerum"] },
     { id: "p2", type: "list", title: "Attractions", items: ["Lake Aspen – swimming", "Skatås nature reserve", "Göteborg city – 20 min by train"] },
