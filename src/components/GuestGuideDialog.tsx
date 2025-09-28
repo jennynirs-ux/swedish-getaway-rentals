@@ -20,7 +20,10 @@ import {
   Package2, 
   Newspaper, 
   Wine, 
-  Trash2
+  Trash2,
+  TreePine,
+  PawPrint,
+  GlassWater
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -157,7 +160,23 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       );
     }
 
-    return <p className="whitespace-pre-wrap">{content}</p>;
+    // Handle markdown-style content with better formatting
+    const formatContent = (text: string) => {
+      return text.split('\n').map((line, idx) => {
+        if (line.startsWith('**') && line.endsWith('**')) {
+          return <h4 key={idx} className="font-semibold text-foreground mt-4 mb-2">{line.slice(2, -2)}</h4>;
+        }
+        if (line.startsWith('• ')) {
+          return <li key={idx} className="ml-4">{line.slice(2)}</li>;
+        }
+        if (line.trim() === '') {
+          return <br key={idx} />;
+        }
+        return <p key={idx} className="mb-2">{line}</p>;
+      });
+    };
+
+    return <div className="space-y-2">{formatContent(content || "")}</div>;
   };
 
   return (

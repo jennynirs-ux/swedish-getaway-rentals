@@ -9,6 +9,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
 import PropertySearch from "@/components/PropertySearch";
+import MainNavigation from "@/components/MainNavigation";
 
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
 import bookCover from "@/assets/book-cover.png";
@@ -101,8 +102,11 @@ const HomePage = memo(() => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      {/* Navigation */}
+      <MainNavigation />
+      
       {/* Hero Section */}
-      <header className="relative py-20 overflow-hidden">
+      <header className="relative py-20 overflow-hidden mt-16">
         <div className="absolute inset-0">
           <LazyImage
             src={forestHeroBg}
