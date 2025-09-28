@@ -12,9 +12,10 @@ interface ReviewCardProps {
   comment?: string;
   created_at: string;
   className?: string;
+  propertyTitle?: string;
 }
 
-const ReviewCard = ({ reviewer, rating, comment, created_at, className }: ReviewCardProps) => {
+const ReviewCard = ({ reviewer, rating, comment, created_at, className, propertyTitle }: ReviewCardProps) => {
   const displayName = reviewer.display_name || reviewer.full_name || 'Anonymous';
   const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
 
@@ -30,6 +31,9 @@ const ReviewCard = ({ reviewer, rating, comment, created_at, className }: Review
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
               <h4 className="font-semibold">{displayName}</h4>
+              {propertyTitle && (
+                <span className="text-sm text-muted-foreground">for {propertyTitle}</span>
+              )}
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star

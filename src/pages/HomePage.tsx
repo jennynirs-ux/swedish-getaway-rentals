@@ -175,7 +175,38 @@ const HomePage = memo(() => {
       </main>
 
       {/* Book Promotion Section */}
-      {/* ... din befintliga boksektion oförändrad ... */}
+      <section className="py-20 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <h2 className="text-4xl font-bold text-foreground">
+                  Experience Nordic Living
+                </h2>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  Our comprehensive guest guide helps you make the most of your Nordic getaway. 
+                  From local customs to hidden gems, discover everything you need for an authentic experience.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button size="lg" asChild>
+                    <Link to="/book-now">Book Your Stay</Link>
+                  </Button>
+                  <Button variant="outline" size="lg" asChild>
+                    <Link to="/villa-hacken/guide">View Guest Guide</Link>
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <LazyImage
+                  src={bookCover}
+                  alt="Nordic getaway guest guide book cover"
+                  className="w-full max-w-md mx-auto rounded-lg shadow-elegant"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Featured Products Section */}
       <MemoizedHomepageProducts />
