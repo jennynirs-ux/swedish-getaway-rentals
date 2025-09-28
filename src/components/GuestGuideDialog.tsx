@@ -13,7 +13,8 @@ import {
   Info, 
   LogOut, 
   Heart, 
-  CheckSquare 
+  CheckSquare, 
+  Recycle 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,8 +23,8 @@ type SectionType = "text" | "list" | "checkbox";
 interface GuideSection {
   id: string;
   title: string;
-  content?: string; // används om type = "text"
-  items?: string[]; // används för listor/checkboxar
+  content?: string;        // används om type = "text"
+  items?: string[];        // används för listor/checkboxar
   type?: SectionType;
   image_url?: string;
   icon?: React.ElementType;
@@ -39,7 +40,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // ✅ Fasta sektioner – alltid med giltiga ikoner
+  // Fasta sektioner med direkt-ikoner
   const fixedSections: GuideSection[] = [
     { id: "home", title: "Welcome Home", icon: Home, type: "text", content: "Welcome to our property! We’re excited to host you." },
     { id: "directions", title: "Directions", icon: MapPin, type: "text", content: "How to reach us and parking instructions." },
@@ -49,19 +50,19 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     { id: "places", title: "Places to visit", icon: BookOpen, type: "list", items: ["Local hiking trails", "Historic town center", "Beachfront promenade"] },
     { id: "rules", title: "House Rules", icon: Heart, type: "list", items: ["Respect quiet hours", "No smoking inside", "No parties allowed"] },
     { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox", items: ["Empty trash", "Return keys", "Close all windows"] },
+    { id: "recycling", title: "Recycling & Environment", icon: Recycle, type: "list", items: ["Food waste → brown bin", "Paper packaging → paper container", "Plastic packaging → plastic container", "Clear glass packaging → glass (clear)", "Coloured glass packaging → glass (coloured)", "Metal packaging → metal container", "Residual waste → grey bin"] },
   ];
 
   const customSections = (property.guidebook_sections as GuideSection[]) || [];
-
   const allSections = fixedSections.map(section => {
     const custom = customSections.find(s => s.id === section.id);
     return {
       ...section,
-      content: custom?.content ?? section.content,
-      image_url: custom?.image_url ?? section.image_url,
-      items: custom?.items ?? section.items,
-      type: custom?.type ?? section.type ?? "text",
-      icon: section.icon, // alltid från lucide-react
+      content: custom?.content || section.content,
+      image_url: custom?.image_url || section.image_url,
+      items: custom?.items || section.items,
+      type: custom?.type || section.type || "text",
+      icon: section.icon, // behåll original ikon
     };
   });
 
@@ -88,7 +89,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     toast({ title: "PDF Export", description: "PDF export coming soon!" });
   };
 
-  // ✅ Renderer för olika typer av sektioner
+  // Renderer för olika typer av sektioner
   const renderSectionContent = (section: GuideSection) => {
     if (section.type === "list" && section.items) {
       return (
@@ -121,7 +122,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
         <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
           {allSections.map((section, index) => {
             const isActive = activeIndex === index;
-            const Icon = typeof section.icon === "function" ? section.icon : Info; // ✅ fallback
+            const Icon = section.icon || Info;
             return (
               <button
                 key={section.id}
