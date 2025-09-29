@@ -60,7 +60,7 @@ const BookPromotion = () => {
           {/* Right: Text + Reviews + CTAs */}
           <div className="flex-1 space-y-4">
             {/* Book name as subtitle */}
-            <h3 className="text-lg font-semibold text-amber-700">
+            <h3 className="text-lg font-semibold text-amber-800">
               When the Ocean Changed Everything
             </h3>
 
@@ -90,13 +90,15 @@ const BookPromotion = () => {
                       key={i}
                       className={`w-4 h-4 ${
                         i < review.rating
-                          ? "text-amber-700 fill-amber-700"
+                          ? "text-amber-800 fill-amber-800"
                           : "text-muted-foreground"
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-sm font-semibold">{review.author}</p>
+                <p className="text-sm font-semibold text-amber-800">
+                  {review.author}
+                </p>
               </div>
 
               {/* Next button */}
