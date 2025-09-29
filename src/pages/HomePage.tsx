@@ -5,13 +5,13 @@ import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
 import LazyImage from "@/components/LazyImage";
-import { Grid3X3, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
 import PropertySearch from "@/components/PropertySearch";
 import MainNavigation from "@/components/MainNavigation";
+import BookPromotion from "@/components/BookPromotion"; // 👈 importera nya komponenten
 
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
-import bookCover from "@/assets/book-cover.png";
 
 interface PropertyFilters {
   guests?: number;
@@ -19,84 +19,11 @@ interface PropertyFilters {
   amenities?: string[];
 }
 
-// Reviews
-const reviews = [
-  {
-    text: `"When the Ocean Changed Everything" is a book that stays with you long after the last page. A tribute to human strength and resilience.`,
-    author: "Patrik",
-    date: "2025-01-03",
-    rating: 5,
-  },
-  {
-    text: "Jenny’s book is a powerful and moving account of how a single event can change a life, written with honesty and hope.",
-    author: "Helena",
-    date: "2024-12-17",
-    rating: 4,
-  },
-  {
-    text: "A compelling description of one of the greatest natural disasters of our time. The book is absolutely worth reading.",
-    author: "Per",
-    date: "2024-12-14",
-    rating: 5,
-  },
-  {
-    text: "An incredibly moving and captivating book. I couldn’t put it down and read it in one sitting.",
-    author: "Anna",
-    date: "2024-12-14",
-    rating: 5,
-  },
-  {
-    text: "A dramatic and well-written story about the tsunami in Sri Lanka that hooks you from the very first line.",
-    author: "Karl-Olov",
-    date: "2024-12-14",
-    rating: 5,
-  },
-];
-
-const ReviewCarousel = () => {
-  const [index, setIndex] = useState(0);
-  const prev = () => setIndex((index - 1 + reviews.length) % reviews.length);
-  const next = () => setIndex((index + 1) % reviews.length);
-
-  const review = reviews[index];
-
-  return (
-    <div className="bg-muted/30 p-6 rounded-lg shadow-md relative">
-      <p className="text-lg italic text-muted-foreground mb-4">"{review.text}"</p>
-      <div className="flex items-center gap-1 mb-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star
-            key={i}
-            className={`w-5 h-5 ${
-              i < review.rating ? "text-amber-700 fill-amber-700" : "text-muted-foreground"
-            }`}
-          />
-        ))}
-      </div>
-      <p className="font-semibold">{review.author}</p>
-      <p className="text-sm text-muted-foreground">{review.date}</p>
-
-      {/* Navigation */}
-      <div className="absolute top-1/2 left-2 -translate-y-1/2">
-        <button onClick={prev}>
-          <ChevronLeft className="w-6 h-6 text-muted-foreground hover:text-primary" />
-        </button>
-      </div>
-      <div className="absolute top-1/2 right-2 -translate-y-1/2">
-        <button onClick={next}>
-          <ChevronRight className="w-6 h-6 text-muted-foreground hover:text-primary" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Memoized components
 const MemoizedPropertyCard = memo(PropertyCard);
 const MemoizedHomepageProducts = memo(HomepageProducts);
 
 const HomePage = memo(() => {
-  /** Optimized properties query */
+  /** Hämta properties från supabase */
   const propertiesQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from("properties")
@@ -136,6 +63,7 @@ const HomePage = memo(() => {
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
 
+  /** Bygg lista med amenities */
   const availableAmenities = useMemo(() => {
     const all = new Set<string>();
     (properties || []).forEach((p: any) => {
@@ -148,6 +76,7 @@ const HomePage = memo(() => {
     return Array.from(all).sort();
   }, [properties]);
 
+  /** Filtrera efter sökkriterier */
   const filteredProperties = useMemo(() => {
     if (!filters) return properties;
 
@@ -174,35 +103,34 @@ const HomePage = memo(() => {
       {/* Navigation */}
       <MainNavigation />
 
-    {/* Hero Section */}
-    <header className="relative h-[80vh] flex items-center justify-center text-center">
-      <div className="absolute inset-0">
-        <LazyImage
-          src={forestHeroBg}
-          alt="Swedish forest background with sunlight through trees"
-          className="w-full h-full object-cover"
-          priority={true}
-          loading="eager"
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/70"></div>
-      </div>
-    
-      <div className="relative z-10 px-4 max-w-4xl mx-auto">
-        <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-          Nordic Getaways
-        </h1>
-        <p className="text-xl md:text-2xl text-white/90 mb-10">
-          Discover your perfect retreat in the Nordic
-        </p>
-    
-        {/* Search bar */}
-        <PropertySearch
-          onFiltersChange={setFilters}
-          availableAmenities={availableAmenities}
-        />
-      </div>
-    </header>
+      {/* Hero Section */}
+      <header className="relative h-[80vh] flex items-center justify-center text-center">
+        <div className="absolute inset-0">
+          <LazyImage
+            src={forestHeroBg}
+            alt="Swedish forest background with sunlight through trees"
+            className="w-full h-full object-cover"
+            priority={true}
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/70"></div>
+        </div>
 
+        <div className="relative z-10 px-4 max-w-4xl mx-auto">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            Nordic Getaways
+          </h1>
+          <p className="text-xl md:text-2xl text-white/90 mb-10">
+            Discover your perfect retreat in the Nordic
+          </p>
+
+          {/* Search bar */}
+          <PropertySearch
+            onFiltersChange={setFilters}
+            availableAmenities={availableAmenities}
+          />
+        </div>
+      </header>
 
       {/* Property Cards */}
       <main className="pb-12">
@@ -241,53 +169,20 @@ const HomePage = memo(() => {
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">No properties found</h3>
-                <p className="text-muted-foreground mb-6">No properties are currently available.</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  No properties found
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  No properties are currently available.
+                </p>
               </div>
             </div>
           )}
         </div>
       </main>
 
-      {/* Book Section */}
-      <section className="py-12 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto flex flex-row gap-6 items-start">
-            {/* Left: Book image */}
-            <div className="flex-shrink-0">
-              <LazyImage
-                src={bookCover}
-                alt="When the Ocean Changed Everything book cover"
-                className="w-28 sm:w-40 md:w-56 lg:w-64 rounded shadow-lg"
-              />
-            </div>
-            {/* Right: Text + Reviews + CTAs */}
-            <div className="flex-1 space-y-4">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-                Vacation Read – A Story of Survival & Meaning
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                A gripping and unforgettable story about survival, resilience,
-                and finding light after the darkest moments. Perfect for your
-                getaway reading.
-              </p>
-              <ReviewCarousel />
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" asChild>
-                  <a href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843" target="_blank" rel="noopener noreferrer">
-                    Swedish Edition
-                  </a>
-                </Button>
-                <Button variant="outline" size="lg" asChild>
-                  <a href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661" target="_blank" rel="noopener noreferrer">
-                    English Edition
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Book Promotion Section */}
+      <BookPromotion /> {/* 👈 ersätter all gammal bokkod */}
 
       {/* Featured Products Section */}
       <MemoizedHomepageProducts />
@@ -320,7 +215,9 @@ const HomePage = memo(() => {
           </div>
 
           <div className="text-center pt-8 border-t border-border">
-            <p className="text-muted-foreground">© 2025 Nordic Getaways. Created with love for Nordic experiences.</p>
+            <p className="text-muted-foreground">
+              © 2025 Nordic Getaways. Created with love for Nordic experiences.
+            </p>
           </div>
         </div>
       </footer>
