@@ -1,32 +1,39 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Save,
-  Download,
-  Share,
   Home,
   MapPin,
-  Coffee,
+  Car,
+  Train,
+  ParkingCircle,
   Key,
   Wifi,
-  Utensils,
-  Cog,
-  Landmark,
-  BookOpen,
   Shield,
-  LogOut,
-  Heart,
+  Utensils,
+  Flame,
+  Trees,
   Recycle,
+  Landmark,
+  ShoppingCart,
+  LogOut,
+  BookOpen,
+  Star,
+  Share2,
+  Download,
+  Heart,
+  Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+type BlockType = "text" | "list" | "checkbox";
+
 interface GuidebookBlock {
   id: string;
-  type: "text" | "list" | "checkbox";
+  type: BlockType;
   title?: string;
   content?: string;
   items?: string[];
@@ -34,103 +41,178 @@ interface GuidebookBlock {
 
 interface GuidebookSection {
   id: string;
-  icon: React.ElementType;
   title: string;
+  icon: React.ElementType;
   blocks: GuidebookBlock[];
-  image_url?: string;
 }
 
 interface GuidebookEditorProps {
-  sections?: GuidebookSection[];
   onChange: (sections: GuidebookSection[]) => void;
   onSave?: () => Promise<void>;
   saving?: boolean;
   propertyTitle?: string;
 }
 
-const FIXED_SECTIONS: Omit<GuidebookSection, "blocks">[] = [
-  { id: "home", icon: Home, title: "Welcome Home" },
-  { id: "directions", icon: MapPin, title: "Directions" },
-  { id: "stop", icon: Coffee, title: "Stop on the way" },
-  { id: "checkin", icon: Key, title: "Check-in" },
-  { id: "wifi", icon: Wifi, title: "Wi-Fi" },
-  { id: "kitchen", icon: Utensils, title: "Kitchen" },
-  { id: "howthingswork", icon: Cog, title: "How things work" },
-  { id: "waste", icon: Recycle, title: "Waste & Recycling" },
-  { id: "places", icon: Landmark, title: "Places to visit" },
-  { id: "customs", icon: BookOpen, title: "Swedish customs" },
-  { id: "rules", icon: Shield, title: "House rules" },
-  { id: "checkout", icon: LogOut, title: "Check-out" },
-  { id: "hoststory", icon: Heart, title: "Host Story" },
+const INITIAL_SECTIONS: GuidebookSection[] = [
+  {
+    id: "welcome",
+    title: "Welcome",
+    icon: Home,
+    blocks: [
+      { id: "w1", type: "text", content: "Welcome to our property! We’re happy to host you." },
+      { id: "w2", type: "text", title: "Emergency Information", content: "Emergency number: 112\nNearest hospital: Lerum Health Center" },
+      { id: "w3", type: "text", title: "Host Story", content: "We are a family who loves sharing our home with guests." },
+    ],
+  },
+  {
+    id: "directions",
+    title: "Directions",
+    icon: MapPin,
+    blocks: [
+      { id: "d1", type: "text", title: "Address", content: "Häckenvägen 78, 443 92 Lerum" },
+      { id: "d2", type: "text", title: "Get here by car", content: "Take the E20 and exit at Lerum. Follow signs to Häckenvägen." },
+      { id: "d3", type: "text", title: "Get here by public transportation", content: "Train to Lerum station, then bus 533 to Häckenvägen." },
+      { id: "d4", type: "text", content: "Tip: Stop at Local Shopping to get groceries on the way." },
+    ],
+  },
+  {
+    id: "parking",
+    title: "Parking",
+    icon: ParkingCircle,
+    blocks: [
+      { id: "p1", type: "text", content: "Park in front of the garage (yellow door). Room for 2 cars. No parking on the street." },
+    ],
+  },
+  {
+    id: "checkin",
+    title: "Check-in",
+    icon: Key,
+    blocks: [
+      { id: "c1", type: "text", content: "Check-in time: 15:00" },
+      { id: "c2", type: "text", content: "Keys are in the lockbox by the entrance. Code will be sent before arrival." },
+    ],
+  },
+  {
+    id: "wifi",
+    title: "Wi-Fi",
+    icon: Wifi,
+    blocks: [
+      { id: "w1", type: "list", title: "Network & Password", items: ["Network: Guest_Wifi", "Password: Welcome2024"] },
+    ],
+  },
+  {
+    id: "rules",
+    title: "House Rules",
+    icon: Shield,
+    blocks: [
+      { id: "r1", type: "list", title: "Rules", items: ["No smoking indoors", "Respect quiet hours 22–07", "No parties"] },
+    ],
+  },
+  {
+    id: "howthingswork",
+    title: "How things work",
+    icon: Utensils,
+    blocks: [
+      { id: "h1", type: "checkbox", title: "Kitchen", items: ["Oven", "Dishwasher", "Coffee machine"] },
+      { id: "h2", type: "checkbox", title: "Heating", items: ["Radiators", "Fireplace"] },
+      { id: "h3", type: "checkbox", title: "Outdoor kitchen", items: ["Grill", "Pizza oven"] },
+      { id: "h4", type: "checkbox", title: "Outdoor amenities", items: ["Hot tub", "Sauna"] },
+    ],
+  },
+  {
+    id: "waste",
+    title: "Waste & Recycling",
+    icon: Recycle,
+    blocks: [
+      { id: "wa1", type: "list", title: "Food waste", items: ["Brown bin outside"] },
+      { id: "wa2", type: "list", title: "Plastic", items: ["Yellow bin"] },
+      { id: "wa3", type: "list", title: "Paper", items: ["Blue bin"] },
+    ],
+  },
+  {
+    id: "local",
+    title: "Local Recommendations",
+    icon: Landmark,
+    blocks: [
+      { id: "l1", type: "list", title: "Restaurants", items: ["Pizzeria Napoli", "Hamnkrogen seafood"] },
+      { id: "l2", type: "list", title: "Activities", items: ["Lake Aspen – swimming", "Hiking trails"] },
+    ],
+  },
+  {
+    id: "shopping",
+    title: "Local Shopping",
+    icon: ShoppingCart,
+    blocks: [
+      { id: "s1", type: "list", title: "Stops", items: ["ICA Kvantum – groceries", "Shell – gas & snacks"] },
+    ],
+  },
+  {
+    id: "checkout",
+    title: "Check-out",
+    icon: LogOut,
+    blocks: [
+      { id: "co1", type: "text", content: "Check-out time: 11:00" },
+      { id: "co2", type: "checkbox", title: "Checklist", items: ["Empty trash", "Remove bed linen", "Load dishwasher", "Lock doors"] },
+    ],
+  },
+  {
+    id: "customs",
+    title: "Swedish Customs",
+    icon: BookOpen,
+    blocks: [
+      { id: "cu1", type: "list", title: "Customs", items: ["No shoes indoors", "Fika = coffee break", "Alcohol only at Systembolaget"] },
+    ],
+  },
+  {
+    id: "review",
+    title: "Review",
+    icon: Star,
+    blocks: [
+      { id: "rv1", type: "text", content: "Please leave us a 5-star review if you enjoyed your stay!" },
+    ],
+  },
+  {
+    id: "social",
+    title: "Let’s get social",
+    icon: Users,
+    blocks: [
+      { id: "so1", type: "text", content: "Follow us on Instagram @nordicgetaways and share your memories!" },
+    ],
+  },
 ];
 
 export const GuidebookEditor = ({
-  sections = [],
   onChange,
   onSave,
   saving = false,
   propertyTitle = "Property",
 }: GuidebookEditorProps) => {
   const { toast } = useToast();
+  const [sections, setSections] = useState<GuidebookSection[]>(INITIAL_SECTIONS);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Merge sections (default + saved)
-  const [localSections, setLocalSections] = useState<GuidebookSection[]>(
-    FIXED_SECTIONS.map((s) => {
-      const existing = sections.find((sec) => sec.id === s.id);
-      return {
-        ...s,
-        blocks: existing?.blocks || [],
-        image_url: existing?.image_url,
-      };
-    })
-  );
-
-  const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
-    const newSections = localSections.map((s) =>
-      s.id === id ? { ...s, ...updated } : s
+  const updateBlock = (sectionId: string, blockId: string, changes: Partial<GuidebookBlock>) => {
+    const newSections = sections.map((s) =>
+      s.id === sectionId
+        ? { ...s, blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, ...changes } : b)) }
+        : s
     );
-    setLocalSections(newSections);
+    setSections(newSections);
     onChange(newSections);
   };
 
-  const updateBlock = useCallback(
-    (sectionId: string, blockId: string, changes: Partial<GuidebookBlock>) => {
-      const newSections = localSections.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              blocks: s.blocks.map((b) =>
-                b.id === blockId ? { ...b, ...changes } : b
-              ),
-            }
-          : s
-      );
-      setLocalSections(newSections);
-      onChange(newSections);
-    },
-    [localSections, onChange]
-  );
-
-  const updateBlockItem = (
-    sectionId: string,
-    blockId: string,
-    index: number,
-    value: string
-  ) => {
-    const newSections = localSections.map((s) =>
+  const updateBlockItem = (sectionId: string, blockId: string, index: number, value: string) => {
+    const newSections = sections.map((s) =>
       s.id === sectionId
         ? {
             ...s,
             blocks: s.blocks.map((b) =>
-              b.id === blockId
-                ? { ...b, items: b.items?.map((it, i) => (i === index ? value : it)) }
-                : b
+              b.id === blockId ? { ...b, items: b.items?.map((it, i) => (i === index ? value : it)) } : b
             ),
           }
         : s
     );
-    setLocalSections(newSections);
+    setSections(newSections);
     onChange(newSections);
   };
 
@@ -138,36 +220,26 @@ export const GuidebookEditor = ({
     if (onSave) {
       try {
         await onSave();
-        toast({ title: "Success", description: "Guest guide saved successfully" });
+        toast({ title: "Saved", description: "Guidebook saved successfully" });
       } catch {
-        toast({
-          title: "Error",
-          description: "Failed to save guide",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "Could not save", variant: "destructive" });
       }
     }
   };
 
-  const activeSection = localSections[activeIndex];
-  const ActiveIcon = activeSection.icon;
+  const currentSection = sections[activeIndex];
 
   return (
-    <div className="flex h-[85vh] border rounded-lg overflow-hidden">
+    <div className="flex h-[90vh]">
       {/* Sidebar */}
-      <div className="w-24 border-r bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto">
-        {localSections.map((section, index) => {
-          const Icon = section.icon;
-          const isActive = activeIndex === index;
+      <div className="w-20 bg-muted/20 flex flex-col items-center py-4 gap-3 overflow-y-auto">
+        {sections.map((s, i) => {
+          const Icon = s.icon;
           return (
             <button
-              key={section.id}
-              onClick={() => setActiveIndex(index)}
-              className={`p-3 rounded-xl transition-all duration-300 flex items-center justify-center ${
-                isActive
-                  ? "bg-primary text-white shadow-md scale-110"
-                  : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
-              }`}
+              key={s.id}
+              onClick={() => setActiveIndex(i)}
+              className={`p-2 rounded-lg ${i === activeIndex ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted/30"}`}
             >
               <Icon className="h-6 w-6" />
             </button>
@@ -177,77 +249,47 @@ export const GuidebookEditor = ({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <ActiveIcon className="h-6 w-6 text-primary" /> {activeSection.title}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Editing section for {propertyTitle}
-            </p>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">{currentSection.title}</h2>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Share className="h-4 w-4 mr-2" /> Share
+            <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
+              {saving ? "Saving..." : "Save"}
             </Button>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" /> PDF
-            </Button>
-            {onSave && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleSave}
-                disabled={saving}
-              >
-                <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save"}
-              </Button>
-            )}
           </div>
         </div>
 
-        {/* Blocks */}
-        {activeSection.blocks.map((block) => (
+        {currentSection.blocks.map((block) => (
           <Card key={block.id} className="mb-4">
             <CardHeader>
-              <CardTitle>{block.title}</CardTitle>
+              {block.title && <CardTitle className="text-sm">{block.title}</CardTitle>}
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent>
               {block.type === "text" && (
                 <Textarea
                   value={block.content}
-                  onChange={(e) =>
-                    updateBlock(activeSection.id, block.id, { content: e.target.value })
-                  }
+                  onChange={(e) => updateBlock(currentSection.id, block.id, { content: e.target.value })}
                   rows={3}
                 />
               )}
-
               {block.type === "list" && (
                 <div className="space-y-2">
-                  {block.items?.map((item, i) => (
+                  {block.items?.map((item, idx) => (
                     <Input
-                      key={i}
+                      key={idx}
                       value={item}
-                      onChange={(e) =>
-                        updateBlockItem(activeSection.id, block.id, i, e.target.value)
-                      }
+                      onChange={(e) => updateBlockItem(currentSection.id, block.id, idx, e.target.value)}
                     />
                   ))}
                 </div>
               )}
-
               {block.type === "checkbox" && (
                 <div className="space-y-2">
-                  {block.items?.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2">
+                  {block.items?.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
                       <input type="checkbox" disabled className="h-4 w-4" />
                       <Input
                         value={item}
-                        onChange={(e) =>
-                          updateBlockItem(activeSection.id, block.id, i, e.target.value)
-                        }
+                        onChange={(e) => updateBlockItem(currentSection.id, block.id, idx, e.target.value)}
                       />
                     </div>
                   ))}
