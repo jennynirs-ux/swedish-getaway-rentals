@@ -5,7 +5,7 @@ import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
 import LazyImage from "@/components/LazyImage";
-import { Grid3X3, ChevronLeft, ChevronRight } from "lucide-react";
+import { Grid3X3, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
 import PropertySearch from "@/components/PropertySearch";
 import MainNavigation from "@/components/MainNavigation";
@@ -19,39 +19,37 @@ interface PropertyFilters {
   amenities?: string[];
 }
 
-const MemoizedPropertyCard = memo(PropertyCard);
-const MemoizedHomepageProducts = memo(HomepageProducts);
-
+// Reviews
 const reviews = [
   {
-    text: `"När havet förändrade allt" är en bok som stannar kvar i tankarna långt efter att sista sidan är läst...`,
+    text: `"When the Ocean Changed Everything" is a book that stays with you long after the last page. A tribute to human strength and resilience.`,
     author: "Patrik",
     date: "2025-01-03",
-    rating: "100%",
+    rating: 5,
   },
   {
-    text: "Jennys bok är en stark och rörande skildring av hur en enda händelse kan förändra ett liv...",
+    text: "Jenny’s book is a powerful and moving account of how a single event can change a life, written with honesty and hope.",
     author: "Helena",
     date: "2024-12-17",
-    rating: "80%",
+    rating: 4,
   },
   {
-    text: "En medryckande och gripande beskrivning av vår tids största naturkatastrof...",
+    text: "A compelling description of one of the greatest natural disasters of our time. The book is absolutely worth reading.",
     author: "Per",
     date: "2024-12-14",
-    rating: "100%",
+    rating: 5,
   },
   {
-    text: "En mycket gripande och fängslande bok. Sträckläste boken, ville inte sluta...",
+    text: "An incredibly moving and captivating book. I couldn’t put it down and read it in one sitting.",
     author: "Anna",
     date: "2024-12-14",
-    rating: "100%",
+    rating: 5,
   },
   {
-    text: "Mycket spännande och dramatisk bok om tsunamin på Sri Lanka...",
-    author: "Karl-olov",
+    text: "A dramatic and well-written story about the tsunami in Sri Lanka that hooks you from the very first line.",
+    author: "Karl-Olov",
     date: "2024-12-14",
-    rating: "100%",
+    rating: 5,
   },
 ];
 
@@ -65,10 +63,20 @@ const ReviewCarousel = () => {
   return (
     <div className="bg-muted/30 p-6 rounded-lg shadow-md relative">
       <p className="text-lg italic text-muted-foreground mb-4">"{review.text}"</p>
+      <div className="flex items-center gap-1 mb-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star
+            key={i}
+            className={`w-5 h-5 ${
+              i < review.rating ? "text-amber-700 fill-amber-700" : "text-muted-foreground"
+            }`}
+          />
+        ))}
+      </div>
       <p className="font-semibold">{review.author}</p>
       <p className="text-sm text-muted-foreground">{review.date}</p>
-      <p className="text-sm text-primary">Rating: {review.rating}</p>
 
+      {/* Navigation */}
       <div className="absolute top-1/2 left-2 -translate-y-1/2">
         <button onClick={prev}>
           <ChevronLeft className="w-6 h-6 text-muted-foreground hover:text-primary" />
@@ -83,7 +91,12 @@ const ReviewCarousel = () => {
   );
 };
 
+// Memoized components
+const MemoizedPropertyCard = memo(PropertyCard);
+const MemoizedHomepageProducts = memo(HomepageProducts);
+
 const HomePage = memo(() => {
+  /** Optimized properties query */
   const propertiesQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from("properties")
@@ -162,33 +175,29 @@ const HomePage = memo(() => {
       <MainNavigation />
 
       {/* Hero Section */}
-      <header className="relative h-[80vh] overflow-hidden">
-        <div className="absolute inset-0">
-          <LazyImage
-            src={forestHeroBg}
-            alt="Swedish forest background with sunlight through trees"
-            className="w-full h-full object-cover"
-            priority={true}
-            loading="eager"
-          />
-          <div className="absolute inset-0 bg-black/40"></div>
-        </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 text-white space-y-6">
-          <h1 className="text-6xl font-bold">Nordic Getaways</h1>
-          <p className="text-2xl text-white/90 max-w-3xl mx-auto">
-            Discover your perfect retreat in the Nordic
-          </p>
-          <div className="flex gap-4">
+      <header className="relative h-[70vh] flex items-center justify-center">
+        <LazyImage
+          src={forestHeroBg}
+          alt="Swedish forest background with sunlight through trees"
+          className="absolute inset-0 w-full h-full object-cover"
+          priority={true}
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60" />
+        <div className="relative z-10 text-center text-white">
+          <h1 className="text-6xl font-bold mb-6">Nordic Getaways</h1>
+          <p className="text-2xl mb-8">Discover your perfect retreat in the Nordics</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
-              <Link to="/properties">Explore Properties</Link>
+              <Link to="/book-now">Book Your Stay</Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/20" asChild>
-              <Link to="/book-now">Book Now</Link>
+            <Button variant="outline" size="lg" asChild>
+              <Link to="/villa-hacken/guide">View Guest Guide</Link>
             </Button>
           </div>
-        </div>
-        <div className="container mx-auto px-4 relative z-10 mt-[65vh]">
-          <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} />
+          <div className="mt-12">
+            <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} />
+          </div>
         </div>
       </header>
 
@@ -227,54 +236,48 @@ const HomePage = memo(() => {
             </div>
           ) : (
             <div className="text-center py-16">
-              <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">No properties found</h3>
-              <p className="text-muted-foreground mb-6">No properties are currently available.</p>
+              <div className="max-w-md mx-auto">
+                <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No properties found</h3>
+                <p className="text-muted-foreground mb-6">No properties are currently available.</p>
+              </div>
             </div>
           )}
         </div>
       </main>
 
-      {/* Book Section with Reviews */}
+      {/* Book Section */}
       <section className="py-20 bg-card">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-            {/* Book image */}
+            {/* Left column: image */}
             <div className="flex justify-center md:justify-start">
               <LazyImage
                 src={bookCover}
-                alt="När havet förändrade allt"
-                className="w-48 md:w-60 rounded-lg shadow-lg"
+                alt="When the Ocean Changed Everything book cover"
+                className="w-40 sm:w-56 md:w-64 rounded-lg shadow-elegant"
               />
             </div>
-
-            {/* Text + CTA + Carousel */}
+            {/* Right column: text + reviews + buttons */}
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold">Tips: Vacation Read</h2>
+              <h2 className="text-3xl font-bold text-foreground">Vacation Read – Recommended</h2>
               <p className="text-muted-foreground">
-                En gripande och oförglömlig berättelse om överlevnad och mening. Läs Jennys bok som berört tusentals läsare världen över.
+                Discover Jenny Nirs’ unforgettable survival story during the 2004 tsunami in Sri Lanka.  
+                A powerful book about trauma, resilience, and finding meaning in life’s darkest moments.
               </p>
-
-              <div className="flex gap-4">
-                <Button asChild>
-                  <a
-                    href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843"
-                    target="_blank"
-                  >
-                    Svenska boken
+              <ReviewCarousel />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" asChild>
+                  <a href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843" target="_blank" rel="noopener noreferrer">
+                    Swedish Edition
                   </a>
                 </Button>
-                <Button asChild variant="outline">
-                  <a
-                    href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661"
-                    target="_blank"
-                  >
-                    English edition
+                <Button variant="outline" size="lg" asChild>
+                  <a href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661" target="_blank" rel="noopener noreferrer">
+                    English Edition
                   </a>
                 </Button>
               </div>
-
-              <ReviewCarousel />
             </div>
           </div>
         </div>
@@ -311,9 +314,7 @@ const HomePage = memo(() => {
           </div>
 
           <div className="text-center pt-8 border-t border-border">
-            <p className="text-muted-foreground">
-              © 2025 Nordic Getaways. Created with love for Nordic experiences.
-            </p>
+            <p className="text-muted-foreground">© 2025 Nordic Getaways. Created with love for Nordic experiences.</p>
           </div>
         </div>
       </footer>
