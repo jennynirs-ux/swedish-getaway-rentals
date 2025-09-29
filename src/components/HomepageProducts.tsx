@@ -153,11 +153,11 @@ const HomepageProducts = memo(() => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Nordic Essentials
+            The Nordic Collection
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Bring a piece of Nordic beauty home with our curated collection of
-            authentic Swedish products.
+            authentic Nordic products.
           </p>
         </div>
 
