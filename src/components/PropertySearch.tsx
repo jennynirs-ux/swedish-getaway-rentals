@@ -65,9 +65,6 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
   };
 
   const activeFiltersCount = [
-    filters.location,
-    filters.checkIn,
-    filters.checkOut,
     filters.propertyType !== "all",
     filters.amenities.length > 0,
     filters.priceRange[0] > 0 || filters.priceRange[1] < 5000,
@@ -75,96 +72,93 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
 
   return (
     <div className="w-full">
-      {/* Main Search Bar */}
-      <Card className="p-4 shadow-elegant">
-        <div className="flex flex-col lg:flex-row gap-4">
+      {/* Compact Search Bar */}
+      <Card className="p-3 shadow-md">
+        <div className="flex flex-col sm:flex-row gap-2">
           {/* Location */}
-          <div className="flex-1">
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Where do you want to go?"
-                value={filters.location}
-                onChange={(e) => updateFilters({ location: e.target.value })}
-                className="pl-10"
-              />
-            </div>
+          <div className="flex-1 relative">
+            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Where?"
+              value={filters.location}
+              onChange={(e) => updateFilters({ location: e.target.value })}
+              className="pl-9 text-sm"
+            />
           </div>
 
           {/* Check-in */}
-          <div className="flex-1">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.checkIn ? format(filters.checkIn, "dd MMM") : "Check-in"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.checkIn}
-                  onSelect={(date) => updateFilters({ checkIn: date })}
-                  disabled={(date) => date < new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-1 justify-start text-left">
+                <Calendar className="mr-1 h-4 w-4" />
+                {filters.checkIn ? format(filters.checkIn, "dd MMM") : "Check-in"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <CalendarComponent
+                mode="single"
+                selected={filters.checkIn}
+                onSelect={(date) => updateFilters({ checkIn: date })}
+                disabled={(date) => date < new Date()}
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* Check-out */}
-          <div className="flex-1">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.checkOut ? format(filters.checkOut, "dd MMM") : "Check-out"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.checkOut}
-                  onSelect={(date) => updateFilters({ checkOut: date })}
-                  disabled={(date) => date < new Date() || (filters.checkIn && date <= filters.checkIn)}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-1 justify-start text-left">
+                <Calendar className="mr-1 h-4 w-4" />
+                {filters.checkOut ? format(filters.checkOut, "dd MMM") : "Check-out"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <CalendarComponent
+                mode="single"
+                selected={filters.checkOut}
+                onSelect={(date) => updateFilters({ checkOut: date })}
+                disabled={(date) => date < new Date() || (filters.checkIn && date <= filters.checkIn)}
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* Guests */}
-          <div className="flex-1">
-            <Select
-              value={filters.guests.toString()}
-              onValueChange={(value) => updateFilters({ guests: parseInt(value) })}
-            >
-              <SelectTrigger>
-                <Users className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Guests" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                  <SelectItem key={num} value={num.toString()}>
-                    {num} {num === 1 ? "guest" : "guests"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={filters.guests.toString()}
+            onValueChange={(value) => updateFilters({ guests: parseInt(value) })}
+          >
+            <SelectTrigger className="flex-1">
+              <Users className="mr-1 h-4 w-4" />
+              <SelectValue placeholder="Guests" />
+            </SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num} {num === 1 ? "guest" : "guests"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Search & Filters */}
-          <div className="flex gap-2">
-            <Button className="px-6">
-              <Search className="h-4 w-4 mr-2" />
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              className="px-4"
+              onClick={() => onFiltersChange(filters)} // 👈 trigger search
+            >
+              <Search className="h-4 w-4 mr-1" />
               Search
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className="relative"
             >
               <SlidersHorizontal className="h-4 w-4" />
               {activeFiltersCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
+                <Badge className="absolute -top-2 -right-2 h-4 w-4 p-0 text-[10px]">
                   {activeFiltersCount}
                 </Badge>
               )}
@@ -175,12 +169,12 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
 
       {/* Advanced Filters */}
       {showFilters && (
-        <Card className="mt-4 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Filters & Sort</h3>
+        <Card className="mt-3 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold">Filters</h3>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear all
+                Clear
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
                 <X className="h-4 w-4" />
@@ -188,38 +182,36 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Price Range */}
             <div>
-              <label className="text-sm font-medium mb-3 block">Price range per night</label>
-              <div className="px-3">
-                <Slider
-                  value={filters.priceRange}
-                  onValueChange={(value) => updateFilters({ priceRange: value as [number, number] })}
-                  max={5000}
-                  min={0}
-                  step={100}
-                  className="mb-2"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{filters.priceRange[0]} kr</span>
-                  <span>{filters.priceRange[1]} kr</span>
-                </div>
+              <label className="text-xs font-medium mb-2 block">Price / night</label>
+              <Slider
+                value={filters.priceRange}
+                onValueChange={(value) => updateFilters({ priceRange: value as [number, number] })}
+                max={5000}
+                min={0}
+                step={100}
+                className="mb-1"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{filters.priceRange[0]} kr</span>
+                <span>{filters.priceRange[1]} kr</span>
               </div>
             </div>
 
             {/* Property Type */}
             <div>
-              <label className="text-sm font-medium mb-3 block">Property type</label>
+              <label className="text-xs font-medium mb-2 block">Type</label>
               <Select
                 value={filters.propertyType}
                 onValueChange={(value) => updateFilters({ propertyType: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All types" />
+                  <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All types</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="villa">Villa</SelectItem>
                   <SelectItem value="lakehouse">Lakehouse</SelectItem>
                   <SelectItem value="cabin">Cabin</SelectItem>
@@ -229,8 +221,8 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             </div>
 
             {/* Amenities */}
-            <div>
-              <label className="text-sm font-medium mb-3 block">Amenities</label>
+            <div className="md:col-span-2">
+              <label className="text-xs font-medium mb-2 block">Amenities</label>
               <div className="flex flex-wrap gap-2">
                 {availableAmenities.map((amenity) => (
                   <Button
