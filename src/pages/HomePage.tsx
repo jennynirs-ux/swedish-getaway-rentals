@@ -250,23 +250,26 @@ const HomePage = memo(() => {
       </main>
 
       {/* Book Section */}
-      <section className="py-20 bg-card">
+      <section className="py-12 bg-card">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-            {/* Left column: image */}
-            <div className="flex justify-center md:justify-start">
+          <div className="max-w-6xl mx-auto flex flex-row gap-6 items-start">
+            {/* Left: Book image */}
+            <div className="flex-shrink-0">
               <LazyImage
                 src={bookCover}
                 alt="When the Ocean Changed Everything book cover"
-                className="w-32 md:w-64 rounded-lg shadow-elegant"
+                className="w-28 sm:w-40 md:w-56 lg:w-64 rounded shadow-lg"
               />
             </div>
-            {/* Right column: text + reviews + buttons */}
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-foreground">Vacation Read – Recommended</h2>
-              <p className="text-muted-foreground">
-                Discover Jenny Nirs’ unforgettable survival story during the 2004 tsunami in Sri Lanka.  
-                A powerful book about trauma, resilience, and finding meaning in life’s darkest moments.
+            {/* Right: Text + Reviews + CTAs */}
+            <div className="flex-1 space-y-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                Vacation Read – A Story of Survival & Meaning
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                A gripping and unforgettable story about survival, resilience,
+                and finding light after the darkest moments. Perfect for your
+                getaway reading.
               </p>
               <ReviewCarousel />
               <div className="flex flex-col sm:flex-row gap-4">
