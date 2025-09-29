@@ -2,6 +2,7 @@ import { useState } from "react";
 import LazyImage from "@/components/LazyImage";
 import { Button } from "@/components/ui/button";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+
 import bookCover from "@/assets/book-cover.png";
 
 const reviews = [
@@ -37,49 +38,14 @@ const reviews = [
   },
 ];
 
-const ReviewCarousel = () => {
+const BookPromotion = () => {
   const [index, setIndex] = useState(0);
+
   const prev = () => setIndex((index - 1 + reviews.length) % reviews.length);
   const next = () => setIndex((index + 1) % reviews.length);
 
   const review = reviews[index];
 
-  return (
-    <div className="bg-muted/30 p-6 rounded-lg shadow-md relative">
-      <p className="text-base italic text-muted-foreground mb-4">
-        "{review.text}"
-      </p>
-      <div className="flex items-center gap-1 mb-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star
-            key={i}
-            className={`w-5 h-5 ${
-              i < review.rating
-                ? "text-amber-700 fill-amber-700"
-                : "text-muted-foreground"
-            }`}
-          />
-        ))}
-      </div>
-      <p className="font-semibold">{review.author}</p>
-      <p className="text-sm text-muted-foreground">{review.date}</p>
-
-      {/* Navigation */}
-      <div className="absolute top-1/2 left-2 -translate-y-1/2">
-        <button onClick={prev}>
-          <ChevronLeft className="w-6 h-6 text-muted-foreground hover:text-primary" />
-        </button>
-      </div>
-      <div className="absolute top-1/2 right-2 -translate-y-1/2">
-        <button onClick={next}>
-          <ChevronRight className="w-6 h-6 text-muted-foreground hover:text-primary" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const BookPromotion = () => {
   return (
     <section className="py-12 bg-card">
       <div className="container mx-auto px-4">
@@ -95,7 +61,7 @@ const BookPromotion = () => {
 
           {/* Right: Text + Reviews + CTAs */}
           <div className="flex-1 space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
               Vacation Read – A Story of Survival & Meaning
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
@@ -104,10 +70,47 @@ const BookPromotion = () => {
               getaway reading.
             </p>
 
-            <ReviewCarousel />
+            {/* Review Carousel */}
+            <div className="bg-muted/30 p-4 rounded-lg shadow-md relative">
+              <p className="text-sm sm:text-base italic text-muted-foreground mb-3">
+                "{review.text}"
+              </p>
+              <div className="flex items-center gap-1 mb-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                      i < review.rating
+                        ? "text-amber-700 fill-amber-700"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="font-semibold">{review.author}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                {review.date}
+              </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button size="lg" asChild>
+              {/* Navigation */}
+              <div className="absolute top-1/2 left-2 -translate-y-1/2">
+                <button onClick={prev}>
+                  <ChevronLeft className="w-6 h-6 text-muted-foreground hover:text-primary" />
+                </button>
+              </div>
+              <div className="absolute top-1/2 right-2 -translate-y-1/2">
+                <button onClick={next}>
+                  <ChevronRight className="w-6 h-6 text-muted-foreground hover:text-primary" />
+                </button>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                asChild
+                className="text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3"
+              >
                 <a
                   href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843"
                   target="_blank"
@@ -116,7 +119,11 @@ const BookPromotion = () => {
                   Swedish Edition
                 </a>
               </Button>
-              <Button variant="outline" size="lg" asChild>
+              <Button
+                variant="outline"
+                asChild
+                className="text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3"
+              >
                 <a
                   href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661"
                   target="_blank"
