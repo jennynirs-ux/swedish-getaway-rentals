@@ -160,7 +160,7 @@ const Shop = () => {
         {/* Innehåll */}
         <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-4xl md:text-6xl font-bold !text-white mb-6">
-            Nordic Store
+            The Nordic Collection
           </h1>
           <p className="text-2xl !text-white max-w-3xl mx-auto">
             Discover unique Nordic-inspired products that bring the beauty of
