@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, User, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/public/lovable-uploads/favicon.png"; // 👈 lägg favicon.png i /src/assets
+import logo from "@/public/favicon.png"; // 👈 lägg favicon.png i /src/assets
 
 interface MainNavigationProps {
   showBackButton?: boolean;
