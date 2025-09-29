@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingBag, User, Menu, X, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +18,9 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
     location.pathname.includes("/villa-") ||
     location.pathname.includes("/lakehouse-") ||
     location.pathname.includes("/property/");
+
+  const isHomePage = location.pathname === "/";
+  const isShopPage = location.pathname.startsWith("/shop");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -41,51 +44,61 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
           <img
             src="/favicon.png"
             alt="Nordic Getaways logo"
-            className="h-8 w-auto filter invert brightness-0" // 👈 gör loggan vit
+            className="h-8 w-auto filter invert brightness-0"
           />
         </Link>
 
         {/* Desktop Navigation */}
         {!isPropertyPage && (
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/shop">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
-              >
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Shop
-              </Button>
-            </Link>
-            <Link to="/cart">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
-              >
-                Cart
-              </Button>
-            </Link>
-            {user ? (
-              <Link to="/profile">
+            {!isShopPage && (
+              <Link to="/shop" title="Shop">
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
+                  size="icon"
+                  className="text-white border-white/30 bg-white/10 
+                             hover:bg-white/20 hover:border-white/50 
+                             backdrop-blur-sm transition-all"
                 >
-                  <User className="w-4 h-4 mr-2" />
-                  Profile
+                  <ShoppingBag className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+            {!isHomePage && (
+              <Link to="/cart" title="Cart">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="text-white border-white/30 bg-white/10 
+                             hover:bg-white/20 hover:border-white/50 
+                             backdrop-blur-sm transition-all"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+            {user ? (
+              <Link to="/profile" title="Profile">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="text-white border-white/30 bg-white/10 
+                             hover:bg-white/20 hover:border-white/50 
+                             backdrop-blur-sm transition-all"
+                >
+                  <User className="w-5 h-5" />
                 </Button>
               </Link>
             ) : (
-              <Link to="/auth">
+              <Link to="/auth" title="Sign In">
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
+                  size="icon"
+                  className="text-white border-white/30 bg-white/10 
+                             hover:bg-white/20 hover:border-white/50 
+                             backdrop-blur-sm transition-all"
                 >
-                  Sign In
+                  <User className="w-5 h-5" />
                 </Button>
               </Link>
             )}
@@ -109,12 +122,16 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
       {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
         <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-3 flex flex-col">
-          <Link to="/shop" onClick={() => setMenuOpen(false)} className="block">
-            Shop
-          </Link>
-          <Link to="/cart" onClick={() => setMenuOpen(false)} className="block">
-            Cart
-          </Link>
+          {!isShopPage && (
+            <Link to="/shop" onClick={() => setMenuOpen(false)} className="block">
+              Shop
+            </Link>
+          )}
+          {!isHomePage && (
+            <Link to="/cart" onClick={() => setMenuOpen(false)} className="block">
+              Cart
+            </Link>
+          )}
           {user ? (
             <Link to="/profile" onClick={() => setMenuOpen(false)} className="block">
               Profile
