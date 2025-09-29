@@ -258,7 +258,7 @@ const HomePage = memo(() => {
               <LazyImage
                 src={bookCover}
                 alt="When the Ocean Changed Everything book cover"
-                className="w-40 sm:w-56 md:w-64 rounded-lg shadow-elegant"
+                className="w-32 md:w-64 rounded-lg shadow-elegant"
               />
             </div>
             {/* Right column: text + reviews + buttons */}
