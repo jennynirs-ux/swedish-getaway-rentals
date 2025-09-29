@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingBag, User, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,29 +36,14 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   return (
     <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
       <div className="container mx-auto flex justify-between items-center">
-        {/* Logo or Back Button */}
-        {showBackButton ? (
-          <Link to="/">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Back to Home</span>
-              <span className="sm:hidden">Back</span>
-            </Button>
-          </Link>
-        ) : (
-          <Link to="/" className="flex items-center">
-            {/* 👇 visa favicon som vit med filter */}
-            <img
-              src="/favicon.png"
-              alt="Nordic Getaways logo"
-              className="h-8 w-auto filter invert brightness-0"
-            />
-          </Link>
-        )}
+        {/* Logo always links to Home */}
+        <Link to="/" className="flex items-center">
+          <img
+            src="/favicon.png"
+            alt="Nordic Getaways logo"
+            className="h-8 w-auto filter invert brightness-0" // 👈 gör loggan vit
+          />
+        </Link>
 
         {/* Desktop Navigation */}
         {!isPropertyPage && (
