@@ -1,10 +1,10 @@
 project_id = "bbuutvozqfzbsnllsiai"
 
 [functions.fetch-printful-products]
-verify_jwt = false
+verify_jwt = true
 
 [functions.sync-printful-products]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-product-payment]
 verify_jwt = false
@@ -28,7 +28,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.sync-ical]
-verify_jwt = false
+verify_jwt = true
 
 [functions.auto-sync-ical]
-verify_jwt = false
+verify_jwt = true

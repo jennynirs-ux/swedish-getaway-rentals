@@ -30,25 +30,26 @@ const Admin = memo(() => {
         return;
       }
 
-      // Check if user is admin
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('is_admin')
+      // Check if user has admin role using new secure system
+      const { data: roles, error } = await supabase
+        .from('user_roles')
+        .select('role')
         .eq('user_id', user.id)
+        .eq('role', 'admin')
         .single();
 
-      if (error) {
-        console.error('Error checking admin status:', error);
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+        console.error('Error checking admin role:', error);
         toast({
           title: "Access Error",
-          description: "Unable to verify admin status",
+          description: "Unable to verify admin privileges",
           variant: "destructive",
         });
         navigate('/');
         return;
       }
 
-      if (!profile?.is_admin) {
+      if (!roles) {
         toast({
           title: "Access Denied",
           description: "You don't have admin privileges",
