@@ -43,7 +43,7 @@ const BookPromotion = () => {
     <section className="py-12 bg-card">
       <div className="container mx-auto px-4">
         {/* Title */}
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-left mb-8">
           Looking for Vacation Read?
         </h2>
 
@@ -59,6 +59,11 @@ const BookPromotion = () => {
 
           {/* Right: Text + Reviews + CTAs */}
           <div className="flex-1 space-y-4">
+            {/* Book name as subtitle */}
+            <h3 className="text-lg font-semibold text-foreground">
+              When the Ocean Changed Everything
+            </h3>
+
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
               A gripping and unforgettable story about survival, resilience, and
               finding light after the darkest moments. Perfect for your getaway
@@ -92,7 +97,6 @@ const BookPromotion = () => {
                   ))}
                 </div>
                 <p className="text-sm font-semibold">{review.author}</p>
-                <p className="text-xs text-muted-foreground">{review.date}</p>
               </div>
 
               {/* Next button */}
