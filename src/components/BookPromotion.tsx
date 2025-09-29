@@ -96,7 +96,7 @@ const BookPromotion = () => {
                     />
                   ))}
                 </div>
-                <p className="text-sm font-semibold text-primary">
+                <p className="text-sm text-primary">
                   {review.author}
                 </p>
               </div>
