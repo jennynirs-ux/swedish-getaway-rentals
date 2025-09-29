@@ -72,11 +72,12 @@ const BookPromotion = () => {
               getaway reading.
             </p>
 
-            {/* Review Carousel */}
-            <div className="bg-muted/20 p-3 sm:p-4 rounded-md shadow-sm relative">
-              <p className="text-xs sm:text-sm italic text-muted-foreground mb-2 leading-snug">
-                "{review.text}"
-              </p>
+          {/* Review Carousel */}
+          <div className="bg-muted/20 p-4 sm:p-5 rounded-md shadow-sm relative min-h-[140px] flex flex-col justify-between">
+            <p className="text-xs sm:text-sm italic text-muted-foreground leading-snug mb-2 line-clamp-4">
+              "{review.text}"
+            </p>
+            <div>
               <div className="flex items-center gap-1 mb-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
@@ -91,19 +92,20 @@ const BookPromotion = () => {
               </div>
               <p className="text-xs font-semibold">{review.author}</p>
               <p className="text-[10px] text-muted-foreground">{review.date}</p>
-
-              {/* Navigation */}
-              <div className="absolute top-1/2 left-2 -translate-y-1/2">
-                <button onClick={prev}>
-                  <ChevronLeft className="w-5 h-5 text-muted-foreground hover:text-primary" />
-                </button>
-              </div>
-              <div className="absolute top-1/2 right-2 -translate-y-1/2">
-                <button onClick={next}>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary" />
-                </button>
-              </div>
             </div>
+          
+            {/* Navigation arrows, pushed outside */}
+            <div className="absolute top-1/2 -left-6 -translate-y-1/2">
+              <button onClick={prev}>
+                <ChevronLeft className="w-5 h-5 text-muted-foreground hover:text-primary" />
+              </button>
+            </div>
+            <div className="absolute top-1/2 -right-6 -translate-y-1/2">
+              <button onClick={next}>
+                <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary" />
+              </button>
+            </div>
+          </div>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
