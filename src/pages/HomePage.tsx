@@ -182,7 +182,7 @@ const HomePage = memo(() => {
       </main>
 
       {/* Book Promotion Section */}
-      <BookPromotion /> {/* 👈 ersätter all gammal bokkod */}
+      <BookPromotion /> {/* 👈 nu används bara komponenten */}
 
       {/* Featured Products Section */}
       <MemoizedHomepageProducts />
