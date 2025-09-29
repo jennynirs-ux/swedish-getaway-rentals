@@ -47,39 +47,41 @@ const BookPromotion = () => {
   const review = reviews[index];
 
   return (
-    <section className="py-12 bg-card">
-      <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto flex flex-row gap-6 items-start">
+    <section className="py-10 bg-card">
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Title on top */}
+        <h2 className="text-center text-2xl sm:text-3xl font-bold text-foreground mb-8">
+          Vacation Read – A Story of Survival & Meaning
+        </h2>
+
+        <div className="flex flex-row gap-6 items-start">
           {/* Left: Book image */}
           <div className="flex-shrink-0">
             <LazyImage
               src={bookCover}
               alt="When the Ocean Changed Everything book cover"
-              className="w-28 sm:w-40 md:w-56 lg:w-64 rounded shadow-lg"
+              className="w-24 sm:w-36 md:w-48 lg:w-56 rounded shadow-md"
             />
           </div>
 
           {/* Right: Text + Reviews + CTAs */}
           <div className="flex-1 space-y-4">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
-              Vacation Read – A Story of Survival & Meaning
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground leading-snug">
               A gripping and unforgettable story about survival, resilience,
               and finding light after the darkest moments. Perfect for your
               getaway reading.
             </p>
 
             {/* Review Carousel */}
-            <div className="bg-muted/30 p-4 rounded-lg shadow-md relative">
-              <p className="text-sm sm:text-base italic text-muted-foreground mb-3">
+            <div className="bg-muted/20 p-3 sm:p-4 rounded-md shadow-sm relative">
+              <p className="text-xs sm:text-sm italic text-muted-foreground mb-2 leading-snug">
                 "{review.text}"
               </p>
-              <div className="flex items-center gap-1 mb-2">
+              <div className="flex items-center gap-1 mb-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                    className={`w-4 h-4 ${
                       i < review.rating
                         ? "text-amber-700 fill-amber-700"
                         : "text-muted-foreground"
@@ -87,29 +89,27 @@ const BookPromotion = () => {
                   />
                 ))}
               </div>
-              <p className="font-semibold">{review.author}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {review.date}
-              </p>
+              <p className="text-xs font-semibold">{review.author}</p>
+              <p className="text-[10px] text-muted-foreground">{review.date}</p>
 
               {/* Navigation */}
               <div className="absolute top-1/2 left-2 -translate-y-1/2">
                 <button onClick={prev}>
-                  <ChevronLeft className="w-6 h-6 text-muted-foreground hover:text-primary" />
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground hover:text-primary" />
                 </button>
               </div>
               <div className="absolute top-1/2 right-2 -translate-y-1/2">
                 <button onClick={next}>
-                  <ChevronRight className="w-6 h-6 text-muted-foreground hover:text-primary" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary" />
                 </button>
               </div>
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
                 asChild
-                className="text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3"
+                className="text-xs sm:text-sm px-3 py-2 sm:px-5 sm:py-2"
               >
                 <a
                   href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843"
@@ -122,7 +122,7 @@ const BookPromotion = () => {
               <Button
                 variant="outline"
                 asChild
-                className="text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3"
+                className="text-xs sm:text-sm px-3 py-2 sm:px-5 sm:py-2"
               >
                 <a
                   href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661"
