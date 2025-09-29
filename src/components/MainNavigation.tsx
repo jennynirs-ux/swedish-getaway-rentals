@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, User, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/public/favicon.png"; // 👈 lägg favicon.png i /src/assets
 
 interface MainNavigationProps {
   showBackButton?: boolean;
@@ -15,19 +14,16 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Kolla om vi är på en property-sida
   const isPropertyPage =
     location.pathname.includes("/villa-") ||
     location.pathname.includes("/lakehouse-") ||
     location.pathname.includes("/property/");
 
   useEffect(() => {
-    // Hämta användare
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
 
-    // Lyssna på auth-status
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -40,6 +36,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   return (
     <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
       <div className="container mx-auto flex justify-between items-center">
+        {/* Logo or Back Button */}
         {showBackButton ? (
           <Link to="/">
             <Button
@@ -55,14 +52,14 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         ) : (
           <Link to="/" className="flex items-center">
             <img
-              src={logo}
+              src="/favicon.png" // ✅ laddas från public/
               alt="Nordic Getaways logo"
-              className="h-8 w-auto filter invert brightness-0"
+              className="h-8 w-auto"
             />
           </Link>
         )}
 
-        {/* Desktop links */}
+        {/* Desktop Navigation */}
         {!isPropertyPage && (
           <div className="hidden md:flex items-center gap-3">
             <Link to="/shop">
@@ -71,8 +68,8 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                 size="sm"
                 className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
               >
-                <ShoppingBag className="w-4 h-4 mr-1 md:mr-2" />
-                <span>Shop</span>
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Shop
               </Button>
             </Link>
             <Link to="/cart">
@@ -91,7 +88,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                   size="sm"
                   className="text-white border-white/30 bg-white/10 hover:bg-white/20 hover:border-white/50 backdrop-blur-sm transition-all"
                 >
-                  <User className="w-4 h-4 mr-1 md:mr-2" />
+                  <User className="w-4 h-4 mr-2" />
                   Profile
                 </Button>
               </Link>
@@ -109,7 +106,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
           </div>
         )}
 
-        {/* Mobile menu button */}
+        {/* Mobile Hamburger */}
         {!isPropertyPage && (
           <div className="md:hidden">
             <button onClick={() => setMenuOpen(!menuOpen)}>
@@ -123,9 +120,9 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         )}
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
-        <div className="md:hidden bg-black/90 text-white mt-4 rounded-lg mx-4 p-4 space-y-3">
+        <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-3">
           <Link to="/shop" onClick={() => setMenuOpen(false)}>
             Shop
           </Link>
