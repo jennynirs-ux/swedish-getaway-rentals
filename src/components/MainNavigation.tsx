@@ -21,6 +21,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
 
   const isHomePage = location.pathname === "/";
   const isShopPage = location.pathname.startsWith("/shop");
+  const isCartPage = location.pathname.startsWith("/cart");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -64,7 +65,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                 </Button>
               </Link>
             )}
-            {!isHomePage && (
+            {!isHomePage && !isCartPage && (
               <Link to="/cart" title="Cart">
                 <Button
                   variant="outline"
@@ -121,24 +122,44 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
 
       {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
-        <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-3 flex flex-col">
+        <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-4 flex flex-col">
           {!isShopPage && (
-            <Link to="/shop" onClick={() => setMenuOpen(false)} className="block">
-              Shop
+            <Link
+              to="/shop"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              <span>Shop</span>
             </Link>
           )}
-          {!isHomePage && (
-            <Link to="/cart" onClick={() => setMenuOpen(false)} className="block">
-              Cart
+          {!isHomePage && !isCartPage && (
+            <Link
+              to="/cart"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span>Cart</span>
             </Link>
           )}
           {user ? (
-            <Link to="/profile" onClick={() => setMenuOpen(false)} className="block">
-              Profile
+            <Link
+              to="/profile"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <User className="w-5 h-5" />
+              <span>Profile</span>
             </Link>
           ) : (
-            <Link to="/auth" onClick={() => setMenuOpen(false)} className="block">
-              Sign In
+            <Link
+              to="/auth"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <User className="w-5 h-5" />
+              <span>Sign In</span>
             </Link>
           )}
         </div>
