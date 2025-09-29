@@ -94,18 +94,17 @@ const BookPromotion = () => {
               <p className="text-[10px] text-muted-foreground">{review.date}</p>
             </div>
           
-            {/* Navigation arrows, pushed outside */}
-            <div className="absolute top-1/2 -left-6 -translate-y-1/2">
+            {/* Navigation arrows */}
+            <div className="absolute top-1/2 -left-4 -translate-y-1/2">
               <button onClick={prev}>
                 <ChevronLeft className="w-5 h-5 text-muted-foreground hover:text-primary" />
               </button>
             </div>
-            <div className="absolute top-1/2 -right-6 -translate-y-1/2">
+            <div className="absolute top-1/2 right-2 sm:-right-4 -translate-y-1/2">
               <button onClick={next}>
                 <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary" />
               </button>
             </div>
-          </div>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
