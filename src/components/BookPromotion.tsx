@@ -52,55 +52,61 @@ const BookPromotion = () => {
           Vacation Read – A Story of Survival & Meaning
         </h2>
 
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6 items-start">
+        <div className="max-w-6xl mx-auto flex flex-row gap-6 items-start">
           {/* Left: Book image */}
-          <div className="flex-shrink-0 flex justify-center md:justify-start">
+          <div className="flex-shrink-0">
             <LazyImage
               src={bookCover}
               alt="When the Ocean Changed Everything book cover"
-              className="w-28 sm:w-40 md:w-56 lg:w-64 rounded shadow-lg"
+              className="w-24 sm:w-36 md:w-48 lg:w-56 rounded shadow-lg"
             />
           </div>
 
           {/* Right: Text + Reviews + CTAs */}
           <div className="flex-1 space-y-4">
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
               A gripping and unforgettable story about survival, resilience, and
               finding light after the darkest moments. Perfect for your getaway
               reading.
             </p>
 
             {/* Review Carousel */}
-            <div className="bg-muted/30 p-4 rounded-lg shadow-md relative">
-              <p className="text-sm text-muted-foreground italic mb-3">
-                "{review.text}"
-              </p>
-              <div className="flex items-center gap-1 mb-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < review.rating
-                        ? "text-amber-700 fill-amber-700"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-sm font-semibold">{review.author}</p>
-              <p className="text-xs text-muted-foreground">{review.date}</p>
+            <div className="relative flex items-center">
+              {/* Prev button */}
+              <button
+                onClick={prev}
+                className="absolute -left-6 top-1/2 -translate-y-1/2"
+              >
+                <ChevronLeft className="w-6 h-6 text-muted-foreground hover:text-primary" />
+              </button>
 
-              {/* Navigation */}
-              <div className="absolute inset-y-0 left-2 flex items-center">
-                <button onClick={prev}>
-                  <ChevronLeft className="w-5 h-5 text-muted-foreground hover:text-primary" />
-                </button>
+              <div className="bg-muted/30 p-4 rounded-lg shadow-md flex-1">
+                <p className="text-sm text-muted-foreground italic mb-2">
+                  "{review.text}"
+                </p>
+                <div className="flex items-center gap-1 mb-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < review.rating
+                          ? "text-amber-700 fill-amber-700"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm font-semibold">{review.author}</p>
+                <p className="text-xs text-muted-foreground">{review.date}</p>
               </div>
-              <div className="absolute inset-y-0 right-2 flex items-center">
-                <button onClick={next}>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground hover:text-primary" />
-                </button>
-              </div>
+
+              {/* Next button */}
+              <button
+                onClick={next}
+                className="absolute -right-6 top-1/2 -translate-y-1/2"
+              >
+                <ChevronRight className="w-6 h-6 text-muted-foreground hover:text-primary" />
+              </button>
             </div>
 
             {/* CTA Buttons */}
