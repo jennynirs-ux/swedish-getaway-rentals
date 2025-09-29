@@ -51,11 +51,11 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
           </Link>
         ) : (
           <Link to="/" className="flex items-center">
-            {/* 👇 laddas från public/favicon.png */}
+            {/* 👇 visa favicon som vit med filter */}
             <img
               src="/favicon.png"
               alt="Nordic Getaways logo"
-              className="h-8 w-auto"
+              className="h-8 w-auto filter invert brightness-0"
             />
           </Link>
         )}
