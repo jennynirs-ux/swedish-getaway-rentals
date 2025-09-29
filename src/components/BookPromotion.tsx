@@ -60,7 +60,7 @@ const BookPromotion = () => {
           {/* Right: Text + Reviews + CTAs */}
           <div className="flex-1 space-y-4">
             {/* Book name as subtitle */}
-            <h3 className="text-lg font-semibold text-foreground">
+            <h3 className="text-lg font-semibold text-amber-700">
               When the Ocean Changed Everything
             </h3>
 
