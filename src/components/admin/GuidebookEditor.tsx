@@ -3,33 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Save,
+  Download,
+  Share,
+  Plus,
+  Trash2,
   Home,
   MapPin,
-  Car,
-  Train,
-  ParkingSquare,
+  Coffee,
   Key,
   Wifi,
-  Shield,
-  Cog,
   Utensils,
-  Flame,
-  Trees,
-  Recycle,
+  Cog,
   Landmark,
-  ShoppingCart,
-  LogOut,
   BookOpen,
-  Star,
-  Share2,
-  Download,
+  Shield,
+  LogOut,
   Heart,
-  PhoneCall,
-  Camera,
+  Recycle,
 } from "lucide-react";
-
 import { useToast } from "@/hooks/use-toast";
 
 interface GuidebookBlock {
@@ -49,6 +43,7 @@ interface GuidebookSection {
 }
 
 interface GuidebookEditorProps {
+  sections?: GuidebookSection[];
   onChange: (sections: GuidebookSection[]) => void;
   onSave?: () => Promise<void>;
   saving?: boolean;
@@ -56,76 +51,64 @@ interface GuidebookEditorProps {
 }
 
 const FIXED_SECTIONS: Omit<GuidebookSection, "blocks">[] = [
-  { id: "home", icon: Home, title: "Welcome" },
+  { id: "home", icon: Home, title: "Welcome Home" },
   { id: "directions", icon: MapPin, title: "Directions" },
-  { id: "parking", icon: ParkingSquare, title: "Parking" },
+  { id: "stop", icon: Coffee, title: "Stop on the way" },
   { id: "checkin", icon: Key, title: "Check-in" },
   { id: "wifi", icon: Wifi, title: "Wi-Fi" },
-  { id: "rules", icon: Shield, title: "House Rules" },
-  { id: "howthingswork", icon: Cog, title: "How Things Work" },
+  { id: "kitchen", icon: Utensils, title: "Kitchen" },
+  { id: "howthingswork", icon: Cog, title: "How things work" },
   { id: "waste", icon: Recycle, title: "Waste & Recycling" },
-  { id: "places", icon: Landmark, title: "Local Recommendations" },
-  { id: "shopping", icon: ShoppingCart, title: "Local Shopping" },
+  { id: "places", icon: Landmark, title: "Places to visit" },
+  { id: "customs", icon: BookOpen, title: "Swedish customs" },
+  { id: "rules", icon: Shield, title: "House rules" },
   { id: "checkout", icon: LogOut, title: "Check-out" },
-  { id: "customs", icon: BookOpen, title: "Swedish Customs" },
-  { id: "review", icon: Star, title: "Review & Rating" },
-  { id: "social", icon: Camera, title: "Let’s Get Social" },
   { id: "hoststory", icon: Heart, title: "Host Story" },
 ];
 
 const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
   home: [
     { id: "h1", type: "text", content: "Welcome to our property! We’re excited to host you." },
-    { id: "h2", type: "text", title: "Emergency Information", content: "Police/Fire/Ambulance: 112\nHost: +46 70 123 45 67" },
   ],
   directions: [
-    { id: "d1", type: "text", title: "Address", content: "Häckenvägen 78, 443 92 Lerum" },
-    { id: "d2", type: "text", title: "Get here by car", content: "Take the E20 and exit at Lerum. Follow signs to Häckenvägen." },
-    { id: "d3", type: "text", title: "Get here by public transport", content: "Train to Lerum, then bus 533 to Häckenvägen." },
-    { id: "d4", type: "text", content: "💡 Tip: Stop at Local Shopping to get groceries on the way." },
+    { id: "d1", type: "text", title: "Get here by car", content: "Take the E20 and exit at Lerum. Parking is available on site." },
+    { id: "d2", type: "text", title: "Get here by public transport", content: "Take the commuter train to Lerum station, then bus 533 to Häckenvägen." },
   ],
-  parking: [
-    { id: "p1", type: "text", content: "Park in front of the garage (yellow door). Space for 2 cars. Parking included. Do not park on the street." },
+  stop: [
+    { id: "s1", type: "list", title: "Useful stops", items: ["ICA Kvantum – groceries", "Shell – gas & snacks", "Local shop – firewood"] },
   ],
   checkin: [
     { id: "c1", type: "text", content: "Check-in time: 15:00" },
-    { id: "c2", type: "text", content: "Keys in lockbox by entrance. Code will be sent via email." },
+    { id: "c2", type: "text", content: "Keys are in the lockbox by the entrance. Code will be sent via email." },
+    { id: "c3", type: "text", content: "Parking is available in front of the house." },
   ],
   wifi: [
     { id: "w1", type: "text", content: "Network: Guest_Wifi\nPassword: Welcome2024" },
   ],
-  rules: [
-    { id: "r1", type: "list", title: "Rules", items: ["No smoking indoors", "Respect quiet hours 22–07", "No parties"] },
+  kitchen: [
+    { id: "k1", type: "list", title: "Appliances", items: ["Oven", "Coffee machine", "Dishwasher"] },
   ],
   howthingswork: [
-    { id: "k1", type: "list", title: "Kitchen", items: ["Oven", "Coffee machine", "Dishwasher"] },
-    { id: "k2", type: "list", title: "Heating", items: ["Thermostat in hallway", "Fireplace in living room"] },
-    { id: "k3", type: "list", title: "Outdoor kitchen", items: ["Gas grill", "Sink", "Utensils"] },
-    { id: "k4", type: "list", title: "Outdoor amenities", items: ["Hot tub", "Sauna", "Boat"] },
+    { id: "h1", type: "text", title: "Oven", content: "Press the power button, select temperature, then press start." },
+    { id: "h2", type: "text", title: "Coffee machine", content: "Fill with water, insert filter and coffee, press brew." },
   ],
   waste: [
-    { id: "wa1", type: "text", content: "Food → brown bin\nPlastic → plastic container\nPaper → paper container\nGlass → glass container\nMetal → metal container\nResidual → grey bin" },
+    { id: "wa1", type: "text", content: "Follow local recycling rules. Use the correct bins for food, paper, plastic, glass, metal, and residual waste." },
   ],
   places: [
-    { id: "pl1", type: "list", title: "Recommendations", items: ["Lake Aspen – swimming", "Göteborg city – 20 min by train"] },
+    { id: "p1", type: "list", title: "Restaurants", items: ["Pizzeria Napoli", "Hamnkrogen seafood", "Sushi & Wok Lerum"] },
+    { id: "p2", type: "list", title: "Attractions", items: ["Lake Aspen – swimming", "Skatås nature reserve", "Göteborg city – 20 min by train"] },
   ],
-  shopping: [
-    { id: "s1", type: "list", title: "Shops", items: ["ICA Kvantum – groceries", "Shell – gas & snacks"] },
+  customs: [
+    { id: "cu1", type: "text", title: "No shoes indoors", content: "In Sweden, it is polite to remove shoes when entering a home." },
+    { id: "cu2", type: "text", title: "Fika", content: "Take a coffee break with something sweet, like a cinnamon bun." },
+  ],
+  rules: [
+    { id: "r1", type: "list", title: "House rules", items: ["No smoking indoors", "Respect quiet hours 22–07", "No parties"] },
   ],
   checkout: [
     { id: "co1", type: "text", content: "Check-out time: 11:00" },
-    { id: "co2", type: "checkbox", title: "Checklist", items: ["Empty trash", "Return keys", "Close windows", "Load dishwasher"] },
-  ],
-  customs: [
-    { id: "cu1", type: "text", content: "No shoes indoors" },
-    { id: "cu2", type: "text", content: "Fika = coffee + pastry break" },
-    { id: "cu3", type: "text", content: "Alcohol only at Systembolaget (20+)" },
-  ],
-  review: [
-    { id: "rv1", type: "text", content: "Please leave us a rating before you leave ⭐⭐⭐⭐⭐" },
-  ],
-  social: [
-    { id: "so1", type: "text", content: "Share your stay on Instagram with #NordicGetaways" },
+    { id: "co2", type: "checkbox", title: "Check-out checklist", items: ["Empty trash", "Remove bed linens", "Close windows & turn off lights"] },
   ],
   hoststory: [
     { id: "hs1", type: "text", content: "We bought Villa Häcken in 2020 and love sharing it with guests." },
@@ -133,43 +116,75 @@ const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
 };
 
 export const GuidebookEditor = ({
+  sections = [],
   onChange,
   onSave,
   saving = false,
   propertyTitle = "Property",
 }: GuidebookEditorProps) => {
   const { toast } = useToast();
-  const [activeIndex, setActiveIndex] = useState(0);
 
-  const [sections, setSections] = useState<GuidebookSection[]>(
-    FIXED_SECTIONS.map((s) => ({
-      ...s,
-      blocks: DEFAULT_BLOCKS[s.id] || [],
-    }))
+  const [localSections, setLocalSections] = useState<GuidebookSection[]>(
+    FIXED_SECTIONS.map((s) => {
+      const existing = sections.find((sec) => sec.id === s.id);
+      return {
+        ...s,
+        blocks: existing?.blocks?.length ? existing.blocks : DEFAULT_BLOCKS[s.id] || [],
+        image_url: existing?.image_url,
+      };
+    })
   );
 
-  const updateBlock = (sectionId: string, blockId: string, changes: Partial<GuidebookBlock>) => {
-    const newSections = sections.map((s) =>
-      s.id === sectionId
-        ? { ...s, blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, ...changes } : b)) }
-        : s
+  const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
+    const newSections = localSections.map((s) =>
+      s.id === id ? { ...s, ...updated } : s
     );
-    setSections(newSections);
+    setLocalSections(newSections);
     onChange(newSections);
   };
 
-  const updateBlockItem = (sectionId: string, blockId: string, index: number, value: string) => {
-    const newSections = sections.map((s) =>
+  const updateBlock = (sectionId: string, blockId: string, changes: Partial<GuidebookBlock>) => {
+    const newSections = localSections.map((s) =>
+      s.id === sectionId
+        ? {
+            ...s,
+            blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, ...changes } : b)),
+          }
+        : s
+    );
+    setLocalSections(newSections);
+    onChange(newSections);
+  };
+
+  const addBlockItem = (sectionId: string, blockId: string) => {
+    const newSections = localSections.map((s) =>
       s.id === sectionId
         ? {
             ...s,
             blocks: s.blocks.map((b) =>
-              b.id === blockId ? { ...b, items: b.items?.map((it, i) => (i === index ? value : it)) } : b
+              b.id === blockId ? { ...b, items: [...(b.items || []), ""] } : b
             ),
           }
         : s
     );
-    setSections(newSections);
+    setLocalSections(newSections);
+    onChange(newSections);
+  };
+
+  const removeBlockItem = (sectionId: string, blockId: string, index: number) => {
+    const newSections = localSections.map((s) =>
+      s.id === sectionId
+        ? {
+            ...s,
+            blocks: s.blocks.map((b) =>
+              b.id === blockId
+                ? { ...b, items: b.items?.filter((_, i) => i !== index) }
+                : b
+            ),
+          }
+        : s
+    );
+    setLocalSections(newSections);
     onChange(newSections);
   };
 
@@ -177,92 +192,127 @@ export const GuidebookEditor = ({
     if (onSave) {
       try {
         await onSave();
-        toast({ title: "Success", description: "Guest guide saved" });
+        toast({ title: "Success", description: "Guest guide saved successfully" });
       } catch {
         toast({ title: "Error", description: "Failed to save guide", variant: "destructive" });
       }
     }
   };
 
-  const activeSection = sections[activeIndex];
-
   return (
-    <div className="flex h-[90vh]">
-      {/* Sidebar with icons */}
-      <div className="w-24 border-r bg-muted/20 flex flex-col items-center py-6 gap-4 overflow-y-auto">
-        {sections.map((s, i) => {
-          const Icon = s.icon;
-          return (
-            <button
-              key={s.id}
-              onClick={() => setActiveIndex(i)}
-              className={`p-3 rounded-lg transition-all ${
-                i === activeIndex ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              <Icon className="h-6 w-6" />
-            </button>
-          );
-        })}
+    <div className="space-y-6">
+      {/* Top bar */}
+      <div className="flex items-center justify-between">
+        <div>
+          <Label className="text-base font-medium">Guest Guide for {propertyTitle}</Label>
+          <p className="text-sm text-muted-foreground">Fill in the guidebook for your guests</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm"><Share className="h-4 w-4 mr-2" /> Share</Button>
+          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" /> PDF</Button>
+          {onSave && (
+            <Button variant="default" size="sm" onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save"}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Editor content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">{activeSection.title}</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm"><Share2 className="w-4 h-4 mr-1" /> Share</Button>
-            <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> PDF</Button>
-            {onSave && (
-              <Button variant="default" size="sm" onClick={handleSave} disabled={saving}>
-                Save
-              </Button>
-            )}
-          </div>
-        </div>
+      {/* Sections */}
+      {localSections.map((section) => {
+        const Icon = section.icon;
+        return (
+          <Card key={section.id}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon className="h-5 w-5 text-primary" /> {section.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {section.blocks.map((block) => (
+                <div key={block.id} className="border rounded p-3 bg-muted/10 space-y-2">
+                  {block.title && <Label className="font-medium">{block.title}</Label>}
 
-        {activeSection.blocks.map((block) => (
-          <Card key={block.id}>
-            <CardContent className="p-4 space-y-2">
-              {block.title && <Label>{block.title}</Label>}
-
-              {block.type === "text" && (
-                <Textarea
-                  value={block.content}
-                  onChange={(e) => updateBlock(activeSection.id, block.id, { content: e.target.value })}
-                  rows={3}
-                />
-              )}
-
-              {block.type === "list" && (
-                <div className="space-y-2">
-                  {block.items?.map((item, i) => (
-                    <Input
-                      key={i}
-                      value={item}
-                      onChange={(e) => updateBlockItem(activeSection.id, block.id, i, e.target.value)}
+                  {block.type === "text" && (
+                    <Textarea
+                      value={block.content}
+                      onChange={(e) => updateBlock(section.id, block.id, { content: e.target.value })}
+                      rows={3}
                     />
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {block.type === "checkbox" && (
-                <div className="space-y-2">
-                  {block.items?.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <input type="checkbox" disabled className="h-4 w-4" />
-                      <Input
-                        value={item}
-                        onChange={(e) => updateBlockItem(activeSection.id, block.id, i, e.target.value)}
-                      />
+                  {block.type === "list" && (
+                    <div className="space-y-2">
+                      {block.items?.map((item, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Input
+                            value={item}
+                            onChange={(e) =>
+                              updateBlock(section.id, block.id, {
+                                items: block.items?.map((it, idx) =>
+                                  idx === i ? e.target.value : it
+                                ),
+                              })
+                            }
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeBlockItem(section.id, block.id, i)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addBlockItem(section.id, block.id)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> Add item
+                      </Button>
                     </div>
-                  ))}
+                  )}
+
+                  {block.type === "checkbox" && (
+                    <div className="space-y-2">
+                      {block.items?.map((item, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <input type="checkbox" disabled className="h-4 w-4" />
+                          <Input
+                            value={item}
+                            onChange={(e) =>
+                              updateBlock(section.id, block.id, {
+                                items: block.items?.map((it, idx) =>
+                                  idx === i ? e.target.value : it
+                                ),
+                              })
+                            }
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeBlockItem(section.id, block.id, i)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addBlockItem(section.id, block.id)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> Add checklist item
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </CardContent>
           </Card>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 };
