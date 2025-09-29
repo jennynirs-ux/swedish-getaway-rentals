@@ -174,32 +174,35 @@ const HomePage = memo(() => {
       {/* Navigation */}
       <MainNavigation />
 
-      {/* Hero Section */}
-      <header className="relative h-[70vh] flex items-center justify-center">
+    {/* Hero Section */}
+    <header className="relative h-[80vh] flex items-center justify-center text-center">
+      <div className="absolute inset-0">
         <LazyImage
           src={forestHeroBg}
           alt="Swedish forest background with sunlight through trees"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="w-full h-full object-cover"
           priority={true}
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60" />
-        <div className="relative z-10 text-center text-white">
-          <h1 className="text-6xl font-bold mb-6">Nordic Getaways</h1>
-          <p className="text-2xl mb-8">Discover your perfect retreat in the Nordics</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link to="/book-now">Book Your Stay</Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link to="/villa-hacken/guide">View Guest Guide</Link>
-            </Button>
-          </div>
-          <div className="mt-12">
-            <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} />
-          </div>
-        </div>
-      </header>
+        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/70"></div>
+      </div>
+    
+      <div className="relative z-10 px-4 max-w-4xl mx-auto">
+        <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+          Nordic Getaways
+        </h1>
+        <p className="text-xl md:text-2xl text-white/90 mb-10">
+          Discover your perfect retreat in the Nordic
+        </p>
+    
+        {/* Search bar */}
+        <PropertySearch
+          onFiltersChange={setFilters}
+          availableAmenities={availableAmenities}
+        />
+      </div>
+    </header>
+
 
       {/* Property Cards */}
       <main className="pb-12">
