@@ -51,8 +51,9 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
           </Link>
         ) : (
           <Link to="/" className="flex items-center">
+            {/* 👇 laddas från public/favicon.png */}
             <img
-              src="/favicon.png" // ✅ laddas från public/
+              src="/favicon.png"
               alt="Nordic Getaways logo"
               className="h-8 w-auto"
             />
@@ -122,19 +123,19 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
 
       {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
-        <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-3">
-          <Link to="/shop" onClick={() => setMenuOpen(false)}>
+        <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-3 flex flex-col">
+          <Link to="/shop" onClick={() => setMenuOpen(false)} className="block">
             Shop
           </Link>
-          <Link to="/cart" onClick={() => setMenuOpen(false)}>
+          <Link to="/cart" onClick={() => setMenuOpen(false)} className="block">
             Cart
           </Link>
           {user ? (
-            <Link to="/profile" onClick={() => setMenuOpen(false)}>
+            <Link to="/profile" onClick={() => setMenuOpen(false)} className="block">
               Profile
             </Link>
           ) : (
-            <Link to="/auth" onClick={() => setMenuOpen(false)}>
+            <Link to="/auth" onClick={() => setMenuOpen(false)} className="block">
               Sign In
             </Link>
           )}
