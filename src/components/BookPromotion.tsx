@@ -8,31 +8,26 @@ const reviews = [
   {
     text: `"When the Ocean Changed Everything" stays with you long after the last page. A tribute to strength and resilience.`,
     author: "Patrik",
-    date: "2025-01-03",
     rating: 5,
   },
   {
     text: "A moving account of how a single event can change a life. Honest and full of hope.",
     author: "Helena",
-    date: "2024-12-17",
     rating: 4,
   },
   {
     text: "A gripping description of one of the greatest natural disasters of our time. Worth reading.",
     author: "Per",
-    date: "2024-12-14",
     rating: 5,
   },
   {
     text: "An incredibly captivating book. I couldn’t put it down.",
     author: "Anna",
-    date: "2024-12-14",
     rating: 5,
   },
   {
     text: "A dramatic and well-written story about the tsunami in Sri Lanka that hooks you instantly.",
     author: "Karl-Olov",
-    date: "2024-12-14",
     rating: 5,
   },
 ];
