@@ -5,8 +5,7 @@ import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
 import LazyImage from "@/components/LazyImage";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Grid3X3 } from "lucide-react";
+import { Grid3X3, ChevronLeft, ChevronRight } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
 import PropertySearch from "@/components/PropertySearch";
 import MainNavigation from "@/components/MainNavigation";
@@ -20,12 +19,71 @@ interface PropertyFilters {
   amenities?: string[];
 }
 
-// Memoized components for performance
 const MemoizedPropertyCard = memo(PropertyCard);
 const MemoizedHomepageProducts = memo(HomepageProducts);
 
+const reviews = [
+  {
+    text: `"När havet förändrade allt" är en bok som stannar kvar i tankarna långt efter att sista sidan är läst...`,
+    author: "Patrik",
+    date: "2025-01-03",
+    rating: "100%",
+  },
+  {
+    text: "Jennys bok är en stark och rörande skildring av hur en enda händelse kan förändra ett liv...",
+    author: "Helena",
+    date: "2024-12-17",
+    rating: "80%",
+  },
+  {
+    text: "En medryckande och gripande beskrivning av vår tids största naturkatastrof...",
+    author: "Per",
+    date: "2024-12-14",
+    rating: "100%",
+  },
+  {
+    text: "En mycket gripande och fängslande bok. Sträckläste boken, ville inte sluta...",
+    author: "Anna",
+    date: "2024-12-14",
+    rating: "100%",
+  },
+  {
+    text: "Mycket spännande och dramatisk bok om tsunamin på Sri Lanka...",
+    author: "Karl-olov",
+    date: "2024-12-14",
+    rating: "100%",
+  },
+];
+
+const ReviewCarousel = () => {
+  const [index, setIndex] = useState(0);
+  const prev = () => setIndex((index - 1 + reviews.length) % reviews.length);
+  const next = () => setIndex((index + 1) % reviews.length);
+
+  const review = reviews[index];
+
+  return (
+    <div className="bg-muted/30 p-6 rounded-lg shadow-md relative">
+      <p className="text-lg italic text-muted-foreground mb-4">"{review.text}"</p>
+      <p className="font-semibold">{review.author}</p>
+      <p className="text-sm text-muted-foreground">{review.date}</p>
+      <p className="text-sm text-primary">Rating: {review.rating}</p>
+
+      <div className="absolute top-1/2 left-2 -translate-y-1/2">
+        <button onClick={prev}>
+          <ChevronLeft className="w-6 h-6 text-muted-foreground hover:text-primary" />
+        </button>
+      </div>
+      <div className="absolute top-1/2 right-2 -translate-y-1/2">
+        <button onClick={next}>
+          <ChevronRight className="w-6 h-6 text-muted-foreground hover:text-primary" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const HomePage = memo(() => {
-  /** Optimized properties query */
   const propertiesQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from("properties")
@@ -59,13 +117,12 @@ const HomePage = memo(() => {
     {
       cacheTime: 15 * 60 * 1000,
       staleTime: 5 * 60 * 1000,
-      enableRealtime: false, // vi vill inte hålla websockets öppna här
+      enableRealtime: false,
     }
   );
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
 
-  /** Amenities för filter */
   const availableAmenities = useMemo(() => {
     const all = new Set<string>();
     (properties || []).forEach((p: any) => {
@@ -78,7 +135,6 @@ const HomePage = memo(() => {
     return Array.from(all).sort();
   }, [properties]);
 
-  /** Filtrering */
   const filteredProperties = useMemo(() => {
     if (!filters) return properties;
 
@@ -104,9 +160,9 @@ const HomePage = memo(() => {
     <div className="min-h-screen bg-gradient-subtle">
       {/* Navigation */}
       <MainNavigation />
-      
+
       {/* Hero Section */}
-      <header className="relative py-20 overflow-hidden mt-16">
+      <header className="relative h-[80vh] overflow-hidden">
         <div className="absolute inset-0">
           <LazyImage
             src={forestHeroBg}
@@ -115,16 +171,23 @@ const HomePage = memo(() => {
             priority={true}
             loading="eager"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/60"></div>
+          <div className="absolute inset-0 bg-black/40"></div>
         </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
-            <h1 className="text-6xl font-bold text-white mb-6">Nordic Getaways</h1>
-            <p className="text-2xl text-white/90 max-w-3xl mx-auto">
-              Discover your perfect retreat in the Nordic
-            </p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 text-white space-y-6">
+          <h1 className="text-6xl font-bold">Nordic Getaways</h1>
+          <p className="text-2xl text-white/90 max-w-3xl mx-auto">
+            Discover your perfect retreat in the Nordic
+          </p>
+          <div className="flex gap-4">
+            <Button size="lg" asChild>
+              <Link to="/properties">Explore Properties</Link>
+            </Button>
+            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/20" asChild>
+              <Link to="/book-now">Book Now</Link>
+            </Button>
           </div>
-
+        </div>
+        <div className="container mx-auto px-4 relative z-10 mt-[65vh]">
           <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} />
         </div>
       </header>
@@ -164,45 +227,54 @@ const HomePage = memo(() => {
             </div>
           ) : (
             <div className="text-center py-16">
-              <div className="max-w-md mx-auto">
-                <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">No properties found</h3>
-                <p className="text-muted-foreground mb-6">No properties are currently available.</p>
-              </div>
+              <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">No properties found</h3>
+              <p className="text-muted-foreground mb-6">No properties are currently available.</p>
             </div>
           )}
         </div>
       </main>
 
-      {/* Book Promotion Section */}
+      {/* Book Section with Reviews */}
       <section className="py-20 bg-card">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <h2 className="text-4xl font-bold text-foreground">
-                  Experience Nordic Living
-                </h2>
-                <p className="text-xl text-muted-foreground leading-relaxed">
-                  Our comprehensive guest guide helps you make the most of your Nordic getaway. 
-                  From local customs to hidden gems, discover everything you need for an authentic experience.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" asChild>
-                    <Link to="/book-now">Book Your Stay</Link>
-                  </Button>
-                  <Button variant="outline" size="lg" asChild>
-                    <Link to="/villa-hacken/guide">View Guest Guide</Link>
-                  </Button>
-                </div>
+          <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+            {/* Book image */}
+            <div className="flex justify-center md:justify-start">
+              <LazyImage
+                src={bookCover}
+                alt="När havet förändrade allt"
+                className="w-48 md:w-60 rounded-lg shadow-lg"
+              />
+            </div>
+
+            {/* Text + CTA + Carousel */}
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold">Tips: Vacation Read</h2>
+              <p className="text-muted-foreground">
+                En gripande och oförglömlig berättelse om överlevnad och mening. Läs Jennys bok som berört tusentals läsare världen över.
+              </p>
+
+              <div className="flex gap-4">
+                <Button asChild>
+                  <a
+                    href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843"
+                    target="_blank"
+                  >
+                    Svenska boken
+                  </a>
+                </Button>
+                <Button asChild variant="outline">
+                  <a
+                    href="https://bokshop.bod.se/when-the-ocean-changed-everything-jenny-nirs-9789180807661"
+                    target="_blank"
+                  >
+                    English edition
+                  </a>
+                </Button>
               </div>
-              <div className="relative">
-                <LazyImage
-                  src={bookCover}
-                  alt="Nordic getaway guest guide book cover"
-                  className="w-full max-w-md mx-auto rounded-lg shadow-elegant"
-                />
-              </div>
+
+              <ReviewCarousel />
             </div>
           </div>
         </div>
@@ -239,7 +311,9 @@ const HomePage = memo(() => {
           </div>
 
           <div className="text-center pt-8 border-t border-border">
-            <p className="text-muted-foreground">© 2025 Nordic Getaways. Created with love for Nordic experiences.</p>
+            <p className="text-muted-foreground">
+              © 2025 Nordic Getaways. Created with love for Nordic experiences.
+            </p>
           </div>
         </div>
       </footer>
