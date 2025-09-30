@@ -169,6 +169,7 @@ const HostDashboard = () => {
           location: "",
           description: "",
           hero_image_url: "",
+          property_type: "Property",
         })
         .select()
         .single();

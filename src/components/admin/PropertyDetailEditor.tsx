@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +68,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     tagline_line2: "",
     review_rating: "5.0",
     review_count: "0",
+    property_type: "Property",
     active: true,
   });
 
@@ -133,6 +135,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         tagline_line2: (data as any).tagline_line2 || "",
         review_rating: ((data as any).review_rating || 5.0).toString(),
         review_count: ((data as any).review_count || 0).toString(),
+        property_type: (data as any).property_type || "Property",
         active: data.active,
       });
     } catch (error) {
@@ -170,6 +173,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         tagline_line2: form.tagline_line2,
         review_rating: parseFloat(form.review_rating) || 5.0,
         review_count: parseInt(form.review_count) || 0,
+        property_type: form.property_type,
         active: form.active,
         updated_at: new Date().toISOString(),
       };
@@ -284,6 +288,36 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                       placeholder="Property location..."
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Property Type</Label>
+                  <Select 
+                    value={form.property_type} 
+                    onValueChange={(value) => setForm(prev => ({ ...prev, property_type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Villa">Villa</SelectItem>
+                      <SelectItem value="Lakehouse">Lakehouse</SelectItem>
+                      <SelectItem value="Cabin">Cabin</SelectItem>
+                      <SelectItem value="Apartment">Apartment</SelectItem>
+                      <SelectItem value="House">House</SelectItem>
+                      <SelectItem value="Cottage">Cottage</SelectItem>
+                      <SelectItem value="Chalet">Chalet</SelectItem>
+                      <SelectItem value="Lodge">Lodge</SelectItem>
+                      <SelectItem value="Farmhouse">Farmhouse</SelectItem>
+                      <SelectItem value="Treehouse">Treehouse</SelectItem>
+                      <SelectItem value="Houseboat">Houseboat</SelectItem>
+                      <SelectItem value="RV">RV</SelectItem>
+                      <SelectItem value="Boat">Boat</SelectItem>
+                      <SelectItem value="Tiny House">Tiny House</SelectItem>
+                      <SelectItem value="Glamping">Glamping</SelectItem>
+                      <SelectItem value="Property">Property</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
