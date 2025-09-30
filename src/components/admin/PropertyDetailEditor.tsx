@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Image, Star, BookOpen, Calendar, Upload } from "lucide-react";
+import { Settings, Image, Star, BookOpen, Calendar } from "lucide-react";
 import { GalleryMetadataEditor } from "./GalleryMetadataEditor";
 import { AmenitiesEditor } from "./AmenitiesEditor";
 import { FeaturedAmenitiesSelector } from "./FeaturedAmenitiesSelector";
@@ -44,10 +44,41 @@ interface PropertyDetailEditorProps {
   onSave?: () => void;
 }
 
+/** Förslagslista för amenities (trimma vid behov) */
+const AMENITY_SUGGESTIONS: string[] = [
+  "Arkadspel","Båt","Standup Paddle Boards","Babyvakt","Badbalja","Badkar","Badtunna",
+  "Bagageavlämning tillåts","Bakgård","Bakmaskin","Bakplåtspapper","Balsam",
+  "Barnböcker och leksaker","Barncyklar","Barnservis","Barnstol","Bastu",
+  "Basutrustning för matlagning","Betald parkering på tomten","Betald parkering utanför fastigheten",
+  "Bidé","Biljardbord","Biograf","Boende på ett plan","Bowlinghall","Brandsläckare","Brandvarnare",
+  "Brädspel","Brödrost","Bärbara fläktar","Båtplats","Böcker och läsmaterial","Cyklar",
+  "Dedikerad arbetsyta","Diskmaskin","Duschgel","Duschtvål","Egen entré","Eget vardagsrum",
+  "Ethernet-anslutning","Extra kuddar och filtar","Frukost","Frys","Fönstersäkring","Förbandslåda",
+  "Galgar","Gratis parkering inkluderad","Gratis parkering på gatan","Grillplats","Grillredskap","Gym",
+  "Hiss","Hockeyrink","Hängmatta","Hårtork","Hörnskydd för bord","Intill vattnet","Kaffe","Kaffebryggare",
+  "Kajak","Kassaskåp","Klädförvaring","Klättervägg","Kokvrå","Kolmonoxidlarm","Komprimator för skräp",
+  "Kylskåp","Kök","Laddare för elbil","Lasergame","Lekplats utomhus","Lekrum för barn","Ljudanläggning",
+  "Luftkonditionering","Långtidsvistelser tillåtna","Matbord","Matplats utomhus","Mikrovågsugn",
+  "Minigolf","Minikyl","Mixer","Myggnät","Mörkläggningsgardin","Nära pisten","Petsäkra kontakter",
+  "Piano","Pingisbord","Pool","Porslin och bestick","Portabel wifi","Rekommendationer gällande barnvakt",
+  "Rengöringsprodukter","Resesäng","Riskokare","Schampo","Skateboardramp","Skivspelare","Skydd för öppen spis",
+  "Skötbord","Slagbur","Solstolar","Spel i naturlig storlek","Spelkonsol","Spis","Spjälsäng",
+  "Strandleksaker","Strykjärn","Städning tillgänglig under vistelsen","Säkerhetsgrindar för barn","Sängkläder",
+  "Takfläkt","Temarum","Tillgång till semesteranläggning","Tillgång till sjön","Tillgång till strand",
+  "Torkställ för kläder","Torktumlare","Träningsredskap","TV","Tvättmaskin","Tvättomat i närheten","Ugn",
+  "Uppvärmning","Utedusch","Utemöbler","Uteplats eller balkong","Utomhuskök","Varmvatten","Varmvattenkokare",
+  "Vinglas","Väsentligheter","Wifi","Öppen eld utomhus","Öppen spis",
+  // Tillgänglighet:
+  "Parkeringsplats för rörelsehindrade","Upplyst gångväg till gästentrén","Åtkomst utan nivåskillnad",
+  "Gästentrén är bredare än 81 centimeter","Lyftanordning för pool eller badtunna",
+  "Takhiss eller mobil lyftanordning"
+];
+
 const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDetailEditorProps) => {
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -72,6 +103,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     active: true,
   });
 
+  // Quick-add Amenity (läggs överst)
+  const [quickAmenity, setQuickAmenity] = useState("");
+
   useEffect(() => {
     if (open && propertyId) {
       loadProperty();
@@ -82,18 +116,18 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('id', propertyId)
+        .from("properties")
+        .select("*")
+        .eq("id", propertyId)
         .single();
 
       if (error) throw error;
 
-      const galleryMetadata = Array.isArray(data.gallery_metadata) 
+      const galleryMetadata = Array.isArray(data.gallery_metadata)
         ? data.gallery_metadata.map((meta: any) => ({
             title: meta?.title || "",
             description: meta?.description || "",
-            alt: meta?.alt || ""
+            alt: meta?.alt || "",
           }))
         : [];
 
@@ -113,7 +147,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         gallery_metadata: galleryMetadata,
         active: data.active || false,
       };
-      
+
       setProperty(propertyData);
       setForm({
         title: data.title || "",
@@ -139,7 +173,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         active: data.active,
       });
     } catch (error) {
-      console.error('Error loading property:', error);
+      console.error("Error loading property:", error);
       toast({
         title: "Error",
         description: "Failed to load property details",
@@ -178,36 +212,35 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         updated_at: new Date().toISOString(),
       };
 
-      // Optimized update with smaller payload and transaction
       const { error } = await supabase
-        .from('properties')
+        .from("properties")
         .update({
           ...updateData,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', propertyId)
-        .select('id')
+        .eq("id", propertyId)
+        .select("id")
         .single();
 
       if (error) throw error;
 
-      // Trigger real-time broadcast for immediate UI updates
-      const channel = supabase.channel('admin-property-updates');
+      const channel = supabase.channel("admin-property-updates");
       await channel.send({
-        type: 'broadcast',
-        event: 'property_updated',
-        payload: { propertyId, timestamp: new Date().toISOString() }
+        type: "broadcast",
+        event: "property_updated",
+        payload: { propertyId, timestamp: new Date().toISOString() },
       });
 
       toast({
         title: "Success",
-        description: "Property updated successfully - changes will appear on the property page immediately",
+        description:
+          "Property updated successfully - changes will appear on the property page immediately",
       });
 
       onSave?.();
       onClose();
     } catch (error) {
-      console.error('Error saving property:', error);
+      console.error("Error saving property:", error);
       toast({
         title: "Error",
         description: "Failed to update property",
@@ -216,6 +249,15 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     } finally {
       setSaving(false);
     }
+  };
+
+  // Quick add amenity överst
+  const addAmenityTop = () => {
+    const value = quickAmenity.trim();
+    if (!value) return;
+    const next = [{ name: value }, ...form.amenities_data]; // antar shape {name:string}; justera vid behov
+    setForm((prev) => ({ ...prev, amenities_data: next }));
+    setQuickAmenity("");
   };
 
   if (loading) {
@@ -238,6 +280,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
+          {/* 5 flikar (Sync är flyttad till Calendar & Pricing) */}
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">
               <Settings className="h-4 w-4 mr-2" />
@@ -259,12 +302,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
               <Calendar className="h-4 w-4 mr-2" />
               Calendar & Pricing
             </TabsTrigger>
-            <TabsTrigger value="sync">
-              <Upload className="h-4 w-4 mr-2" />
-              Sync
-            </TabsTrigger>
           </TabsList>
 
+          {/* BASIC */}
           <TabsContent value="basic" className="space-y-6">
             <Card>
               <CardHeader>
@@ -276,7 +316,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Label>Title</Label>
                     <Input
                       value={form.title}
-                      onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, title: e.target.value }))
+                      }
                       placeholder="Property title..."
                     />
                   </div>
@@ -284,7 +326,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Label>Location</Label>
                     <Input
                       value={form.location}
-                      onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, location: e.target.value }))
+                      }
                       placeholder="Property location..."
                     />
                   </div>
@@ -292,12 +336,14 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
                 <div className="space-y-2">
                   <Label>Property Type</Label>
-                  <Select 
-                    value={form.property_type} 
-                    onValueChange={(value) => setForm(prev => ({ ...prev, property_type: value }))}
+                  <Select
+                    value={form.property_type}
+                    onValueChange={(value) =>
+                      setForm((prev) => ({ ...prev, property_type: value }))
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Villa">Villa</SelectItem>
@@ -324,7 +370,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                   <Label>Description</Label>
                   <Textarea
                     value={form.description}
-                    onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, description: e.target.value }))
+                    }
                     placeholder="Detailed property description..."
                     rows={4}
                   />
@@ -336,7 +384,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Input
                       type="number"
                       value={form.price_per_night}
-                      onChange={(e) => setForm(prev => ({ ...prev, price_per_night: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, price_per_night: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -344,7 +394,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Input
                       type="number"
                       value={form.bedrooms}
-                      onChange={(e) => setForm(prev => ({ ...prev, bedrooms: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, bedrooms: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -352,7 +404,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Input
                       type="number"
                       value={form.bathrooms}
-                      onChange={(e) => setForm(prev => ({ ...prev, bathrooms: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, bathrooms: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -360,7 +414,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Input
                       type="number"
                       value={form.max_guests}
-                      onChange={(e) => setForm(prev => ({ ...prev, max_guests: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, max_guests: e.target.value }))
+                      }
                     />
                   </div>
                 </div>
@@ -368,7 +424,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                 <div className="flex items-center space-x-2">
                   <Switch
                     checked={form.active}
-                    onCheckedChange={(checked) => setForm(prev => ({ ...prev, active: checked }))}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, active: checked }))
+                    }
                   />
                   <Label>Property is active and visible</Label>
                 </div>
@@ -385,48 +443,81 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
             </div>
           </TabsContent>
 
+          {/* GALLERY */}
           <TabsContent value="gallery">
             <GalleryMetadataEditor
               images={form.gallery_images}
               metadata={form.gallery_metadata}
               onChange={(metadata, images) => {
-                setForm(prev => ({
+                setForm((prev) => ({
                   ...prev,
                   gallery_metadata: metadata,
-                  gallery_images: images || prev.gallery_images
+                  gallery_images: images || prev.gallery_images,
                 }));
               }}
               onSave={handleSave}
               saving={saving}
+              allowHeroSelection
+              heroImageUrl={form.hero_image_url}
+              onHeroChange={(url) =>
+                setForm((prev) => ({ ...prev, hero_image_url: url }))
+              }
             />
           </TabsContent>
 
+          {/* AMENITIES */}
           <TabsContent value="amenities" className="space-y-6">
+            {/* Quick add överst */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Add Amenity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Input
+                    value={quickAmenity}
+                    onChange={(e) => setQuickAmenity(e.target.value)}
+                    placeholder="Add amenity (e.g. Badtunna, Bastu, Grillplats...)"
+                    list="amenities-suggestions"
+                  />
+                  <Button onClick={addAmenityTop}>Add</Button>
+                </div>
+                <datalist id="amenities-suggestions">
+                  {AMENITY_SUGGESTIONS.map((s) => (
+                    <option value={s} key={s} />
+                  ))}
+                </datalist>
+              </CardContent>
+            </Card>
+
             <AmenitiesEditor
               amenities={form.amenities_data}
               onChange={(amenities) => {
-                setForm(prev => ({ ...prev, amenities_data: amenities }));
+                setForm((prev) => ({ ...prev, amenities_data: amenities }));
               }}
               onSave={handleSave}
               saving={saving}
+              // Om din komponent stödjer props för att dölja text vid ikoner/ändra ordning,
+              // kan du lägga till t.ex. insertAtTop / hideIconLabels här.
             />
-            
+
             <FeaturedAmenitiesSelector
               amenities={form.amenities_data}
               featuredAmenities={form.featured_amenities || []}
               onChange={(featured) => {
-                setForm(prev => ({ ...prev, featured_amenities: featured }));
+                setForm((prev) => ({ ...prev, featured_amenities: featured }));
               }}
               onSave={handleSave}
               saving={saving}
             />
           </TabsContent>
 
+          {/* GUIDEBOOK */}
           <TabsContent value="guide">
             <GuidebookEditor
               sections={form.guidebook_sections}
               onChange={(sections) => {
-                setForm(prev => ({ ...prev, guidebook_sections: sections }));
+                setForm((prev) => ({ ...prev, guidebook_sections: sections }));
               }}
               onSave={handleSave}
               saving={saving}
@@ -434,32 +525,38 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
             />
           </TabsContent>
 
-
+          {/* CALENDAR & PRICING (inkl. Sync flyttad hit) */}
           <TabsContent value="calendar" className="space-y-6">
-            <div className="space-y-6">
-              <PropertyPricingRules propertyId={propertyId} />
-              <PropertySpecialPricing 
-                propertyId={propertyId} 
-                basePrice={property?.price_per_night || 0}
-                currency={property?.currency || 'SEK'}
-              />
-              {property && (
-                <PropertyCalendarWidget
-                  propertyId={property.id}
-                  basePrice={parseInt(form.price_per_night) || 0}
-                  currency={form.currency}
-                  mode="admin"
-                />
-              )}
-            </div>
-          </TabsContent>
+            <PropertyPricingRules propertyId={propertyId} />
 
-          <TabsContent value="sync">
+            <PropertySpecialPricing
+              propertyId={propertyId}
+              basePrice={property?.price_per_night || 0}
+              currency={property?.currency || "SEK"}
+            />
+
             {property && (
-              <AirbnbSyncManager
+              <PropertyCalendarWidget
                 propertyId={property.id}
-                propertyTitle={form.title}
+                basePrice={parseInt(form.price_per_night) || 0}
+                currency={form.currency}
+                mode="admin"
               />
+            )}
+
+            {/* Sync flyttad hit */}
+            {property && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sync with other calendars</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AirbnbSyncManager
+                    propertyId={property.id}
+                    propertyTitle={form.title}
+                  />
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>
