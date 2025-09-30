@@ -49,6 +49,8 @@ export interface Property {
   };
   contact_response_time?: string;
   footer_quick_links?: string[];
+  property_type?: string;
+  special_amenities?: string[];
 }
 
 export const useProperties = () => {

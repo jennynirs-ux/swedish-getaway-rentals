@@ -8,8 +8,6 @@ import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import BookingSuccess from "./pages/BookingSuccess";
-import VillaGuide from "./pages/VillaGuide";
-import LakehouseGuide from "./pages/LakehouseGuide";
 import PropertyGuide from "./pages/PropertyGuide";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -38,9 +36,9 @@ const App = () => {
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/villa-hacken" element={<PropertyPage />} />
-            <Route path="/villa-hacken/guide" element={<VillaGuide />} />
+            <Route path="/villa-hacken/guide" element={<PropertyGuide />} />
             <Route path="/lakehouse-getaway" element={<PropertyPage />} />
-            <Route path="/lakehouse-getaway/guide" element={<LakehouseGuide />} />
+            <Route path="/lakehouse-getaway/guide" element={<PropertyGuide />} />
             <Route path="/property/:id" element={<PropertyPage />} />
             <Route path="/property/:id/guide" element={<PropertyGuide />} />
             <Route path="/shop" element={<Shop />} />

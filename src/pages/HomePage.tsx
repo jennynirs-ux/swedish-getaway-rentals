@@ -42,7 +42,10 @@ const HomePage = memo(() => {
         amenities,
         active,
         review_rating,
-        review_count
+        review_count,
+        property_type,
+        special_amenities,
+        featured_amenities
       `)
       .eq("active", true)
       .order("created_at", { ascending: false });
@@ -154,13 +157,15 @@ const HomePage = memo(() => {
             </div>
           ) : filteredProperties.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {filteredProperties.map((p: PropertyCardData) => (
+              {filteredProperties.map((p: any) => (
                 <MemoizedPropertyCard
                   key={p.id}
                   property={{
                     ...p,
                     hero_image_url: p.hero_image_url || "/placeholder.jpg",
                     description: p.description || "",
+                    featured_amenities: Array.isArray(p.featured_amenities) ? p.featured_amenities : [],
+                    special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
                   }}
                 />
               ))}

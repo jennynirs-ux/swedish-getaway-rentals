@@ -93,7 +93,7 @@ const HomepageProducts = memo(() => {
     const description =
       product.description_override ||
       product.custom_description ||
-      product.description;
+      product.description || "";
     const price =
       product.price_override || product.custom_price || product.price;
     const imageUrl = product.main_image_override || product.image_url;

@@ -52,6 +52,9 @@ export interface PropertyCardData {
   host_id: string;
   review_rating?: number;
   review_count?: number;
+  property_type?: string;
+  special_amenities?: string[];
+  featured_amenities?: { icon: string; title: string; tagline: string; description: string; image_url?: string; features?: string[] }[];
 }
 
 interface PropertyCardProps {
@@ -192,11 +195,7 @@ const PropertyCard = memo(({
           {/* Property Type Badge */}
           <div className="absolute bottom-4 left-4">
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
-              {property.title.toLowerCase().includes("villa")
-                ? "Villa"
-                : property.title.toLowerCase().includes("lakehouse")
-                ? "Lakehouse"
-                : "Property"}
+              {property.property_type || "Property"}
             </Badge>
           </div>
         </div>
@@ -241,17 +240,23 @@ const PropertyCard = memo(({
             </div>
           </div>
 
-          {/* Amenities */}
+          {/* Special Amenities */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {property.amenities?.slice(0, 3).map((amenity, index) => (
+            {property.featured_amenities?.slice(0, 3).map((amenity, index) => (
+              <div key={index} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                <Sparkles className="w-3 h-3" />
+                <span className="capitalize">{amenity.title}</span>
+              </div>
+            )) || property.amenities?.slice(0, 3).map((amenity, index) => (
               <div key={index} className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full">
                 {getAmenityIcon(amenity)}
                 <span className="capitalize">{amenity}</span>
               </div>
             ))}
-            {property.amenities && property.amenities.length > 3 && (
+            {((property.featured_amenities && property.featured_amenities.length > 3) || 
+              (property.amenities && property.amenities.length > 3)) && (
               <div className="text-xs text-muted-foreground px-2 py-1">
-                +{property.amenities.length - 3} more
+                +{(property.featured_amenities?.length || property.amenities?.length || 0) - 3} more
               </div>
             )}
           </div>

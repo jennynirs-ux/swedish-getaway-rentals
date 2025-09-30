@@ -668,8 +668,10 @@ export type Database = {
           pending_approval: boolean
           price_per_night: number
           pricing_table: Json | null
+          property_type: string | null
           review_count: number | null
           review_rating: number | null
+          special_amenities: string[] | null
           special_highlights: Json | null
           tagline_line1: string | null
           tagline_line2: string | null
@@ -708,8 +710,10 @@ export type Database = {
           pending_approval?: boolean
           price_per_night: number
           pricing_table?: Json | null
+          property_type?: string | null
           review_count?: number | null
           review_rating?: number | null
+          special_amenities?: string[] | null
           special_highlights?: Json | null
           tagline_line1?: string | null
           tagline_line2?: string | null
@@ -748,8 +752,10 @@ export type Database = {
           pending_approval?: boolean
           price_per_night?: number
           pricing_table?: Json | null
+          property_type?: string | null
           review_count?: number | null
           review_rating?: number | null
+          special_amenities?: string[] | null
           special_highlights?: Json | null
           tagline_line1?: string | null
           tagline_line2?: string | null
@@ -900,6 +906,7 @@ export type Database = {
       shop_products: {
         Row: {
           additional_images_override: string[] | null
+          color: string | null
           created_at: string
           currency: string
           custom_description: string | null
@@ -916,7 +923,9 @@ export type Database = {
           printful_data: Json | null
           printful_product_id: string
           printful_sync_variant_id: string | null
+          product_type: string | null
           sort_order: number | null
+          tags: string[] | null
           title: string
           title_override: string | null
           updated_at: string
@@ -924,6 +933,7 @@ export type Database = {
         }
         Insert: {
           additional_images_override?: string[] | null
+          color?: string | null
           created_at?: string
           currency?: string
           custom_description?: string | null
@@ -940,7 +950,9 @@ export type Database = {
           printful_data?: Json | null
           printful_product_id: string
           printful_sync_variant_id?: string | null
+          product_type?: string | null
           sort_order?: number | null
+          tags?: string[] | null
           title: string
           title_override?: string | null
           updated_at?: string
@@ -948,6 +960,7 @@ export type Database = {
         }
         Update: {
           additional_images_override?: string[] | null
+          color?: string | null
           created_at?: string
           currency?: string
           custom_description?: string | null
@@ -964,7 +977,9 @@ export type Database = {
           printful_data?: Json | null
           printful_product_id?: string
           printful_sync_variant_id?: string | null
+          product_type?: string | null
           sort_order?: number | null
+          tags?: string[] | null
           title?: string
           title_override?: string | null
           updated_at?: string

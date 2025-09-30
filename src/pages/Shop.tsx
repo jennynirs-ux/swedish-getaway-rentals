@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
+import ShopFilters, { ShopFilters as ShopFiltersType } from "@/components/ShopFilters";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 
 interface ShopProduct {
@@ -28,25 +29,62 @@ interface ShopProduct {
   is_visible_home: boolean;
   sort_order?: number;
   printful_data?: any;
+  product_type?: string;
+  color?: string;
+  tags?: string[];
 }
 
 const Shop = () => {
   const [products, setProducts] = useState<ShopProduct[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const { addItem } = useCart();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<ShopFiltersType>({
+    sortBy: "newest",
+    productType: undefined,
+    color: undefined,
+    tags: [],
+  });
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter(product => {
+  // Extract filter options from products
+  const availableProductTypes = useMemo(() => {
+    const types = new Set<string>();
+    products.forEach(product => {
+      if (product.product_type) types.add(product.product_type);
+    });
+    return Array.from(types).sort();
+  }, [products]);
+
+  const availableColors = useMemo(() => {
+    const colors = new Set<string>();
+    products.forEach(product => {
+      if (product.color) colors.add(product.color);
+    });
+    return Array.from(colors).sort();
+  }, [products]);
+
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>();
+    products.forEach(product => {
+      if (product.tags) {
+        product.tags.forEach(tag => tags.add(tag));
+      }
+    });
+    return Array.from(tags).sort();
+  }, [products]);
+
+  // Filter and sort products
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(product => {
         const { title, description } = getDisplayData(product);
         const searchText = searchTerm.toLowerCase();
         return (
@@ -54,15 +92,49 @@ const Shop = () => {
           description.toLowerCase().includes(searchText)
         );
       });
-      setFilteredProducts(filtered);
     }
-  }, [searchTerm, products]);
+
+    // Apply filters
+    if (filters.productType) {
+      filtered = filtered.filter(product => product.product_type === filters.productType);
+    }
+
+    if (filters.color) {
+      filtered = filtered.filter(product => product.color === filters.color);
+    }
+
+    if (filters.tags && filters.tags.length > 0) {
+      filtered = filtered.filter(product => 
+        filters.tags!.some(tag => product.tags?.includes(tag))
+      );
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      const aData = getDisplayData(a);
+      const bData = getDisplayData(b);
+
+      switch (filters.sortBy) {
+        case "price-low":
+          return aData.price - bData.price;
+        case "price-high":
+          return bData.price - aData.price;
+        case "name":
+          return aData.title.localeCompare(bData.title);
+        case "newest":
+        default:
+          return 0; // Keep original order (already sorted by created_at in query)
+      }
+    });
+
+    return sorted;
+  }, [products, searchTerm, filters]);
 
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
         .from("shop_products")
-        .select("*")
+        .select("*, product_type, color, tags")
         .eq("is_visible_shop", true)
         .eq("visible", true)
         .order("sort_order", { ascending: true, nullsFirst: false })
@@ -70,7 +142,6 @@ const Shop = () => {
 
       if (error) throw error;
       setProducts(data || []);
-      setFilteredProducts(data || []);
     } catch (error) {
       console.error("Error fetching products:", error);
       toast({
@@ -120,7 +191,7 @@ const Shop = () => {
     const description =
       product.description_override ||
       product.custom_description ||
-      product.description;
+      product.description || "";
     const price =
       product.price_override || product.custom_price || product.price;
     const imageUrl = product.main_image_override || product.image_url;
@@ -185,30 +256,44 @@ const Shop = () => {
       {/* Products Grid */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-20">
-              <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                {searchTerm ? "No products found" : "No products found"}
-              </h3>
-              <p className="text-muted-foreground">
-                {searchTerm
-                  ? "Try adjusting your search terms"
-                  : "No products found. Click Sync with Printful to import your products."}
-              </p>
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Filters Sidebar */}
+            <div className="lg:w-64 shrink-0">
+              <ShopFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                availableProductTypes={availableProductTypes}
+                availableColors={availableColors}
+                availableTags={availableTags}
+              />
             </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {searchTerm
-                    ? `Search Results (${filteredProducts.length})`
-                    : `All Products (${filteredProducts.length})`}
-                </h2>
-              </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredProducts.map((product) => {
+            {/* Products Content */}
+            <div className="flex-1">
+              {filteredAndSortedProducts.length === 0 ? (
+                <div className="text-center py-20">
+                  <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {searchTerm ? "No products found" : "No products found"}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm
+                      ? "Try adjusting your search terms or filters"
+                      : "No products found. Click Sync with Printful to import your products."}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      {searchTerm
+                        ? `Search Results (${filteredAndSortedProducts.length})`
+                        : `All Products (${filteredAndSortedProducts.length})`}
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {filteredAndSortedProducts.map((product) => {
                   const { title, description, price, imageUrl } =
                     getDisplayData(product);
 
@@ -263,10 +348,12 @@ const Shop = () => {
                       </CardContent>
                     </Card>
                   );
-                })}
-              </div>
-            </>
-          )}
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </section>
     </div>
