@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Plus, GripVertical, Save } from "lucide-react";
+import { Trash2, GripVertical, Save, Star } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -34,8 +34,10 @@ interface GalleryMetadata {
 interface GalleryMetadataEditorProps {
   images: string[];
   metadata: GalleryMetadata[];
+  heroImageUrl?: string;
   onChange: (metadata: GalleryMetadata[], images?: string[]) => void;
   onSave?: () => Promise<void>;
+  onHeroChange?: (url: string) => void;
   saving?: boolean;
 }
 
@@ -44,13 +46,14 @@ interface SortableItemProps {
   image: string;
   metadata: GalleryMetadata;
   index: number;
+  isHero: boolean;
   onUpdate: (field: keyof GalleryMetadata, value: string) => void;
   onRemove: () => void;
+  onSetHero: () => void;
 }
 
-/** Memoized item → renderas bara om props ändras */
 const SortableItem = React.memo(
-  ({ id, image, metadata, index, onUpdate, onRemove }: SortableItemProps) => {
+  ({ id, image, metadata, index, isHero, onUpdate, onRemove, onSetHero }: SortableItemProps) => {
     const { attributes, listeners, setNodeRef, transform, transition } =
       useSortable({ id });
 
@@ -60,7 +63,11 @@ const SortableItem = React.memo(
     };
 
     return (
-      <Card ref={setNodeRef} style={style}>
+      <Card
+        ref={setNodeRef}
+        style={style}
+        className={`border ${isHero ? "border-primary" : "border-transparent"}`}
+      >
         <CardContent className="p-4">
           <div className="flex gap-4">
             {/* Drag handle */}
@@ -75,13 +82,18 @@ const SortableItem = React.memo(
             </div>
 
             {/* Thumbnail */}
-            <div className="flex-shrink-0">
+            <div className="relative flex-shrink-0">
               <img
                 src={image}
                 alt={`Gallery image ${index + 1}`}
                 className="w-24 h-24 object-cover rounded-md"
                 loading="lazy"
               />
+              {isHero && (
+                <div className="absolute top-1 left-1 bg-primary text-white text-xs px-2 py-0.5 rounded">
+                  Hero
+                </div>
+              )}
             </div>
 
             {/* Metadata inputs */}
@@ -113,8 +125,17 @@ const SortableItem = React.memo(
               </div>
             </div>
 
-            {/* Delete button */}
-            <div className="flex-shrink-0">
+            {/* Actions */}
+            <div className="flex flex-col gap-2 items-end">
+              <Button
+                type="button"
+                variant={isHero ? "default" : "outline"}
+                size="sm"
+                onClick={onSetHero}
+              >
+                <Star className="h-4 w-4 mr-1" />
+                {isHero ? "Hero" : "Set as Hero"}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -135,8 +156,10 @@ const SortableItem = React.memo(
 export const GalleryMetadataEditor = ({
   images,
   metadata,
+  heroImageUrl,
   onChange,
   onSave,
+  onHeroChange,
   saving = false,
 }: GalleryMetadataEditorProps) => {
   const { toast } = useToast();
@@ -144,13 +167,13 @@ export const GalleryMetadataEditor = ({
   const [localMetadata, setLocalMetadata] = useState(
     metadata.length ? metadata : images.map(() => ({ title: "", description: "", alt: "" }))
   );
+  const [localHero, setLocalHero] = useState(heroImageUrl || "");
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  /** Endast lokala uppdateringar */
   const updateMetadata = useCallback(
     (index: number, field: keyof GalleryMetadata, value: string) => {
       setLocalMetadata((prev) => {
@@ -180,7 +203,8 @@ export const GalleryMetadataEditor = ({
 
   const handleSave = async () => {
     try {
-      onChange(localMetadata, localImages); // 🔥 skickas först här
+      onChange(localMetadata, localImages);
+      if (onHeroChange) onHeroChange(localHero);
       if (onSave) await onSave();
       toast({
         title: "Saved",
@@ -233,17 +257,17 @@ export const GalleryMetadataEditor = ({
                   image={image}
                   metadata={localMetadata[index] || { title: "", description: "", alt: "" }}
                   index={index}
+                  isHero={localHero === image}
                   onUpdate={(field, value) => updateMetadata(index, field, value)}
                   onRemove={() => removeMetadata(index)}
+                  onSetHero={() => setLocalHero(image)}
                 />
               ))}
             </div>
           </SortableContext>
         </DndContext>
       ) : (
-        <p className="text-muted-foreground text-sm">
-          Add gallery images to edit metadata
-        </p>
+        <p className="text-muted-foreground text-sm">Add gallery images to edit metadata</p>
       )}
     </div>
   );
