@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Plus, GripVertical, Save } from "lucide-react";
+import { Trash2, Plus, GripVertical, Save, Upload } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -20,11 +20,10 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GalleryMetadata {
   title: string;
@@ -38,6 +37,7 @@ interface GalleryMetadataEditorProps {
   onChange: (metadata: GalleryMetadata[], images?: string[]) => void;
   onSave?: () => Promise<void>;
   saving?: boolean;
+  propertyId?: string; // används för att lägga bilder i rätt mapp
 }
 
 interface SortableItemProps {
@@ -50,13 +50,7 @@ interface SortableItemProps {
 }
 
 const SortableItem = ({ id, image, metadata, index, onUpdate, onRemove }: SortableItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -68,11 +62,7 @@ const SortableItem = ({ id, image, metadata, index, onUpdate, onRemove }: Sortab
       <CardContent className="p-4">
         <div className="flex gap-4">
           <div className="flex-shrink-0 flex items-center">
-            <div 
-              {...attributes} 
-              {...listeners}
-              className="cursor-grab p-2 hover:bg-accent rounded-md"
-            >
+            <div {...attributes} {...listeners} className="cursor-grab p-2 hover:bg-accent rounded-md">
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
@@ -132,17 +122,17 @@ export const GalleryMetadataEditor = ({
   metadata, 
   onChange, 
   onSave, 
-  saving = false 
+  saving = false,
+  propertyId
 }: GalleryMetadataEditorProps) => {
   const { toast } = useToast();
   const [localImages, setLocalImages] = useState(images);
   const [localMetadata, setLocalMetadata] = useState(metadata);
+  const [uploading, setUploading] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const updateMetadata = (index: number, field: keyof GalleryMetadata, value: string) => {
@@ -174,7 +164,6 @@ export const GalleryMetadataEditor = ({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
     if (over && active.id !== over.id) {
       const oldIndex = localImages.findIndex((_, i) => i.toString() === active.id);
       const newIndex = localImages.findIndex((_, i) => i.toString() === over.id);
@@ -188,49 +177,73 @@ export const GalleryMetadataEditor = ({
     }
   };
 
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    setUploading(true);
+
+    try {
+      const file = event.target.files[0];
+      const filePath = `properties/${propertyId || "general"}/${Date.now()}-${file.name}`;
+
+      const { error } = await supabase.storage
+        .from("property-images")
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      const publicUrl = supabase.storage.from("property-images").getPublicUrl(filePath).data.publicUrl;
+
+      const newImages = [...localImages, publicUrl];
+      const newMetadata = [...localMetadata, { title: '', description: '', alt: '' }];
+
+      setLocalImages(newImages);
+      setLocalMetadata(newMetadata);
+      onChange(newMetadata, newImages);
+
+      toast({ title: "Upload complete", description: "Image uploaded successfully" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      event.target.value = ""; // reset file input
+    }
+  };
+
   const handleSave = async () => {
     if (onSave) {
       try {
         await onSave();
-        toast({
-          title: "Success",
-          description: "Gallery metadata saved successfully"
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to save gallery metadata",
-          variant: "destructive"
-        });
+        toast({ title: "Success", description: "Gallery metadata saved successfully" });
+      } catch {
+        toast({ title: "Error", description: "Failed to save gallery metadata", variant: "destructive" });
       }
     }
   };
 
-  // Sync with props when they change
-  useState(() => {
-    setLocalImages(images);
-  });
-
-  useState(() => {
-    setLocalMetadata(metadata);
-  });
-
-  // Ensure metadata array matches images length
-  if (localMetadata.length < localImages.length) {
-    addDefaultMetadata();
-  }
+  if (localMetadata.length < localImages.length) addDefaultMetadata();
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Label className="text-base font-medium">Gallery Image Information</Label>
+        <Label className="text-base font-medium">Gallery Images</Label>
         <div className="flex gap-2">
-          {localImages.length > localMetadata.length && (
-            <Button type="button" variant="outline" size="sm" onClick={addDefaultMetadata}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add metadata for all images
-            </Button>
-          )}
+          <input
+            id="fileUpload"
+            type="file"
+            accept="image/*"
+            onChange={handleUpload}
+            className="hidden"
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={() => document.getElementById("fileUpload")?.click()}
+            disabled={uploading}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? "Uploading..." : "Upload Image"}
+          </Button>
           {onSave && (
             <Button 
               type="button" 
@@ -240,42 +253,32 @@ export const GalleryMetadataEditor = ({
               disabled={saving}
             >
               <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           )}
         </div>
       </div>
       
       {localImages.length > 0 ? (
-        <DndContext 
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext 
-            items={localImages.map((_, index) => index.toString())}
-            strategy={verticalListSortingStrategy}
-          >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localImages.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
             <div className="grid gap-4">
-              {localImages.map((image, index) => {
-                const meta = localMetadata[index] || { title: '', description: '', alt: '' };
-                return (
-                  <SortableItem
-                    key={index}
-                    id={index.toString()}
-                    image={image}
-                    metadata={meta}
-                    index={index}
-                    onUpdate={(field, value) => updateMetadata(index, field, value)}
-                    onRemove={() => removeMetadata(index)}
-                  />
-                );
-              })}
+              {localImages.map((image, index) => (
+                <SortableItem
+                  key={index}
+                  id={index.toString()}
+                  image={image}
+                  metadata={localMetadata[index] || { title: '', description: '', alt: '' }}
+                  index={index}
+                  onUpdate={(field, value) => updateMetadata(index, field, value)}
+                  onRemove={() => removeMetadata(index)}
+                />
+              ))}
             </div>
           </SortableContext>
         </DndContext>
       ) : (
-        <p className="text-muted-foreground text-sm">Add gallery images to edit metadata</p>
+        <p className="text-muted-foreground text-sm">No images uploaded yet</p>
       )}
     </div>
   );
