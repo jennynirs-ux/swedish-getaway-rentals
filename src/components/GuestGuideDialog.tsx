@@ -122,8 +122,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Apple,
           title: "Food Waste",
           description: [
-            "Fruit & vegetable scraps, tea bags, coffee grounds, eggshells, meat bones, small amounts of kitchen paper.",
-            { not: "Plastic, snus, cigarettes, flowers or candles." }
+            "Fruit and vegetable scraps, tea bags, coffee grounds, eggshells, meat bones and the like. A bit of kitchen paper is also fine. Food waste should only be put in the special bag provided for this purpose ",
+            { not: "Plastic, snus (oral moist snuff), cigarettes, flowers and candles are not food waste. " }
           ],
           tip: "Food waste becomes biogas and biofertilizer."
         },
@@ -131,8 +131,9 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Trash2,
           title: "Plastic Packaging",
           description: [
-            "Plastic bags, bottles, refill packs, tubes, trays, crisp bags, styrofoam. Remove lids and stoppers, empty & dry.",
+            "Plastic Bottles, cans, plastic bags, refill packs, plastic tubes, crisp packets and polystyrene. Remove any stoppers and lids. Empty your bag with the different types of plastic packaging into the separate containers for each. This makes it easier in later recycling stages.",
             { not: "Plastic toys and furniture → bulky waste." }
+            { not: "Deposit bottles should be returned to a store for a refund. " }            
           ],
           tip: "Recycled plastic becomes bags and recycling containers."
         },
@@ -140,9 +141,10 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Cog,
           title: "Metal Packaging",
           description: [
-            "Cans, empty spray cans, tubes, bottle caps, lids, empty paint tins. Fold in sharp lids.",
+            "Tin cans, empty spray cans, tubes, bottle caps, lids and empty paint tins. Fold in sharp lids on tin cans.",
             { not: "Tins with paint/glue → hazardous waste." },
             { not: "Scrap metal like pans → bulky waste." }
+            { not: "Deposit cans should be returned to a store for a refund. " }          
           ],
           tip: "Recycled metal can become wheel rims or sheet metal."
         },
@@ -150,8 +152,9 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Newspaper,
           title: "Newspapers & Paper",
           description: [
-            "Daily/weekly newspapers, magazines, catalogues, flyers, brochures, paperback books. Remove plastic wrapping.",
+            "Daily and weekly newspapers, magazines, catalogues, advertising flyers, brochures, paperback books and writing/drawing paper. Remove plastic wrapping and advertising stickers.",
             { not: "Envelopes & bound books → residual waste." }
+            { not: "Paper bags, cartons and similar should be deposited in the container for paper packaging." }
           ],
           tip: "Old newspapers become kitchen rolls or new paper."
         },
@@ -159,7 +162,9 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Package,
           title: "Paper Packaging",
           description: [
-            "Milk & juice cartons, paper bags, shoeboxes, toilet roll tubes, cardboard boxes. Flatten/fold, put small packages in bigger ones."
+            "Pasta packs, milk and juice cartons, paper bags, shoeboxes, toilet roll tubes and cardboard boxes. Flatten and fold in two. Put small packaging in larger packaging to save space."
+            { not: "Envelopes & bound books → residual waste." }
+            { not: "Newspapers, advertising flyers and similar → newspaper waste." }
           ],
           tip: "Paper packaging usually becomes new packaging."
         },
@@ -167,7 +172,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Wine,
           title: "Glass Packaging",
           description: [
-            "Clear & coloured bottles and jars. Remove caps/lids/corks.",
+            "Sort clear & coloured bottles and jars in the correct container (one for clear glass and one for coloured glass). Remove caps/lids/corks.",
             { not: "Porcelain, ceramics & bulbs → bulky/hazardous waste." },
             { not: "Deposit bottles → return to store." }
           ],
@@ -177,8 +182,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Skull,
           title: "Residual Waste",
           description: [
-            "Diapers, envelopes, dishcloths, snus, toothbrushes, hair.",
-            { not: "No recyclable, hazardous or electrical waste – take those to a recycling centre." }
+            "Diapers, envelopes, dishcloths, snus, toothbrushes, hair from hairbrushes.",
+            { not: "No recyclable, hazardous or electrical waste – take those to a recycling centre instead. Residual waste should be disposed of in a bag that is securely tied. " }
           ],
           tip: "Residual waste is used for electricity and heat."
         },
@@ -186,7 +191,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Recycle,
           title: "Deposit Bottles & Cans (Pant)",
           description: [
-            "Return bottles and cans with the Pant logo at stores for a refund instead of recycling."
+            "Return bottles and cans with the Pant (recycle) logo at stores for a refund instead of recycling."
           ],
           tip: "Pant saves resources and gives you money back."
         },
@@ -195,7 +200,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       return (
         <div className="grid gap-6">
           <p className="text-muted-foreground">
-            Recycling is super important here and saves raw materials and energy – every item you sort makes a difference! Did you know that we can be fined if not recycling right in Sweden? 
+            Recycling is very important in Sweden – it saves raw materials and energy, and every item you sort makes a difference. Please note that as a guest you are responsible for sorting your waste correctly, as fines can apply if recycling is not done properly.
           </p>
     
           {wasteCategories.map((cat, index) => {
