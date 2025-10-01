@@ -32,7 +32,7 @@ import {
   Clock,
   Apple,
   BottleWine,
-  trash,
+  Trash,
   Newspaper,
   Package,
   Wine,
@@ -125,7 +125,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           description: "Plastic bags, refill packs, tubes, trays. Empty and remove lids. Large plastic items → bulky waste.",
         },
         {
-          icon: trash,
+          icon: Trash,
           title: "Metal packaging",
           description: "Cans, spray cans, tubes, caps, lids, empty paint tins. Tins with paint/glue → hazardous waste.",
         },
