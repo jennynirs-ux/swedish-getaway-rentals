@@ -1,7 +1,13 @@
+import { useState, type ElementType } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Property } from "@/hooks/useProperties";
-import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Share2,
   Download,
@@ -14,7 +20,6 @@ import {
   LogOut,
   Heart,
   CheckSquare,
-  Recycle,
   Coffee,
   Utensils,
   Cog,
@@ -25,14 +30,16 @@ import {
   Ban,
   Volume2,
   Clock,
+  Apple,
+  BottlePlastic,
+  Tin,
+  Newspaper,
+  Package,
+  Wine,
+  Trash2,
+  Recycle,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Property } from "@/hooks/useProperties";
 
 type SectionType = "text" | "list" | "checkbox" | "custom";
 
@@ -43,7 +50,7 @@ interface GuideSection {
   items?: string[];
   type?: SectionType;
   image_url?: string;
-  icon?: React.ElementType;
+  icon?: ElementType;
 }
 
 interface GuestGuideDialogProps {
@@ -56,21 +63,23 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Standardsektioner
   const defaultSections: GuideSection[] = [
     { id: "home", title: "Welcome Home", icon: Home, type: "text", content: "Welcome to our property! We’re excited to host you." },
-    { id: "directions", title: "Directions", icon: MapPin, type: "list", items: ["By car: Take E20 and exit at Lerum. Parking on site.", "By public transport: Train to Lerum station, then bus 533."] },
+    { id: "directions", title: "Directions", icon: MapPin, type: "list", items: [
+      "By car: Take E20 and exit at Lerum. Parking on site.",
+      "By public transport: Train to Lerum station, then bus 533."
+    ]},
     { id: "stop", title: "Stop on the way", icon: Coffee, type: "list", items: ["ICA Kvantum – groceries", "Shell – gas & snacks", "Local shop – firewood"] },
     { id: "checkin", title: "Check-in", icon: Key, type: "list", items: ["Check-in: 15:00", "Keys in lockbox", "Parking in front of house"] },
     { id: "wifi", title: "Wi-Fi", icon: Wifi, type: "list", items: ["Network: Guest_Wifi", "Password: Welcome2024"] },
     { id: "kitchen", title: "Kitchen", icon: Utensils, type: "list", items: ["Oven", "Coffee machine", "Dishwasher"] },
-    { id: "howthingswork", title: "How things work", icon: Cog, type: "checkbox", items: ["Oven: press power + start", "Coffee maker: fill with water + brew", "Heating: adjust thermostat"] },
-    { id: "waste", title: "Waste & Recycling", icon: Recycle, type: "list", items: ["Food → brown bin", "Paper → paper container", "Plastic → plastic container", "Glass → glass container"] },
-    { id: "places", title: "Places to visit", icon: Landmark, type: "list", items: ["Lake Aspen – swimming", "Skatås reserve", "Göteborg – 20 min by train"] },
+    { id: "howthingswork", title: "How things work", icon: Cog, type: "checkbox", items: ["Oven: press power + start", "Coffee maker: fill water + brew", "Heating: adjust thermostat"] },
+    { id: "waste", title: "Waste & Recycling", icon: Recycle, type: "custom" }, // egen specialrendering
+    { id: "places", title: "Places to visit", icon: Landmark, type: "list", items: ["Lake Aspen – swimming", "Skatås reserve", "Gothenburg – 20 min by train"] },
     { id: "customs", title: "Swedish customs", icon: BookOpen, type: "list", items: ["No shoes indoors", "Fika tradition", "Alcohol only at Systembolaget"] },
     { id: "rules", title: "House Rules", icon: Shield, type: "custom" },
     { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox", items: ["Empty trash", "Remove linens", "Close windows & lights", "Lock doors"] },
-    { id: "ratings", title: "Star Rating", icon: Star, type: "custom" },    
+    { id: "ratings", title: "Star Ratings", icon: Star, type: "custom" },
     { id: "hoststory", title: "Host Story", icon: Heart, type: "text", content: "We bought Villa Häcken in 2020 and love sharing it with guests." },
   ];
 
@@ -79,6 +88,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     const custom = customSections.find((s) => s.id === section.id);
     return { ...section, ...custom, icon: section.icon };
   });
+
+  const getIndexById = (id: string) => allSections.findIndex((s) => s.id === id);
 
   const shareGuide = async () => {
     const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
@@ -100,6 +111,90 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   };
 
   const renderSectionContent = (section: GuideSection) => {
+    // --- Waste & Recycling specialvy ---
+    if (section.id === "waste") {
+      const wasteCategories = [
+        {
+          icon: Apple,
+          title: "Food waste",
+          description: "Fruit/vegetable scraps, coffee grounds, tea bags, eggshells, meat bones. Use the green food waste bag.",
+        },
+        {
+          icon: BottlePlastic,
+          title: "Plastic packaging",
+          description: "Plastic bags, refill packs, tubes, trays. Empty and remove lids. Large plastic items → bulky waste.",
+        },
+        {
+          icon: Tin,
+          title: "Metal packaging",
+          description: "Cans, spray cans, tubes, caps, lids, empty paint tins. Tins with paint/glue → hazardous waste.",
+        },
+        {
+          icon: Newspaper,
+          title: "Newspapers",
+          description: "Daily/weekly papers, magazines, flyers, brochures. Remove plastic wrapping. Envelopes → residual waste.",
+        },
+        {
+          icon: Package,
+          title: "Paper packaging",
+          description: "Milk/juice cartons, cardboard boxes, shoeboxes. Flatten/fold. Put small packages in bigger ones.",
+        },
+        {
+          icon: Wine,
+          title: "Glass packaging",
+          description: "Clear/colored bottles & jars. Remove caps/corks. Porcelain, ceramics & bulbs → bulky/hazardous waste.",
+        },
+        {
+          icon: Trash2,
+          title: "Residual waste",
+          description: "Diapers, envelopes, dishcloths, snus, toothbrushes, hair. Nothing recyclable, hazardous or electrical.",
+        },
+        {
+          icon: Recycle,
+          title: "Deposit bottles & cans (Pant)",
+          description: "Return bottles and cans with the Pant logo at stores for a refund instead of recycling.",
+        },
+      ];
+
+      return (
+        <div className="grid gap-6">
+          <p className="text-muted-foreground">
+            When we all recycle, we all win. Recycling saves raw materials and energy, and helps create a better world.
+          </p>
+          {wasteCategories.map((cat, index) => {
+            const Icon = cat.icon;
+            return (
+              <div
+                key={index}
+                className="flex items-start gap-4 p-6 bg-card border rounded-lg hover:shadow-md transition-shadow"
+              >
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Icon className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">{cat.title}</h3>
+                  <p className="text-muted-foreground text-sm">{cat.description}</p>
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-sm text-muted-foreground mt-4">
+            More info:{" "}
+            <a
+              href="https://www.sopor.nu"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline"
+            >
+              sopor.nu
+            </a>{" "}
+            or contact your municipality for details about local recycling.
+          </p>
+        </div>
+      );
+    }
+
+    // --- House Rules (som tidigare) ---
     if (section.id === "rules") {
       const houseRules = [
         { icon: Ban, rule: "No smoking indoors", description: "Smoking is only allowed outside" },
@@ -129,39 +224,48 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       );
     }
 
+    // --- Star Ratings (som du redan har) ---
     if (section.id === "ratings") {
       const ratingInfo = [
-        { stars: 5, title: "Outstanding", description: "Exceptional experience" },
-        { stars: 4, title: "Excellent", description: "Great with minor issues" },
-        { stars: 3, title: "Good", description: "Met expectations" },
-        { stars: 2, title: "Fair", description: "Below expectations" },
-        { stars: 1, title: "Poor", description: "Did not meet standards" },
+        { stars: 5, text: "Perfection doesn’t exist, but we were happy!" },
+        { stars: 4, text: "A few issues, but we still enjoyed our stay." },
+        { stars: 3, text: "Major issues, most likely won’t return." },
+        { stars: 2, text: "Close the house down!" },
+        { stars: 1, text: "Burn it!" },
       ];
       return (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          <p className="text-muted-foreground">
+            Your review matters! When rating us after your stay, please note that if a host
+            receives an average rating of 4.3 or less, the account can be deactivated and all
+            future guests will have their stays cancelled.
+            <br /><br />
+            Help us earn your five star review!
+          </p>
+
           {ratingInfo.map((rating, index) => (
-            <div key={index} className="p-6 bg-card border rounded-lg">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-5 w-5 ${
-                        i < rating.stars ? "fill-[#8B4513] text-[#8B4513]" : "text-muted-foreground"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="font-bold text-lg">{rating.stars} Stars</span>
-                <span className="text-primary ml-auto">{rating.title}</span>
+            <div key={index} className="flex items-start gap-3">
+              <div className="flex gap-1 mt-1">
+                {[...Array(rating.stars)].map((_, i) => (
+                  <Star key={i} className="h-5 w-5 text-[#8B4513]" fill="#8B4513" />
+                ))}
               </div>
-              <p className="text-muted-foreground">{rating.description}</p>
+              <p className="text-muted-foreground">{rating.text}</p>
             </div>
           ))}
+
+          <div className="text-center mt-8">
+            <h4 className="font-bold text-lg tracking-wide">WE STRIVE FOR A 5 STAR EXPERIENCE</h4>
+            <p className="text-muted-foreground mt-2">
+              Please let us know of any problem that you encounter during your stay and we will
+              do our best to rectify the situation.
+            </p>
+          </div>
         </div>
       );
     }
 
+    // Standard list/checkbox/text
     if (section.type === "list" && section.items) {
       return <ul className="list-disc pl-5 space-y-2">{section.items.map((item, idx) => <li key={idx}>{item}</li>)}</ul>;
     }
@@ -186,7 +290,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
         <div className="flex-1 flex m-0 h-full">
           {/* Left menu with tooltips */}
           <TooltipProvider>
-            <div className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto h-full">
+            <nav className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto h-full">
               {allSections.map((section, index) => {
                 const isActive = activeIndex === index;
                 const Icon = section.icon || Info;
@@ -206,7 +310,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
                   </Tooltip>
                 );
               })}
-            </div>
+            </nav>
           </TooltipProvider>
 
           {/* Right content */}
@@ -215,46 +319,38 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
               <div className="flex items-start justify-between">
                 <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
                 <div className="flex gap-2 mt-1">
-                  <Button variant="outline" size="icon" onClick={shareGuide}>
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" onClick={exportToPDF}>
-                    <Download className="h-4 w-4" />
-                  </Button>
+                  <Button variant="outline" size="icon" onClick={shareGuide}><Share2 className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" onClick={exportToPDF}><Download className="h-4 w-4" /></Button>
                 </div>
               </div>
             </DialogHeader>
 
-            {/* Hero image */}
             {property.hero_image_url && allSections[activeIndex].id === "home" && (
               <img src={property.hero_image_url} alt={property.title} className="w-full h-64 object-cover rounded-lg mb-6" />
             )}
-
-            {/* Section image */}
             {allSections[activeIndex].image_url && allSections[activeIndex].id !== "home" && (
               <img src={allSections[activeIndex].image_url} alt={allSections[activeIndex].title} className="w-full h-48 object-cover rounded-lg mb-6" />
             )}
 
-            {/* Section content */}
             <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
               {renderSectionContent(allSections[activeIndex])}
             </div>
 
-            {/* Visual TOC on Welcome Home */}
             {allSections[activeIndex].id === "home" && (
               <div className="mt-6 p-4 border rounded-lg bg-muted/10">
                 <h4 className="font-semibold mb-4">Contents</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  {allSections.filter((s) => s.id !== "home").map((s, idx) => {
+                  {allSections.filter((s) => s.id !== "home").map((s) => {
                     const Icon = s.icon || Info;
+                    const targetIdx = getIndexById(s.id);
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setActiveIndex(idx + 1)}
+                        onClick={() => setActiveIndex(targetIdx)}
                         className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-primary/10 transition"
                       >
                         <Icon className="h-5 w-5 text-primary" />
-                        <span className="text-left">{s.title}</span>
+                        <span>{s.title}</span>
                       </button>
                     );
                   })}
