@@ -195,7 +195,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       return (
         <div className="grid gap-6">
           <p className="text-muted-foreground">
-            Recycling saves raw materials and energy – every item you sort makes a difference!
+            Recycling is super important here and saves raw materials and energy – every item you sort makes a difference! Did you know that we can be fined if not recycling right in Sweden? 
           </p>
     
           {wasteCategories.map((cat, index) => {
