@@ -211,9 +211,8 @@ const HomePage = memo(() => {
             <div>
               <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/shop" className="hover:text-foreground">Nordic Shop</Link></li>
-                <li><Link to="/gallery" className="hover:text-foreground">Photo Gallery</Link></li>
-                <li><Link to="/amenities" className="hover:text-foreground">Amenities</Link></li>
+                <li><Link to="/shop" className="hover:text-foreground">The Nordic Collection</Link></li>
+                <li><Link to="/first-time-in-sweden" className="hover:text-foreground">First time in Sweden</Link></li>
                 <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
               </ul>
             </div>
