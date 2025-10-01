@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Image, Star, BookOpen, Calendar } from "lucide-react";
+import { Settings, Image, Star, BookOpen, Calendar, Upload } from "lucide-react";
 import { GalleryMetadataEditor } from "./GalleryMetadataEditor";
+import { ImageUpload } from "./ImageUpload";
 import { AmenitiesEditor } from "./AmenitiesEditor";
 import { FeaturedAmenitiesSelector } from "./FeaturedAmenitiesSelector";
 import { GuidebookEditor } from "./GuidebookEditor";
@@ -335,6 +336,30 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Hero Image</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Upload a hero image for your property. This will be displayed on the property card, property page header, and first tab in guidebook.
+                  </p>
+                  <div className="space-y-2">
+                    {form.hero_image_url && (
+                      <div className="relative w-full h-48">
+                        <img
+                          src={form.hero_image_url}
+                          alt="Hero"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                    <Input
+                      type="url"
+                      placeholder="Enter image URL or upload below..."
+                      value={form.hero_image_url}
+                      onChange={(e) => setForm((prev) => ({ ...prev, hero_image_url: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <Label>Property Type</Label>
                   <Select
                     value={form.property_type}
@@ -457,11 +482,6 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
               }}
               onSave={handleSave}
               saving={saving}
-              allowHeroSelection
-              heroImageUrl={form.hero_image_url}
-              onHeroChange={(url) =>
-                setForm((prev) => ({ ...prev, hero_image_url: url }))
-              }
             />
           </TabsContent>
 

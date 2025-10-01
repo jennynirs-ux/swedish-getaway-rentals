@@ -19,7 +19,7 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Hero Background Image */}
+      {/* Hero Background Image - Use hero_image_url first */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{

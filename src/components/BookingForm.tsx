@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarDays, Shield } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
@@ -70,6 +71,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
+  const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
 
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return 0;
@@ -113,6 +115,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (totalAmount <= 0) return;
+
+    if (!houseRulesAccepted) {
+      setValidationErrors({ houseRules: "You must accept the house rules to proceed" });
+      return;
+    }
 
     const validatedData = validateForm();
     if (!validatedData || !checkIn || !checkOut) return;
@@ -302,10 +309,46 @@ const BookingForm: React.FC<BookingFormProps> = ({
             )}
           </div>
 
+          {/* House Rules Acceptance */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="houseRules"
+                checked={houseRulesAccepted}
+                onCheckedChange={(checked) => {
+                  setHouseRulesAccepted(checked as boolean);
+                  if (validationErrors.houseRules) {
+                    setValidationErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.houseRules;
+                      return newErrors;
+                    });
+                  }
+                }}
+                className={validationErrors.houseRules ? "border-destructive" : ""}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="houseRules"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 cursor-pointer"
+                >
+                  <Shield className="h-4 w-4 text-primary" />
+                  I have read and agree to the House Rules
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  You'll receive a link to the full guest guidebook after booking
+                </p>
+                {validationErrors.houseRules && (
+                  <p className="text-destructive text-sm">{validationErrors.houseRules}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || totalAmount <= 0}
+            disabled={loading || totalAmount <= 0 || !houseRulesAccepted}
           >
             {loading ? 'Sending...' : 'Send booking request'}
           </Button>

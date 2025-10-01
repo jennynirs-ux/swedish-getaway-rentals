@@ -22,6 +22,8 @@ import Amenities from "./pages/Amenities";
 import Contact from "./pages/Contact";
 import BookNow from "./pages/BookNow";
 import Profile from "./pages/Profile";
+import FirstTimeInSweden from "./pages/FirstTimeInSweden";
+import PricingGuide from "./pages/PricingGuide";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,8 @@ const App = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/book-now" element={<BookNow />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/first-time-in-sweden" element={<FirstTimeInSweden />} />
+            <Route path="/pricing-guide" element={<PricingGuide />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </TooltipProvider>
