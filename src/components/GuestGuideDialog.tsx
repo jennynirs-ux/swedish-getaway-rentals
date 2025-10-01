@@ -37,6 +37,7 @@ import {
   Package,
   Wine,
   Trash2,
+  Skull,
   Recycle,
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
@@ -120,12 +121,12 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           description: "Fruit/vegetable scraps, coffee grounds, tea bags, eggshells, meat bones. Use the green food waste bag.",
         },
         {
-          icon: Bottle,
+          icon: Trash2,
           title: "Plastic packaging",
           description: "Plastic bags, refill packs, tubes, trays. Empty and remove lids. Large plastic items → bulky waste.",
         },
         {
-          icon: Trash,
+          icon: Cog,
           title: "Metal packaging",
           description: "Cans, spray cans, tubes, caps, lids, empty paint tins. Tins with paint/glue → hazardous waste.",
         },
@@ -145,7 +146,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           description: "Clear/colored bottles & jars. Remove caps/corks. Porcelain, ceramics & bulbs → bulky/hazardous waste.",
         },
         {
-          icon: Trash2,
+          icon: Skull,
           title: "Residual waste",
           description: "Diapers, envelopes, dishcloths, snus, toothbrushes, hair. Nothing recyclable, hazardous or electrical.",
         },
