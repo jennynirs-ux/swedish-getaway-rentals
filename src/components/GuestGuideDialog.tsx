@@ -37,7 +37,7 @@ import {
   Trash2,
   Skull,
   Recycle,
-  Ban,
+  CheckCircle,
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
 
@@ -85,7 +85,6 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
 
   const customSections = (property.guidebook_sections as GuideSection[]) || [];
 
-  // ✅ Memoisera för bättre prestanda
   const allSections = useMemo(() => {
     return defaultSections.map((section) => {
       const custom = customSections.find((s) => s.id === section.id);
@@ -114,7 +113,6 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     toast({ title: "PDF Export", description: "Coming soon!" });
   };
 
-  // ✅ Render endast aktiv sektion
   const renderSectionContent = (section: GuideSection) => {
     if (section.id === "waste") {
       const wasteCategories = [
@@ -122,8 +120,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Apple,
           title: "Food Waste",
           description: [
-            "Fruit and vegetable scraps, tea bags, coffee grounds, eggshells, meat bones and the like. A bit of kitchen paper is also fine. Food waste should only be put in the special bag provided for this purpose ",
-            { not: "Plastic, snus (oral moist snuff), cigarettes, flowers and candles are not food waste. " }
+            "Fruit and vegetable scraps, tea bags, coffee grounds, eggshells, meat bones, small amounts of kitchen paper.",
+            { not: "Plastic, snus, cigarettes, flowers or candles." }
           ],
           tip: "Food waste becomes biogas and biofertilizer."
         },
@@ -131,9 +129,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Trash2,
           title: "Plastic Packaging",
           description: [
-            "Plastic Bottles, cans, plastic bags, refill packs, plastic tubes, crisp packets and polystyrene. Remove any stoppers and lids. Empty your bag with the different types of plastic packaging into the separate containers for each. This makes it easier in later recycling stages.",
+            "Plastic bags, bottles, refill packs, tubes, trays, crisp bags, styrofoam.",
             { not: "Plastic toys and furniture → bulky waste." }
-            { not: "Deposit bottles should be returned to a store for a refund. " }            
           ],
           tip: "Recycled plastic becomes bags and recycling containers."
         },
@@ -141,10 +138,9 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Cog,
           title: "Metal Packaging",
           description: [
-            "Tin cans, empty spray cans, tubes, bottle caps, lids and empty paint tins. Fold in sharp lids on tin cans.",
+            "Cans, empty spray cans, tubes, caps, lids, empty paint tins.",
             { not: "Tins with paint/glue → hazardous waste." },
             { not: "Scrap metal like pans → bulky waste." }
-            { not: "Deposit cans should be returned to a store for a refund. " }          
           ],
           tip: "Recycled metal can become wheel rims or sheet metal."
         },
@@ -152,9 +148,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Newspaper,
           title: "Newspapers & Paper",
           description: [
-            "Daily and weekly newspapers, magazines, catalogues, advertising flyers, brochures, paperback books and writing/drawing paper. Remove plastic wrapping and advertising stickers.",
+            "Daily/weekly papers, magazines, flyers, brochures.",
             { not: "Envelopes & bound books → residual waste." }
-            { not: "Paper bags, cartons and similar should be deposited in the container for paper packaging." }
           ],
           tip: "Old newspapers become kitchen rolls or new paper."
         },
@@ -162,9 +157,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Package,
           title: "Paper Packaging",
           description: [
-            "Pasta packs, milk and juice cartons, paper bags, shoeboxes, toilet roll tubes and cardboard boxes. Flatten and fold in two. Put small packaging in larger packaging to save space."
+            "Milk/juice cartons, cardboard boxes, shoeboxes. Flatten/fold.",
             { not: "Envelopes & bound books → residual waste." }
-            { not: "Newspapers, advertising flyers and similar → newspaper waste." }
           ],
           tip: "Paper packaging usually becomes new packaging."
         },
@@ -172,7 +166,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Wine,
           title: "Glass Packaging",
           description: [
-            "Sort clear & coloured bottles and jars in the correct container (one for clear glass and one for coloured glass). Remove caps/lids/corks.",
+            "Clear/colored bottles & jars. Remove caps/corks.",
             { not: "Porcelain, ceramics & bulbs → bulky/hazardous waste." },
             { not: "Deposit bottles → return to store." }
           ],
@@ -182,8 +176,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Skull,
           title: "Residual Waste",
           description: [
-            "Diapers, envelopes, dishcloths, snus, toothbrushes, hair from hairbrushes.",
-            { not: "No recyclable, hazardous or electrical waste – take those to a recycling centre instead. Residual waste should be disposed of in a bag that is securely tied. " }
+            "Diapers, envelopes, dishcloths, snus, toothbrushes, hair.",
+            { not: "No recyclable, hazardous or electrical waste." }
           ],
           tip: "Residual waste is used for electricity and heat."
         },
@@ -191,18 +185,18 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           icon: Recycle,
           title: "Deposit Bottles & Cans (Pant)",
           description: [
-            "Return bottles and cans with the Pant (recycle) logo at stores for a refund instead of recycling."
+            "Return bottles and cans with the Pant logo at stores for a refund instead of recycling."
           ],
           tip: "Pant saves resources and gives you money back."
         },
       ];
-    
+
       return (
         <div className="grid gap-6">
           <p className="text-muted-foreground">
-            Recycling is very important in Sweden – it saves raw materials and energy, and every item you sort makes a difference. Please note that as a guest you are responsible for sorting your waste correctly, as fines can apply if recycling is not done properly.
+            Recycling saves raw materials and energy – every item you sort makes a difference!
           </p>
-    
+
           {wasteCategories.map((cat, index) => {
             const Icon = cat.icon;
             return (
@@ -215,13 +209,16 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1">{cat.title}</h3>
-                  {/* Rendera description som text eller not-punkt */}
                   {cat.description.map((desc, i) =>
                     typeof desc === "string" ? (
-                      <p key={i} className="text-muted-foreground text-sm mb-1">{desc}</p>
+                      <p key={i} className="flex items-center gap-2 text-sm mb-1">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        <span className="text-muted-foreground">{desc}</span>
+                      </p>
                     ) : (
-                      <p key={i} className="flex items-center gap-2 text-destructive text-sm mb-1">
-                        <Ban className="h-4 w-4" /> {desc.not}
+                      <p key={i} className="flex items-center gap-2 text-sm mb-1">
+                        <Ban className="h-4 w-4 text-destructive" />
+                        <span className="text-muted-foreground">{desc.not}</span>
                       </p>
                     )
                   )}
@@ -230,33 +227,9 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
               </div>
             );
           })}
-    
-          <div className="mt-6 p-4 border rounded-lg bg-muted/10">
-            <h4 className="font-semibold mb-2">Sort More – Thank You!</h4>
-            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-              <li>Do not mix different types of waste.</li>
-              <li>Food waste → special green bag. Residual waste → securely tied bag.</li>
-              <li>Packaging must be empty and somewhat dry.</li>
-              <li>If multi-material packaging: sort by the material that weighs the most.</li>
-            </ul>
-          </div>
-    
-          <p className="text-sm text-muted-foreground mt-4">
-            Find your nearest recycling station, sorting guides and videos at{" "}
-            <a
-              href="https://www.sopor.nu"
-              target="_blank"
-              rel="noreferrer"
-              className="text-primary underline"
-            >
-              sopor.nu
-            </a>{" "}
-            or contact your municipality for local info.
-          </p>
         </div>
       );
     }
-
 
     if (section.id === "rules") {
       const houseRules = [
@@ -298,9 +271,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       return (
         <div className="space-y-6">
           <p className="text-muted-foreground">
-            Your review matters! Please let us kno af any problem during your stay and we will do our best to rectify the situation. We strive for a 5 star experience!
-            <br /><br />
-            Help us earn your five star review!
+            Your review matters! Please let us know of any problem during your stay and we will do our best to fix it. We strive for a 5 star experience!
           </p>
           {ratingInfo.map((rating, index) => (
             <div key={index} className="flex items-start gap-3">
@@ -334,14 +305,12 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     return <p className="text-muted-foreground">{section.content}</p>;
   };
 
-  // ✅ Mounta bara om öppen
   if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0">
         <div className="flex-1 flex m-0 h-full">
-          {/* Vänster meny */}
           <TooltipProvider>
             <nav className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto h-full">
               {allSections.map((section, index) => {
@@ -366,7 +335,6 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
             </nav>
           </TooltipProvider>
 
-          {/* Höger innehåll */}
           <div className="flex-1 overflow-y-auto px-8 py-6 relative h-full">
             <DialogHeader className="mb-6">
               <div className="flex items-start justify-between">
@@ -378,38 +346,9 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
               </div>
             </DialogHeader>
 
-            {property.hero_image_url && allSections[activeIndex].id === "home" && (
-              <img src={property.hero_image_url} loading="lazy" alt={property.title} className="w-full h-64 object-cover rounded-lg mb-6" />
-            )}
-            {allSections[activeIndex].image_url && allSections[activeIndex].id !== "home" && (
-              <img src={allSections[activeIndex].image_url} loading="lazy" alt={allSections[activeIndex].title} className="w-full h-48 object-cover rounded-lg mb-6" />
-            )}
-
             <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
               {renderSectionContent(allSections[activeIndex])}
             </div>
-
-            {allSections[activeIndex].id === "home" && (
-              <div className="mt-6 p-4 border rounded-lg bg-muted/10">
-                <h4 className="font-semibold mb-4">Contents</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {allSections.filter((s) => s.id !== "home").map((s) => {
-                    const Icon = s.icon || Info;
-                    const targetIdx = getIndexById(s.id);
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => setActiveIndex(targetIdx)}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-white/50 hover:bg-primary/10 transition"
-                      >
-                        <Icon className="h-5 w-5 text-primary" />
-                        <span>{s.title}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>
