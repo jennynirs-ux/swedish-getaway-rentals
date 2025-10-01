@@ -293,9 +293,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       return (
         <div className="space-y-6">
           <p className="text-muted-foreground">
-            Your review matters! When rating us after your stay, please note that if a host
-            receives an average rating of 4.3 or less, the account can be deactivated and all
-            future guests will have their stays cancelled.
+            Your review matters! Please let us kno af any problem during your stay and we will do our best to rectify the situation. We strive for a 5 star experience!
             <br /><br />
             Help us earn your five star review!
           </p>
