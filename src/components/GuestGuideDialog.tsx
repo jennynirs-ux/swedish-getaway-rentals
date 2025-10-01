@@ -37,7 +37,7 @@ import {
   Trash2,
   Skull,
   Recycle,
-  XCircle,
+  Ban,
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
 
@@ -216,7 +216,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
                       <p key={i} className="text-muted-foreground text-sm mb-1">{desc}</p>
                     ) : (
                       <p key={i} className="flex items-center gap-2 text-destructive text-sm mb-1">
-                        <XCircle className="h-4 w-4" /> {desc.not}
+                        <Ban className="h-4 w-4" /> {desc.not}
                       </p>
                     )
                   )}
