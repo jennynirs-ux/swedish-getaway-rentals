@@ -37,6 +37,7 @@ import {
   Trash2,
   Skull,
   Recycle,
+  XCircle,
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
 
@@ -117,38 +118,140 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   const renderSectionContent = (section: GuideSection) => {
     if (section.id === "waste") {
       const wasteCategories = [
-        { icon: Apple, title: "Food waste", description: "Fruit/vegetable scraps, coffee grounds, tea bags, eggshells, meat bones. Use the green food waste bag." },
-        { icon: Trash2, title: "Plastic packaging", description: "Plastic bags, refill packs, tubes, trays. Empty and remove lids. Large plastic items → bulky waste." },
-        { icon: Cog, title: "Metal packaging", description: "Cans, spray cans, tubes, caps, lids, empty paint tins. Tins with paint/glue → hazardous waste." },
-        { icon: Newspaper, title: "Newspapers", description: "Daily/weekly papers, magazines, flyers, brochures. Remove plastic wrapping. Envelopes → residual waste." },
-        { icon: Package, title: "Paper packaging", description: "Milk/juice cartons, cardboard boxes, shoeboxes. Flatten/fold. Put small packages in bigger ones." },
-        { icon: Wine, title: "Glass packaging", description: "Clear/colored bottles & jars. Remove caps/corks. Porcelain, ceramics & bulbs → bulky/hazardous waste." },
-        { icon: Skull, title: "Residual waste", description: "Diapers, envelopes, dishcloths, snus, toothbrushes, hair. Nothing recyclable, hazardous or electrical." },
-        { icon: Recycle, title: "Deposit bottles & cans (Pant)", description: "Return bottles and cans with the Pant logo at stores for a refund instead of recycling." },
+        {
+          icon: Apple,
+          title: "Food Waste",
+          description: [
+            "Fruit & vegetable scraps, tea bags, coffee grounds, eggshells, meat bones, small amounts of kitchen paper.",
+            { not: "Plastic, snus, cigarettes, flowers or candles." }
+          ],
+          tip: "Food waste becomes biogas and biofertilizer."
+        },
+        {
+          icon: Trash2,
+          title: "Plastic Packaging",
+          description: [
+            "Plastic bags, bottles, refill packs, tubes, trays, crisp bags, styrofoam. Remove lids and stoppers, empty & dry.",
+            { not: "Plastic toys and furniture → bulky waste." }
+          ],
+          tip: "Recycled plastic becomes bags and recycling containers."
+        },
+        {
+          icon: Cog,
+          title: "Metal Packaging",
+          description: [
+            "Cans, empty spray cans, tubes, bottle caps, lids, empty paint tins. Fold in sharp lids.",
+            { not: "Tins with paint/glue → hazardous waste." },
+            { not: "Scrap metal like pans → bulky waste." }
+          ],
+          tip: "Recycled metal can become wheel rims or sheet metal."
+        },
+        {
+          icon: Newspaper,
+          title: "Newspapers & Paper",
+          description: [
+            "Daily/weekly newspapers, magazines, catalogues, flyers, brochures, paperback books. Remove plastic wrapping.",
+            { not: "Envelopes & bound books → residual waste." }
+          ],
+          tip: "Old newspapers become kitchen rolls or new paper."
+        },
+        {
+          icon: Package,
+          title: "Paper Packaging",
+          description: [
+            "Milk & juice cartons, paper bags, shoeboxes, toilet roll tubes, cardboard boxes. Flatten/fold, put small packages in bigger ones."
+          ],
+          tip: "Paper packaging usually becomes new packaging."
+        },
+        {
+          icon: Wine,
+          title: "Glass Packaging",
+          description: [
+            "Clear & coloured bottles and jars. Remove caps/lids/corks.",
+            { not: "Porcelain, ceramics & bulbs → bulky/hazardous waste." },
+            { not: "Deposit bottles → return to store." }
+          ],
+          tip: "Glass becomes new bottles and jars."
+        },
+        {
+          icon: Skull,
+          title: "Residual Waste",
+          description: [
+            "Diapers, envelopes, dishcloths, snus, toothbrushes, hair.",
+            { not: "No recyclable, hazardous or electrical waste – take those to a recycling centre." }
+          ],
+          tip: "Residual waste is used for electricity and heat."
+        },
+        {
+          icon: Recycle,
+          title: "Deposit Bottles & Cans (Pant)",
+          description: [
+            "Return bottles and cans with the Pant logo at stores for a refund instead of recycling."
+          ],
+          tip: "Pant saves resources and gives you money back."
+        },
       ];
-
+    
       return (
         <div className="grid gap-6">
           <p className="text-muted-foreground">
-            When we all recycle, we all win. Recycling saves raw materials and energy, and helps create a better world.
+            Recycling saves raw materials and energy – every item you sort makes a difference!
           </p>
+    
           {wasteCategories.map((cat, index) => {
             const Icon = cat.icon;
             return (
-              <div key={index} className="flex items-start gap-4 p-6 bg-card border rounded-lg hover:shadow-md transition-shadow">
-                <div className="p-3 bg-primary/10 rounded-lg">
+              <div
+                key={index}
+                className="flex flex-col sm:flex-row gap-4 p-6 bg-card border rounded-lg hover:shadow-md transition-shadow"
+              >
+                <div className="flex-shrink-0 p-3 bg-primary/10 rounded-lg self-start">
                   <Icon className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1">{cat.title}</h3>
-                  <p className="text-muted-foreground text-sm">{cat.description}</p>
+                  {/* Rendera description som text eller not-punkt */}
+                  {cat.description.map((desc, i) =>
+                    typeof desc === "string" ? (
+                      <p key={i} className="text-muted-foreground text-sm mb-1">{desc}</p>
+                    ) : (
+                      <p key={i} className="flex items-center gap-2 text-destructive text-sm mb-1">
+                        <XCircle className="h-4 w-4" /> {desc.not}
+                      </p>
+                    )
+                  )}
+                  <p className="text-xs text-primary font-medium mt-1">{cat.tip}</p>
                 </div>
               </div>
             );
           })}
+    
+          <div className="mt-6 p-4 border rounded-lg bg-muted/10">
+            <h4 className="font-semibold mb-2">Sort More – Thank You!</h4>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              <li>Do not mix different types of waste.</li>
+              <li>Food waste → special green bag. Residual waste → securely tied bag.</li>
+              <li>Packaging must be empty and somewhat dry.</li>
+              <li>If multi-material packaging: sort by the material that weighs the most.</li>
+            </ul>
+          </div>
+    
+          <p className="text-sm text-muted-foreground mt-4">
+            Find your nearest recycling station, sorting guides and videos at{" "}
+            <a
+              href="https://www.sopor.nu"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline"
+            >
+              sopor.nu
+            </a>{" "}
+            or contact your municipality for local info.
+          </p>
         </div>
       );
     }
+
 
     if (section.id === "rules") {
       const houseRules = [
