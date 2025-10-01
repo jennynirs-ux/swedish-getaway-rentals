@@ -84,7 +84,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
 
   const customSections = (property.guidebook_sections as GuideSection[]) || [];
 
-  // ✅ Memoisera sektionerna
+  // ✅ Memoisera för bättre prestanda
   const allSections = useMemo(() => {
     return defaultSections.map((section) => {
       const custom = customSections.find((s) => s.id === section.id);
@@ -113,7 +113,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     toast({ title: "PDF Export", description: "Coming soon!" });
   };
 
-  // ✅ Renderar endast aktiv sektion
+  // ✅ Render endast aktiv sektion
   const renderSectionContent = (section: GuideSection) => {
     if (section.id === "waste") {
       const wasteCategories = [
@@ -150,7 +150,65 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       );
     }
 
-    // ... dina House Rules och Ratings följer här som tidigare ...
+    if (section.id === "rules") {
+      const houseRules = [
+        { icon: Ban, rule: "No smoking indoors", description: "Smoking is only allowed outside" },
+        { icon: Volume2, rule: "No parties", description: "Respect the neighbors" },
+        { icon: SmilePlus, rule: "No pets", description: "Pets are not allowed" },
+        { icon: Clock, rule: "Quiet 22–07", description: "Respect quiet hours" },
+        { icon: Recycle, rule: "Recycle", description: "Separate waste properly" },
+        { icon: Heart, rule: "Enjoy!", description: "Relax and feel at home" },
+      ];
+      return (
+        <div className="grid gap-6">
+          {houseRules.map((rule, index) => {
+            const Icon = rule.icon;
+            return (
+              <div key={index} className="flex items-start gap-4 p-6 bg-card border rounded-lg">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Icon className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">{rule.rule}</h3>
+                  <p className="text-muted-foreground text-sm">{rule.description}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (section.id === "ratings") {
+      const ratingInfo = [
+        { stars: 5, text: "Perfection doesn’t exist, but we were happy!" },
+        { stars: 4, text: "A few issues, but we still enjoyed our stay." },
+        { stars: 3, text: "Major issues, most likely won’t return." },
+        { stars: 2, text: "Close the house down!" },
+        { stars: 1, text: "Burn it!" },
+      ];
+      return (
+        <div className="space-y-6">
+          <p className="text-muted-foreground">
+            Your review matters! When rating us after your stay, please note that if a host
+            receives an average rating of 4.3 or less, the account can be deactivated and all
+            future guests will have their stays cancelled.
+            <br /><br />
+            Help us earn your five star review!
+          </p>
+          {ratingInfo.map((rating, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <div className="flex gap-1 mt-1">
+                {[...Array(rating.stars)].map((_, i) => (
+                  <Star key={i} className="h-5 w-5 text-[#8B4513]" fill="#8B4513" />
+                ))}
+              </div>
+              <p className="text-muted-foreground">{rating.text}</p>
+            </div>
+          ))}
+        </div>
+      );
+    }
 
     if (section.type === "list" && section.items) {
       return <ul className="list-disc pl-5 space-y-2">{section.items.map((item, idx) => <li key={idx}>{item}</li>)}</ul>;
@@ -170,13 +228,14 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     return <p className="text-muted-foreground">{section.content}</p>;
   };
 
-  // ✅ Mounta bara när öppen
+  // ✅ Mounta bara om öppen
   if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0">
         <div className="flex-1 flex m-0 h-full">
+          {/* Vänster meny */}
           <TooltipProvider>
             <nav className="w-28 border-r border-muted/20 bg-card/50 flex flex-col items-center py-6 gap-6 overflow-y-auto h-full">
               {allSections.map((section, index) => {
@@ -201,6 +260,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
             </nav>
           </TooltipProvider>
 
+          {/* Höger innehåll */}
           <div className="flex-1 overflow-y-auto px-8 py-6 relative h-full">
             <DialogHeader className="mb-6">
               <div className="flex items-start justify-between">
