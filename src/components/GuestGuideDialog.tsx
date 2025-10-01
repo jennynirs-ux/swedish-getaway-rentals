@@ -31,7 +31,7 @@ import {
   Volume2,
   Clock,
   Apple,
-  BottleWine,
+  Bottle,
   Trash,
   Newspaper,
   Package,
@@ -120,7 +120,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
           description: "Fruit/vegetable scraps, coffee grounds, tea bags, eggshells, meat bones. Use the green food waste bag.",
         },
         {
-          icon: BottleWine,
+          icon: Bottle,
           title: "Plastic packaging",
           description: "Plastic bags, refill packs, tubes, trays. Empty and remove lids. Large plastic items → bulky waste.",
         },
