@@ -31,7 +31,6 @@ import {
   Volume2,
   Clock,
   Apple,
-  Bottle,
   Trash,
   Newspaper,
   Package,
