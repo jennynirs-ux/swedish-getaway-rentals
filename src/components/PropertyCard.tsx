@@ -240,23 +240,17 @@ const PropertyCard = memo(({
             </div>
           </div>
 
-          {/* Special Amenities */}
+          {/* Featured Amenities with Icons */}
           <div className="flex flex-wrap gap-2 mb-4">
             {property.featured_amenities?.slice(0, 3).map((amenity, index) => (
               <div key={index} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                <Sparkles className="w-3 h-3" />
+                {getAmenityIcon(amenity.icon || amenity.title)}
                 <span className="capitalize">{amenity.title}</span>
               </div>
-            )) || property.amenities?.slice(0, 3).map((amenity, index) => (
-              <div key={index} className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full">
-                {getAmenityIcon(amenity)}
-                <span className="capitalize">{amenity}</span>
-              </div>
             ))}
-            {((property.featured_amenities && property.featured_amenities.length > 3) || 
-              (property.amenities && property.amenities.length > 3)) && (
+            {property.featured_amenities && property.featured_amenities.length > 3 && (
               <div className="text-xs text-muted-foreground px-2 py-1">
-                +{(property.featured_amenities?.length || property.amenities?.length || 0) - 3} more
+                +{property.featured_amenities.length - 3} more
               </div>
             )}
           </div>

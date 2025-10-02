@@ -2,6 +2,7 @@ import { useState, useMemo, type ElementType } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
 import {
   Tooltip,
   TooltipContent,
@@ -110,7 +111,51 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   };
 
   const exportToPDF = () => {
-    toast({ title: "PDF Export", description: "Coming soon!" });
+    const pdf = new jsPDF();
+    let yPosition = 20;
+
+    // Cover page
+    pdf.setFontSize(24);
+    pdf.text(property.title, 20, yPosition);
+    yPosition += 10;
+    pdf.setFontSize(12);
+    pdf.text("Guest Guidebook", 20, yPosition);
+    yPosition += 20;
+
+    // Add sections
+    allSections.forEach((section) => {
+      if (yPosition > 270) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+
+      pdf.setFontSize(16);
+      pdf.text(section.title, 20, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(10);
+      if (section.content) {
+        const lines = pdf.splitTextToSize(section.content, 170);
+        pdf.text(lines, 20, yPosition);
+        yPosition += lines.length * 5 + 10;
+      }
+
+      if (section.items) {
+        section.items.forEach((item) => {
+          if (yPosition > 270) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          const lines = pdf.splitTextToSize(`• ${item}`, 165);
+          pdf.text(lines, 25, yPosition);
+          yPosition += lines.length * 5 + 2;
+        });
+        yPosition += 5;
+      }
+    });
+
+    pdf.save(`${property.title}-guidebook.pdf`);
+    toast({ title: "PDF Downloaded", description: "Guidebook saved successfully!" });
   };
 
   const renderSectionContent = (section: GuideSection) => {

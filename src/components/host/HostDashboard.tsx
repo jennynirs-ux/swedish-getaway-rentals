@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, DollarSign, Calendar, Plus, HelpCircle } from "lucide-react";
+import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen } from "lucide-react";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { BookingChatList } from "../BookingChatList";
 import MainNavigation from "@/components/MainNavigation";
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
+import HostGuidebookDialog from "./HostGuidebookDialog";
 
 interface HostStats {
   total_properties: number;
@@ -78,6 +79,7 @@ const HostDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
   const [creatingProperty, setCreatingProperty] = useState(false);
+  const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
 
   const { properties, refetch: refetchProperties } = useHostProperties();
 
@@ -209,9 +211,19 @@ const HostDashboard = () => {
       <MainNavigation />
       <TooltipProvider>
         <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Host Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Manage your properties and bookings</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Host Dashboard</h1>
+              <p className="text-muted-foreground mt-2">Manage your properties and bookings</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsGuidebookOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              Host Guidebook
+            </Button>
           </div>
 
           {/* Stats Cards */}
@@ -328,6 +340,11 @@ const HostDashboard = () => {
               }}
             />
           )}
+
+          <HostGuidebookDialog
+            isOpen={isGuidebookOpen}
+            onClose={() => setIsGuidebookOpen(false)}
+          />
         </div>
       </TooltipProvider>
     </div>
