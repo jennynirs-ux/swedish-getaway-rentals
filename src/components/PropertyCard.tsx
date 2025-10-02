@@ -78,7 +78,10 @@ const PropertyCard = memo(({
   // Always use dynamic property routes
   const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
 
-  const getAmenityIcon = (amenity: string) => {
+  const getAmenityIcon = (amenity: unknown) => {
+    if (typeof amenity !== "string" || !amenity) {
+      return <Home className="w-4 h-4" />;
+    }
     const lower = amenity.toLowerCase();
     if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="w-4 h-4" />;
     if (lower.includes("parking") || lower.includes("garage")) return <Car className="w-4 h-4" />;
@@ -244,12 +247,15 @@ const PropertyCard = memo(({
           <div className="flex flex-wrap gap-2 mb-4">
             {property.featured_amenities && property.featured_amenities.length > 0 ? (
               <>
-                {property.featured_amenities.slice(0, 3).map((amenity, index) => (
-                  <div key={index} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    {getAmenityIcon(amenity.icon || amenity.title)}
-                    <span className="capitalize">{amenity.title}</span>
-                  </div>
-                ))}
+                {property.featured_amenities.slice(0, 3).map((amenity: any, index) => {
+                  const label = typeof amenity === "string" ? amenity : (amenity?.title || amenity?.icon || "Amenity");
+                  return (
+                    <div key={index} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                      {getAmenityIcon(label)}
+                      <span className="capitalize">{typeof amenity === "string" ? amenity : (amenity?.title || label)}</span>
+                    </div>
+                  );
+                })}
                 {property.featured_amenities.length > 3 && (
                   <div className="text-xs text-muted-foreground px-2 py-1">
                     +{property.featured_amenities.length - 3} more
