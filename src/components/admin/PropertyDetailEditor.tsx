@@ -337,26 +337,21 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
                 <div className="space-y-2">
                   <Label>Hero Image</Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Upload a hero image for your property. This will be displayed on the property card, property page header, and first tab in guidebook.
+                  <p className="text-sm text-muted-foreground">
+                    The Hero Image is set in the Gallery tab by marking an image as "Hero". This image will be displayed on property cards and the property page header.
                   </p>
-                  <div className="space-y-2">
-                    {form.hero_image_url && (
-                      <div className="relative w-full h-48">
-                        <img
-                          src={form.hero_image_url}
-                          alt="Hero"
-                          className="w-full h-full object-cover rounded-lg"
-                        />
+                  {form.hero_image_url && (
+                    <div className="relative w-full h-48 mt-2">
+                      <img
+                        src={form.hero_image_url}
+                        alt="Current Hero"
+                        className="w-full h-full object-cover rounded-lg border"
+                      />
+                      <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
+                        Current Hero Image
                       </div>
-                    )}
-                    <Input
-                      type="url"
-                      placeholder="Enter image URL or upload below..."
-                      value={form.hero_image_url}
-                      onChange={(e) => setForm((prev) => ({ ...prev, hero_image_url: e.target.value }))}
-                    />
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

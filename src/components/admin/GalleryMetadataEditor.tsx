@@ -220,10 +220,14 @@ export const GalleryMetadataEditor = ({
     }
   };
 
-  const handleSetHero = (url: string) => {
+  const handleSetHero = async (url: string) => {
     setLocalHero(url);
     onHeroChange?.(url);
     onChange(localMetadata, localImages, url);
+    toast({ 
+      title: "Hero Image Set", 
+      description: "This image will now be used on property cards and the property page" 
+    });
   };
 
   const handleSave = async () => {

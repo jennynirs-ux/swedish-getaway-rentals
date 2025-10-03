@@ -78,12 +78,29 @@ const PropertyCard = memo(({
   // Always use dynamic property routes
   const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
 
+  // Unified amenity icon mapping
   const getAmenityIcon = (amenity: unknown) => {
     if (typeof amenity !== "string" || !amenity) {
       return <Home className="w-4 h-4" />;
     }
-    const lower = amenity.toLowerCase();
+    
+    const lower = amenity.toLowerCase().trim();
+    
+    // Exact matches first for consistency
+    if (lower === "lake access") return <Waves className="w-4 h-4" />;
+    if (lower === "ocean access") return <Waves className="w-4 h-4" />;
+    if (lower === "beach access") return <Waves className="w-4 h-4" />;
+    if (lower === "wifi") return <Wifi className="w-4 h-4" />;
+    if (lower === "parking") return <Car className="w-4 h-4" />;
+    if (lower === "kitchen") return <UtensilsCrossed className="w-4 h-4" />;
+    if (lower === "hot tub") return <Sparkles className="w-4 h-4" />;
+    if (lower === "sauna") return <Flame className="w-4 h-4" />;
+    if (lower === "fireplace") return <Flame className="w-4 h-4" />;
+    if (lower === "pool") return <Droplets className="w-4 h-4" />;
+    
+    // Partial matches for flexibility
     if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="w-4 h-4" />;
+    if (lower.includes("lake") || lower.includes("ocean") || lower.includes("beach")) return <Waves className="w-4 h-4" />;
     if (lower.includes("parking") || lower.includes("garage")) return <Car className="w-4 h-4" />;
     if (lower.includes("coffee")) return <Coffee className="w-4 h-4" />;
     if (lower.includes("kitchen")) return <UtensilsCrossed className="w-4 h-4" />;
@@ -96,8 +113,7 @@ const PropertyCard = memo(({
     if (lower.includes("bedroom") || lower.includes("bed")) return <Bed className="w-4 h-4" />;
     if (lower.includes("bathroom") || lower.includes("bath")) return <Bath className="w-4 h-4" />;
     if (lower.includes("guest") || lower.includes("people")) return <Users className="w-4 h-4" />;
-    if (lower.includes("fireplace") || lower.includes("fire")) return <Flame className="w-4 h-4" />;
-    if (lower.includes("lake access") || lower.includes("ocean access")) return <Waves className="w-4 h-4" />;
+    if (lower.includes("fireplace") || lower.includes("fire") || lower.includes("sauna")) return <Flame className="w-4 h-4" />;
     if (lower.includes("heating") || lower.includes("warm")) return <Thermometer className="w-4 h-4" />;
     if (lower.includes("ac") || lower.includes("air") || lower.includes("cooling")) return <Snowflake className="w-4 h-4" />;
     if (lower.includes("tv") || lower.includes("television")) return <Tv className="w-4 h-4" />;
@@ -107,6 +123,7 @@ const PropertyCard = memo(({
     if (lower.includes("outdoor") || lower.includes("sun")) return <Sun className="w-4 h-4" />;
     if (lower.includes("wind") || lower.includes("fan")) return <Wind className="w-4 h-4" />;
     if (lower.includes("romantic")) return <HeartHandshake className="w-4 h-4" />;
+    
     return <Home className="w-4 h-4" />;
   };
 
