@@ -27,58 +27,26 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const sections = [
-{
-  id: "price-guide",
-  title: "Price Guide",
-  icon: DollarSign,
-  content: {
-    title: "Setting Competitive Prices",
-    description: "Master the art of pricing your property for maximum bookings and revenue.",
-    sections: [
-      {
-        type: "intro",
-        title: "Understanding Pricing Strategy",
-        icon: "DollarSign",
-        body: "Setting the right price for your property is both an art and a science...",
-        commissionExample: {
-          base: "2000 SEK",
-          fee: "200 SEK",
-          guest: "2200 SEK/night"
-        }
+    {
+      id: "price-guide",
+      title: "Price Guide",
+      icon: DollarSign,
+      content: {
+        title: "Setting Competitive Prices",
+        description: "Learn how to price your property competitively in the Swedish market.",
+        tips: [
+          "Research similar properties in your area",
+          "Consider seasonal demand and local events",
+          "Factor in your unique amenities and features",
+          "Use dynamic pricing for weekends vs weekdays",
+          "Offer discounts for longer stays (7+ nights)",
+          "Remember: Nordin Getaways takes 10% commission",
+          "Total price shown to guests includes our fee",
+        ],
+        formula: "Guest pays: Your price + 10% platform fee",
+        example: "If you set 1000 SEK/night, guest sees 1100 SEK/night, you receive 1000 SEK",
       },
-      {
-        type: "tiers",
-        title: "Market Pricing Tiers in Sweden",
-        items: [
-          {
-            tier: "Budget",
-            range: "800–1500 SEK/night",
-            icon: "Users",
-            color: "text-blue-600",
-            points: ["Basic amenities", "Shared facilities", "Rural location"]
-          },
-          {
-            tier: "Mid-Range",
-            range: "1500–3500 SEK/night",
-            icon: "Star",
-            color: "text-amber-600",
-            points: ["Private facilities", "Good location", "Ideal for families"]
-          },
-          {
-            tier: "Premium",
-            range: "3500+ SEK/night",
-            icon: "Lightbulb",
-            color: "text-purple-600",
-            points: ["Luxury amenities", "Unique location", "Exceptional experience"]
-          }
-        ]
-      }
-    ],
-    formula: "Guest pays: Your price + 10% platform fee",
-    example: "If you set 1000 SEK/night, guest sees 1100 SEK/night, you receive 1000 SEK"
-  }
-}
-
+    },
     {
       id: "gallery",
       title: "Gallery Guide",
