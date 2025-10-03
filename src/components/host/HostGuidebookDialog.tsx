@@ -118,7 +118,7 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
               "Consider add-ons (firewood, breakfast baskets, late checkout)"
             ]
           }
-        ]
+        ],
         formula: "Guest pays: Your price + 10% platform fee",
         example: "If you set 1000 SEK/night, guest sees 1100 SEK/night, you receive 1000 SEK",
       },
