@@ -265,31 +265,61 @@ const PropertyCard = memo(({
           {/* Featured Amenities with Icons */}
           <div className="flex flex-wrap gap-2 mb-4">
             {property.featured_amenities && property.featured_amenities.length > 0 ? (
-              <>
-                {property.featured_amenities.slice(0, 3).map((amenity: any, index) => {
-                  const label = typeof amenity === "string" ? amenity : (amenity?.title || amenity?.icon || "Amenity");
-                  return (
-                    <div key={index} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                      {getAmenityIcon(label)}
-                      <span className="capitalize">{typeof amenity === "string" ? amenity : (amenity?.title || label)}</span>
-                    </div>
-                  );
-                })}
-                <div className="text-xs text-primary font-medium px-2 py-1">
-                  +{property.featured_amenities.length} amenities
-                </div>
-              </>
+              (() => {
+                // räkna bort special_amenities så de inte dubblas
+                const special = (property.special_amenities || []).map(a => a.toLowerCase());
+                const all = property.amenities || [];
+                const nonSpecialAmenities = all.filter(
+                  a => !special.includes(a.toLowerCase())
+                );
+          
+                // visa featured ikoner (upp till 3 st)
+                const displayed = property.featured_amenities.slice(0, 3);
+          
+                return (
+                  <>
+                    {displayed.map((amenity: any, index) => {
+                      const label = typeof amenity === "string"
+                        ? amenity
+                        : amenity?.title || amenity?.icon || "Amenity";
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
+                        >
+                          {getAmenityIcon(label)}
+                          <span className="capitalize">
+                            {typeof amenity === "string" ? amenity : (amenity?.title || label)}
+                          </span>
+                        </div>
+                      );
+                    })}
+          
+                    {/* antal = alla utan special minus det vi visade */}
+                    {nonSpecialAmenities.length > 0 && (
+                      <div className="text-xs text-primary font-medium px-2 py-1">
+                        +{nonSpecialAmenities.length} amenities
+                      </div>
+                    )}
+                  </>
+                );
+              })()
             ) : property.amenities && property.amenities.length > 0 ? (
               <>
                 {property.amenities.slice(0, 3).map((amenity, index) => (
-                  <div key={index} className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full">
+                  <div
+                    key={index}
+                    className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full"
+                  >
                     {getAmenityIcon(amenity)}
                     <span className="capitalize">{amenity}</span>
                   </div>
                 ))}
-                <div className="text-xs text-primary font-medium px-2 py-1">
-                  +{property.amenities.length} amenities
-                </div>
+                {property.amenities.length > 3 && (
+                  <div className="text-xs text-primary font-medium px-2 py-1">
+                    +{property.amenities.length - 3} amenities
+                  </div>
+                )}
               </>
             ) : null}
           </div>
