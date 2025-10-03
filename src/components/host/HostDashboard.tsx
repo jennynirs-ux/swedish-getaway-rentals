@@ -209,23 +209,30 @@ const HostDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <TooltipProvider>
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8 flex items-center justify-between">
+      
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-background border-b">
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Host Dashboard</h1>
-              <p className="text-muted-foreground mt-2">Manage your properties and bookings</p>
+              <h1 className="text-4xl font-bold text-foreground mb-2">Host Dashboard</h1>
+              <p className="text-muted-foreground text-lg">Manage your properties and bookings</p>
             </div>
             <Button 
-              variant="outline" 
+              variant="default" 
+              size="lg"
               onClick={() => setIsGuidebookOpen(true)}
               className="flex items-center gap-2"
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-5 h-5" />
               Host Guidebook
             </Button>
           </div>
+        </div>
+      </div>
 
+      <TooltipProvider>
+        <div className="container mx-auto px-4 py-8">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>

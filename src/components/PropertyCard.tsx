@@ -274,26 +274,26 @@ const PropertyCard = memo(({
                   );
                 })}
                 {property.featured_amenities.length > 3 && (
-                  <div className="text-xs text-muted-foreground px-2 py-1">
-                    +{property.featured_amenities.length - 3} more
+                  <div className="text-xs text-primary font-medium px-2 py-1">
+                    +{property.featured_amenities.length - 3} more amenities
                   </div>
                 )}
               </>
-            ) : (
+            ) : property.amenities && property.amenities.length > 0 ? (
               <>
-                {property.amenities?.slice(0, 3).map((amenity, index) => (
+                {property.amenities.slice(0, 3).map((amenity, index) => (
                   <div key={index} className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full">
                     {getAmenityIcon(amenity)}
                     <span className="capitalize">{amenity}</span>
                   </div>
                 ))}
-                {property.amenities && property.amenities.length > 3 && (
-                  <div className="text-xs text-muted-foreground px-2 py-1">
-                    +{property.amenities.length - 3} more
+                {property.amenities.length > 3 && (
+                  <div className="text-xs text-primary font-medium px-2 py-1">
+                    +{property.amenities.length - 3} more amenities
                   </div>
                 )}
               </>
-            )}
+            ) : null}
           </div>
 
           {/* Price and CTA */}
