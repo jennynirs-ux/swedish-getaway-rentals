@@ -33,7 +33,7 @@ import {
   Sun,
   Wind
 } from "lucide-react";
-import { useState, memo } from "react";
+import { useState, memo, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface PropertyCardData {
@@ -78,54 +78,56 @@ const PropertyCard = memo(({
   // Always use dynamic property routes
   const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
 
-  // Unified amenity icon mapping
-  const getAmenityIcon = (amenity: unknown) => {
-    if (typeof amenity !== "string" || !amenity) {
+  // Memoized amenity icon mapping for performance
+  const getAmenityIcon = useMemo(() => {
+    return (amenity: unknown) => {
+      if (typeof amenity !== "string" || !amenity) {
+        return <Home className="w-4 h-4" />;
+      }
+      
+      const lower = amenity.toLowerCase().trim();
+      
+      // Exact matches first for consistency
+      if (lower === "lake access") return <Waves className="w-4 h-4" />;
+      if (lower === "ocean access") return <Waves className="w-4 h-4" />;
+      if (lower === "beach access") return <Waves className="w-4 h-4" />;
+      if (lower === "wifi") return <Wifi className="w-4 h-4" />;
+      if (lower === "parking") return <Car className="w-4 h-4" />;
+      if (lower === "kitchen") return <UtensilsCrossed className="w-4 h-4" />;
+      if (lower === "hot tub") return <Sparkles className="w-4 h-4" />;
+      if (lower === "sauna") return <Flame className="w-4 h-4" />;
+      if (lower === "fireplace") return <Flame className="w-4 h-4" />;
+      if (lower === "pool") return <Droplets className="w-4 h-4" />;
+      
+      // Partial matches for flexibility
+      if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="w-4 h-4" />;
+      if (lower.includes("lake") || lower.includes("ocean") || lower.includes("beach")) return <Waves className="w-4 h-4" />;
+      if (lower.includes("parking") || lower.includes("garage")) return <Car className="w-4 h-4" />;
+      if (lower.includes("coffee")) return <Coffee className="w-4 h-4" />;
+      if (lower.includes("kitchen")) return <UtensilsCrossed className="w-4 h-4" />;
+      if (lower.includes("boat") || lower.includes("canoe") || lower.includes("kayak")) return <Anchor className="w-4 h-4" />;
+      if (lower.includes("dining") || lower.includes("restaurant")) return <Utensils className="w-4 h-4" />;
+      if (lower.includes("jacuzzi") || lower.includes("spa") || lower.includes("hot tub")) return <Sparkles className="w-4 h-4" />;
+      if (lower.includes("pool") || lower.includes("swimming")) return <Droplets className="w-4 h-4" />;
+      if (lower.includes("forest") || lower.includes("nature")) return <TreePine className="w-4 h-4" />;
+      if (lower.includes("mountain") || lower.includes("view")) return <Mountain className="w-4 h-4" />;
+      if (lower.includes("bedroom") || lower.includes("bed")) return <Bed className="w-4 h-4" />;
+      if (lower.includes("bathroom") || lower.includes("bath")) return <Bath className="w-4 h-4" />;
+      if (lower.includes("guest") || lower.includes("people")) return <Users className="w-4 h-4" />;
+      if (lower.includes("fireplace") || lower.includes("fire") || lower.includes("sauna")) return <Flame className="w-4 h-4" />;
+      if (lower.includes("heating") || lower.includes("warm")) return <Thermometer className="w-4 h-4" />;
+      if (lower.includes("ac") || lower.includes("air") || lower.includes("cooling")) return <Snowflake className="w-4 h-4" />;
+      if (lower.includes("tv") || lower.includes("television")) return <Tv className="w-4 h-4" />;
+      if (lower.includes("gym") || lower.includes("fitness")) return <Dumbbell className="w-4 h-4" />;
+      if (lower.includes("pet") || lower.includes("dog")) return <PawPrint className="w-4 h-4" />;
+      if (lower.includes("smoking")) return <Cigarette className="w-4 h-4" />;
+      if (lower.includes("outdoor") || lower.includes("sun")) return <Sun className="w-4 h-4" />;
+      if (lower.includes("wind") || lower.includes("fan")) return <Wind className="w-4 h-4" />;
+      if (lower.includes("romantic")) return <HeartHandshake className="w-4 h-4" />;
+      
       return <Home className="w-4 h-4" />;
-    }
-    
-    const lower = amenity.toLowerCase().trim();
-    
-    // Exact matches first for consistency
-    if (lower === "lake access") return <Waves className="w-4 h-4" />;
-    if (lower === "ocean access") return <Waves className="w-4 h-4" />;
-    if (lower === "beach access") return <Waves className="w-4 h-4" />;
-    if (lower === "wifi") return <Wifi className="w-4 h-4" />;
-    if (lower === "parking") return <Car className="w-4 h-4" />;
-    if (lower === "kitchen") return <UtensilsCrossed className="w-4 h-4" />;
-    if (lower === "hot tub") return <Sparkles className="w-4 h-4" />;
-    if (lower === "sauna") return <Flame className="w-4 h-4" />;
-    if (lower === "fireplace") return <Flame className="w-4 h-4" />;
-    if (lower === "pool") return <Droplets className="w-4 h-4" />;
-    
-    // Partial matches for flexibility
-    if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="w-4 h-4" />;
-    if (lower.includes("lake") || lower.includes("ocean") || lower.includes("beach")) return <Waves className="w-4 h-4" />;
-    if (lower.includes("parking") || lower.includes("garage")) return <Car className="w-4 h-4" />;
-    if (lower.includes("coffee")) return <Coffee className="w-4 h-4" />;
-    if (lower.includes("kitchen")) return <UtensilsCrossed className="w-4 h-4" />;
-    if (lower.includes("boat") || lower.includes("canoe") || lower.includes("kayak")) return <Anchor className="w-4 h-4" />;
-    if (lower.includes("dining") || lower.includes("restaurant")) return <Utensils className="w-4 h-4" />;
-    if (lower.includes("jacuzzi") || lower.includes("spa") || lower.includes("hot tub")) return <Sparkles className="w-4 h-4" />;
-    if (lower.includes("pool") || lower.includes("swimming")) return <Droplets className="w-4 h-4" />;
-    if (lower.includes("forest") || lower.includes("nature")) return <TreePine className="w-4 h-4" />;
-    if (lower.includes("mountain") || lower.includes("view")) return <Mountain className="w-4 h-4" />;
-    if (lower.includes("bedroom") || lower.includes("bed")) return <Bed className="w-4 h-4" />;
-    if (lower.includes("bathroom") || lower.includes("bath")) return <Bath className="w-4 h-4" />;
-    if (lower.includes("guest") || lower.includes("people")) return <Users className="w-4 h-4" />;
-    if (lower.includes("fireplace") || lower.includes("fire") || lower.includes("sauna")) return <Flame className="w-4 h-4" />;
-    if (lower.includes("heating") || lower.includes("warm")) return <Thermometer className="w-4 h-4" />;
-    if (lower.includes("ac") || lower.includes("air") || lower.includes("cooling")) return <Snowflake className="w-4 h-4" />;
-    if (lower.includes("tv") || lower.includes("television")) return <Tv className="w-4 h-4" />;
-    if (lower.includes("gym") || lower.includes("fitness")) return <Dumbbell className="w-4 h-4" />;
-    if (lower.includes("pet") || lower.includes("dog")) return <PawPrint className="w-4 h-4" />;
-    if (lower.includes("smoking")) return <Cigarette className="w-4 h-4" />;
-    if (lower.includes("outdoor") || lower.includes("sun")) return <Sun className="w-4 h-4" />;
-    if (lower.includes("wind") || lower.includes("fan")) return <Wind className="w-4 h-4" />;
-    if (lower.includes("romantic")) return <HeartHandshake className="w-4 h-4" />;
-    
-    return <Home className="w-4 h-4" />;
-  };
+    };
+  }, []);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -273,11 +275,9 @@ const PropertyCard = memo(({
                     </div>
                   );
                 })}
-                {property.featured_amenities.length > 3 && (
-                  <div className="text-xs text-primary font-medium px-2 py-1">
-                    +{property.featured_amenities.length - 3} more amenities
-                  </div>
-                )}
+                <div className="text-xs text-primary font-medium px-2 py-1">
+                  +{property.featured_amenities.length} amenities
+                </div>
               </>
             ) : property.amenities && property.amenities.length > 0 ? (
               <>
@@ -287,11 +287,9 @@ const PropertyCard = memo(({
                     <span className="capitalize">{amenity}</span>
                   </div>
                 ))}
-                {property.amenities.length > 3 && (
-                  <div className="text-xs text-primary font-medium px-2 py-1">
-                    +{property.amenities.length - 3} more amenities
-                  </div>
-                )}
+                <div className="text-xs text-primary font-medium px-2 py-1">
+                  +{property.amenities.length} amenities
+                </div>
               </>
             ) : null}
           </div>
