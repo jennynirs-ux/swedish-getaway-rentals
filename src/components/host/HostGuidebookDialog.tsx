@@ -33,16 +33,92 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
       icon: DollarSign,
       content: {
         title: "Setting Competitive Prices",
-        description: "Learn how to price your property competitively in the Swedish market.",
-        tips: [
-          "Research similar properties in your area",
-          "Consider seasonal demand and local events",
-          "Factor in your unique amenities and features",
-          "Use dynamic pricing for weekends vs weekdays",
-          "Offer discounts for longer stays (7+ nights)",
-          "Remember: Nordin Getaways takes 10% commission",
-          "Total price shown to guests includes our fee",
-        ],
+        description: "Master the art of pricing your property for maximum bookings and revenue.",
+    sections: [
+          {
+            type: "intro",
+            title: "Understanding Pricing Strategy",
+            icon: DollarSign,
+            body: "Setting the right price for your property is both an art and a science...",
+            commissionExample: {
+              base: "2000 SEK",
+              fee: "200 SEK",
+              guest: "2200 SEK/night"
+            }
+          },
+          {
+            type: "tiers",
+            title: "Market Pricing Tiers in Sweden",
+            items: [
+              {
+                tier: "Budget",
+                range: "800–1500 SEK/night",
+                icon: "Users",
+                color: "text-blue-600",
+                points: ["Basic amenities", "Shared facilities", ...]
+              },
+              {
+                tier: "Mid-Range",
+                range: "1500–3500 SEK/night",
+                icon: "Star",
+                color: "text-amber-600",
+                points: ["Private facilities", "Good location", ...]
+              },
+              {
+                tier: "Premium",
+                range: "3500+ SEK/night",
+                icon: "Lightbulb",
+                color: "text-purple-600",
+                points: ["Luxury amenities", "Unique location", ...]
+              }
+            ]
+          },
+          {
+            type: "factors",
+            title: "Key Pricing Factors",
+            items: [
+              { icon: "Users", title: "Number of Bedrooms", text: "Each additional bedroom adds..." },
+              { icon: "Calendar", title: "Seasonality", text: "Summer & winter holidays..." },
+              ...
+            ]
+          },
+          {
+            type: "psychology",
+            title: "The Psychology of Pricing",
+            items: [
+              { title: "Charm Pricing", text: "2499 feels cheaper than 2500..." },
+              { title: "Anchor Pricing", text: "Show weekend rate first..." },
+              ...
+            ]
+          },
+          {
+            type: "dynamic",
+            title: "Dynamic Pricing Strategies",
+            items: [
+              { icon: "Calendar", title: "Weekend vs. Weekday", text: "Charge 20–40% more Fri–Sat..." },
+              ...
+            ]
+          },
+          {
+            type: "currency",
+            title: "Currency & International Guests",
+            currencies: [
+              { currency: "EUR", amount: "~220" },
+              { currency: "USD", amount: "~240" },
+              ...
+            ],
+            note: "Prices may look different depending on currency..."
+          },
+          {
+            type: "final",
+            title: "Final Tips",
+            tips: [
+              "Review and adjust pricing every 2–4 weeks",
+              "Don’t race to the bottom",
+              "Consider add-ons (firewood, breakfast baskets, late checkout)"
+            ]
+          }
+        ]
         formula: "Guest pays: Your price + 10% platform fee",
         example: "If you set 1000 SEK/night, guest sees 1100 SEK/night, you receive 1000 SEK",
       },
