@@ -1,0 +1,106 @@
+import { useState, useEffect } from "react";
+
+interface ExchangeRates {
+  [key: string]: number;
+}
+
+interface CurrencyInfo {
+  code: string;
+  symbol: string;
+  rate: number;
+}
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  SEK: "kr",
+  EUR: "€",
+  USD: "$",
+  GBP: "£",
+  NOK: "kr",
+  DKK: "kr",
+};
+
+export const useCurrencyConversion = () => {
+  const [rates, setRates] = useState<ExchangeRates>({ SEK: 1 });
+  const [userCurrency, setUserCurrency] = useState<CurrencyInfo>({
+    code: "SEK",
+    symbol: "kr",
+    rate: 1,
+  });
+
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        // Using free API with SEK as base currency
+        const response = await fetch(
+          "https://api.exchangerate-api.com/v4/latest/SEK"
+        );
+        const data = await response.json();
+        setRates(data.rates || { SEK: 1 });
+      } catch (error) {
+        console.error("Error fetching exchange rates:", error);
+      }
+    };
+
+    fetchRates();
+    // Refresh rates every 24 hours
+    const interval = setInterval(fetchRates, 24 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const detectUserCurrency = () => {
+      // Try to detect from browser locale
+      const locale = navigator.language || "sv-SE";
+      const country = locale.split("-")[1] || "SE";
+
+      const currencyMap: Record<string, string> = {
+        SE: "SEK",
+        NO: "NOK",
+        DK: "DKK",
+        GB: "GBP",
+        US: "USD",
+      };
+
+      // Default to EUR for other EU countries
+      const euCountries = [
+        "DE", "FR", "IT", "ES", "NL", "BE", "AT", "PT", "IE", "FI", "GR"
+      ];
+      
+      let detectedCurrency = currencyMap[country];
+      if (!detectedCurrency && euCountries.includes(country)) {
+        detectedCurrency = "EUR";
+      }
+      
+      const currencyCode = detectedCurrency || "SEK";
+      const rate = rates[currencyCode] || 1;
+
+      setUserCurrency({
+        code: currencyCode,
+        symbol: CURRENCY_SYMBOLS[currencyCode] || currencyCode,
+        rate,
+      });
+    };
+
+    detectUserCurrency();
+  }, [rates]);
+
+  const convertPrice = (priceInSEK: number, targetCurrency?: string): number => {
+    const currency = targetCurrency || userCurrency.code;
+    const rate = rates[currency] || 1;
+    return Math.round(priceInSEK * rate);
+  };
+
+  const formatPrice = (priceInSEK: number, targetCurrency?: string): string => {
+    const currency = targetCurrency || userCurrency.code;
+    const converted = convertPrice(priceInSEK, currency);
+    const symbol = CURRENCY_SYMBOLS[currency] || currency;
+    return `${converted.toLocaleString()} ${symbol}`;
+  };
+
+  return {
+    userCurrency,
+    rates,
+    convertPrice,
+    formatPrice,
+  };
+};

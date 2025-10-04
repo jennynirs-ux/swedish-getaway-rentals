@@ -647,6 +647,7 @@ export type Database = {
           availability_text: string | null
           bathrooms: number
           bedrooms: number
+          cancellation_policy: string | null
           commission_rate: number | null
           contact_response_time: string | null
           created_at: string
@@ -665,6 +666,7 @@ export type Database = {
           introduction_text: string | null
           location: string | null
           max_guests: number
+          monthly_discount_percentage: number | null
           pending_approval: boolean
           price_per_night: number
           pricing_table: Json | null
@@ -679,6 +681,7 @@ export type Database = {
           updated_at: string
           video_metadata: Json | null
           video_urls: string[] | null
+          weekly_discount_percentage: number | null
           what_makes_special: string | null
         }
         Insert: {
@@ -689,6 +692,7 @@ export type Database = {
           availability_text?: string | null
           bathrooms?: number
           bedrooms?: number
+          cancellation_policy?: string | null
           commission_rate?: number | null
           contact_response_time?: string | null
           created_at?: string
@@ -707,6 +711,7 @@ export type Database = {
           introduction_text?: string | null
           location?: string | null
           max_guests?: number
+          monthly_discount_percentage?: number | null
           pending_approval?: boolean
           price_per_night: number
           pricing_table?: Json | null
@@ -721,6 +726,7 @@ export type Database = {
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
+          weekly_discount_percentage?: number | null
           what_makes_special?: string | null
         }
         Update: {
@@ -731,6 +737,7 @@ export type Database = {
           availability_text?: string | null
           bathrooms?: number
           bedrooms?: number
+          cancellation_policy?: string | null
           commission_rate?: number | null
           contact_response_time?: string | null
           created_at?: string
@@ -749,6 +756,7 @@ export type Database = {
           introduction_text?: string | null
           location?: string | null
           max_guests?: number
+          monthly_discount_percentage?: number | null
           pending_approval?: boolean
           price_per_night?: number
           pricing_table?: Json | null
@@ -763,6 +771,7 @@ export type Database = {
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
+          weekly_discount_percentage?: number | null
           what_makes_special?: string | null
         }
         Relationships: [

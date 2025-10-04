@@ -51,6 +51,9 @@ export interface Property {
   footer_quick_links?: string[];
   property_type?: string;
   special_amenities?: string[];
+  weekly_discount_percentage?: number;
+  monthly_discount_percentage?: number;
+  cancellation_policy?: "flexible" | "moderate" | "strict";
 }
 
 export const useProperties = () => {

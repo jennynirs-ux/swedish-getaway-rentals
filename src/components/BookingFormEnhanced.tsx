@@ -11,6 +11,7 @@ import { usePricingRules } from "@/hooks/usePricingRules";
 import { supabase } from "@/integrations/supabase/client";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 
 interface BookingFormProps {
   propertyId: string;
@@ -29,6 +30,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { createBooking, loading } = useBooking();
   const { rules, calculatePrice, getAvailableServices } = usePricingRules(propertyId);
+  const { userCurrency, formatPrice, convertPrice } = useCurrencyConversion();
   
   // Enable real-time calendar updates when bookings are made
   useBookingRealtime({
@@ -266,33 +268,61 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {/* Price Breakdown */}
           {pricingCalculation.total > 0 && (
             <div className="space-y-3 p-4 bg-muted rounded-lg">
-              <h4 className="font-medium">Price Breakdown</h4>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-medium">Price Breakdown</h4>
+                {userCurrency.code !== currency && (
+                  <span className="text-xs text-muted-foreground">
+                    Showing in {userCurrency.code} (base: {currency})
+                  </span>
+                )}
+              </div>
               <div className="space-y-1 text-sm">
                  <div className="flex justify-between">
                    <span>Accommodation ({pricingCalculation.nights} nights)</span>
-                   <span>{pricingCalculation.breakdown.accommodation.toLocaleString()} {currency}</span>
+                   <span>
+                     {formatPrice(pricingCalculation.breakdown.accommodation)}
+                     {userCurrency.code !== currency && (
+                       <span className="text-xs text-muted-foreground ml-1">
+                         (~{pricingCalculation.breakdown.accommodation.toLocaleString()} {currency})
+                       </span>
+                     )}
+                   </span>
                  </div>
                  {pricingCalculation.breakdown.extraGuests > 0 && (
                    <div className="flex justify-between">
                      <span>Extra guests</span>
-                     <span>{pricingCalculation.breakdown.extraGuests.toLocaleString()} {currency}</span>
+                     <span>
+                       {formatPrice(pricingCalculation.breakdown.extraGuests)}
+                     </span>
                    </div>
                  )}
                  {pricingCalculation.breakdown.cleaning > 0 && (
                    <div className="flex justify-between">
                      <span>Cleaning fee</span>
-                     <span>{pricingCalculation.breakdown.cleaning.toLocaleString()} {currency}</span>
+                     <span>
+                       {formatPrice(pricingCalculation.breakdown.cleaning)}
+                     </span>
                    </div>
                  )}
                  {pricingCalculation.breakdown.services > 0 && (
                    <div className="flex justify-between">
                      <span>Extra services</span>
-                     <span>{pricingCalculation.breakdown.services.toLocaleString()} {currency}</span>
+                     <span>
+                       {formatPrice(pricingCalculation.breakdown.services)}
+                     </span>
                    </div>
                  )}
-                 <div className="border-t pt-1 flex justify-between font-semibold">
-                   <span>Total</span>
-                   <span>{pricingCalculation.total.toLocaleString()} {currency}</span>
+                 <div className="border-t pt-1 flex justify-between text-sm text-muted-foreground">
+                   <span>Subtotal (Host Earnings)</span>
+                   <span>{formatPrice(pricingCalculation.total)}</span>
+                 </div>
+                 <div className="flex justify-between text-sm text-muted-foreground">
+                   <span>Platform Fee (10%)</span>
+                   <span>+{formatPrice(Math.round(pricingCalculation.total * 0.1))}</span>
+                 </div>
+                 <div className="border-t pt-1 flex justify-between font-semibold text-lg">
+                   <span>Total (Guest Pays)</span>
+                   <span>{formatPrice(Math.round(pricingCalculation.total * 1.1))}</span>
                  </div>
               </div>
             </div>

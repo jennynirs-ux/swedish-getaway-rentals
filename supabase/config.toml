@@ -32,3 +32,9 @@ verify_jwt = true
 
 [functions.auto-sync-ical]
 verify_jwt = true
+
+[functions.create-connect-account]
+verify_jwt = true
+
+[functions.create-connect-dashboard-link]
+verify_jwt = true

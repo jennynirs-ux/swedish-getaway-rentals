@@ -20,6 +20,10 @@ import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
 import { AirbnbSyncManager } from "./AirbnbSyncManager";
 import PropertyPricingRules from "@/components/PropertyPricingRules";
 import PropertySpecialPricing from "./PropertySpecialPricing";
+import { PricingCalculator } from "./PricingCalculator";
+import { BankAccountSetup } from "./BankAccountSetup";
+import { CancellationPolicyDisplay } from "../CancellationPolicyDisplay";
+import { CardDescription } from "@/components/ui/card";
 
 interface Property {
   id: string;
@@ -102,6 +106,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     review_count: "0",
     property_type: "Property",
     active: true,
+    weekly_discount_percentage: "0",
+    monthly_discount_percentage: "0",
+    cancellation_policy: "moderate" as "flexible" | "moderate" | "strict",
   });
 
   // Quick-add Amenity (läggs överst)
@@ -172,6 +179,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         review_count: ((data as any).review_count || 0).toString(),
         property_type: (data as any).property_type || "Property",
         active: data.active,
+        weekly_discount_percentage: ((data as any).weekly_discount_percentage || 0).toString(),
+        monthly_discount_percentage: ((data as any).monthly_discount_percentage || 0).toString(),
+        cancellation_policy: ((data as any).cancellation_policy || "moderate") as "flexible" | "moderate" | "strict",
       });
     } catch (error) {
       console.error("Error loading property:", error);
@@ -542,6 +552,132 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
           {/* CALENDAR & PRICING (inkl. Sync flyttad hit) */}
           <TabsContent value="calendar" className="space-y-6">
+            {/* Pricing & Discounts Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pricing & Discounts</CardTitle>
+                <CardDescription>
+                  Set your base price and discounts for longer stays.{" "}
+                  <button
+                    onClick={() => {
+                      const guidebookBtn = document.querySelector('[data-host-guidebook-trigger]') as HTMLButtonElement;
+                      if (guidebookBtn) {
+                        guidebookBtn.click();
+                        setTimeout(() => {
+                          const priceTab = document.querySelector('[data-value="price-guide"]') as HTMLButtonElement;
+                          if (priceTab) priceTab.click();
+                        }, 100);
+                      }
+                    }}
+                    className="text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    Learn more about pricing strategies →
+                  </button>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price_per_night">Nightly Price ({form.currency || "SEK"})</Label>
+                    <Input
+                      id="price_per_night"
+                      type="number"
+                      min="0"
+                      value={form.price_per_night || ""}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        price_per_night: e.target.value
+                      }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="weekly_discount">Weekly Discount (%)</Label>
+                    <Input
+                      id="weekly_discount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={form.weekly_discount_percentage || ""}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        weekly_discount_percentage: e.target.value
+                      }))}
+                    />
+                    <p className="text-xs text-muted-foreground">Applied to bookings of 7+ nights</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="monthly_discount">Monthly Discount (%)</Label>
+                    <Input
+                      id="monthly_discount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={form.monthly_discount_percentage || ""}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        monthly_discount_percentage: e.target.value
+                      }))}
+                    />
+                    <p className="text-xs text-muted-foreground">Applied to bookings of 30+ nights</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pricing Calculator */}
+            {property && (
+              <PricingCalculator
+                basePrice={parseInt(form.price_per_night) || 0}
+                weeklyDiscount={parseFloat(form.weekly_discount_percentage || "0")}
+                monthlyDiscount={parseFloat(form.monthly_discount_percentage || "0")}
+                currency={form.currency || "SEK"}
+              />
+            )}
+
+            {/* Cancellation Policy */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Cancellation Policy</CardTitle>
+                <CardDescription>
+                  Choose how flexible you want to be with cancellations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cancellation_policy">Policy Type</Label>
+                  <Select
+                    value={form.cancellation_policy || "moderate"}
+                    onValueChange={(value: "flexible" | "moderate" | "strict") => setForm(prev => ({
+                      ...prev,
+                      cancellation_policy: value
+                    }))}
+                  >
+                    <SelectTrigger id="cancellation_policy">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="flexible">
+                        Flexible - Full refund up to 1 day before
+                      </SelectItem>
+                      <SelectItem value="moderate">
+                        Moderate - Full refund up to 5 days before
+                      </SelectItem>
+                      <SelectItem value="strict">
+                        Strict - 50% refund up to 7 days before
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <CancellationPolicyDisplay policy={form.cancellation_policy || "moderate"} />
+              </CardContent>
+            </Card>
+
+            {/* Bank Account Setup */}
+            <BankAccountSetup />
+
+            {/* Existing Pricing Rules */}
             <PropertyPricingRules propertyId={propertyId} />
 
             <PropertySpecialPricing
