@@ -142,6 +142,7 @@ const PropertyCalendarOptimized = memo(({
         disabled={disabledMatchers}
         initialFocus
         numberOfMonths={1}
+        weekStartsOn={1}
         className="rounded-md border"
         components={{
           DayContent: (props) => {

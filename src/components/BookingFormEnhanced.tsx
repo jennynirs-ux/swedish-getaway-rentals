@@ -89,7 +89,31 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   };
 
-  // Calculate pricing with dynamic pricing rules
+  // Fetch property discount data
+  const [propertyDiscounts, setPropertyDiscounts] = useState<{ weekly: number; monthly: number }>({
+    weekly: 0,
+    monthly: 0
+  });
+
+  useEffect(() => {
+    const loadPropertyDiscounts = async () => {
+      const { data } = await supabase
+        .from('properties')
+        .select('weekly_discount_percentage, monthly_discount_percentage')
+        .eq('id', propertyId)
+        .single();
+      
+      if (data) {
+        setPropertyDiscounts({
+          weekly: data.weekly_discount_percentage || 0,
+          monthly: data.monthly_discount_percentage || 0
+        });
+      }
+    };
+    loadPropertyDiscounts();
+  }, [propertyId]);
+
+  // Calculate pricing with dynamic pricing rules and discounts
   const pricingCalculation = useMemo(() => {
     if (!selectedDates.checkIn || !selectedDates.checkOut) {
       return {
@@ -99,6 +123,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
         extraGuestFee: 0,
         cleaningFee: 0,
         extraServices: 0,
+        discount: 0,
+        subtotal: 0,
         total: 0,
         breakdown: {
           accommodation: 0,
@@ -109,7 +135,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       };
     }
     
-    return calculatePrice(
+    const baseCalc = calculatePrice(
       pricePerNight,
       selectedDates.checkIn,
       selectedDates.checkOut,
@@ -117,7 +143,25 @@ const BookingForm: React.FC<BookingFormProps> = ({
       availabilityPrices,
       selectedServices
     );
-  }, [selectedDates, pricePerNight, formData.number_of_guests, availabilityPrices, selectedServices, calculatePrice]);
+
+    // Apply weekly or monthly discount
+    let discount = 0;
+    const nights = baseCalc.nights;
+    if (nights >= 30 && propertyDiscounts.monthly > 0) {
+      discount = (baseCalc.total * propertyDiscounts.monthly) / 100;
+    } else if (nights >= 7 && propertyDiscounts.weekly > 0) {
+      discount = (baseCalc.total * propertyDiscounts.weekly) / 100;
+    }
+
+    const subtotal = baseCalc.total - discount;
+    
+    return {
+      ...baseCalc,
+      discount,
+      subtotal,
+      total: subtotal
+    };
+  }, [selectedDates, pricePerNight, formData.number_of_guests, availabilityPrices, selectedServices, calculatePrice, propertyDiscounts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -312,17 +356,26 @@ const BookingForm: React.FC<BookingFormProps> = ({
                      </span>
                    </div>
                  )}
+                 {pricingCalculation.discount > 0 && (
+                   <div className="flex justify-between text-green-600">
+                     <span>
+                       {pricingCalculation.nights >= 30 ? 'Monthly' : 'Weekly'} Discount
+                       ({pricingCalculation.nights >= 30 ? propertyDiscounts.monthly : propertyDiscounts.weekly}%)
+                     </span>
+                     <span>-{formatPrice(pricingCalculation.discount)}</span>
+                   </div>
+                 )}
                  <div className="border-t pt-1 flex justify-between text-sm text-muted-foreground">
                    <span>Subtotal (Host Earnings)</span>
-                   <span>{formatPrice(pricingCalculation.total)}</span>
+                   <span>{formatPrice(pricingCalculation.subtotal)}</span>
                  </div>
                  <div className="flex justify-between text-sm text-muted-foreground">
                    <span>Platform Fee (10%)</span>
-                   <span>+{formatPrice(Math.round(pricingCalculation.total * 0.1))}</span>
+                   <span>+{formatPrice(Math.round(pricingCalculation.subtotal * 0.1))}</span>
                  </div>
                  <div className="border-t pt-1 flex justify-between font-semibold text-lg">
                    <span>Total (Guest Pays)</span>
-                   <span>{formatPrice(Math.round(pricingCalculation.total * 1.1))}</span>
+                   <span>{formatPrice(Math.round(pricingCalculation.subtotal * 1.1))}</span>
                  </div>
               </div>
             </div>
