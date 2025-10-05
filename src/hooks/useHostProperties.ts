@@ -20,7 +20,27 @@ export const useHostProperties = () => {
 
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select(`
+          id,
+          host_id,
+          title,
+          description,
+          location,
+          price_per_night,
+          currency,
+          max_guests,
+          bedrooms,
+          bathrooms,
+          hero_image_url,
+          amenities,
+          active,
+          review_rating,
+          review_count,
+          property_type,
+          special_amenities,
+          featured_amenities,
+          amenities_data
+        `)
         .eq('host_id', profile.id)
         .order('created_at', { ascending: false });
 
@@ -28,7 +48,11 @@ export const useHostProperties = () => {
       
       const mappedData = (data || []).map((item: any) => ({
         ...item,
-        gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : []
+        gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : [],
+        amenities: Array.isArray(item.amenities) ? item.amenities : [],
+        special_amenities: Array.isArray(item.special_amenities) ? item.special_amenities : [],
+        featured_amenities: Array.isArray(item.featured_amenities) ? item.featured_amenities : [],
+        amenities_data: Array.isArray(item.amenities_data) ? item.amenities_data : []
       }));
       
       setProperties(mappedData);
