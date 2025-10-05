@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import LazyImage from "@/components/LazyImage";
 import { 
   MapPin, 
   Star, 
@@ -55,6 +56,7 @@ export interface PropertyCardData {
   property_type?: string;
   special_amenities?: string[];
   featured_amenities?: { icon: string; title: string; tagline: string; description: string; image_url?: string; features?: string[] }[];
+  amenities_data?: any[];
 }
 
 interface PropertyCardProps {
@@ -72,11 +74,28 @@ const PropertyCard = memo(({
   showFullDescription = false,
   size = "default" 
 }: PropertyCardProps) => {
-  const [imageLoading, setImageLoading] = useState(true);
   const { toast } = useToast();
+
+  // Defensive data normalization
+  const safeProperty = {
+    ...property,
+    amenities: Array.isArray(property.amenities) ? property.amenities : [],
+    featured_amenities: Array.isArray(property.featured_amenities) ? property.featured_amenities : [],
+    special_amenities: Array.isArray(property.special_amenities) ? property.special_amenities : [],
+    hero_image_url: property.hero_image_url || "/placeholder.jpg",
+    description: property.description || "",
+    currency: property.currency || "SEK",
+  };
 
   // Always use dynamic property routes
   const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
+
+  // Dev warning for missing critical fields
+  if (process.env.NODE_ENV === 'development') {
+    if (!property.id || !property.title) {
+      console.warn('PropertyCard: Missing critical fields', { id: property.id, title: property.title });
+    }
+  }
 
   // Memoized amenity icon mapping for performance
   const getAmenityIcon = useMemo(() => {
@@ -132,10 +151,10 @@ const PropertyCard = memo(({
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onFavoriteToggle?.(property.id);
+    onFavoriteToggle?.(safeProperty.id);
     toast({
       title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: `${property.title} ${isFavorite ? "removed from" : "added to"} your favorites`,
+      description: `${safeProperty.title} ${isFavorite ? "removed from" : "added to"} your favorites`,
     });
   };
 
@@ -144,12 +163,12 @@ const PropertyCard = memo(({
     e.stopPropagation();
     if (navigator.share) {
       navigator.share({
-        title: property.title,
-        text: property.description,
-        url: window.location.origin + getPropertyRoute(property),
+        title: safeProperty.title,
+        text: safeProperty.description,
+        url: window.location.origin + getPropertyRoute(safeProperty),
       });
     } else {
-      navigator.clipboard.writeText(window.location.origin + getPropertyRoute(property));
+      navigator.clipboard.writeText(window.location.origin + getPropertyRoute(safeProperty));
       toast({
         title: "Link copied",
         description: "Link has been copied to clipboard",
@@ -164,18 +183,19 @@ const PropertyCard = memo(({
       : "overflow-hidden hover-scale group cursor-pointer";
 
   return (
-    <Link to={getPropertyRoute(property)} className="block">
+    <Link to={getPropertyRoute(safeProperty)} className="block">
       <Card className={cardClass}>
         <div className={`relative ${cardHeight}`}>
-          {/* Image */}
-          <img
-            src={property.hero_image_url || "/placeholder.svg"}
-            alt={property.title}
-            loading="lazy"
-            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
-              imageLoading ? "blur-sm" : ""
-            }`}
-            onLoad={() => setImageLoading(false)}
+          {/* Image with LazyImage for performance */}
+          <LazyImage
+            src={safeProperty.hero_image_url}
+            alt={safeProperty.title}
+            fallbackSrc="/placeholder.jpg"
+            priority={false}
+            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+            decoding="async"
+            width={800}
+            height={600}
           />
 
           {/* Image Overlay */}
@@ -183,11 +203,11 @@ const PropertyCard = memo(({
 
           {/* Top Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
-            {property.review_rating && (
+            {safeProperty.review_rating && (
               <Badge className="bg-primary text-primary-foreground shadow-md">
                 <Star className="w-3 h-3 mr-1 fill-current" />
-                {property.review_rating.toFixed(1)}{" "}
-                {property.review_count ? `(${property.review_count})` : ""}
+                {safeProperty.review_rating.toFixed(1)}{" "}
+                {safeProperty.review_count ? `(${safeProperty.review_count})` : ""}
               </Badge>
             )}
           </div>
@@ -217,7 +237,7 @@ const PropertyCard = memo(({
           {/* Property Type Badge */}
           <div className="absolute bottom-4 left-4">
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
-              {property.property_type || "Property"}
+              {safeProperty.property_type || "Property"}
             </Badge>
           </div>
         </div>
@@ -226,11 +246,11 @@ const PropertyCard = memo(({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors">
-                {property.title}
+                {safeProperty.title}
               </h3>
               <div className="flex items-center text-muted-foreground text-sm mt-1">
                 <MapPin className="w-4 h-4 mr-1" />
-                {property.location || "Sverige"}
+                {safeProperty.location || "Sverige"}
               </div>
             </div>
           </div>
@@ -240,9 +260,9 @@ const PropertyCard = memo(({
           {/* Description */}
           <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
             {showFullDescription
-              ? property.description
-              : property.description
-              ? `${property.description.substring(0, 120)}...`
+              ? safeProperty.description
+              : safeProperty.description
+              ? `${safeProperty.description.substring(0, 120)}...`
               : ""}
           </p>
 
@@ -250,31 +270,30 @@ const PropertyCard = memo(({
           <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
             <div className="flex items-center">
               <Users className="w-4 h-4 mr-1" />
-              {property.max_guests} guests
+              {safeProperty.max_guests} guests
             </div>
             <div className="flex items-center">
               <Bed className="w-4 h-4 mr-1" />
-              {property.bedrooms} bedrooms
+              {safeProperty.bedrooms} bedrooms
             </div>
             <div className="flex items-center">
               <Bath className="w-4 h-4 mr-1" />
-              {property.bathrooms} bathrooms
+              {safeProperty.bathrooms} bathrooms
             </div>
           </div>
 
           {/* Featured Amenities with Icons */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {property.featured_amenities && property.featured_amenities.length > 0 ? (
+            {safeProperty.featured_amenities.length > 0 ? (
               (() => {
                 // räkna bort special_amenities så de inte dubblas
-                const special = (property.special_amenities || []).map(a => a.toLowerCase());
-                const all = property.amenities || [];
-                const nonSpecialAmenities = all.filter(
+                const special = safeProperty.special_amenities.map(a => a.toLowerCase());
+                const nonSpecialAmenities = safeProperty.amenities.filter(
                   a => !special.includes(a.toLowerCase())
                 );
           
                 // visa featured ikoner (upp till 3 st)
-                const displayed = property.featured_amenities.slice(0, 3);
+                const displayed = safeProperty.featured_amenities.slice(0, 3);
           
                 return (
                   <>
@@ -304,9 +323,9 @@ const PropertyCard = memo(({
                   </>
                 );
               })()
-            ) : property.amenities && property.amenities.length > 0 ? (
+            ) : safeProperty.amenities.length > 0 ? (
               <>
-                {property.amenities.slice(0, 3).map((amenity, index) => (
+                {safeProperty.amenities.slice(0, 3).map((amenity, index) => (
                   <div
                     key={index}
                     className="flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-full"
@@ -315,9 +334,9 @@ const PropertyCard = memo(({
                     <span className="capitalize">{amenity}</span>
                   </div>
                 ))}
-                {property.amenities.length > 3 && (
+                {safeProperty.amenities.length > 3 && (
                   <div className="text-xs text-primary font-medium px-2 py-1">
-                    +{property.amenities.length - 3} amenities
+                    +{safeProperty.amenities.length - 3} amenities
                   </div>
                 )}
               </>
@@ -328,7 +347,7 @@ const PropertyCard = memo(({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-foreground">
-                {(property.price_per_night || 0).toLocaleString()} {property.currency}
+                {(safeProperty.price_per_night || 0).toLocaleString()} {safeProperty.currency}
               </span>
               <span className="text-muted-foreground text-sm ml-1">/night</span>
             </div>

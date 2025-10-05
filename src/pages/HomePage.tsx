@@ -164,8 +164,11 @@ const HomePage = memo(() => {
                     ...p,
                     hero_image_url: p.hero_image_url || "/placeholder.jpg",
                     description: p.description || "",
+                    currency: p.currency || "SEK",
+                    amenities: Array.isArray(p.amenities) ? p.amenities : [],
                     featured_amenities: Array.isArray(p.featured_amenities) ? p.featured_amenities : [],
                     special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
+                    amenities_data: Array.isArray(p.amenities_data) ? p.amenities_data : [],
                   }}
                 />
               ))}
