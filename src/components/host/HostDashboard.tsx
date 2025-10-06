@@ -80,6 +80,7 @@ const HostDashboard = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  const [pricingPropertyId, setPricingPropertyId] = useState<string | null>(null);
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
 
@@ -387,8 +388,8 @@ const HostDashboard = () => {
                     <Label>Select Property</Label>
                     <select
                       className="w-full mt-2 p-2 border rounded-md"
-                      value={editingPropertyId || ''}
-                      onChange={(e) => setEditingPropertyId(e.target.value || null)}
+                      value={pricingPropertyId || ''}
+                      onChange={(e) => setPricingPropertyId(e.target.value || null)}
                     >
                       <option value="">Choose a property...</option>
                       {properties.map((p) => (
@@ -399,11 +400,11 @@ const HostDashboard = () => {
                     </select>
                   </div>
                   
-                  {editingPropertyId && (() => {
-                    const selectedProperty = properties.find((p) => p.id === editingPropertyId);
+                  {pricingPropertyId && (() => {
+                    const selectedProperty = properties.find((p) => p.id === pricingPropertyId);
                     return selectedProperty ? (
                       <HostPropertyEditor
-                        propertyId={editingPropertyId}
+                        propertyId={pricingPropertyId}
                         propertyTitle={selectedProperty.title}
                         preparationDays={selectedProperty.preparation_days || 0}
                         onUpdate={() => {
