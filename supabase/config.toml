@@ -1,5 +1,8 @@
 project_id = "bbuutvozqfzbsnllsiai"
 
+[functions.generate-yale-code]
+verify_jwt = false
+
 [functions.fetch-printful-products]
 verify_jwt = true
 

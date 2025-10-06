@@ -107,6 +107,8 @@ export type Database = {
       }
       bookings: {
         Row: {
+          access_code: string | null
+          access_code_expires_at: string | null
           check_in_date: string
           check_out_date: string
           created_at: string
@@ -125,6 +127,8 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          access_code?: string | null
+          access_code_expires_at?: string | null
           check_in_date: string
           check_out_date: string
           created_at?: string
@@ -143,6 +147,8 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          access_code?: string | null
+          access_code_expires_at?: string | null
           check_in_date?: string
           check_out_date?: string
           created_at?: string
@@ -473,6 +479,66 @@ export type Database = {
         }
         Relationships: []
       }
+      lock_access_log: {
+        Row: {
+          access_code: string
+          booking_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          status: string
+          updated_at: string
+          valid_from: string
+          valid_to: string
+          yale_lock_id: string
+        }
+        Insert: {
+          access_code: string
+          booking_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          updated_at?: string
+          valid_from: string
+          valid_to: string
+          yale_lock_id: string
+        }
+        Update: {
+          access_code?: string
+          booking_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string
+          yale_lock_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lock_access_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lock_access_log_yale_lock_id_fkey"
+            columns: ["yale_lock_id"]
+            isOneToOne: false
+            referencedRelation: "yale_locks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string
@@ -648,6 +714,8 @@ export type Database = {
           bathrooms: number
           bedrooms: number
           cancellation_policy: string | null
+          check_in_time: string | null
+          check_out_time: string | null
           commission_rate: number | null
           contact_response_time: string | null
           created_at: string
@@ -694,6 +762,8 @@ export type Database = {
           bathrooms?: number
           bedrooms?: number
           cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
           commission_rate?: number | null
           contact_response_time?: string | null
           created_at?: string
@@ -740,6 +810,8 @@ export type Database = {
           bathrooms?: number
           bedrooms?: number
           cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
           commission_rate?: number | null
           contact_response_time?: string | null
           created_at?: string
@@ -1046,6 +1118,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      yale_locks: {
+        Row: {
+          access_duration_hours: number | null
+          api_credentials: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          is_active: boolean | null
+          last_sync: string | null
+          lock_id: string
+          lock_name: string | null
+          property_id: string
+          sync_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_duration_hours?: number | null
+          api_credentials?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync?: string | null
+          lock_id: string
+          lock_name?: string | null
+          property_id: string
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_duration_hours?: number | null
+          api_credentials?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync?: string | null
+          lock_id?: string
+          lock_name?: string | null
+          property_id?: string
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yale_locks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
