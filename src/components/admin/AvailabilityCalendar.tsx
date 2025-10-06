@@ -127,40 +127,28 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
     return availability.find(a => a.date === dateStr);
   };
 
-  const renderDay = (date: Date) => {
-    const avail = getDateAvailability(date);
-    const isSelected = selectedDates.some(d => isSameDay(d, date));
+  const getDateModifiers = () => {
+    const blocked: Date[] = [];
+    const special: Date[] = [];
+    const preparation: Date[] = [];
     
-    let className = "w-full h-full flex items-center justify-center text-sm rounded cursor-pointer transition-colors ";
-    
-    if (isSelected) {
-      className += "bg-primary text-primary-foreground ";
-    } else if (avail) {
+    availability.forEach(avail => {
+      const date = new Date(avail.date + 'T00:00:00');
       if (!avail.available) {
-        className += "bg-red-100 text-red-900 ";
+        if (avail.reason === 'preparation') {
+          preparation.push(date);
+        } else {
+          blocked.push(date);
+        }
       } else if (avail.seasonal_price) {
-        className += "bg-blue-100 text-blue-900 ";
-      } else {
-        className += "bg-green-100 text-green-900 ";
+        special.push(date);
       }
-    } else {
-      className += "hover:bg-muted ";
-    }
-
-    return (
-      <div className={className} onClick={() => handleDateClick(date)}>
-        <div className="text-center">
-          <div>{date.getDate()}</div>
-          {avail && (
-            <div className="text-xs">
-              {avail.seasonal_price ? `${avail.seasonal_price} SEK` : 
-               !avail.available ? '✕' : '✓'}
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    });
+    
+    return { blocked, special, preparation };
   };
+
+  const modifiers = getDateModifiers();
 
   const handleDateClick = (date: Date) => {
     const isSelected = selectedDates.some(d => isSameDay(d, date));
@@ -212,8 +200,30 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                   selected={selectedDates}
                   onSelect={(dates) => setSelectedDates(dates || [])}
                   className="rounded-md border"
+                  modifiers={{
+                    blocked: modifiers.blocked,
+                    special: modifiers.special,
+                    preparation: modifiers.preparation
+                  }}
+                  modifiersClassNames={{
+                    blocked: "bg-destructive/20 text-destructive line-through",
+                    special: "bg-blue-100 text-blue-900 font-semibold",
+                    preparation: "bg-orange-100 text-orange-900 italic"
+                  }}
                   components={{
-                    Day: ({ date }) => renderDay(date)
+                    DayContent: ({ date }) => {
+                      const avail = getDateAvailability(date);
+                      return (
+                        <div className="flex flex-col items-center leading-none">
+                          <span>{date.getDate()}</span>
+                          {avail?.seasonal_price && (
+                            <span className="text-[10px] mt-0.5">
+                              {avail.seasonal_price}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
                   }}
                 />
               )}
