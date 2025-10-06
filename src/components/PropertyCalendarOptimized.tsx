@@ -6,9 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface AvailabilityDate {
   date: string;
   available: boolean;
-  reason?: string;
-  seasonal_price?: number;
-  minimum_nights?: number;
+  reason?: string | null;
+  seasonal_price?: number | null;
+  minimum_nights?: number | null;
 }
 
 interface PropertyCalendarOptimizedProps {
@@ -66,6 +66,7 @@ const PropertyCalendarOptimized = memo(({
         {
           available: item.available,
           price: item.seasonal_price || basePrice,
+          reason: item.reason,
         }
       ])
     );
@@ -147,19 +148,34 @@ const PropertyCalendarOptimized = memo(({
         components={{
           DayContent: (props) => {
             const date = props.date;
+            const dateStr = date.toISOString().split('T')[0];
+            const info = availabilityMap.get(dateStr);
             const available = isDateAvailable(date);
             const price = getDatePrice(date);
             const showPrice = mode === "guest" && available && price !== basePrice;
+            const isPreparation = info?.reason === 'preparation';
+            const isBooked = info?.reason === 'booked';
 
             return (
               <div className="flex flex-col items-center leading-none">
-                <span className={available ? "" : "line-through opacity-50"}>
+                <span className={
+                  !available 
+                    ? isPreparation 
+                      ? "opacity-40 text-orange-600" 
+                      : isBooked 
+                        ? "line-through opacity-50 text-red-600"
+                        : "line-through opacity-50" 
+                    : ""
+                }>
                   {date.getDate()}
                 </span>
                 {showPrice && (
                   <span className="text-[10px] opacity-70 mt-0.5">
                     {price}
                   </span>
+                )}
+                {!available && isPreparation && mode === "admin" && (
+                  <span className="text-[8px] text-orange-600 mt-0.5">prep</span>
                 )}
               </div>
             );

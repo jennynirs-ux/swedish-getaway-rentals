@@ -668,6 +668,7 @@ export type Database = {
           max_guests: number
           monthly_discount_percentage: number | null
           pending_approval: boolean
+          preparation_days: number | null
           price_per_night: number
           pricing_table: Json | null
           property_type: string | null
@@ -713,6 +714,7 @@ export type Database = {
           max_guests?: number
           monthly_discount_percentage?: number | null
           pending_approval?: boolean
+          preparation_days?: number | null
           price_per_night: number
           pricing_table?: Json | null
           property_type?: string | null
@@ -758,6 +760,7 @@ export type Database = {
           max_guests?: number
           monthly_discount_percentage?: number | null
           pending_approval?: boolean
+          preparation_days?: number | null
           price_per_night?: number
           pricing_table?: Json | null
           property_type?: string | null

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen } from "lucide-react";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
@@ -13,6 +14,7 @@ import { BookingChatList } from "../BookingChatList";
 import MainNavigation from "@/components/MainNavigation";
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import HostGuidebookDialog from "./HostGuidebookDialog";
+import { HostPropertyEditor } from "./HostPropertyEditor";
 
 interface HostStats {
   total_properties: number;
@@ -337,7 +339,83 @@ const HostDashboard = () => {
               <BookingChatList />
             </TabsContent>
 
-            {/* bookings och pricing flikarna kan behållas som de är */}
+            <TabsContent value="bookings" className="space-y-6">
+              <h2 className="text-xl font-semibold mb-4">Recent Bookings</h2>
+              {bookings.length === 0 ? (
+                <Card>
+                  <CardContent className="py-16 text-center">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No bookings yet</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {bookings.slice(0, 10).map((booking) => (
+                    <Card key={booking.id}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{booking.properties.title}</h3>
+                            <p className="text-sm text-muted-foreground">Guest: {booking.guest_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{booking.total_amount.toLocaleString()} {booking.properties.currency || 'SEK'}</p>
+                            <p className="text-sm text-muted-foreground capitalize">{booking.status}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="pricing" className="space-y-6">
+              {properties.length === 0 ? (
+                <Card>
+                  <CardContent className="py-16 text-center">
+                    <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">Create a property first to manage pricing and calendar</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <Label>Select Property</Label>
+                    <select
+                      className="w-full mt-2 p-2 border rounded-md"
+                      value={editingPropertyId || ''}
+                      onChange={(e) => setEditingPropertyId(e.target.value || null)}
+                    >
+                      <option value="">Choose a property...</option>
+                      {properties.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {editingPropertyId && (() => {
+                    const selectedProperty = properties.find((p) => p.id === editingPropertyId);
+                    return selectedProperty ? (
+                      <HostPropertyEditor
+                        propertyId={editingPropertyId}
+                        propertyTitle={selectedProperty.title}
+                        preparationDays={selectedProperty.preparation_days || 0}
+                        onUpdate={() => {
+                          refetchProperties();
+                          fetchHostStats();
+                        }}
+                      />
+                    ) : null;
+                  })()}
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
 
           {editingPropertyId && (

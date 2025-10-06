@@ -56,6 +56,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [availabilityPrices, setAvailabilityPrices] = useState<Record<string, number>>({});
+  const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
+  const [guestCountConfirmed, setGuestCountConfirmed] = useState(false);
 
   // Load availability prices when dates change
   useEffect(() => {
@@ -365,29 +367,68 @@ const BookingForm: React.FC<BookingFormProps> = ({
                      <span>-{formatPrice(pricingCalculation.discount)}</span>
                    </div>
                  )}
-                 <div className="border-t pt-1 flex justify-between text-sm text-muted-foreground">
-                   <span>Subtotal (Host Earnings)</span>
-                   <span>{formatPrice(pricingCalculation.subtotal)}</span>
-                 </div>
-                 <div className="flex justify-between text-sm text-muted-foreground">
-                   <span>Platform Fee (10%)</span>
-                   <span>+{formatPrice(Math.round(pricingCalculation.subtotal * 0.1))}</span>
-                 </div>
-                 <div className="border-t pt-1 flex justify-between font-semibold text-lg">
-                   <span>Total (Guest Pays)</span>
-                   <span>{formatPrice(Math.round(pricingCalculation.subtotal * 1.1))}</span>
-                 </div>
+                  <div className="border-t pt-2 flex justify-between font-semibold text-lg">
+                    <span>Total</span>
+                    <span>{formatPrice(Math.round(pricingCalculation.subtotal * 1.1))}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Includes all fees and charges
+                  </div>
               </div>
             </div>
           )}
+
+          {/* Confirmation Checkboxes */}
+          <div className="space-y-3 p-4 bg-muted rounded-lg">
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="house-rules"
+                checked={houseRulesAccepted}
+                onCheckedChange={(checked) => setHouseRulesAccepted(checked === true)}
+              />
+              <Label htmlFor="house-rules" className="text-sm leading-relaxed cursor-pointer">
+                I have read and agree to the{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    // This would open the GuestGuideDialog - you can implement this based on your needs
+                    const event = new CustomEvent('open-guest-guide', { 
+                      detail: { section: 'house-rules' } 
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  className="text-primary underline hover:no-underline"
+                >
+                  House Rules
+                </button>
+              </Label>
+            </div>
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="guest-count"
+                checked={guestCountConfirmed}
+                onCheckedChange={(checked) => setGuestCountConfirmed(checked === true)}
+              />
+              <Label htmlFor="guest-count" className="text-sm leading-relaxed cursor-pointer">
+                I confirm that I have entered the correct number of guests ({formData.number_of_guests} {formData.number_of_guests === 1 ? 'person' : 'people'}), including myself
+              </Label>
+            </div>
+          </div>
 
           {/* Submit Button */}
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={pricingCalculation.total === 0 || loading}
+            disabled={
+              pricingCalculation.total === 0 || 
+              loading || 
+              !houseRulesAccepted || 
+              !guestCountConfirmed
+            }
           >
-            {loading ? 'Processing...' : `Book Now (${pricingCalculation.total > 0 ? `${pricingCalculation.total.toLocaleString()} ${currency}` : 'Select dates'})`}
+            {loading ? 'Processing...' : 
+             !houseRulesAccepted || !guestCountConfirmed ? 'Please accept terms above' :
+             `Confirm Booking (${pricingCalculation.total > 0 ? formatPrice(Math.round(pricingCalculation.subtotal * 1.1)) : 'Select dates'})`}
           </Button>
         </form>
       </CardContent>

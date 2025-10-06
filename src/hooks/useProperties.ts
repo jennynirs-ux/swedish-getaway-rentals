@@ -54,6 +54,7 @@ export interface Property {
   weekly_discount_percentage?: number;
   monthly_discount_percentage?: number;
   cancellation_policy?: "flexible" | "moderate" | "strict";
+  preparation_days?: number;
 }
 
 export const useProperties = () => {
@@ -64,16 +65,27 @@ export const useProperties = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
+      // Optimized query: select only needed fields for listing view
       const { data, error } = await supabase
         .from('properties')
-        .select('*')
+        .select(`
+          id, title, description, location, price_per_night, currency,
+          max_guests, bedrooms, bathrooms, hero_image_url, amenities, 
+          active, review_rating, review_count, property_type, 
+          special_amenities, featured_amenities, host_id, 
+          weekly_discount_percentage, monthly_discount_percentage,
+          cancellation_policy, preparation_days
+        `)
         .eq('active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       const mappedData = (data || []).map((item: any) => ({
         ...item,
-        gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : []
+        amenities: Array.isArray(item.amenities) ? item.amenities : [],
+        gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : [],
+        special_amenities: Array.isArray(item.special_amenities) ? item.special_amenities : [],
+        featured_amenities: Array.isArray(item.featured_amenities) ? item.featured_amenities : []
       }));
       setProperties(mappedData);
     } catch (err) {

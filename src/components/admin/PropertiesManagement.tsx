@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Edit2, Calendar } from "lucide-react";
+import { Edit2, Calendar, Settings } from "lucide-react";
 import AvailabilityCalendar from "./AvailabilityCalendar";
+import PropertyDetailEditor from "./PropertyDetailEditor";
 
 interface Property {
   id: string;
@@ -27,6 +28,7 @@ const PropertiesManagement = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Property | null>(null);
   const [showCalendarFor, setShowCalendarFor] = useState<Property | null>(null);
+  const [editingDetailPropertyId, setEditingDetailPropertyId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     location: "",
@@ -158,7 +160,10 @@ const PropertiesManagement = () => {
                   <TableCell>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => startEdit(p)}>
-                        <Edit2 className="h-4 w-4 mr-2" /> Edit
+                        <Edit2 className="h-4 w-4 mr-2" /> Quick Edit
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingDetailPropertyId(p.id)}>
+                        <Settings className="h-4 w-4 mr-2" /> Full Edit
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => setShowCalendarFor(p)}>
                         <Calendar className="h-4 w-4 mr-2" /> Availability
@@ -219,6 +224,19 @@ const PropertiesManagement = () => {
             <AvailabilityCalendar defaultPropertyId={showCalendarFor.id} />
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Full Property Detail Editor */}
+      {editingDetailPropertyId && (
+        <PropertyDetailEditor
+          propertyId={editingDetailPropertyId}
+          open={!!editingDetailPropertyId}
+          onClose={() => setEditingDetailPropertyId(null)}
+          onSave={() => {
+            setEditingDetailPropertyId(null);
+            loadProperties();
+          }}
+        />
       )}
     </div>
   );

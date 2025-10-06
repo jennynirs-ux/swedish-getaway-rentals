@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Building2, CheckCircle2, ExternalLink } from "lucide-react";
+import { Building2, CheckCircle2, ExternalLink, AlertCircle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 export const BankAccountSetup = () => {
   const [loading, setLoading] = useState(false);
+  const [accountStatus, setAccountStatus] = useState<'connected' | 'pending' | 'not_connected'>('not_connected');
 
   const { data: profile, refetch } = useQuery({
     queryKey: ["host-profile"],
@@ -23,6 +25,14 @@ export const BankAccountSetup = () => {
         .single();
 
       if (error) throw error;
+      
+      // Update status based on account ID presence
+      if (data?.stripe_connect_account_id) {
+        setAccountStatus('connected');
+      } else {
+        setAccountStatus('not_connected');
+      }
+      
       return data;
     }
   });
@@ -83,14 +93,29 @@ export const BankAccountSetup = () => {
     }
   };
 
-  const isConnected = !!profile?.stripe_connect_account_id;
+  const isConnected = accountStatus === 'connected';
+  const isPending = accountStatus === 'pending';
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-primary" />
-          <CardTitle>Bank Account & Payouts</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            <CardTitle>Bank Account & Payouts</CardTitle>
+          </div>
+          {isConnected && (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Connected
+            </Badge>
+          )}
+          {isPending && (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Pending
+            </Badge>
+          )}
         </div>
         <CardDescription>
           Connect your bank account to receive payouts from bookings
@@ -105,15 +130,56 @@ export const BankAccountSetup = () => {
                 Your bank account is connected. Payouts will be sent after each booking, minus the 10% platform fee.
               </AlertDescription>
             </Alert>
-            <Button 
-              onClick={handleManageAccount} 
-              disabled={loading}
-              variant="outline"
-              className="w-full"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Manage Payout Settings
-            </Button>
+            <div className="grid gap-2">
+              <Button 
+                onClick={handleManageAccount} 
+                disabled={loading}
+                variant="outline"
+                className="w-full"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Manage Payout Settings
+              </Button>
+              <Button 
+                onClick={() => refetch()} 
+                disabled={loading}
+                variant="ghost"
+                size="sm"
+                className="w-full"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Verify Connection Status
+              </Button>
+            </div>
+          </>
+        ) : isPending ? (
+          <>
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                Your Stripe Connect account setup is pending. Please complete the setup process or verify your account details.
+              </AlertDescription>
+            </Alert>
+            <div className="grid gap-2">
+              <Button 
+                onClick={handleConnectStripe} 
+                disabled={loading}
+                className="w-full"
+              >
+                <Building2 className="mr-2 h-4 w-4" />
+                Complete Setup
+              </Button>
+              <Button 
+                onClick={() => refetch()} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Check Status
+              </Button>
+            </div>
           </>
         ) : (
           <>
