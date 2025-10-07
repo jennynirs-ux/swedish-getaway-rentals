@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { geocodeAddress } from '@/lib/geocoding';
 import { toast } from '@/hooks/use-toast';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 const EditorMap = lazy(() => import('./maps/LeafletEditorInner'));
 
@@ -181,9 +182,11 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
               Drag the pin to adjust the exact location. Click anywhere on the map to move the pin.
             </p>
             <div className="h-[400px] rounded-lg overflow-hidden border">
-              <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
-                <EditorMap center={mapPosition} onPositionChange={handleMarkerMove} />
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                  <EditorMap center={mapPosition} onPositionChange={handleMarkerMove} />
+                </Suspense>
+              </ErrorBoundary>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>

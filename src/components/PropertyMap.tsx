@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense } from 'react';
 // react-leaflet imports moved to lazy-loaded inner component
 import type { LatLngExpression } from 'leaflet';
 import { getDrivingRoute, getClosestMajorCity, type Coordinates, type RouteInfo } from '@/lib/distance';
-
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 interface PropertyMapProps {
   latitude: number;
@@ -73,20 +73,22 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
 
   return (
     <div className={`relative ${className}`}>
-      <Suspense
-        fallback={
-          <div className="h-full w-full flex items-center justify-center">
-            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        }
-      >
-        <PropertyLeaflet
-          position={position}
-          propertyTitle={propertyTitle}
-          googleMapsUrl={googleMapsUrl}
-          routePositions={routePositions}
-        />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense
+          fallback={
+            <div className="h-full w-full flex items-center justify-center">
+              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          }
+        >
+          <PropertyLeaflet
+            position={position}
+            propertyTitle={propertyTitle}
+            googleMapsUrl={googleMapsUrl}
+            routePositions={routePositions}
+          />
+        </Suspense>
+      </ErrorBoundary>
       <div className="absolute bottom-2 right-2 bg-background/80 px-2 py-1 rounded text-xs z-10">
         Map data © OpenStreetMap contributors
       </div>
