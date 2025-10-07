@@ -55,6 +55,12 @@ export interface Property {
   monthly_discount_percentage?: number;
   cancellation_policy?: "flexible" | "moderate" | "strict";
   preparation_days?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  street?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+  country?: string | null;
 }
 
 export const useProperties = () => {
@@ -74,7 +80,7 @@ export const useProperties = () => {
           active, review_rating, review_count, property_type, 
           special_amenities, featured_amenities, host_id, 
           weekly_discount_percentage, monthly_discount_percentage,
-          cancellation_policy, preparation_days
+          cancellation_policy, preparation_days, latitude, longitude, city
         `)
         .eq('active', true)
         .order('created_at', { ascending: false });

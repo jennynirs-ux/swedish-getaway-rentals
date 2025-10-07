@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Search, MapPin, Users, Calendar, SlidersHorizontal, X } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Search, MapPin, Users, Calendar, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { geocodeAddress } from "@/lib/geocoding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -18,6 +19,7 @@ interface SearchFilters {
   priceRange: [number, number];
   amenities: string[];
   propertyType: string;
+  destinationCoords?: { latitude: number; longitude: number } | null;
 }
 
 interface PropertySearchProps {
@@ -27,6 +29,7 @@ interface PropertySearchProps {
 
 const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySearchProps) => {
   const [showFilters, setShowFilters] = useState(false);
+  const [isGeocodingLocation, setIsGeocodingLocation] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
     location: "",
     checkIn: undefined,
@@ -35,6 +38,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
     priceRange: [0, 5000],
     amenities: [],
     propertyType: "all",
+    destinationCoords: null,
   });
 
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
@@ -42,6 +46,29 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
     setFilters(updatedFilters);
     onFiltersChange(updatedFilters);
   };
+
+  const handleSearch = useCallback(async () => {
+    setIsGeocodingLocation(true);
+    try {
+      if (filters.location.trim()) {
+        const result = await geocodeAddress(filters.location);
+        if (result) {
+          updateFilters({
+            destinationCoords: {
+              latitude: result.latitude,
+              longitude: result.longitude
+            }
+          });
+        } else {
+          updateFilters({ destinationCoords: null });
+        }
+      } else {
+        updateFilters({ destinationCoords: null });
+      }
+    } finally {
+      setIsGeocodingLocation(false);
+    }
+  }, [filters.location]);
 
   const clearFilters = () => {
     const clearedFilters: SearchFilters = {
@@ -52,6 +79,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       priceRange: [0, 5000],
       amenities: [],
       propertyType: "all",
+      destinationCoords: null,
     };
     setFilters(clearedFilters);
     onFiltersChange(clearedFilters);
@@ -79,11 +107,15 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
           <div className="flex-1 relative">
             <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Where?"
+              placeholder="City or destination"
               value={filters.location}
               onChange={(e) => updateFilters({ location: e.target.value })}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="pl-9 text-sm"
             />
+            {isGeocodingLocation && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+            )}
           </div>
 
           {/* Check-in */}
@@ -145,9 +177,14 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             <Button
               size="sm"
               className="px-4"
-              onClick={() => onFiltersChange(filters)} // 👈 trigger search
+              onClick={handleSearch}
+              disabled={isGeocodingLocation}
             >
-              <Search className="h-4 w-4 mr-1" />
+              {isGeocodingLocation ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4 mr-1" />
+              )}
               Search
             </Button>
             <Button

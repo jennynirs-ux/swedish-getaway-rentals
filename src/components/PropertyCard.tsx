@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useState, memo, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
 
 export interface PropertyCardData {
   id: string;
@@ -57,6 +58,9 @@ export interface PropertyCardData {
   special_amenities?: string[];
   featured_amenities?: { icon: string; title: string; tagline: string; description: string; image_url?: string; features?: string[] }[];
   amenities_data?: any[];
+  latitude?: number | null;
+  longitude?: number | null;
+  city?: string | null;
 }
 
 interface PropertyCardProps {
@@ -252,6 +256,20 @@ const PropertyCard = memo(({
                 <MapPin className="w-4 h-4 mr-1" />
                 {safeProperty.location || "Sverige"}
               </div>
+              {safeProperty.latitude && safeProperty.longitude && (() => {
+                const coords: Coordinates = { 
+                  latitude: safeProperty.latitude, 
+                  longitude: safeProperty.longitude 
+                };
+                const closestCity = getClosestMajorCity(coords);
+                if (!closestCity) return null;
+                const driveTime = calculateDriveTime(closestCity.distance);
+                return (
+                  <div className="text-muted-foreground text-xs mt-1">
+                    {formatDistanceText(closestCity.distance, driveTime)}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </CardHeader>

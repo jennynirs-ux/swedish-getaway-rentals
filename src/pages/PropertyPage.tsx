@@ -16,6 +16,46 @@ const PropertyAmenities = lazy(() => import("@/components/PropertyAmenities"));
 const PropertySpecialHighlights = lazy(() => import("@/components/PropertySpecialHighlights"));
 const PropertyBooking = lazy(() => import("@/components/PropertyBooking"));
 const PropertyFooter = lazy(() => import("@/components/PropertyFooter"));
+const PropertyLocation = lazy(() => import("@/components/PropertyLocation"));
+const NearbyProperties = lazy(() => import("@/components/NearbyProperties"));
+
+// Wrapper component to fetch nearby properties
+const NearbyPropertiesWrapper = memo(({ currentPropertyId, currentCoordinates }: { 
+  currentPropertyId: string; 
+  currentCoordinates: { latitude: number; longitude: number };
+}) => {
+  const fetchNearbyPropertiesFn = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, title, hero_image_url, latitude, longitude, location")
+      .eq("active", true)
+      .not("latitude", "is", null)
+      .not("longitude", "is", null);
+    
+    if (error) throw error;
+    return { data: data || [], error: null };
+  }, []);
+
+  const { data: allProperties = [] } = useOptimizedQuery(
+    "all-properties-nearby",
+    fetchNearbyPropertiesFn,
+    {
+      cacheTime: 15 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      enableRealtime: false,
+    }
+  );
+
+  return (
+    <NearbyProperties
+      currentPropertyId={currentPropertyId}
+      currentCoordinates={currentCoordinates}
+      allProperties={allProperties}
+    />
+  );
+});
+
+NearbyPropertiesWrapper.displayName = "NearbyPropertiesWrapper";
 
 const PropertyPage = memo(() => {
   const { id } = useParams<{ id: string }>();
@@ -72,7 +112,10 @@ const PropertyPage = memo(() => {
         tagline_line2,
         review_rating,
         review_count,
-        active
+        active,
+        latitude,
+        longitude,
+        city
       `)
       .eq("id", propertyId)
       .eq("active", true)
@@ -154,6 +197,9 @@ const PropertyPage = memo(() => {
         ? heavyProperty.footer_quick_links
         : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
       pricing_table: heavyProperty?.pricing_table ?? null,
+      latitude: lightProperty.latitude ?? null,
+      longitude: lightProperty.longitude ?? null,
+      city: lightProperty.city ?? null,
     } as Property;
   }, [lightProperty, heavyProperty]);
 
@@ -214,6 +260,27 @@ const PropertyPage = memo(() => {
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <PropertyBooking property={property} />
       </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+        <PropertyLocation
+          latitude={property.latitude}
+          longitude={property.longitude}
+          propertyTitle={property.title}
+          location={property.location}
+        />
+      </Suspense>
+
+      {property.latitude && property.longitude && (
+        <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+          <NearbyPropertiesWrapper
+            currentPropertyId={property.id}
+            currentCoordinates={{
+              latitude: property.latitude,
+              longitude: property.longitude
+            }}
+          />
+        </Suspense>
+      )}
 
       <Suspense fallback={<Skeleton className="h-20 w-full" />}>
         <PropertyFooter property={property} />

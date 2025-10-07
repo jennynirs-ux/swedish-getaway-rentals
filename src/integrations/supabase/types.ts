@@ -727,8 +727,10 @@ export type Database = {
           cancellation_policy: string | null
           check_in_time: string | null
           check_out_time: string | null
+          city: string | null
           commission_rate: number | null
           contact_response_time: string | null
+          country: string | null
           created_at: string
           currency: string
           description: string | null
@@ -743,10 +745,13 @@ export type Database = {
           ical_export_secret: string | null
           id: string
           introduction_text: string | null
+          latitude: number | null
           location: string | null
+          longitude: number | null
           max_guests: number
           monthly_discount_percentage: number | null
           pending_approval: boolean
+          postal_code: string | null
           preparation_days: number | null
           price_per_night: number
           pricing_table: Json | null
@@ -755,6 +760,7 @@ export type Database = {
           review_rating: number | null
           special_amenities: string[] | null
           special_highlights: Json | null
+          street: string | null
           tagline_line1: string | null
           tagline_line2: string | null
           title: string
@@ -775,8 +781,10 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          city?: string | null
           commission_rate?: number | null
           contact_response_time?: string | null
+          country?: string | null
           created_at?: string
           currency?: string
           description?: string | null
@@ -791,10 +799,13 @@ export type Database = {
           ical_export_secret?: string | null
           id?: string
           introduction_text?: string | null
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           max_guests?: number
           monthly_discount_percentage?: number | null
           pending_approval?: boolean
+          postal_code?: string | null
           preparation_days?: number | null
           price_per_night: number
           pricing_table?: Json | null
@@ -803,6 +814,7 @@ export type Database = {
           review_rating?: number | null
           special_amenities?: string[] | null
           special_highlights?: Json | null
+          street?: string | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title: string
@@ -823,8 +835,10 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          city?: string | null
           commission_rate?: number | null
           contact_response_time?: string | null
+          country?: string | null
           created_at?: string
           currency?: string
           description?: string | null
@@ -839,10 +853,13 @@ export type Database = {
           ical_export_secret?: string | null
           id?: string
           introduction_text?: string | null
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           max_guests?: number
           monthly_discount_percentage?: number | null
           pending_approval?: boolean
+          postal_code?: string | null
           preparation_days?: number | null
           price_per_night?: number
           pricing_table?: Json | null
@@ -851,6 +868,7 @@ export type Database = {
           review_rating?: number | null
           special_amenities?: string[] | null
           special_highlights?: Json | null
+          street?: string | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title?: string

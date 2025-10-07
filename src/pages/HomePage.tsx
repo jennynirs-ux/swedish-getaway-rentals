@@ -9,7 +9,8 @@ import { Grid3X3 } from "lucide-react";
 import HomepageProducts from "@/components/HomepageProducts";
 import PropertySearch from "@/components/PropertySearch";
 import MainNavigation from "@/components/MainNavigation";
-import BookPromotion from "@/components/BookPromotion"; // 👈 importera nya komponenten
+import BookPromotion from "@/components/BookPromotion";
+import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
 
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
 
@@ -17,6 +18,8 @@ interface PropertyFilters {
   guests?: number;
   propertyType?: string;
   amenities?: string[];
+  destinationCoords?: { latitude: number; longitude: number } | null;
+  location?: string;
 }
 
 const MemoizedPropertyCard = memo(PropertyCard);
@@ -45,7 +48,10 @@ const HomePage = memo(() => {
         review_count,
         property_type,
         special_amenities,
-        featured_amenities
+        featured_amenities,
+        latitude,
+        longitude,
+        city
       `)
       .eq("active", true)
       .order("created_at", { ascending: false });
@@ -85,10 +91,15 @@ const HomePage = memo(() => {
     if (!filters) return properties;
 
     return properties.filter((p: any) => {
+      // Guest filter
       if (filters.guests && p.max_guests < filters.guests) return false;
+      
+      // Property type filter
       if (filters.propertyType && filters.propertyType !== "all") {
         if (!p.title.toLowerCase().includes(filters.propertyType.toLowerCase())) return false;
       }
+      
+      // Amenities filter
       if (filters.amenities && filters.amenities.length > 0) {
         const names = Array.isArray(p.amenities)
           ? p.amenities.map((a: any) => String(a || "").toLowerCase()).filter(Boolean)
@@ -98,6 +109,31 @@ const HomePage = memo(() => {
           if (!names.some((n) => n.includes(w))) return false;
         }
       }
+      
+      // Location/City filter with distance calculation
+      if (filters.location && filters.location.trim()) {
+        // Check city name match or city groups
+        if (p.city && isInCityGroup(p.city, filters.location)) {
+          return true;
+        }
+        
+        // Check distance-based filtering if coordinates are available
+        if (filters.destinationCoords && p.latitude && p.longitude) {
+          const propertyCoords: Coordinates = {
+            latitude: p.latitude,
+            longitude: p.longitude
+          };
+          const distance = calculateDistance(filters.destinationCoords, propertyCoords);
+          // Within 30 km radius
+          if (distance <= 30) {
+            return true;
+          }
+        }
+        
+        // If location specified but no match, filter out
+        return false;
+      }
+      
       return true;
     });
   }, [properties, filters]);
