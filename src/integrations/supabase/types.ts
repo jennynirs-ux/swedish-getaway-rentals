@@ -118,6 +118,7 @@ export type Database = {
           guest_phone: string | null
           id: string
           number_of_guests: number
+          pre_checkin_reminder_sent_at: string | null
           property_id: string
           special_requests: string | null
           status: string
@@ -138,6 +139,7 @@ export type Database = {
           guest_phone?: string | null
           id?: string
           number_of_guests: number
+          pre_checkin_reminder_sent_at?: string | null
           property_id: string
           special_requests?: string | null
           status?: string
@@ -158,6 +160,7 @@ export type Database = {
           guest_phone?: string | null
           id?: string
           number_of_guests?: number
+          pre_checkin_reminder_sent_at?: string | null
           property_id?: string
           special_requests?: string | null
           status?: string
@@ -752,9 +755,12 @@ export type Database = {
           monthly_discount_percentage: number | null
           pending_approval: boolean
           postal_code: string | null
+          pre_checkin_reminder_enabled: boolean
+          pre_checkin_send_time: string
           preparation_days: number | null
           price_per_night: number
           pricing_table: Json | null
+          property_timezone: string
           property_type: string | null
           review_count: number | null
           review_rating: number | null
@@ -806,9 +812,12 @@ export type Database = {
           monthly_discount_percentage?: number | null
           pending_approval?: boolean
           postal_code?: string | null
+          pre_checkin_reminder_enabled?: boolean
+          pre_checkin_send_time?: string
           preparation_days?: number | null
           price_per_night: number
           pricing_table?: Json | null
+          property_timezone?: string
           property_type?: string | null
           review_count?: number | null
           review_rating?: number | null
@@ -860,9 +869,12 @@ export type Database = {
           monthly_discount_percentage?: number | null
           pending_approval?: boolean
           postal_code?: string | null
+          pre_checkin_reminder_enabled?: boolean
+          pre_checkin_send_time?: string
           preparation_days?: number | null
           price_per_night?: number
           pricing_table?: Json | null
+          property_timezone?: string
           property_type?: string | null
           review_count?: number | null
           review_rating?: number | null
@@ -941,6 +953,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      property_travel_cache: {
+        Row: {
+          computed_at: string
+          drive_distance_km: number | null
+          drive_time_min: number | null
+          nearest_city_name: string | null
+          property_id: string
+        }
+        Insert: {
+          computed_at?: string
+          drive_distance_km?: number | null
+          drive_time_min?: number | null
+          nearest_city_name?: string | null
+          property_id: string
+        }
+        Update: {
+          computed_at?: string
+          drive_distance_km?: number | null
+          drive_time_min?: number | null
+          nearest_city_name?: string | null
+          property_id?: string
+        }
+        Relationships: []
       }
       reviews: {
         Row: {

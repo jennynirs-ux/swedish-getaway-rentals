@@ -193,8 +193,8 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         postal_code: (data as any).postal_code || "",
         city: (data as any).city || "",
         country: (data as any).country || "Sweden",
-        latitude: (data as any).latitude || null,
-        longitude: (data as any).longitude || null,
+        latitude: (data as any).latitude !== null && (data as any).latitude !== undefined ? Number((data as any).latitude) : null,
+        longitude: (data as any).longitude !== null && (data as any).longitude !== undefined ? Number((data as any).longitude) : null,
       });
     } catch (error) {
       console.error("Error loading property:", error);
@@ -237,8 +237,8 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         postal_code: form.postal_code,
         city: form.city ? form.city.toLowerCase() : null,
         country: form.country,
-        latitude: form.latitude,
-        longitude: form.longitude,
+        latitude: typeof form.latitude === 'number' ? form.latitude : (form.latitude ? Number(form.latitude) : null),
+        longitude: typeof form.longitude === 'number' ? form.longitude : (form.longitude ? Number(form.longitude) : null),
         updated_at: new Date().toISOString(),
       };
 
