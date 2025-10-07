@@ -1192,6 +1192,23 @@ export type Database = {
       }
     }
     Views: {
+      booking_statistics: {
+        Row: {
+          booking_count: number | null
+          booking_month: string | null
+          property_id: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
