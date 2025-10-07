@@ -77,11 +77,15 @@ function MapClickHandler({
 
 export function LocationEditor({ value, onChange }: LocationEditorProps) {
   const [loading, setLoading] = useState(false);
-  const [mapKey, setMapKey] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const [mapPosition, setMapPosition] = useState<[number, number]>([
     value.latitude || 57.7089,
     value.longitude || 11.9746
   ]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (value.latitude && value.longitude) {
@@ -221,7 +225,7 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
           </Button>
         </div>
 
-        {typeof value.latitude === 'number' && typeof value.longitude === 'number' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) && (
+        {mounted && typeof value.latitude === 'number' && typeof value.longitude === 'number' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) && (
           <div className="space-y-2">
             <Label>Map Preview</Label>
             <p className="text-sm text-muted-foreground mb-2">

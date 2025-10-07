@@ -37,9 +37,12 @@ function MapUpdater({ center }: { center: LatLngExpression }) {
 function PropertyMap({ latitude, longitude, propertyTitle, className = '', showRoute = false }: PropertyMapProps) {
   const [route, setRoute] = useState<RouteInfo | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isValid = Number.isFinite(latitude) && Number.isFinite(longitude);
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
   const position: LatLngExpression = [latitude, longitude];
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (showRoute) {
@@ -80,6 +83,10 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
   const routePositions: LatLngExpression[] = route?.geometry.map(
     ([lng, lat]) => [lat, lng] as LatLngExpression
   ) || [];
+
+  if (!mounted) {
+    return <div className={`relative ${className}`} />;
+  }
 
   if (!isValid) {
     return (
