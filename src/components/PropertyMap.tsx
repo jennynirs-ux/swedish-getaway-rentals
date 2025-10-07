@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, MapContainerProps, useMap } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import { getDrivingRoute, getClosestMajorCity, type Coordinates, type RouteInfo } from '@/lib/distance';
@@ -34,9 +34,10 @@ function MapUpdater({ center }: { center: LatLngExpression }) {
   return null;
 }
 
-const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '', showRoute = false }: PropertyMapProps) => {
+function PropertyMap({ latitude, longitude, propertyTitle, className = '', showRoute = false }: PropertyMapProps) {
   const [route, setRoute] = useState<RouteInfo | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+  const isValid = Number.isFinite(latitude) && Number.isFinite(longitude);
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
   const position: LatLngExpression = [latitude, longitude];
 
@@ -79,6 +80,14 @@ const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '', 
   const routePositions: LatLngExpression[] = route?.geometry.map(
     ([lng, lat]) => [lat, lng] as LatLngExpression
   ) || [];
+
+  if (!isValid) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="p-3 text-sm text-muted-foreground">Location not available.</div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`}>
@@ -127,7 +136,7 @@ const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '', 
       )}
     </div>
   );
-});
+}
 
 PropertyMap.displayName = 'PropertyMap';
 

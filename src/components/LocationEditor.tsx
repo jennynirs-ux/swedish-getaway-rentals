@@ -221,7 +221,7 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
           </Button>
         </div>
 
-        {value.latitude && value.longitude && (
+        {typeof value.latitude === 'number' && typeof value.longitude === 'number' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) && (
           <div className="space-y-2">
             <Label>Map Preview</Label>
             <p className="text-sm text-muted-foreground mb-2">
