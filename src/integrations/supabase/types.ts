@@ -1209,6 +1209,15 @@ export type Database = {
           },
         ]
       }
+      profile_statistics: {
+        Row: {
+          approved_hosts: number | null
+          avg_guest_rating: number | null
+          total_hosts: number | null
+          total_profiles: number | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
