@@ -81,6 +81,7 @@ const HomePage = memo(() => {
 
   /** Filtrera efter sökkriterier */
   const filteredProperties = useMemo(() => {
+    if (!properties || !Array.isArray(properties)) return [];
     if (!filters) return properties;
 
     return properties.filter((p: any) => {
