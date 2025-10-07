@@ -64,7 +64,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0]) {
             errors[err.path[0] as string] = err.message;
           }

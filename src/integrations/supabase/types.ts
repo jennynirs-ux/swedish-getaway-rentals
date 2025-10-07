@@ -632,7 +632,6 @@ export type Database = {
           host_description: string | null
           host_onboarding_completed: boolean | null
           id: string
-          is_admin: boolean
           is_host: boolean
           location: string | null
           phone: string | null
@@ -661,7 +660,6 @@ export type Database = {
           host_description?: string | null
           host_onboarding_completed?: boolean | null
           id?: string
-          is_admin?: boolean
           is_host?: boolean
           location?: string | null
           phone?: string | null
@@ -690,7 +688,6 @@ export type Database = {
           host_description?: string | null
           host_onboarding_completed?: boolean | null
           id?: string
-          is_admin?: boolean
           is_host?: boolean
           location?: string | null
           phone?: string | null

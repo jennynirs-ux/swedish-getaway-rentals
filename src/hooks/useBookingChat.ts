@@ -174,10 +174,10 @@ export const useBookingChatList = () => {
     try {
       setLoading(true);
       
-      // Get user profile to check if host or admin
+      // Get user profile to check if host
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, is_admin, is_host')
+        .select('id, is_host')
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
@@ -204,9 +204,17 @@ export const useBookingChatList = () => {
         .eq('status', 'confirmed')
         .limit(50);
 
-      // Filter by host if not admin
-      if (!profile.is_admin && profile.is_host) {
-        query = query.eq('properties.host_id', profile.id);
+      // Filter by host if not admin (check via user_roles)
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      if (!adminRole && (profile as any).is_host) {
+        query = query.eq('properties.host_id', (profile as any).id);
       }
 
       const { data: bookings, error } = await query.order('created_at', { ascending: false });

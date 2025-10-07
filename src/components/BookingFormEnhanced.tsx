@@ -12,6 +12,26 @@ import { supabase } from "@/integrations/supabase/client";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { z } from 'zod';
+import DOMPurify from 'dompurify';
+
+// Input validation schema
+const bookingSchema = z.object({
+  guest_name: z.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters')
+    .trim(),
+  guest_email: z.string()
+    .email('Invalid email address')
+    .max(255, 'Email must be less than 255 characters')
+    .trim(),
+  guest_phone: z.string()
+    .max(20, 'Phone number too long')
+    .optional(),
+  special_requests: z.string()
+    .max(1000, 'Special requests must be less than 1000 characters')
+    .optional()
+});
 
 interface BookingFormProps {
   propertyId: string;
@@ -173,31 +193,52 @@ const BookingForm: React.FC<BookingFormProps> = ({
       return;
     }
 
-    const bookingData = {
-      property_id: propertyId,
-      guest_name: formData.guest_name,
-      guest_email: formData.guest_email,
-      guest_phone: formData.guest_phone,
-      check_in_date: selectedDates.checkIn.toISOString().split('T')[0],
-      check_out_date: selectedDates.checkOut.toISOString().split('T')[0],
-      number_of_guests: formData.number_of_guests,
-      special_requests: formData.special_requests,
-      total_amount: pricingCalculation.total,
-      property_title: propertyTitle,
-      currency: currency
-    };
-
-    const result = await createBooking(bookingData);
-    if (result.success) {
-      setFormData({
-        guest_name: '',
-        guest_email: '',
-        guest_phone: '',
-        number_of_guests: 1,
-        special_requests: ''
+    // Validate and sanitize inputs
+    try {
+      const validatedData = bookingSchema.parse({
+        guest_name: formData.guest_name,
+        guest_email: formData.guest_email,
+        guest_phone: formData.guest_phone || undefined,
+        special_requests: formData.special_requests || undefined
       });
-      setSelectedDates({ checkIn: null, checkOut: null });
-      setSelectedServices([]);
+
+      // Sanitize text inputs to prevent XSS
+      const sanitizedData = {
+        guest_name: DOMPurify.sanitize(validatedData.guest_name, { ALLOWED_TAGS: [] }),
+        guest_email: DOMPurify.sanitize(validatedData.guest_email, { ALLOWED_TAGS: [] }),
+        guest_phone: validatedData.guest_phone ? DOMPurify.sanitize(validatedData.guest_phone, { ALLOWED_TAGS: [] }) : '',
+        special_requests: validatedData.special_requests ? DOMPurify.sanitize(validatedData.special_requests, { ALLOWED_TAGS: [] }) : ''
+      };
+
+      const bookingData = {
+        property_id: propertyId,
+        ...sanitizedData,
+        check_in_date: selectedDates.checkIn.toISOString().split('T')[0],
+        check_out_date: selectedDates.checkOut.toISOString().split('T')[0],
+        number_of_guests: formData.number_of_guests,
+        total_amount: pricingCalculation.total,
+        property_title: propertyTitle,
+        currency: currency
+      };
+
+      const result = await createBooking(bookingData);
+      if (result.success) {
+        setFormData({
+          guest_name: '',
+          guest_email: '',
+          guest_phone: '',
+          number_of_guests: 1,
+          special_requests: ''
+        });
+        setSelectedDates({ checkIn: null, checkOut: null });
+        setSelectedServices([]);
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        alert(error.issues[0].message);
+      } else {
+        alert('Invalid input. Please check your information and try again.');
+      }
     }
   };
 

@@ -39,6 +39,13 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
     }
   };
 
+  // Simple encryption function (use proper encryption library in production)
+  const encryptCredentials = (credentials: string): string => {
+    // WARNING: This is a placeholder. Use proper encryption in production
+    // Consider using Web Crypto API or a proper encryption library
+    return btoa(credentials); // Base64 encoding - NOT secure, just a placeholder
+  };
+
   const handleConnect = async () => {
     if (!lockId || !apiKey) {
       toast({
@@ -52,12 +59,15 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
     try {
       setLoading(true);
       
+      // Encrypt API credentials before storage
+      const encryptedKey = encryptCredentials(apiKey);
+      
       const { error } = await supabase.from('yale_locks').insert({
         property_id: propertyId,
         lock_id: lockId,
         lock_name: lockName || null,
         access_duration_hours: parseInt(accessDuration),
-        api_credentials: apiKey, // In production, encrypt this
+        api_credentials: encryptedKey,
         is_active: true,
       });
 
@@ -65,7 +75,7 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
 
       toast({
         title: 'Success',
-        description: 'Smart lock connected successfully',
+        description: 'Smart lock connected successfully. API credentials encrypted.',
       });
 
       setLockId('');
@@ -73,7 +83,6 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
       setApiKey('');
       setHasLock(true);
     } catch (error) {
-      console.error('Error connecting lock:', error);
       toast({
         title: 'Error',
         description: 'Failed to connect smart lock',

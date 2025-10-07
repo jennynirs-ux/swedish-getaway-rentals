@@ -21,6 +21,18 @@ serve(async (req) => {
 
     console.log('Generating Yale code for booking:', bookingId);
 
+    // Decrypt credentials helper (matches SmartLockSetup encryption)
+    const decryptCredentials = (encrypted: string): string => {
+      // WARNING: This matches the placeholder encryption in SmartLockSetup
+      // Use proper decryption in production (e.g., AES-256-GCM)
+      try {
+        return atob(encrypted);
+      } catch (e) {
+        console.error('Failed to decrypt credentials:', e);
+        return '';
+      }
+    };
+
     // Get the Yale lock for this property
     const { data: lock, error: lockError } = await supabaseClient
       .from('yale_locks')
@@ -36,6 +48,9 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
       );
     }
+
+    // Decrypt API credentials for use
+    const apiCredentials = lock.api_credentials ? decryptCredentials(lock.api_credentials) : null;
 
     // Get property check-out time to calculate expiry
     const { data: property } = await supabaseClient

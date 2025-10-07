@@ -9,6 +9,15 @@ import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
+import { z } from 'zod';
+
+// Password validation schema
+const passwordSchema = z.string()
+  .min(10, 'Password must be at least 10 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 
 const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -17,6 +26,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passwordStrength, setPasswordStrength] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
@@ -57,10 +67,30 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate, redirectTo]);
 
+  const validatePassword = (pwd: string) => {
+    try {
+      passwordSchema.parse(pwd);
+      setPasswordStrength('Strong');
+      return true;
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setPasswordStrength(err.issues[0].message);
+      }
+      return false;
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Validate password strength
+    if (!validatePassword(password)) {
+      setLoading(false);
+      toast.error('Password does not meet security requirements');
+      return;
+    }
 
     try {
       const redirectUrl = `${window.location.origin}/`;
@@ -270,11 +300,30 @@ const Auth = () => {
                         id="signup-password"
                         type="password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (e.target.value.length > 0) {
+                            validatePassword(e.target.value);
+                          } else {
+                            setPasswordStrength('');
+                          }
+                        }}
                         required
-                        placeholder="••••••••"
-                        minLength={6}
+                        placeholder="Min 10 chars, uppercase, lowercase, number, special char"
+                        minLength={10}
                       />
+                      {passwordStrength && (
+                        <div className={`text-sm mt-1 ${
+                          passwordStrength === 'Strong' 
+                            ? 'text-green-600' 
+                            : 'text-destructive'
+                        }`}>
+                          {passwordStrength}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Must contain: 10+ characters, uppercase, lowercase, number, and special character
+                      </p>
                     </div>
                     {error && (
                       <div className="text-destructive text-sm">{error}</div>
