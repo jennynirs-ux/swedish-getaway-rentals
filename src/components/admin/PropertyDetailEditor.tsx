@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Image, Star, BookOpen, Calendar, Upload } from "lucide-react";
+import { Settings, Image, Star, BookOpen, Calendar, Upload, MapPin } from "lucide-react";
 import { GalleryMetadataEditor } from "./GalleryMetadataEditor";
 import { ImageUpload } from "./ImageUpload";
 import { AmenitiesEditor } from "./AmenitiesEditor";
@@ -24,6 +24,7 @@ import { PricingCalculator } from "./PricingCalculator";
 import { BankAccountSetup } from "./BankAccountSetup";
 import { CancellationPolicyDisplay } from "../CancellationPolicyDisplay";
 import { CardDescription } from "@/components/ui/card";
+import { LocationEditor } from "../LocationEditor";
 
 interface Property {
   id: string;
@@ -109,6 +110,12 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     weekly_discount_percentage: "0",
     monthly_discount_percentage: "0",
     cancellation_policy: "moderate" as "flexible" | "moderate" | "strict",
+    street: "",
+    postal_code: "",
+    city: "",
+    country: "Sweden",
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
 
   // Quick-add Amenity (läggs överst)
@@ -182,6 +189,12 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         weekly_discount_percentage: ((data as any).weekly_discount_percentage || 0).toString(),
         monthly_discount_percentage: ((data as any).monthly_discount_percentage || 0).toString(),
         cancellation_policy: ((data as any).cancellation_policy || "moderate") as "flexible" | "moderate" | "strict",
+        street: (data as any).street || "",
+        postal_code: (data as any).postal_code || "",
+        city: (data as any).city || "",
+        country: (data as any).country || "Sweden",
+        latitude: (data as any).latitude || null,
+        longitude: (data as any).longitude || null,
       });
     } catch (error) {
       console.error("Error loading property:", error);
@@ -220,6 +233,12 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         review_count: parseInt(form.review_count) || 0,
         property_type: form.property_type,
         active: form.active,
+        street: form.street,
+        postal_code: form.postal_code,
+        city: form.city ? form.city.toLowerCase() : null,
+        country: form.country,
+        latitude: form.latitude,
+        longitude: form.longitude,
         updated_at: new Date().toISOString(),
       };
 
@@ -291,11 +310,15 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
-          {/* 5 flikar (Sync är flyttad till Calendar & Pricing) */}
-          <TabsList className="grid w-full grid-cols-5">
+          {/* 6 tabs */}
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="basic">
               <Settings className="h-4 w-4 mr-2" />
               Basic
+            </TabsTrigger>
+            <TabsTrigger value="location">
+              <MapPin className="h-4 w-4 mr-2" />
+              Location
             </TabsTrigger>
             <TabsTrigger value="gallery">
               <Image className="h-4 w-4 mr-2" />
@@ -463,6 +486,40 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
               </CardContent>
             </Card>
 
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* LOCATION */}
+          <TabsContent value="location" className="space-y-6">
+            <LocationEditor
+              value={{
+                street: form.street,
+                postal_code: form.postal_code,
+                city: form.city,
+                country: form.country,
+                latitude: form.latitude,
+                longitude: form.longitude
+              }}
+              onChange={(locationData) => {
+                setForm(prev => ({
+                  ...prev,
+                  street: locationData.street || "",
+                  postal_code: locationData.postal_code || "",
+                  city: locationData.city || "",
+                  country: locationData.country || "Sweden",
+                  latitude: locationData.latitude || null,
+                  longitude: locationData.longitude || null
+                }));
+              }}
+            />
+            
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Cancel

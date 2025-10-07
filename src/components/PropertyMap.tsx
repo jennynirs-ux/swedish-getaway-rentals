@@ -1,7 +1,7 @@
-import { memo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, MapContainerProps } from 'react-leaflet';
+import { memo, useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, MapContainerProps, useMap } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { getDrivingRoute, getClosestMajorCity, type Coordinates, type RouteInfo } from '@/lib/distance';
 
 // Fix Leaflet default icon issue
 import L from 'leaflet';
@@ -22,11 +22,53 @@ interface PropertyMapProps {
   longitude: number;
   propertyTitle: string;
   className?: string;
+  showRoute?: boolean;
 }
 
-const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '' }: PropertyMapProps) => {
+// Component to handle map center updates
+const MapUpdater = memo(({ center }: { center: LatLngExpression }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, 13);
+  }, [center, map]);
+  return null;
+});
+
+MapUpdater.displayName = 'MapUpdater';
+
+const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '', showRoute = false }: PropertyMapProps) => {
+  const [route, setRoute] = useState<RouteInfo | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
   const position: LatLngExpression = [latitude, longitude];
+
+  useEffect(() => {
+    if (showRoute) {
+      const loadRoute = async () => {
+        setRouteLoading(true);
+        try {
+          const propertyCoords: Coordinates = { latitude, longitude };
+          const closestCity = getClosestMajorCity(propertyCoords);
+          
+          if (closestCity) {
+            const cityCoords = closestCity.city === 'Stockholm' 
+              ? { latitude: 59.3293, longitude: 18.0686 }
+              : closestCity.city === 'Gothenburg'
+              ? { latitude: 57.7089, longitude: 11.9746 }
+              : { latitude: 55.6050, longitude: 13.0038 };
+            
+            const routeInfo = await getDrivingRoute(cityCoords, propertyCoords);
+            setRoute(routeInfo);
+          }
+        } catch (error) {
+          console.error('Failed to load route:', error);
+        } finally {
+          setRouteLoading(false);
+        }
+      };
+      loadRoute();
+    }
+  }, [latitude, longitude, showRoute]);
 
   const mapProps: MapContainerProps = {
     center: position,
@@ -35,6 +77,11 @@ const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '' }
     className: "w-full h-full rounded-lg z-0"
   };
 
+  // Convert route geometry to Leaflet LatLng format
+  const routePositions: LatLngExpression[] = route?.geometry.map(
+    ([lng, lat]) => [lat, lng] as LatLngExpression
+  ) || [];
+
   return (
     <div className={`relative ${className}`}>
       <MapContainer {...mapProps}>
@@ -42,6 +89,19 @@ const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '' }
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapUpdater center={position} />
+        
+        {route && routePositions.length > 0 && (
+          <Polyline
+            positions={routePositions}
+            pathOptions={{ 
+              color: 'hsl(var(--primary))',
+              weight: 4,
+              opacity: 0.7
+            }}
+          />
+        )}
+        
         <Marker position={position}>
           <Popup>
             <div className="text-sm">
@@ -61,6 +121,12 @@ const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '' }
       <div className="absolute bottom-2 right-2 bg-background/80 px-2 py-1 rounded text-xs z-10">
         Map data © OpenStreetMap contributors
       </div>
+      {routeLoading && (
+        <div className="absolute top-2 right-2 bg-background/80 px-3 py-2 rounded text-xs z-10 flex items-center gap-2">
+          <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          Loading route...
+        </div>
+      )}
     </div>
   );
 });

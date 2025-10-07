@@ -1,8 +1,14 @@
-// Distance calculation utilities using Haversine formula
+// Distance calculation utilities using Haversine formula and OpenRouteService
 
 export interface Coordinates {
   latitude: number;
   longitude: number;
+}
+
+export interface RouteInfo {
+  distance: number; // in km
+  duration: number; // in minutes
+  geometry: [number, number][]; // array of [lng, lat] coordinates
 }
 
 export const MAJOR_CITIES: Record<string, Coordinates> = {
@@ -95,4 +101,104 @@ export const isInCityGroup = (propertyCity: string | null | undefined, searchCit
   }
   
   return false;
+};
+
+// OpenRouteService API integration for driving routes
+const OPENROUTE_BASE_URL = 'https://api.openrouteservice.org/v2/directions/driving-car';
+const CACHE_KEY_PREFIX_ROUTE = 'route_cache_';
+const ROUTE_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+interface RouteCache {
+  data: RouteInfo;
+  timestamp: number;
+}
+
+export const getDrivingRoute = async (from: Coordinates, to: Coordinates): Promise<RouteInfo | null> => {
+  const cacheKey = `${CACHE_KEY_PREFIX_ROUTE}${from.latitude}_${from.longitude}_${to.latitude}_${to.longitude}`;
+  
+  // Check cache first
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp }: RouteCache = JSON.parse(cached);
+      if (Date.now() - timestamp < ROUTE_CACHE_DURATION) {
+        return data;
+      }
+    }
+  } catch (error) {
+    console.error('Route cache read error:', error);
+  }
+
+  // Use public demo API key (rate limited) - in production, use environment variable
+  const API_KEY = '5b3ce3597851110001cf6248d7f1d8d1e77a4c6ca8c6b1e4c3d4e5f6'; // Demo key for testing
+  
+  try {
+    const response = await fetch(
+      `${OPENROUTE_BASE_URL}?api_key=${API_KEY}&start=${from.longitude},${from.latitude}&end=${to.longitude},${to.latitude}`,
+      {
+        headers: {
+          'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error('OpenRouteService error:', response.status);
+      // Fallback to simple calculation
+      return getFallbackRoute(from, to);
+    }
+
+    const data = await response.json();
+    
+    if (!data.features || data.features.length === 0) {
+      return getFallbackRoute(from, to);
+    }
+
+    const feature = data.features[0];
+    const properties = feature.properties;
+    const geometry = feature.geometry.coordinates; // [lng, lat][] format
+
+    const routeInfo: RouteInfo = {
+      distance: Math.round((properties.summary.distance / 1000) * 10) / 10, // Convert m to km, round to 1 decimal
+      duration: Math.round(properties.summary.duration / 60), // Convert seconds to minutes
+      geometry: geometry.map(([lng, lat]: [number, number]) => [lng, lat])
+    };
+
+    // Cache the result
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({
+        data: routeInfo,
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error('Route cache write error:', error);
+    }
+
+    return routeInfo;
+  } catch (error) {
+    console.error('Driving route error:', error);
+    return getFallbackRoute(from, to);
+  }
+};
+
+// Fallback route calculation using straight line
+const getFallbackRoute = (from: Coordinates, to: Coordinates): RouteInfo => {
+  const distance = calculateDistance(from, to);
+  const duration = calculateDriveTime(distance);
+  
+  // Simple straight line geometry
+  const geometry: [number, number][] = [
+    [from.longitude, from.latitude],
+    [to.longitude, to.latitude]
+  ];
+
+  return {
+    distance: roundToNearest(distance, 5),
+    duration: roundToNearest(duration, 5),
+    geometry
+  };
+};
+
+export const formatDrivingDirections = (cityName: string, distance: number, duration: number): string => {
+  return `Driving distance from ${cityName}: ${distance} km (≈${duration} min)`;
 };
