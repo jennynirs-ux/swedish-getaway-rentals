@@ -25,16 +25,14 @@ interface PropertyMapProps {
   showRoute?: boolean;
 }
 
-// Component to handle map center updates
-const MapUpdater = memo(({ center }: { center: LatLngExpression }) => {
+// Component to handle map center updates - not memoized to preserve context
+function MapUpdater({ center }: { center: LatLngExpression }) {
   const map = useMap();
   useEffect(() => {
     map.setView(center, 13);
   }, [center, map]);
   return null;
-});
-
-MapUpdater.displayName = 'MapUpdater';
+}
 
 const PropertyMap = memo(({ latitude, longitude, propertyTitle, className = '', showRoute = false }: PropertyMapProps) => {
   const [route, setRoute] = useState<RouteInfo | null>(null);

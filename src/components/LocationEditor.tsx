@@ -36,16 +36,14 @@ interface LocationEditorProps {
   onChange: (data: LocationData) => void;
 }
 
-// Draggable marker component
-const DraggableMarker = memo(({ 
+// Draggable marker component - not memoized to preserve Leaflet context
+function DraggableMarker({ 
   position, 
   onPositionChange 
 }: { 
   position: [number, number]; 
   onPositionChange: (lat: number, lng: number) => void;
-}) => {
-  const [draggable] = useState(true);
-
+}) {
   const eventHandlers = {
     dragend: (e: L.LeafletEvent) => {
       const marker = e.target as L.Marker;
@@ -57,29 +55,25 @@ const DraggableMarker = memo(({
   return (
     <Marker
       position={position}
-      draggable={draggable}
+      draggable={true}
       eventHandlers={eventHandlers}
     />
   );
-});
+}
 
-DraggableMarker.displayName = 'DraggableMarker';
-
-// Map click handler
-const MapClickHandler = memo(({ 
+// Map click handler - not memoized to preserve Leaflet context
+function MapClickHandler({ 
   onMapClick 
 }: { 
   onMapClick: (lat: number, lng: number) => void;
-}) => {
+}) {
   useMapEvents({
     click: (e) => {
       onMapClick(e.latlng.lat, e.latlng.lng);
     },
   });
   return null;
-});
-
-MapClickHandler.displayName = 'MapClickHandler';
+}
 
 export const LocationEditor = memo(({ value, onChange }: LocationEditorProps) => {
   const [loading, setLoading] = useState(false);
@@ -237,7 +231,6 @@ export const LocationEditor = memo(({ value, onChange }: LocationEditorProps) =>
                 center={mapPosition}
                 zoom={13}
                 className="w-full h-full"
-                key={`${mapPosition[0]}-${mapPosition[1]}`}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
