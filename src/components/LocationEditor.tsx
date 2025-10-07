@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -75,7 +75,7 @@ function MapClickHandler({
   return null;
 }
 
-export const LocationEditor = memo(({ value, onChange }: LocationEditorProps) => {
+export function LocationEditor({ value, onChange }: LocationEditorProps) {
   const [loading, setLoading] = useState(false);
   const [mapPosition, setMapPosition] = useState<[number, number]>([
     value.latitude || 57.7089,
@@ -258,6 +258,6 @@ export const LocationEditor = memo(({ value, onChange }: LocationEditorProps) =>
       </CardContent>
     </Card>
   );
-});
+}
 
-LocationEditor.displayName = 'LocationEditor';
+
