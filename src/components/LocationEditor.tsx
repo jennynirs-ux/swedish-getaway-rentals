@@ -77,6 +77,7 @@ function MapClickHandler({
 
 export function LocationEditor({ value, onChange }: LocationEditorProps) {
   const [loading, setLoading] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
   const [mapPosition, setMapPosition] = useState<[number, number]>([
     value.latitude || 57.7089,
     value.longitude || 11.9746
