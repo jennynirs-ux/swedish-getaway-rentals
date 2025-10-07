@@ -1,21 +1,8 @@
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, MapContainerProps, useMap } from 'react-leaflet';
+import { useEffect, useState, lazy, Suspense } from 'react';
+// react-leaflet imports moved to lazy-loaded inner component
 import type { LatLngExpression } from 'leaflet';
 import { getDrivingRoute, getClosestMajorCity, type Coordinates, type RouteInfo } from '@/lib/distance';
 
-// Fix Leaflet default icon issue
-import L from 'leaflet';
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface PropertyMapProps {
   latitude: number;
@@ -25,14 +12,8 @@ interface PropertyMapProps {
   showRoute?: boolean;
 }
 
-// Component to handle map center updates - not memoized to preserve context
-function MapUpdater({ center }: { center: LatLngExpression }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, 13);
-  }, [center, map]);
-  return null;
-}
+// Inner map is lazy-loaded to avoid context issues
+const PropertyLeaflet = lazy(() => import('./maps/LeafletPropertyMapInner'));
 
 function PropertyMap({ latitude, longitude, propertyTitle, className = '', showRoute = false }: PropertyMapProps) {
   const [route, setRoute] = useState<RouteInfo | null>(null);
@@ -72,12 +53,6 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
     }
   }, [latitude, longitude, showRoute]);
 
-  const mapProps: MapContainerProps = {
-    center: position,
-    zoom: 13,
-    scrollWheelZoom: false,
-    className: "w-full h-full rounded-lg z-0"
-  };
 
   // Convert route geometry to Leaflet LatLng format
   const routePositions: LatLngExpression[] = route?.geometry.map(
@@ -98,40 +73,20 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
 
   return (
     <div className={`relative ${className}`}>
-      <MapContainer {...mapProps}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      <Suspense
+        fallback={
+          <div className="h-full w-full flex items-center justify-center">
+            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        }
+      >
+        <PropertyLeaflet
+          position={position}
+          propertyTitle={propertyTitle}
+          googleMapsUrl={googleMapsUrl}
+          routePositions={routePositions}
         />
-        <MapUpdater center={position} />
-        
-        {route && routePositions.length > 0 && (
-          <Polyline
-            positions={routePositions}
-            pathOptions={{ 
-              color: 'hsl(var(--primary))',
-              weight: 4,
-              opacity: 0.7
-            }}
-          />
-        )}
-        
-        <Marker position={position}>
-          <Popup>
-            <div className="text-sm">
-              <p className="font-semibold mb-2">{propertyTitle}</p>
-              <a
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Get directions →
-              </a>
-            </div>
-          </Popup>
-        </Marker>
-      </MapContainer>
+      </Suspense>
       <div className="absolute bottom-2 right-2 bg-background/80 px-2 py-1 rounded text-xs z-10">
         Map data © OpenStreetMap contributors
       </div>

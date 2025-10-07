@@ -1,26 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { geocodeAddress } from '@/lib/geocoding';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
 import { toast } from '@/hooks/use-toast';
 
-// Fix Leaflet default icon
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+const EditorMap = lazy(() => import('./maps/LeafletEditorInner'));
 
 interface LocationData {
   street?: string;
@@ -36,44 +23,6 @@ interface LocationEditorProps {
   onChange: (data: LocationData) => void;
 }
 
-// Draggable marker component - not memoized to preserve Leaflet context
-function DraggableMarker({ 
-  position, 
-  onPositionChange 
-}: { 
-  position: [number, number]; 
-  onPositionChange: (lat: number, lng: number) => void;
-}) {
-  const eventHandlers = {
-    dragend: (e: L.LeafletEvent) => {
-      const marker = e.target as L.Marker;
-      const position = marker.getLatLng();
-      onPositionChange(position.lat, position.lng);
-    },
-  };
-
-  return (
-    <Marker
-      position={position}
-      draggable={true}
-      eventHandlers={eventHandlers}
-    />
-  );
-}
-
-// Map click handler - not memoized to preserve Leaflet context
-function MapClickHandler({ 
-  onMapClick 
-}: { 
-  onMapClick: (lat: number, lng: number) => void;
-}) {
-  useMapEvents({
-    click: (e) => {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
 
 export function LocationEditor({ value, onChange }: LocationEditorProps) {
   const [loading, setLoading] = useState(false);
@@ -232,21 +181,9 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
               Drag the pin to adjust the exact location. Click anywhere on the map to move the pin.
             </p>
             <div className="h-[400px] rounded-lg overflow-hidden border">
-              <MapContainer
-                center={mapPosition}
-                zoom={13}
-                className="w-full h-full"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <DraggableMarker
-                  position={mapPosition}
-                  onPositionChange={handleMarkerMove}
-                />
-                <MapClickHandler onMapClick={handleMarkerMove} />
-              </MapContainer>
+              <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                <EditorMap center={mapPosition} onPositionChange={handleMarkerMove} />
+              </Suspense>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
