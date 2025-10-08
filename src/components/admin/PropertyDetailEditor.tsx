@@ -84,6 +84,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
