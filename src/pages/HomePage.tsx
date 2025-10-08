@@ -242,7 +242,7 @@ const HomePage = memo(() => {
                 Discover authentic Nordic experiences in our handpicked properties.
               </p>
               <div className="flex gap-2">
-                <Link to="/auth?redirect=/host-dashboard">
+                <Link to="/become-host">
                   <Button variant="outline">Become a Host</Button>
                 </Link>
               </div>

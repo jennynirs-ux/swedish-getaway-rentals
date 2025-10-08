@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, X, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -11,6 +11,7 @@ interface MainNavigationProps {
 
 const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -23,19 +24,47 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const isShopPage = location.pathname.startsWith("/shop");
   const isCartPage = location.pathname.startsWith("/cart");
 
+  const [isHost, setIsHost] = useState(false);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+      if (user) {
+        checkHostStatus(user.id);
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        checkHostStatus(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkHostStatus = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('is_host, host_approved')
+      .eq('user_id', userId)
+      .single();
+    
+    setIsHost(data?.is_host && data?.host_approved);
+  };
+
+  const handleProfileClick = () => {
+    if (!user) {
+      navigate('/auth');
+    } else if (isHost) {
+      navigate('/host-dashboard');
+    } else {
+      navigate('/profile');
+    }
+  };
 
   return (
     <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
@@ -78,31 +107,17 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                 </Button>
               </Link>
             )}
-            {user ? (
-              <Link to="/profile" title="Profile">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="text-white border-white/30 bg-white/10 
-                             hover:bg-white/20 hover:border-white/50 
-                             backdrop-blur-sm transition-all"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
-            ) : (
-              <Link to="/auth" title="Sign In">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="text-white border-white/30 bg-white/10 
-                             hover:bg-white/20 hover:border-white/50 
-                             backdrop-blur-sm transition-all"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
-            )}
+            <Button
+              variant="outline"
+              size="icon"
+              title={user ? (isHost ? "Host Dashboard" : "Profile") : "Sign In"}
+              onClick={handleProfileClick}
+              className="text-white border-white/30 bg-white/10 
+                         hover:bg-white/20 hover:border-white/50 
+                         backdrop-blur-sm transition-all"
+            >
+              <User className="w-5 h-5" />
+            </Button>
           </div>
         )}
 
@@ -143,25 +158,16 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               <span>Cart</span>
             </Link>
           )}
-          {user ? (
-            <Link
-              to="/profile"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2"
-            >
-              <User className="w-5 h-5" />
-              <span>Profile</span>
-            </Link>
-          ) : (
-            <Link
-              to="/auth"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2"
-            >
-              <User className="w-5 h-5" />
-              <span>Sign In</span>
-            </Link>
-          )}
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              handleProfileClick();
+            }}
+            className="flex items-center gap-2"
+          >
+            <User className="w-5 h-5" />
+            <span>{user ? (isHost ? "Host Dashboard" : "Profile") : "Sign In"}</span>
+          </button>
         </div>
       )}
     </nav>

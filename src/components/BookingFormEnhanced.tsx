@@ -408,10 +408,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
                      <span>-{formatPrice(pricingCalculation.discount)}</span>
                    </div>
                  )}
-                  <div className="border-t pt-2 flex justify-between font-semibold text-lg">
-                    <span>Total</span>
-                    <span>{formatPrice(Math.round(pricingCalculation.subtotal * 1.1))}</span>
-                  </div>
+                   <div className="border-t pt-2 flex justify-between font-semibold text-lg">
+                     <span>Total</span>
+                     <span>{formatPrice(pricingCalculation.subtotal)}</span>
+                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Includes all fees and charges
                   </div>
@@ -469,7 +469,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           >
             {loading ? 'Processing...' : 
              !houseRulesAccepted || !guestCountConfirmed ? 'Please accept terms above' :
-             `Confirm Booking (${pricingCalculation.total > 0 ? formatPrice(Math.round(pricingCalculation.subtotal * 1.1)) : 'Select dates'})`}
+             `Confirm Booking (${pricingCalculation.total > 0 ? formatPrice(pricingCalculation.subtotal) : 'Select dates'})`}
           </Button>
         </form>
       </CardContent>

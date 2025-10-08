@@ -29,7 +29,7 @@ const UnifiedAdmin = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-3 w-full">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Home className="w-4 h-4" />
             Dashboard
@@ -38,25 +38,9 @@ const UnifiedAdmin = () => {
             <Building2 className="w-4 h-4" />
             Rentals
           </TabsTrigger>
-          <TabsTrigger value="hosts" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Hosts
-          </TabsTrigger>
-          <TabsTrigger value="products" className="flex items-center gap-2">
+          <TabsTrigger value="shop" className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4" />
-            Products
-          </TabsTrigger>
-          <TabsTrigger value="orders" className="flex items-center gap-2">
-            <Package className="w-4 h-4" />
-            Orders
-          </TabsTrigger>
-          <TabsTrigger value="content" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Content
-          </TabsTrigger>
-          <TabsTrigger value="shipping" className="flex items-center gap-2">
-            <Truck className="w-4 h-4" />
-            Shipping
+            Shop
           </TabsTrigger>
         </TabsList>
 
@@ -78,34 +62,31 @@ const UnifiedAdmin = () => {
           <Tabs defaultValue="properties" className="space-y-4">
             <TabsList>
               <TabsTrigger value="properties">Properties</TabsTrigger>
+              <TabsTrigger value="hosts">Hosts</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+              <TabsTrigger value="coupons">Coupons</TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
             
             <TabsContent value="properties">
               <PropertiesManagement />
             </TabsContent>
+
+            <TabsContent value="hosts">
+              <HostManagement />
+            </TabsContent>
             
             <TabsContent value="bookings">
-              <Tabs defaultValue="bookings" className="space-y-4">
-                <TabsList>
-                  <TabsTrigger value="bookings">Bookings</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                  <TabsTrigger value="coupons">Coupons</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="bookings">
-                  <BookingsManagement />
-                </TabsContent>
-                
-                <TabsContent value="reviews">
-                  <ReviewsManagement />
-                </TabsContent>
-                
-                <TabsContent value="coupons">
-                  <CouponsManagement />
-                </TabsContent>
-              </Tabs>
+              <BookingsManagement />
+            </TabsContent>
+            
+            <TabsContent value="reviews">
+              <ReviewsManagement />
+            </TabsContent>
+            
+            <TabsContent value="coupons">
+              <CouponsManagement />
             </TabsContent>
             
             <TabsContent value="pricing">
@@ -114,27 +95,34 @@ const UnifiedAdmin = () => {
           </Tabs>
         </TabsContent>
 
-        <TabsContent value="hosts" className="space-y-6">
-          <HostManagement />
-        </TabsContent>
+        <TabsContent value="shop" className="space-y-6">
+          <Tabs defaultValue="products" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="products">Products</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="shipping">Shipping</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="products">
+              <ShopProductsManagement 
+                editingProductId={editingProductId}
+                onClearEditingProduct={() => setEditingProductId(null)}
+              />
+            </TabsContent>
 
-        <TabsContent value="products" className="space-y-6">
-          <ShopProductsManagement 
-            editingProductId={editingProductId}
-            onClearEditingProduct={() => setEditingProductId(null)}
-          />
-        </TabsContent>
+            <TabsContent value="orders">
+              <OrdersManagement />
+            </TabsContent>
 
-        <TabsContent value="orders" className="space-y-6">
-          <OrdersManagement />
-        </TabsContent>
+            <TabsContent value="content">
+              <ContentEditor />
+            </TabsContent>
 
-        <TabsContent value="content" className="space-y-6">
-          <ContentEditor />
-        </TabsContent>
-
-        <TabsContent value="shipping" className="space-y-6">
-          <ShippingEditor />
+            <TabsContent value="shipping">
+              <ShippingEditor />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
 

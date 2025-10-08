@@ -367,9 +367,10 @@ const PropertyCard = memo(({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-foreground">
-                {(safeProperty.price_per_night || 0).toLocaleString()} {safeProperty.currency}
+                {Math.round((safeProperty.price_per_night || 0) * 1.1).toLocaleString()} {safeProperty.currency}
               </span>
               <span className="text-muted-foreground text-sm ml-1">/night</span>
+              <div className="text-xs text-muted-foreground">Incl. platform fee</div>
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               View Details

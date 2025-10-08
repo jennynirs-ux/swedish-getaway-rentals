@@ -24,6 +24,7 @@ import BookNow from "./pages/BookNow";
 import Profile from "./pages/Profile";
 import FirstTimeInSweden from "./pages/FirstTimeInSweden";
 import PricingGuide from "./pages/PricingGuide";
+import BecomeHost from "./pages/BecomeHost";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/first-time-in-sweden" element={<FirstTimeInSweden />} />
             <Route path="/pricing-guide" element={<PricingGuide />} />
+            <Route path="/become-host" element={<BecomeHost />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </TooltipProvider>

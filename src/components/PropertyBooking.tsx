@@ -41,7 +41,7 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
             <BookingForm
               propertyId={property.id}
               propertyTitle={property.title}
-              pricePerNight={property.price_per_night}
+              pricePerNight={Math.round(property.price_per_night * 1.1)}
               currency={property.currency}
               maxGuests={property.max_guests}
             />
