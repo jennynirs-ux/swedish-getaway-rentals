@@ -29,7 +29,7 @@ type Props = {
   routePositions?: LatLngExpression[];
 };
 
-export default function LeafletPropertyMapInner({ position, propertyTitle, googleMapsUrl, routePositions = [] }: Props) {
+function LeafletPropertyMapInner({ position, propertyTitle, googleMapsUrl, routePositions = [] }: Props) {
   return (
     <MapContainer center={position} zoom={13} scrollWheelZoom={false} className="w-full h-full rounded-lg z-0">
       <TileLayer
@@ -56,3 +56,5 @@ export default function LeafletPropertyMapInner({ position, propertyTitle, googl
     </MapContainer>
   );
 }
+
+export default LeafletPropertyMapInner;

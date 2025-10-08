@@ -45,7 +45,7 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
   return null;
 }
 
-export default function LeafletEditorInner({ center, onPositionChange }: Props) {
+function LeafletEditorInner({ center, onPositionChange }: Props) {
   return (
     <MapContainer center={center} zoom={13} className="w-full h-full">
       <TileLayer
@@ -57,3 +57,5 @@ export default function LeafletEditorInner({ center, onPositionChange }: Props) 
     </MapContainer>
   );
 }
+
+export default LeafletEditorInner;
