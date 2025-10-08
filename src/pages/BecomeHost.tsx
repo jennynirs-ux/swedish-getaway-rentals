@@ -29,21 +29,28 @@ const BecomeHost = () => {
 
   const handleCreateHostAccount = async () => {
     if (!user) {
-      navigate('/auth');
+      // Redirect to auth with a clear message
+      toast({
+        title: "Sign in required",
+        description: "Please sign in or create an account to become a host.",
+      });
+      navigate('/auth?redirect=/become-host');
       return;
     }
 
     setLoading(true);
     try {
-      // First, check if profile exists, if not create it
-      const { data: existingProfile } = await supabase
+      // Get the current profile
+      const { data: profile, error: fetchError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, is_host, host_approved')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (!existingProfile) {
-        // Create profile if it doesn't exist
+      if (fetchError) throw fetchError;
+
+      // If no profile exists, create one
+      if (!profile) {
         const { error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -56,6 +63,14 @@ const BecomeHost = () => {
           });
 
         if (createError) throw createError;
+      } else if (profile.is_host && profile.host_approved) {
+        // Already a host, just redirect
+        toast({
+          title: "You're already a host!",
+          description: "Redirecting to your dashboard.",
+        });
+        navigate('/host-dashboard');
+        return;
       } else {
         // Update existing profile to become a host
         const { error: updateError } = await supabase
