@@ -215,7 +215,19 @@ const PropertyDetailEditor = ({
         bathrooms: parseInt(form.bathrooms) || 1,
         max_guests: parseInt(form.max_guests) || 4,
         amenities: Array.isArray(form.amenities) ? form.amenities : [],
-        amenities_data: sanitizeAmenitiesData(form.amenities_data),
+        amenities_data: (form.amenities_data || []).map((item: any) => ({
+          icon: item.icon?.trim() || "",
+          title: item.title?.trim() || "",
+          tagline: item.tagline?.trim() || "",
+          description: item.description?.trim() || "",
+          image_url:
+            typeof item.image_url === "string" && item.image_url.startsWith("data:")
+              ? null
+              : item.image_url || "",
+          features: Array.isArray(item.features)
+            ? item.features.filter((f) => f && f.trim().length > 0)
+            : [],
+        })),
         featured_amenities: sanitizeFeatured(form.featured_amenities).slice(0, 3),
         hero_image_url:
           typeof form.hero_image_url === "string" && form.hero_image_url.startsWith("data:")
@@ -506,54 +518,185 @@ const PropertyDetailEditor = ({
               </CardContent>
             </Card>
 
-            {/* Egna amenities -> kolumn `amenities_data` */}
+            {/* 2️⃣ Custom Amenities – Full structured version */}
             <Card>
               <CardHeader>
                 <CardTitle>Custom Amenities (up to 11)</CardTitle>
-                <CardDescription>Unika bekvämligheter som gör ditt boende speciellt.</CardDescription>
+                <CardDescription>
+                  Add unique amenities that make your property stand out. Each amenity can include an icon, title, tagline, description, features, and image.
+                </CardDescription>
               </CardHeader>
+            
               <CardContent>
-                <div className="space-y-2">
-                  {form.amenities_data.map((a: any, index: number) => (
-                    <div key={`${a.title}-${index}`} className="flex gap-2 items-center">
-                      <Input
-                        value={a.title || ""}
+                {form.amenities_data.map((a: any, index: number) => (
+                  <div
+                    key={index}
+                    className="border rounded-lg p-4 mb-4 bg-muted/30 relative space-y-4"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Icon</Label>
+                        <Input
+                          value={a.icon || ""}
+                          onChange={(e) => {
+                            const updated = [...form.amenities_data];
+                            updated[index].icon = e.target.value;
+                            setForm((p: any) => ({ ...p, amenities_data: updated }));
+                          }}
+                          placeholder="e.g. sauna, wifi, nature, fire"
+                        />
+                      </div>
+            
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          value={a.title || ""}
+                          onChange={(e) => {
+                            const updated = [...form.amenities_data];
+                            updated[index].title = e.target.value;
+                            setForm((p: any) => ({ ...p, amenities_data: updated }));
+                          }}
+                          placeholder="e.g. Lake Access"
+                        />
+                      </div>
+            
+                      <div>
+                        <Label>Tagline</Label>
+                        <Input
+                          value={a.tagline || ""}
+                          onChange={(e) => {
+                            const updated = [...form.amenities_data];
+                            updated[index].tagline = e.target.value;
+                            setForm((p: any) => ({ ...p, amenities_data: updated }));
+                          }}
+                          placeholder="e.g. Enjoy lake access during your stay"
+                        />
+                      </div>
+                    </div>
+            
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        rows={2}
+                        value={a.description || ""}
                         onChange={(e) => {
                           const updated = [...form.amenities_data];
-                          updated[index] = { title: e.target.value };
+                          updated[index].description = e.target.value;
                           setForm((p: any) => ({ ...p, amenities_data: updated }));
                         }}
-                        placeholder={`Amenity ${index + 1}`}
+                        placeholder="Describe this amenity..."
                       />
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() =>
-                          setForm((p: any) => ({
-                            ...p,
-                            amenities_data: p.amenities_data.filter((_: any, i: number) => i !== index),
-                          }))
-                        }
-                      >
-                        Remove
-                      </Button>
                     </div>
-                  ))}
-                  {form.amenities_data.length < 11 && (
+            
+                    <div>
+                      <Label>Image URL</Label>
+                      <Input
+                        value={a.image_url || ""}
+                        onChange={(e) => {
+                          const updated = [...form.amenities_data];
+                          updated[index].image_url = e.target.value;
+                          setForm((p: any) => ({ ...p, amenities_data: updated }));
+                        }}
+                        placeholder="Paste an image URL"
+                      />
+                      {a.image_url && (
+                        <img
+                          src={a.image_url}
+                          alt={a.title || "amenity"}
+                          className="w-24 h-24 object-cover rounded-md mt-2 border"
+                        />
+                      )}
+                    </div>
+            
+                    <div>
+                      <Label>Features</Label>
+                      <div className="space-y-2">
+                        {(a.features || []).map((f: string, fi: number) => (
+                          <div key={fi} className="flex gap-2 items-center">
+                            <Input
+                              value={f}
+                              onChange={(e) => {
+                                const updated = [...form.amenities_data];
+                                const feats = [...(a.features || [])];
+                                feats[fi] = e.target.value;
+                                updated[index].features = feats;
+                                setForm((p: any) => ({ ...p, amenities_data: updated }));
+                              }}
+                              placeholder="e.g. Private Dock"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                const updated = [...form.amenities_data];
+                                updated[index].features = (a.features || []).filter(
+                                  (_: any, i: number) => i !== fi
+                                );
+                                setForm((p: any) => ({ ...p, amenities_data: updated }));
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...form.amenities_data];
+                            const feats = [...(a.features || []), ""];
+                            updated[index].features = feats;
+                            setForm((p: any) => ({ ...p, amenities_data: updated }));
+                          }}
+                        >
+                          + Add Feature
+                        </Button>
+                      </div>
+                    </div>
+            
                     <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
                       onClick={() =>
                         setForm((p: any) => ({
                           ...p,
-                          amenities_data: [...p.amenities_data, { title: "" }],
+                          amenities_data: p.amenities_data.filter(
+                            (_: any, i: number) => i !== index
+                          ),
                         }))
                       }
                     >
-                      + Add Amenity
+                      Remove Amenity
                     </Button>
-                  )}
-                </div>
+                  </div>
+                ))}
+            
+                {form.amenities_data.length < 11 && (
+                  <Button
+                    onClick={() =>
+                      setForm((p: any) => ({
+                        ...p,
+                        amenities_data: [
+                          ...p.amenities_data,
+                          {
+                            icon: "",
+                            title: "",
+                            tagline: "",
+                            description: "",
+                            image_url: "",
+                            features: [],
+                          },
+                        ],
+                      }))
+                    }
+                  >
+                    + Add Amenity
+                  </Button>
+                )}
               </CardContent>
             </Card>
+
 
             {/* Special (featured) amenities -> kolumn `featured_amenities` */}
             <Card>
