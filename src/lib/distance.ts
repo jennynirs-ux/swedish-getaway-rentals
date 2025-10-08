@@ -202,3 +202,51 @@ const getFallbackRoute = (from: Coordinates, to: Coordinates): RouteInfo => {
 export const formatDrivingDirections = (cityName: string, distance: number, duration: number): string => {
   return `Driving distance from ${cityName}: ${distance} km (≈${duration} min)`;
 };
+
+// Transport hubs in Sweden
+const AIRPORTS: Record<string, Coordinates> = {
+  'Stockholm Arlanda': { latitude: 59.6519, longitude: 17.9186 },
+  'Göteborg Landvetter': { latitude: 57.6628, longitude: 12.2798 },
+  'Malmö Airport': { latitude: 55.5364, longitude: 13.3762 },
+  'Stockholm Bromma': { latitude: 59.3544, longitude: 17.9417 },
+};
+
+const TRAIN_STATIONS: Record<string, Coordinates> = {
+  'Stockholm Central': { latitude: 59.3293, longitude: 18.0579 },
+  'Göteborg Central': { latitude: 57.7089, longitude: 11.9746 },
+  'Malmö Central': { latitude: 55.6092, longitude: 13.0009 },
+};
+
+export const getNearestTransportInfo = (coordinates: Coordinates): {
+  airport: string;
+  trainStation: string;
+  busStop: string;
+} => {
+  // Find nearest airport
+  let nearestAirport = { name: '', distance: Infinity };
+  for (const [name, coords] of Object.entries(AIRPORTS)) {
+    const distance = calculateDistance(coordinates, coords);
+    if (distance < nearestAirport.distance) {
+      nearestAirport = { name, distance };
+    }
+  }
+
+  // Find nearest train station
+  let nearestStation = { name: '', distance: Infinity };
+  for (const [name, coords] of Object.entries(TRAIN_STATIONS)) {
+    const distance = calculateDistance(coordinates, coords);
+    if (distance < nearestStation.distance) {
+      nearestStation = { name, distance };
+    }
+  }
+
+  // For bus stops, we estimate based on property location
+  // Typically rural properties have bus stops within 5-15 km
+  const estimatedBusDistance = Math.min(10, nearestStation.distance * 0.3);
+
+  return {
+    airport: `${nearestAirport.name}: ${Math.round(nearestAirport.distance)} km`,
+    trainStation: `${nearestStation.name}: ${Math.round(nearestStation.distance)} km`,
+    busStop: `Lokal busshållplats: ~${Math.round(estimatedBusDistance)} km`
+  };
+};
