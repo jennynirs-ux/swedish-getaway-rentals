@@ -175,7 +175,7 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
           </Button>
         </div>
 
-        {mounted && typeof value.latitude === 'number' && typeof value.longitude === 'number' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) && (
+        {mounted && (
           <div className="space-y-2">
             <Label>Map Preview</Label>
             <p className="text-sm text-muted-foreground mb-2">
@@ -188,16 +188,18 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
                 </Suspense>
               </ErrorBoundary>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Latitude:</span>
-                <span className="ml-2 font-mono">{value.latitude.toFixed(6)}</span>
+            {typeof value.latitude === 'number' && typeof value.longitude === 'number' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) && (
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Latitude:</span>
+                  <span className="ml-2 font-mono">{value.latitude.toFixed(6)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Longitude:</span>
+                  <span className="ml-2 font-mono">{value.longitude.toFixed(6)}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-muted-foreground">Longitude:</span>
-                <span className="ml-2 font-mono">{value.longitude.toFixed(6)}</span>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </CardContent>

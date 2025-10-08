@@ -248,9 +248,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
           ...updateData,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", propertyId)
-        .select("id")
-        .single();
+        .eq("id", propertyId);
 
       if (error) throw error;
 
