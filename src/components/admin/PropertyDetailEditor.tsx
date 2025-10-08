@@ -42,9 +42,9 @@ import {
 import { GuidebookEditor } from "./GuidebookEditor";
 import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
 import { AirbnbSyncManager } from "./AirbnbSyncManager";
-import PropertyPricingRules from "@/components/PropertyPricingRules";
-import PropertySpecialPricing from "./PropertySpecialPricing";
-import { PricingCalculator } from "./PricingCalculator";
+import { PropertyPricingRulesEnhanced } from "./PropertyPricingRulesEnhanced";
+import { PropertySpecialPricingEnhanced } from "./PropertySpecialPricingEnhanced";
+import AvailabilityCalendar from "./AvailabilityCalendar";
 import { CancellationPolicyDisplay } from "../CancellationPolicyDisplay";
 import { LocationEditor } from "../LocationEditor";
 import { HostBasicTab } from "../host/HostBasicTab";
@@ -203,14 +203,35 @@ const PropertyDetailEditor = ({
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
-            <TabsTrigger value="basic"><Settings className="h-4 w-4 mr-2" />Basic</TabsTrigger>
-            <TabsTrigger value="amenities"><Star className="h-4 w-4 mr-2" />Amenities</TabsTrigger>
-            <TabsTrigger value="gallery"><Image className="h-4 w-4 mr-2" />Gallery</TabsTrigger>
-            <TabsTrigger value="location"><MapPin className="h-4 w-4 mr-2" />Location</TabsTrigger>
-            <TabsTrigger value="calendar"><Calendar className="h-4 w-4 mr-2" />Calendar</TabsTrigger>
-            <TabsTrigger value="pricing"><DollarSign className="h-4 w-4 mr-2" />Pricing</TabsTrigger>
-            <TabsTrigger value="guide"><BookOpen className="h-4 w-4 mr-2" />Guide</TabsTrigger>
+          <TabsList className="w-full flex flex-wrap gap-1 h-auto p-2">
+            <TabsTrigger value="basic" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Basic</span>
+            </TabsTrigger>
+            <TabsTrigger value="amenities" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Amenities</span>
+            </TabsTrigger>
+            <TabsTrigger value="gallery" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Image className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Gallery</span>
+            </TabsTrigger>
+            <TabsTrigger value="location" className="flex items-center gap-1 text-xs sm:text-sm">
+              <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Location</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Calendar</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="flex items-center gap-1 text-xs sm:text-sm">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Pricing</span>
+            </TabsTrigger>
+            <TabsTrigger value="guide" className="flex items-center gap-1 text-xs sm:text-sm">
+              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Guide</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* BASIC */}
@@ -299,12 +320,17 @@ const PropertyDetailEditor = ({
 
           {/* CALENDAR */}
           <TabsContent value="calendar" className="space-y-6">
-            <PropertyCalendarWidget
-              propertyId={propertyId}
-              basePrice={parseInt(form.price_per_night) || 0}
-              currency={form.currency || "SEK"}
-              mode="admin"
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Availability Management</CardTitle>
+                <CardDescription>
+                  Set dates as available or unavailable to prevent double bookings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AvailabilityCalendar defaultPropertyId={propertyId} />
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>
@@ -371,13 +397,6 @@ const PropertyDetailEditor = ({
               </CardContent>
             </Card>
 
-            <PricingCalculator
-              basePrice={parseInt(form.price_per_night) || 0}
-              weeklyDiscount={parseFloat(form.weekly_discount_percentage || "0")}
-              monthlyDiscount={parseFloat(form.monthly_discount_percentage || "0")}
-              currency={form.currency || "SEK"}
-            />
-
             <Card>
               <CardHeader>
                 <CardTitle>Cancellation Policy</CardTitle>
@@ -401,12 +420,17 @@ const PropertyDetailEditor = ({
               </CardContent>
             </Card>
 
-            <PropertyPricingRules propertyId={propertyId} />
+            <PropertyPricingRulesEnhanced 
+              propertyId={propertyId} 
+              currency={form.currency || "SEK"}
+            />
 
-            <PropertySpecialPricing
+            <PropertySpecialPricingEnhanced
               propertyId={propertyId}
               basePrice={parseInt(form.price_per_night) || 0}
               currency={form.currency || "SEK"}
+              weeklyDiscount={parseFloat(form.weekly_discount_percentage || "0")}
+              monthlyDiscount={parseFloat(form.monthly_discount_percentage || "0")}
             />
 
             <div className="flex justify-end gap-2">
