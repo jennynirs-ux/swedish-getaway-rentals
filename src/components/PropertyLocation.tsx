@@ -1,5 +1,5 @@
 import { memo, Suspense, lazy, useMemo } from 'react';
-import { MapPin, Navigation, Plane, Bus, Train } from 'lucide-react';
+import { MapPin, Navigation, Plane, Bus, Train, ShoppingCart, Tent } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { getClosestMajorCity, calculateDriveTime, getDetailedDistanceText, type Coordinates, getNearestTransportInfo } from '@/lib/distance';
@@ -97,6 +97,14 @@ const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location }:
                       <div className="flex items-center gap-2">
                         <Bus className="w-4 h-4 text-primary flex-shrink-0" />
                         <span>{transportInfo.busStop}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ShoppingCart className="w-4 h-4 text-primary flex-shrink-0" />
+                        <span>{transportInfo.grocery}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Tent className="w-4 h-4 text-primary flex-shrink-0" />
+                        <span>{transportInfo.themePark}</span>
                       </div>
                     </div>
                   );

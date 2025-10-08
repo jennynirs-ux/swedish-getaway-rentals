@@ -203,7 +203,7 @@ export const formatDrivingDirections = (cityName: string, distance: number, dura
   return `Driving distance from ${cityName}: ${distance} km (≈${duration} min)`;
 };
 
-// Transport hubs in Sweden
+// Transport hubs and points of interest in Sweden
 const AIRPORTS: Record<string, Coordinates> = {
   'Stockholm Arlanda': { latitude: 59.6519, longitude: 17.9186 },
   'Göteborg Landvetter': { latitude: 57.6628, longitude: 12.2798 },
@@ -215,38 +215,103 @@ const TRAIN_STATIONS: Record<string, Coordinates> = {
   'Stockholm Central': { latitude: 59.3293, longitude: 18.0579 },
   'Göteborg Central': { latitude: 57.7089, longitude: 11.9746 },
   'Malmö Central': { latitude: 55.6092, longitude: 13.0009 },
+  'Uppsala C': { latitude: 59.8586, longitude: 17.6389 },
+  'Linköping C': { latitude: 58.4167, longitude: 15.6267 },
+  'Örebro C': { latitude: 59.2753, longitude: 15.2134 },
+  'Västerås C': { latitude: 59.6099, longitude: 16.5448 },
+  'Norrköping C': { latitude: 58.5877, longitude: 16.1924 },
+  'Helsingborg C': { latitude: 56.0465, longitude: 12.6945 },
+  'Jönköping C': { latitude: 57.7826, longitude: 14.1618 },
+  'Umeå C': { latitude: 63.7949, longitude: 20.2597 },
+  'Lund C': { latitude: 55.7088, longitude: 13.1910 },
+  'Borås C': { latitude: 57.7210, longitude: 12.9401 },
+  'Sundsvall C': { latitude: 62.3908, longitude: 17.3069 },
+  'Gävle C': { latitude: 60.6749, longitude: 17.1413 },
+  'Eskilstuna C': { latitude: 59.3708, longitude: 16.5077 },
+  'Karlstad C': { latitude: 59.3793, longitude: 13.5036 },
+  'Växjö C': { latitude: 56.8777, longitude: 14.8091 },
+  'Halmstad C': { latitude: 56.6745, longitude: 12.8577 },
+  'Södertälje Syd': { latitude: 59.1617, longitude: 17.6253 },
+  'Älvsjö': { latitude: 59.2728, longitude: 18.0128 },
+  'Kungsbacka': { latitude: 57.4874, longitude: 12.0757 },
+  'Varberg': { latitude: 57.1057, longitude: 12.2504 },
+  'Skövde C': { latitude: 58.3916, longitude: 13.8454 },
+};
+
+const GROCERY_STORES: Record<string, Coordinates> = {
+  'ICA Maxi Stockholm Barkarby': { latitude: 59.4141, longitude: 17.8847 },
+  'ICA Maxi Göteborg Högsbo': { latitude: 57.6838, longitude: 11.9351 },
+  'Coop Extra Malmö': { latitude: 55.6050, longitude: 13.0038 },
+  'Willys Stockholm City': { latitude: 59.3345, longitude: 18.0632 },
+  'Hemköp Göteborg': { latitude: 57.7089, longitude: 11.9746 },
+  'ICA Kvantum Uppsala': { latitude: 59.8586, longitude: 17.6389 },
+  'Coop Forum Linköping': { latitude: 58.4108, longitude: 15.6214 },
+};
+
+const THEME_PARKS: Record<string, Coordinates> = {
+  'Liseberg (Göteborg)': { latitude: 57.6952, longitude: 11.9929 },
+  'Gröna Lund (Stockholm)': { latitude: 59.3234, longitude: 18.0966 },
+  'Kolmården Djurpark': { latitude: 58.6787, longitude: 16.3658 },
+  'Skara Sommarland': { latitude: 58.3850, longitude: 13.4394 },
+  'Furuvik': { latitude: 60.6363, longitude: 17.2549 },
+  'Astrid Lindgrens Värld (Vimmerby)': { latitude: 57.6648, longitude: 15.8542 },
+  'High Chaparral (Hillerstorp)': { latitude: 57.1167, longitude: 13.5500 },
+};
+
+interface TransportDistances {
+  airport: { name: string; distance: number };
+  trainStation: { name: string; distance: number };
+  grocery: { name: string; distance: number };
+  themePark: { name: string; distance: number };
+}
+
+// Calculate driving distance for nearby locations (simple estimation)
+const estimateDrivingDistance = (straightDistance: number): number => {
+  // Roads are typically 20-30% longer than straight line
+  return Math.round(straightDistance * 1.25);
+};
+
+const findNearest = (
+  coordinates: Coordinates,
+  locations: Record<string, Coordinates>
+): { name: string; distance: number } => {
+  let nearest = { name: '', distance: Infinity };
+  
+  for (const [name, coords] of Object.entries(locations)) {
+    const straightDistance = calculateDistance(coordinates, coords);
+    const drivingDistance = estimateDrivingDistance(straightDistance);
+    
+    if (drivingDistance < nearest.distance) {
+      nearest = { name, distance: drivingDistance };
+    }
+  }
+  
+  return nearest;
 };
 
 export const getNearestTransportInfo = (coordinates: Coordinates): {
   airport: string;
   trainStation: string;
   busStop: string;
+  grocery: string;
+  themePark: string;
 } => {
-  // Find nearest airport
-  let nearestAirport = { name: '', distance: Infinity };
-  for (const [name, coords] of Object.entries(AIRPORTS)) {
-    const distance = calculateDistance(coordinates, coords);
-    if (distance < nearestAirport.distance) {
-      nearestAirport = { name, distance };
-    }
-  }
+  const nearest = {
+    airport: findNearest(coordinates, AIRPORTS),
+    trainStation: findNearest(coordinates, TRAIN_STATIONS),
+    grocery: findNearest(coordinates, GROCERY_STORES),
+    themePark: findNearest(coordinates, THEME_PARKS),
+  };
 
-  // Find nearest train station
-  let nearestStation = { name: '', distance: Infinity };
-  for (const [name, coords] of Object.entries(TRAIN_STATIONS)) {
-    const distance = calculateDistance(coordinates, coords);
-    if (distance < nearestStation.distance) {
-      nearestStation = { name, distance };
-    }
-  }
-
-  // For bus stops, we estimate based on property location
-  // Typically rural properties have bus stops within 5-15 km
-  const estimatedBusDistance = Math.min(10, nearestStation.distance * 0.3);
+  // For bus stops, estimate based on Swedish standards
+  // Rural areas typically have bus stops within 5-15 km
+  const estimatedBusDistance = Math.min(15, Math.round(nearest.trainStation.distance * 0.4));
 
   return {
-    airport: `${nearestAirport.name}: ${Math.round(nearestAirport.distance)} km`,
-    trainStation: `${nearestStation.name}: ${Math.round(nearestStation.distance)} km`,
-    busStop: `Lokal busshållplats: ~${Math.round(estimatedBusDistance)} km`
+    airport: `${nearest.airport.name}: ~${nearest.airport.distance} km`,
+    trainStation: `${nearest.trainStation.name}: ~${nearest.trainStation.distance} km`,
+    busStop: `Lokal busshållplats: ~${estimatedBusDistance} km`,
+    grocery: `${nearest.grocery.name}: ~${nearest.grocery.distance} km`,
+    themePark: `${nearest.themePark.name}: ~${nearest.themePark.distance} km`,
   };
 };
