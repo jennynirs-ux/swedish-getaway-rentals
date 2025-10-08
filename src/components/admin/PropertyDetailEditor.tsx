@@ -1,20 +1,46 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Image, Star, BookOpen, Calendar, Upload, MapPin } from "lucide-react";
+import {
+  Settings,
+  Image,
+  Star,
+  BookOpen,
+  Calendar,
+  MapPin,
+} from "lucide-react";
 import { GalleryMetadataEditor } from "./GalleryMetadataEditor";
-import { ImageUpload } from "./ImageUpload";
-import { AmenitiesEditor } from "./AmenitiesEditor";
-import { FeaturedAmenitiesSelector } from "./FeaturedAmenitiesSelector";
 import { GuidebookEditor } from "./GuidebookEditor";
 import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
 import { AirbnbSyncManager } from "./AirbnbSyncManager";
@@ -23,25 +49,22 @@ import PropertySpecialPricing from "./PropertySpecialPricing";
 import { PricingCalculator } from "./PricingCalculator";
 import { BankAccountSetup } from "./BankAccountSetup";
 import { CancellationPolicyDisplay } from "../CancellationPolicyDisplay";
-import { CardDescription } from "@/components/ui/card";
 import { LocationEditor } from "../LocationEditor";
 
-interface Property {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  price_per_night: number;
-  currency: string;
-  bedrooms: number;
-  bathrooms: number;
-  max_guests: number;
-  amenities: string[];
-  hero_image_url: string;
-  gallery_images: string[];
-  gallery_metadata: { title: string; description: string; alt: string }[];
-  active: boolean;
-}
+// Standard-amenities som host klickar i (sparas i kolumnen `amenities`)
+const AMENITY_SUGGESTIONS: string[] = [
+  "Arkadspel","Båt","Standup Paddle Boards","Babyvakt","Badbalja","Badkar","Badtunna",
+  "Bakgård","Barnböcker och leksaker","Barncyklar","Barnstol","Bastu",
+  "Basutrustning för matlagning","Betald parkering på tomten","Betald parkering utanför fastigheten",
+  "Bidé","Biljardbord","Boende på ett plan","Brandsläckare","Brandvarnare",
+  "Brädspel","Brödrost","Båtplats","Böcker och läsmaterial","Cyklar",
+  "Dedikerad arbetsyta","Diskmaskin","Egen entré","Frys","Förbandslåda",
+  "Gratis parkering","Grillplats","Gym","Hiss","Hängmatta","Hårtork",
+  "Intill vattnet","Kaffe","Kaffebryggare","Kajak","Kylskåp","Kök",
+  "Lekplats","Ljudanläggning","Luftkonditionering","Matbord","Mikrovågsugn",
+  "Pool","Porslin och bestick","TV","Tvättmaskin","Torktumlare",
+  "Utemöbler","Uteplats eller balkong","Utomhuskök","Varmvatten","Wifi","Öppen spis"
+];
 
 interface PropertyDetailEditorProps {
   propertyId: string;
@@ -50,43 +73,17 @@ interface PropertyDetailEditorProps {
   onSave?: () => void;
 }
 
-/** Förslagslista för amenities (trimma vid behov) */
-const AMENITY_SUGGESTIONS: string[] = [
-  "Arkadspel","Båt","Standup Paddle Boards","Babyvakt","Badbalja","Badkar","Badtunna",
-  "Bagageavlämning tillåts","Bakgård","Bakmaskin","Bakplåtspapper","Balsam",
-  "Barnböcker och leksaker","Barncyklar","Barnservis","Barnstol","Bastu",
-  "Basutrustning för matlagning","Betald parkering på tomten","Betald parkering utanför fastigheten",
-  "Bidé","Biljardbord","Biograf","Boende på ett plan","Bowlinghall","Brandsläckare","Brandvarnare",
-  "Brädspel","Brödrost","Bärbara fläktar","Båtplats","Böcker och läsmaterial","Cyklar",
-  "Dedikerad arbetsyta","Diskmaskin","Duschgel","Duschtvål","Egen entré","Eget vardagsrum",
-  "Ethernet-anslutning","Extra kuddar och filtar","Frukost","Frys","Fönstersäkring","Förbandslåda",
-  "Galgar","Gratis parkering inkluderad","Gratis parkering på gatan","Grillplats","Grillredskap","Gym",
-  "Hiss","Hockeyrink","Hängmatta","Hårtork","Hörnskydd för bord","Intill vattnet","Kaffe","Kaffebryggare",
-  "Kajak","Kassaskåp","Klädförvaring","Klättervägg","Kokvrå","Kolmonoxidlarm","Komprimator för skräp",
-  "Kylskåp","Kök","Laddare för elbil","Lasergame","Lekplats utomhus","Lekrum för barn","Ljudanläggning",
-  "Luftkonditionering","Långtidsvistelser tillåtna","Matbord","Matplats utomhus","Mikrovågsugn",
-  "Minigolf","Minikyl","Mixer","Myggnät","Mörkläggningsgardin","Nära pisten","Petsäkra kontakter",
-  "Piano","Pingisbord","Pool","Porslin och bestick","Portabel wifi","Rekommendationer gällande barnvakt",
-  "Rengöringsprodukter","Resesäng","Riskokare","Schampo","Skateboardramp","Skivspelare","Skydd för öppen spis",
-  "Skötbord","Slagbur","Solstolar","Spel i naturlig storlek","Spelkonsol","Spis","Spjälsäng",
-  "Strandleksaker","Strykjärn","Städning tillgänglig under vistelsen","Säkerhetsgrindar för barn","Sängkläder",
-  "Takfläkt","Temarum","Tillgång till semesteranläggning","Tillgång till sjön","Tillgång till strand",
-  "Torkställ för kläder","Torktumlare","Träningsredskap","TV","Tvättmaskin","Tvättomat i närheten","Ugn",
-  "Uppvärmning","Utedusch","Utemöbler","Uteplats eller balkong","Utomhuskök","Varmvatten","Varmvattenkokare",
-  "Vinglas","Väsentligheter","Wifi","Öppen eld utomhus","Öppen spis",
-  // Tillgänglighet:
-  "Parkeringsplats för rörelsehindrade","Upplyst gångväg till gästentrén","Åtkomst utan nivåskillnad",
-  "Gästentrén är bredare än 81 centimeter","Lyftanordning för pool eller badtunna",
-  "Takhiss eller mobil lyftanordning"
-];
-
-const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDetailEditorProps) => {
-  const [property, setProperty] = useState<Property | null>(null);
+const PropertyDetailEditor = ({
+  propertyId,
+  open,
+  onClose,
+  onSave,
+}: PropertyDetailEditorProps) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<any>({
     title: "",
     description: "",
     location: "",
@@ -95,13 +92,16 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     bedrooms: "1",
     bathrooms: "1",
     max_guests: "4",
+    // sparas som textsträngar i kolumnen `amenities`
     amenities: [] as string[],
-    amenities_data: [] as any[],
+    // egna (custom) amenities-objekt [{title: string}], sparas i `amenities_data`
+    amenities_data: [] as { title: string }[],
+    // upp till 3 special amenities [{title:string}], sparas i `featured_amenities`
+    featured_amenities: [] as { title: string }[],
     hero_image_url: "",
     gallery_images: [] as string[],
-    gallery_metadata: [] as { title: string; description: string; alt: string }[],
+    gallery_metadata: [] as any[],
     guidebook_sections: [] as any[],
-    featured_amenities: [] as any[],
     tagline_line1: "",
     tagline_line2: "",
     review_rating: "5.0",
@@ -119,13 +119,11 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     longitude: null as number | null,
   });
 
-  // Quick-add Amenity (läggs överst)
-  const [quickAmenity, setQuickAmenity] = useState("");
-
   useEffect(() => {
     if (open && propertyId) {
       loadProperty();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, propertyId]);
 
   const loadProperty = async () => {
@@ -139,33 +137,8 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
       if (error) throw error;
 
-      const galleryMetadata = Array.isArray(data.gallery_metadata)
-        ? data.gallery_metadata.map((meta: any) => ({
-            title: meta?.title || "",
-            description: meta?.description || "",
-            alt: meta?.alt || "",
-          }))
-        : [];
-
-      const propertyData: Property = {
-        id: data.id,
-        title: data.title || "",
-        description: data.description || "",
-        location: data.location || "",
-        price_per_night: data.price_per_night || 0,
-        currency: data.currency || "SEK",
-        bedrooms: data.bedrooms || 1,
-        bathrooms: data.bathrooms || 1,
-        max_guests: data.max_guests || 4,
-        amenities: data.amenities || [],
-        hero_image_url: data.hero_image_url || "",
-        gallery_images: data.gallery_images || [],
-        gallery_metadata: galleryMetadata,
-        active: data.active || false,
-      };
-
-      setProperty(propertyData);
-      setForm({
+      setForm((prev: any) => ({
+        ...prev,
         title: data.title || "",
         description: data.description || "",
         location: data.location || "",
@@ -174,31 +147,37 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bedrooms: data.bedrooms?.toString() || "1",
         bathrooms: data.bathrooms?.toString() || "1",
         max_guests: data.max_guests?.toString() || "4",
-        amenities: data.amenities || [],
-        amenities_data: (data as any).amenities_data || [],
+        amenities: Array.isArray(data.amenities) ? data.amenities : [],
+        amenities_data: Array.isArray(data.amenities_data)
+          ? data.amenities_data.map((a: any) => ({
+              title: a?.title || a?.name || "",
+            }))
+          : [],
+        featured_amenities: Array.isArray(data.featured_amenities)
+          ? data.featured_amenities.map((fa: any) => ({ title: fa?.title || fa?.name || "" }))
+          : [],
         hero_image_url: data.hero_image_url || "",
-        gallery_images: data.gallery_images || [],
-        gallery_metadata: galleryMetadata,
-        guidebook_sections: (data as any).guidebook_sections || [],
-        featured_amenities: (data as any).featured_amenities || [],
-        tagline_line1: (data as any).tagline_line1 || "",
-        tagline_line2: (data as any).tagline_line2 || "",
-        review_rating: ((data as any).review_rating || 5.0).toString(),
-        review_count: ((data as any).review_count || 0).toString(),
-        property_type: (data as any).property_type || "Property",
-        active: data.active,
-        weekly_discount_percentage: ((data as any).weekly_discount_percentage || 0).toString(),
-        monthly_discount_percentage: ((data as any).monthly_discount_percentage || 0).toString(),
-        cancellation_policy: ((data as any).cancellation_policy || "moderate") as "flexible" | "moderate" | "strict",
-        street: (data as any).street || "",
-        postal_code: (data as any).postal_code || "",
-        city: (data as any).city || "",
-        country: (data as any).country || "Sweden",
-        latitude: (data as any).latitude !== null && (data as any).latitude !== undefined ? Number((data as any).latitude) : null,
-        longitude: (data as any).longitude !== null && (data as any).longitude !== undefined ? Number((data as any).longitude) : null,
-      });
-    } catch (error) {
-      console.error("Error loading property:", error);
+        gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
+        gallery_metadata: Array.isArray(data.gallery_metadata) ? data.gallery_metadata : [],
+        guidebook_sections: Array.isArray(data.guidebook_sections) ? data.guidebook_sections : [],
+        tagline_line1: data.tagline_line1 || "",
+        tagline_line2: data.tagline_line2 || "",
+        review_rating: (data.review_rating ?? 5.0).toString(),
+        review_count: (data.review_count ?? 0).toString(),
+        property_type: data.property_type || "Property",
+        active: data.active ?? true,
+        weekly_discount_percentage: (data.weekly_discount_percentage ?? 0).toString(),
+        monthly_discount_percentage: (data.monthly_discount_percentage ?? 0).toString(),
+        cancellation_policy: (data.cancellation_policy as "flexible" | "moderate" | "strict") || "moderate",
+        street: data.street || "",
+        postal_code: data.postal_code || "",
+        city: data.city || "",
+        country: data.country || "Sweden",
+        latitude: (data.latitude ?? null) as number | null,
+        longitude: (data.longitude ?? null) as number | null,
+      }));
+    } catch (err) {
+      console.error("Error loading property:", err);
       toast({
         title: "Error",
         description: "Failed to load property details",
@@ -209,30 +188,23 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     }
   };
 
+  const sanitizeAmenitiesData = (arr: any[]) =>
+    (Array.isArray(arr) ? arr : [])
+      .map((item) => ({
+        title: (item?.title || item?.name || "").toString().trim(),
+      }))
+      .filter((i) => i.title.length > 0);
+
+  const sanitizeFeatured = (arr: any[]) =>
+    (Array.isArray(arr) ? arr : [])
+      .map((item) => ({
+        title: (item?.title || item?.name || "").toString().trim(),
+      }))
+      .filter((i) => i.title.length > 0);
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Sanitize large inline data to avoid timeouts (strip base64 data URLs)
-      const sanitizedAmenitiesData = Array.isArray(form.amenities_data)
-        ? form.amenities_data.map((item: any) => {
-            if (item && typeof item === 'object') {
-              const imageUrl = (item as any).image_url;
-              return {
-                ...item,
-                image_url:
-                  typeof imageUrl === 'string' && imageUrl.startsWith('data:')
-                    ? null
-                    : imageUrl,
-              };
-            }
-            return item;
-          })
-        : [];
-
-      const sanitizedGalleryImages = Array.isArray(form.gallery_images)
-        ? form.gallery_images.filter((img) => typeof img === 'string' && !img.startsWith('data:'))
-        : [];
-
       const updateData = {
         title: form.title.trim(),
         description: form.description.trim(),
@@ -242,54 +214,62 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bedrooms: parseInt(form.bedrooms) || 1,
         bathrooms: parseInt(form.bathrooms) || 1,
         max_guests: parseInt(form.max_guests) || 4,
-        amenities: form.amenities,
-        amenities_data: sanitizedAmenitiesData,
-        featured_amenities: form.featured_amenities,
-        hero_image_url: typeof form.hero_image_url === 'string' && form.hero_image_url.startsWith('data:') ? null : form.hero_image_url,
-        gallery_images: sanitizedGalleryImages,
-        gallery_metadata: form.gallery_metadata,
-        guidebook_sections: form.guidebook_sections,
+        amenities: Array.isArray(form.amenities) ? form.amenities : [],
+        amenities_data: sanitizeAmenitiesData(form.amenities_data),
+        featured_amenities: sanitizeFeatured(form.featured_amenities).slice(0, 3),
+        hero_image_url:
+          typeof form.hero_image_url === "string" && form.hero_image_url.startsWith("data:")
+            ? null
+            : form.hero_image_url || null,
+        gallery_images: Array.isArray(form.gallery_images) ? form.gallery_images.filter((img: string) => !img.startsWith("data:")) : [],
+        gallery_metadata: Array.isArray(form.gallery_metadata) ? form.gallery_metadata : [],
+        guidebook_sections: Array.isArray(form.guidebook_sections) ? form.guidebook_sections : [],
         tagline_line1: form.tagline_line1,
         tagline_line2: form.tagline_line2,
         review_rating: parseFloat(form.review_rating) || 5.0,
         review_count: parseInt(form.review_count) || 0,
         property_type: form.property_type,
-        active: form.active,
+        active: !!form.active,
         street: form.street,
         postal_code: form.postal_code,
         city: form.city ? form.city.toLowerCase() : null,
         country: form.country,
-        latitude: typeof form.latitude === 'number' ? form.latitude : (form.latitude ? Number(form.latitude) : null),
-        longitude: typeof form.longitude === 'number' ? form.longitude : (form.longitude ? Number(form.longitude) : null),
+        latitude: typeof form.latitude === "number" ? form.latitude : (form.latitude ? Number(form.latitude) : null),
+        longitude: typeof form.longitude === "number" ? form.longitude : (form.longitude ? Number(form.longitude) : null),
+        weekly_discount_percentage: parseFloat(form.weekly_discount_percentage) || 0,
+        monthly_discount_percentage: parseFloat(form.monthly_discount_percentage) || 0,
+        cancellation_policy: form.cancellation_policy || "moderate",
         updated_at: new Date().toISOString(),
       };
+
       const { error } = await supabase
         .from("properties")
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", propertyId);
 
       if (error) throw error;
 
-      const channel = supabase.channel("admin-property-updates");
-      await channel.send({
-        type: "broadcast",
-        event: "property_updated",
-        payload: { propertyId, timestamp: new Date().toISOString() },
-      });
+      // broadcast (om du använder realtime)
+      try {
+        const channel = supabase.channel("admin-property-updates");
+        await channel.send({
+          type: "broadcast",
+          event: "property_updated",
+          payload: { propertyId, timestamp: new Date().toISOString() },
+        });
+      } catch {
+        // no-op om channel inte finns
+      }
 
       toast({
         title: "Success",
-        description:
-          "Property updated successfully - changes will appear on the property page immediately",
+        description: "Property updated successfully",
       });
 
       onSave?.();
       onClose();
-    } catch (error) {
-      console.error("Error saving property:", error);
+    } catch (err) {
+      console.error("Error saving property:", err);
       toast({
         title: "Error",
         description: "Failed to update property",
@@ -300,21 +280,12 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     }
   };
 
-  // Quick add amenity överst
-  const addAmenityTop = () => {
-    const value = quickAmenity.trim();
-    if (!value) return;
-    const next = [{ name: value }, ...form.amenities_data]; // antar shape {name:string}; justera vid behov
-    setForm((prev) => ({ ...prev, amenities_data: next }));
-    setQuickAmenity("");
-  };
-
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
         </DialogContent>
       </Dialog>
@@ -325,53 +296,30 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Property: {property?.title}</DialogTitle>
+          <DialogTitle>Edit Property: {form.title || "Untitled"}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
-          {/* 6 tabs */}
           <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="basic">
-              <Settings className="h-4 w-4 mr-2" />
-              Basic
-            </TabsTrigger>
-            <TabsTrigger value="location">
-              <MapPin className="h-4 w-4 mr-2" />
-              Location
-            </TabsTrigger>
-            <TabsTrigger value="gallery">
-              <Image className="h-4 w-4 mr-2" />
-              Gallery
-            </TabsTrigger>
-            <TabsTrigger value="amenities">
-              <Star className="h-4 w-4 mr-2" />
-              Amenities
-            </TabsTrigger>
-            <TabsTrigger value="guide">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Guide
-            </TabsTrigger>
-            <TabsTrigger value="calendar">
-              <Calendar className="h-4 w-4 mr-2" />
-              Calendar & Pricing
-            </TabsTrigger>
+            <TabsTrigger value="basic"><Settings className="h-4 w-4 mr-2" />Basic</TabsTrigger>
+            <TabsTrigger value="location"><MapPin className="h-4 w-4 mr-2" />Location</TabsTrigger>
+            <TabsTrigger value="gallery"><Image className="h-4 w-4 mr-2" />Gallery</TabsTrigger>
+            <TabsTrigger value="amenities"><Star className="h-4 w-4 mr-2" />Amenities</TabsTrigger>
+            <TabsTrigger value="guide"><BookOpen className="h-4 w-4 mr-2" />Guide</TabsTrigger>
+            <TabsTrigger value="calendar"><Calendar className="h-4 w-4 mr-2" />Calendar & Pricing</TabsTrigger>
           </TabsList>
 
           {/* BASIC */}
           <TabsContent value="basic" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Basic Information</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Title</Label>
                     <Input
                       value={form.title}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, title: e.target.value }))
-                      }
+                      onChange={(e) => setForm((p: any) => ({ ...p, title: e.target.value }))}
                       placeholder="Property title..."
                     />
                   </div>
@@ -379,86 +327,29 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Label>Location</Label>
                     <Input
                       value={form.location}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, location: e.target.value }))
-                      }
+                      onChange={(e) => setForm((p: any) => ({ ...p, location: e.target.value }))}
                       placeholder="Property location..."
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Hero Image</Label>
-                  <p className="text-sm text-muted-foreground">
-                    The Hero Image is set in the Gallery tab by marking an image as "Hero". This image will be displayed on property cards and the property page header.
-                  </p>
-                  {form.hero_image_url && (
-                    <div className="relative w-full h-48 mt-2">
-                      <img
-                        src={form.hero_image_url}
-                        alt="Current Hero"
-                        className="w-full h-full object-cover rounded-lg border"
-                      />
-                      <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
-                        Current Hero Image
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Property Type</Label>
-                  <Select
-                    value={form.property_type}
-                    onValueChange={(value) =>
-                      setForm((prev) => ({ ...prev, property_type: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Villa">Villa</SelectItem>
-                      <SelectItem value="Lakehouse">Lakehouse</SelectItem>
-                      <SelectItem value="Cabin">Cabin</SelectItem>
-                      <SelectItem value="Apartment">Apartment</SelectItem>
-                      <SelectItem value="House">House</SelectItem>
-                      <SelectItem value="Cottage">Cottage</SelectItem>
-                      <SelectItem value="Chalet">Chalet</SelectItem>
-                      <SelectItem value="Lodge">Lodge</SelectItem>
-                      <SelectItem value="Farmhouse">Farmhouse</SelectItem>
-                      <SelectItem value="Treehouse">Treehouse</SelectItem>
-                      <SelectItem value="Houseboat">Houseboat</SelectItem>
-                      <SelectItem value="RV">RV</SelectItem>
-                      <SelectItem value="Boat">Boat</SelectItem>
-                      <SelectItem value="Tiny House">Tiny House</SelectItem>
-                      <SelectItem value="Glamping">Glamping</SelectItem>
-                      <SelectItem value="Property">Property</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
                   <Label>Description</Label>
                   <Textarea
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, description: e.target.value }))
-                    }
-                    placeholder="Detailed property description..."
                     rows={4}
+                    value={form.description}
+                    onChange={(e) => setForm((p: any) => ({ ...p, description: e.target.value }))}
+                    placeholder="Detailed property description..."
                   />
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label>Price per night (SEK)</Label>
+                    <Label>Price per night ({form.currency})</Label>
                     <Input
                       type="number"
                       value={form.price_per_night}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, price_per_night: e.target.value }))
-                      }
+                      onChange={(e) => setForm((p: any) => ({ ...p, price_per_night: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -466,9 +357,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Input
                       type="number"
                       value={form.bedrooms}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, bedrooms: e.target.value }))
-                      }
+                      onChange={(e) => setForm((p: any) => ({ ...p, bedrooms: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -476,9 +365,7 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Input
                       type="number"
                       value={form.bathrooms}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, bathrooms: e.target.value }))
-                      }
+                      onChange={(e) => setForm((p: any) => ({ ...p, bathrooms: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -486,19 +373,29 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                     <Input
                       type="number"
                       value={form.max_guests}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, max_guests: e.target.value }))
-                      }
+                      onChange={(e) => setForm((p: any) => ({ ...p, max_guests: e.target.value }))}
                     />
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Property Type</Label>
+                  <Select
+                    value={form.property_type}
+                    onValueChange={(value) => setForm((p: any) => ({ ...p, property_type: value }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      {["Villa","Lakehouse","Cabin","Apartment","House","Cottage","Chalet","Lodge","Farmhouse","Treehouse","Houseboat","RV","Boat","Tiny House","Glamping","Property"]
+                        .map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <Switch
-                    checked={form.active}
-                    onCheckedChange={(checked) =>
-                      setForm((prev) => ({ ...prev, active: checked }))
-                    }
+                    checked={!!form.active}
+                    onCheckedChange={(checked) => setForm((p: any) => ({ ...p, active: checked }))}
                   />
                   <Label>Property is active and visible</Label>
                 </div>
@@ -506,12 +403,8 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
             </Card>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
             </div>
           </TabsContent>
 
@@ -526,78 +419,74 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                 latitude: form.latitude,
                 longitude: form.longitude
               }}
-              onChange={(locationData) => {
-                setForm(prev => ({
-                  ...prev,
-                  street: locationData.street || "",
-                  postal_code: locationData.postal_code || "",
-                  city: locationData.city || "",
-                  country: locationData.country || "Sweden",
-                  latitude: locationData.latitude || null,
-                  longitude: locationData.longitude || null
-                }));
-              }}
+              onChange={(loc) =>
+                setForm((p: any) => ({
+                  ...p,
+                  street: loc.street || "",
+                  postal_code: loc.postal_code || "",
+                  city: loc.city || "",
+                  country: loc.country || "Sweden",
+                  latitude: loc.latitude ?? null,
+                  longitude: loc.longitude ?? null
+                }))
+              }
             />
-            
+
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
             </div>
           </TabsContent>
 
           {/* GALLERY */}
           <TabsContent value="gallery">
-            <GalleryMetadataEditor
-              images={form.gallery_images}
-              metadata={form.gallery_metadata}
-              onChange={(metadata, images) => {
-                setForm((prev) => ({
-                  ...prev,
-                  gallery_metadata: metadata,
-                  gallery_images: images || prev.gallery_images,
-                }));
-              }}
-              onSave={handleSave}
-              saving={saving}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Gallery</CardTitle>
+                <CardDescription>
+                  Markera din bästa bild som <strong>Hero</strong> i galleriet — den används på Property Card & Property Page.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GalleryMetadataEditor
+                  images={form.gallery_images}
+                  metadata={form.gallery_metadata}
+                  onChange={(metadata, images) =>
+                    setForm((p: any) => ({
+                      ...p,
+                      gallery_metadata: metadata,
+                      gallery_images: images || p.gallery_images
+                    }))
+                  }
+                  onSave={handleSave}
+                  saving={saving}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* AMENITIES */}
           <TabsContent value="amenities" className="space-y-6">
-            {/* 1️⃣ Checkbox amenities */}
+            {/* Checkbox-lista -> kolumn `amenities` */}
             <Card>
               <CardHeader>
                 <CardTitle>Select Amenities</CardTitle>
+                <CardDescription>Allmänt tillgängliga bekvämligheter. Sparas i <code>amenities</code>.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Choose all amenities that apply to your property. These will appear on your listing page.
-                </p>
-          
-                {/* Visa fler / färre */}
                 <div className="flex justify-end mb-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      setShowAllAmenities((prev) => !prev)
-                    }
+                    onClick={() => setShowAllAmenities((prev) => !prev)}
                   >
                     {showAllAmenities ? "Show fewer" : "Show all"}
                   </Button>
                 </div>
-          
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {(showAllAmenities ? AMENITY_SUGGESTIONS : AMENITY_SUGGESTIONS.slice(0, 20)).map(
+                  {(showAllAmenities ? AMENITY_SUGGESTIONS : AMENITY_SUGGESTIONS.slice(0, 24)).map(
                     (amenity) => (
-                      <label
-                        key={amenity}
-                        className="flex items-center space-x-2 text-sm"
-                      >
+                      <label key={amenity} className="flex items-center space-x-2 text-sm">
                         <input
                           type="checkbox"
                           className="rounded border-gray-300"
@@ -605,8 +494,8 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                           onChange={(e) => {
                             const selected = e.target.checked
                               ? [...form.amenities, amenity]
-                              : form.amenities.filter((a) => a !== amenity);
-                            setForm((prev) => ({ ...prev, amenities: selected }));
+                              : form.amenities.filter((a: string) => a !== amenity);
+                            setForm((p: any) => ({ ...p, amenities: selected }));
                           }}
                         />
                         <span>{amenity}</span>
@@ -616,48 +505,46 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                 </div>
               </CardContent>
             </Card>
-          
-            {/* 2️⃣ Egna (custom) amenities */}
+
+            {/* Egna amenities -> kolumn `amenities_data` */}
             <Card>
               <CardHeader>
                 <CardTitle>Custom Amenities (up to 11)</CardTitle>
+                <CardDescription>Unika bekvämligheter som gör ditt boende speciellt.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add unique amenities that make your property stand out. These will appear under “Extra amenities”.
-                </p>
-          
                 <div className="space-y-2">
-                  {form.amenities_data.map((a, index) => (
-                    <div key={index} className="flex gap-2 items-center">
+                  {form.amenities_data.map((a: any, index: number) => (
+                    <div key={`${a.title}-${index}`} className="flex gap-2 items-center">
                       <Input
                         value={a.title || ""}
                         onChange={(e) => {
                           const updated = [...form.amenities_data];
-                          updated[index].title = e.target.value;
-                          setForm((prev) => ({ ...prev, amenities_data: updated }));
+                          updated[index] = { title: e.target.value };
+                          setForm((p: any) => ({ ...p, amenities_data: updated }));
                         }}
                         placeholder={`Amenity ${index + 1}`}
                       />
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => {
-                          const filtered = form.amenities_data.filter((_, i) => i !== index);
-                          setForm((prev) => ({ ...prev, amenities_data: filtered }));
-                        }}
+                        onClick={() =>
+                          setForm((p: any) => ({
+                            ...p,
+                            amenities_data: p.amenities_data.filter((_: any, i: number) => i !== index),
+                          }))
+                        }
                       >
                         Remove
                       </Button>
                     </div>
                   ))}
-          
                   {form.amenities_data.length < 11 && (
                     <Button
                       onClick={() =>
-                        setForm((prev) => ({
-                          ...prev,
-                          amenities_data: [...prev.amenities_data, { title: "" }],
+                        setForm((p: any) => ({
+                          ...p,
+                          amenities_data: [...p.amenities_data, { title: "" }],
                         }))
                       }
                     >
@@ -667,30 +554,27 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                 </div>
               </CardContent>
             </Card>
-          
-            {/* 3️⃣ Special amenities (max 3) */}
+
+            {/* Special (featured) amenities -> kolumn `featured_amenities` */}
             <Card>
               <CardHeader>
                 <CardTitle>Special Amenities (max 3)</CardTitle>
+                <CardDescription>Välj 3 som bäst representerar “What makes it special”.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Choose up to 3 amenities that best represent what makes your property special.
-                </p>
-          
                 {form.amenities_data.length === 0 && (
                   <p className="text-xs text-muted-foreground italic mb-4">
-                    Add custom amenities above first to select your top 3 special ones.
+                    Lägg till “Custom Amenities” ovan först, välj sedan 3 här.
                   </p>
                 )}
-          
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {form.amenities_data.map((a) => (
+                  {form.amenities_data.map((a: any) => (
                     <label key={a.title} className="flex items-center space-x-2 text-sm">
                       <input
                         type="checkbox"
                         className="rounded border-gray-300"
-                        checked={form.featured_amenities.some((f) => f.title === a.title)}
+                        checked={form.featured_amenities.some((f: any) => f.title === a.title)}
                         onChange={(e) => {
                           let updated = [...form.featured_amenities];
                           if (e.target.checked) {
@@ -699,15 +583,15 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                             } else {
                               toast({
                                 title: "Limit reached",
-                                description:
-                                  "You can only select up to 3 special amenities.",
+                                description: "You can only select up to 3 special amenities.",
                                 variant: "destructive",
                               });
+                              return;
                             }
                           } else {
-                            updated = updated.filter((f) => f.title !== a.title);
+                            updated = updated.filter((f: any) => f.title !== a.title);
                           }
-                          setForm((prev) => ({ ...prev, featured_amenities: updated }));
+                          setForm((p: any) => ({ ...p, featured_amenities: updated }));
                         }}
                       />
                       <span>{a.title}</span>
@@ -716,12 +600,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                 </div>
               </CardContent>
             </Card>
-          
-            {/* Save buttons */}
+
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
@@ -730,55 +611,45 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
           {/* GUIDEBOOK */}
           <TabsContent value="guide">
-            <GuidebookEditor
-              sections={form.guidebook_sections}
-              onChange={(sections) => {
-                setForm((prev) => ({ ...prev, guidebook_sections: sections }));
-              }}
-              onSave={handleSave}
-              saving={saving}
-              propertyTitle={form.title}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Host Guidebook</CardTitle>
+                <CardDescription>Hantera sektioner, house rules m.m.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GuidebookEditor
+                  sections={form.guidebook_sections}
+                  onChange={(sections) =>
+                    setForm((p: any) => ({ ...p, guidebook_sections: sections }))
+                  }
+                  onSave={handleSave}
+                  saving={saving}
+                  propertyTitle={form.title}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          {/* CALENDAR & PRICING (inkl. Sync flyttad hit) */}
+          {/* CALENDAR & PRICING */}
           <TabsContent value="calendar" className="space-y-6">
-            {/* Pricing & Discounts Section */}
+            {/* Pricing & Discounts */}
             <Card>
               <CardHeader>
                 <CardTitle>Pricing & Discounts</CardTitle>
                 <CardDescription>
-                  Set your base price and discounts for longer stays.{" "}
-                  <button
-                    onClick={() => {
-                      const guidebookBtn = document.querySelector('[data-host-guidebook-trigger]') as HTMLButtonElement;
-                      if (guidebookBtn) {
-                        guidebookBtn.click();
-                        setTimeout(() => {
-                          const priceTab = document.querySelector('[data-value="price-guide"]') as HTMLButtonElement;
-                          if (priceTab) priceTab.click();
-                        }, 100);
-                      }
-                    }}
-                    className="text-primary hover:underline inline-flex items-center gap-1"
-                  >
-                    Learn more about pricing strategies →
-                  </button>
+                  Sätt ditt baspris samt vecko- och månadsrabatter.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price_per_night">Nightly Price ({form.currency || "SEK"})</Label>
+                    <Label htmlFor="price_per_night">Nightly Price ({form.currency})</Label>
                     <Input
                       id="price_per_night"
                       type="number"
                       min="0"
                       value={form.price_per_night || ""}
-                      onChange={(e) => setForm(prev => ({
-                        ...prev,
-                        price_per_night: e.target.value
-                      }))}
+                      onChange={(e) => setForm((p: any) => ({ ...p, price_per_night: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -790,12 +661,9 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                       max="100"
                       step="0.1"
                       value={form.weekly_discount_percentage || ""}
-                      onChange={(e) => setForm(prev => ({
-                        ...prev,
-                        weekly_discount_percentage: e.target.value
-                      }))}
+                      onChange={(e) => setForm((p: any) => ({ ...p, weekly_discount_percentage: e.target.value }))}
                     />
-                    <p className="text-xs text-muted-foreground">Applied to bookings of 7+ nights</p>
+                    <p className="text-xs text-muted-foreground">Applied to 7+ nights</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="monthly_discount">Monthly Discount (%)</Label>
@@ -806,100 +674,84 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
                       max="100"
                       step="0.1"
                       value={form.monthly_discount_percentage || ""}
-                      onChange={(e) => setForm(prev => ({
-                        ...prev,
-                        monthly_discount_percentage: e.target.value
-                      }))}
+                      onChange={(e) => setForm((p: any) => ({ ...p, monthly_discount_percentage: e.target.value }))}
                     />
-                    <p className="text-xs text-muted-foreground">Applied to bookings of 30+ nights</p>
+                    <p className="text-xs text-muted-foreground">Applied to 30+ nights</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Pricing Calculator */}
-            {property && (
-              <PricingCalculator
-                basePrice={parseInt(form.price_per_night) || 0}
-                weeklyDiscount={parseFloat(form.weekly_discount_percentage || "0")}
-                monthlyDiscount={parseFloat(form.monthly_discount_percentage || "0")}
-                currency={form.currency || "SEK"}
-              />
-            )}
+            {/* Kalkylator */}
+            <PricingCalculator
+              basePrice={parseInt(form.price_per_night) || 0}
+              weeklyDiscount={parseFloat(form.weekly_discount_percentage || "0")}
+              monthlyDiscount={parseFloat(form.monthly_discount_percentage || "0")}
+              currency={form.currency || "SEK"}
+            />
 
             {/* Cancellation Policy */}
             <Card>
               <CardHeader>
                 <CardTitle>Cancellation Policy</CardTitle>
-                <CardDescription>
-                  Choose how flexible you want to be with cancellations
-                </CardDescription>
+                <CardDescription>Välj hur flexibel du vill vara.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cancellation_policy">Policy Type</Label>
-                  <Select
-                    value={form.cancellation_policy || "moderate"}
-                    onValueChange={(value: "flexible" | "moderate" | "strict") => setForm(prev => ({
-                      ...prev,
-                      cancellation_policy: value
-                    }))}
-                  >
-                    <SelectTrigger id="cancellation_policy">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="flexible">
-                        Flexible - Full refund up to 1 day before
-                      </SelectItem>
-                      <SelectItem value="moderate">
-                        Moderate - Full refund up to 5 days before
-                      </SelectItem>
-                      <SelectItem value="strict">
-                        Strict - 50% refund up to 7 days before
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label htmlFor="cancellation_policy">Policy Type</Label>
+                <Select
+                  value={form.cancellation_policy || "moderate"}
+                  onValueChange={(value: "flexible" | "moderate" | "strict") =>
+                    setForm((p: any) => ({ ...p, cancellation_policy: value }))
+                  }
+                >
+                  <SelectTrigger id="cancellation_policy"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="flexible">Flexible — Full refund up to 1 day before</SelectItem>
+                    <SelectItem value="moderate">Moderate — Full refund up to 5 days before</SelectItem>
+                    <SelectItem value="strict">Strict — 50% refund up to 7 days before</SelectItem>
+                  </SelectContent>
+                </Select>
                 <CancellationPolicyDisplay policy={form.cancellation_policy || "moderate"} />
               </CardContent>
             </Card>
 
-            {/* Bank Account Setup */}
+            {/* Bankkonto/Stripe */}
             <BankAccountSetup />
 
-            {/* Existing Pricing Rules */}
+            {/* Pricing Rules (min stays, prep days etc.) */}
             <PropertyPricingRules propertyId={propertyId} />
 
+            {/* Special Pricing (datumintervall) */}
             <PropertySpecialPricing
               propertyId={propertyId}
-              basePrice={property?.price_per_night || 0}
-              currency={property?.currency || "SEK"}
+              basePrice={parseInt(form.price_per_night) || 0}
+              currency={form.currency || "SEK"}
             />
 
-            {property && (
-              <PropertyCalendarWidget
-                propertyId={property.id}
-                basePrice={parseInt(form.price_per_night) || 0}
-                currency={form.currency}
-                mode="admin"
-              />
-            )}
+            {/* Kalender */}
+            <PropertyCalendarWidget
+              propertyId={propertyId}
+              basePrice={parseInt(form.price_per_night) || 0}
+              currency={form.currency || "SEK"}
+              mode="admin"
+            />
 
-            {/* Sync flyttad hit */}
-            {property && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sync with other calendars</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AirbnbSyncManager
-                    propertyId={property.id}
-                    propertyTitle={form.title}
-                  />
-                </CardContent>
-              </Card>
-            )}
+            {/* iCal Sync */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sync with other calendars (iCal)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AirbnbSyncManager propertyId={propertyId} propertyTitle={form.title} />
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
