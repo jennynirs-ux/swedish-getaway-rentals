@@ -211,6 +211,27 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Sanitize large inline data to avoid timeouts (strip base64 data URLs)
+      const sanitizedAmenitiesData = Array.isArray(form.amenities_data)
+        ? form.amenities_data.map((item: any) => {
+            if (item && typeof item === 'object') {
+              const imageUrl = (item as any).image_url;
+              return {
+                ...item,
+                image_url:
+                  typeof imageUrl === 'string' && imageUrl.startsWith('data:')
+                    ? null
+                    : imageUrl,
+              };
+            }
+            return item;
+          })
+        : [];
+
+      const sanitizedGalleryImages = Array.isArray(form.gallery_images)
+        ? form.gallery_images.filter((img) => typeof img === 'string' && !img.startsWith('data:'))
+        : [];
+
       const updateData = {
         title: form.title.trim(),
         description: form.description.trim(),
@@ -221,10 +242,10 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         bathrooms: parseInt(form.bathrooms) || 1,
         max_guests: parseInt(form.max_guests) || 4,
         amenities: form.amenities,
-        amenities_data: form.amenities_data,
+        amenities_data: sanitizedAmenitiesData,
         featured_amenities: form.featured_amenities,
-        hero_image_url: form.hero_image_url,
-        gallery_images: form.gallery_images,
+        hero_image_url: typeof form.hero_image_url === 'string' && form.hero_image_url.startsWith('data:') ? null : form.hero_image_url,
+        gallery_images: sanitizedGalleryImages,
         gallery_metadata: form.gallery_metadata,
         guidebook_sections: form.guidebook_sections,
         tagline_line1: form.tagline_line1,
@@ -241,7 +262,6 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
         longitude: typeof form.longitude === 'number' ? form.longitude : (form.longitude ? Number(form.longitude) : null),
         updated_at: new Date().toISOString(),
       };
-
       const { error } = await supabase
         .from("properties")
         .update({
