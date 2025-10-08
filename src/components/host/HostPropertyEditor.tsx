@@ -10,6 +10,12 @@ import { CheckInOutTimes } from "@/components/admin/CheckInOutTimes";
 import { LocationEditor } from "@/components/LocationEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { HostBasicTab } from "./HostBasicTab";
+import { HostAmenitiesTab } from "./HostAmenitiesTab";
+import { HostGalleryTab } from "./HostGalleryTab";
+import PropertyPricingRules from "@/components/PropertyPricingRules";
+import PropertySpecialPricing from "@/components/admin/PropertySpecialPricing";
+import CouponForm from "@/components/CouponForm";
 
 interface HostPropertyEditorProps {
   propertyId: string;
@@ -105,36 +111,48 @@ export const HostPropertyEditor = ({
         <p className="text-muted-foreground">Manage your property settings, availability, and pricing</p>
       </div>
 
-      <Tabs defaultValue="calendar" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Calendar
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-1">
+          <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Basic</span>
           </TabsTrigger>
-          <TabsTrigger value="location" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Location
+          <TabsTrigger value="amenities" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Amenities</span>
           </TabsTrigger>
-          <TabsTrigger value="times" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Check-in/out
+          <TabsTrigger value="gallery" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Gallery</span>
           </TabsTrigger>
-          <TabsTrigger value="preparation" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Preparation
+          <TabsTrigger value="location" className="flex items-center gap-2 text-xs sm:text-sm">
+            <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Location</span>
           </TabsTrigger>
-          <TabsTrigger value="smartlock" className="flex items-center gap-2">
-            <Lock className="h-4 w-4" />
-            Smart Lock
+          <TabsTrigger value="calendar" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Calendar</span>
           </TabsTrigger>
-          <TabsTrigger value="pricing" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            Pricing
+          <TabsTrigger value="pricing" className="flex items-center gap-2 text-xs sm:text-sm">
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Pricing</span>
+          </TabsTrigger>
+          <TabsTrigger value="smartlock" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Smart Lock</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="calendar" className="mt-6">
-          <AvailabilityCalendar defaultPropertyId={propertyId} />
+        <TabsContent value="basic" className="mt-6">
+          <HostBasicTab propertyId={propertyId} onUpdate={onUpdate} />
+        </TabsContent>
+
+        <TabsContent value="amenities" className="mt-6">
+          <HostAmenitiesTab propertyId={propertyId} onUpdate={onUpdate} />
+        </TabsContent>
+
+        <TabsContent value="gallery" className="mt-6">
+          <HostGalleryTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
 
         <TabsContent value="location" className="mt-6 space-y-4">
@@ -156,36 +174,80 @@ export const HostPropertyEditor = ({
           </div>
         </TabsContent>
 
-        <TabsContent value="times" className="mt-6">
-          <CheckInOutTimes propertyId={propertyId} onUpdate={onUpdate} />
-        </TabsContent>
+        <TabsContent value="calendar" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Availability Calendar</CardTitle>
+              <CardDescription>Manage available dates and block preparation days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AvailabilityCalendar defaultPropertyId={propertyId} />
+            </CardContent>
+          </Card>
 
-        <TabsContent value="preparation" className="mt-6">
-          <PropertyPreparationDays 
-            propertyId={propertyId} 
-            currentPreparationDays={preparationDays}
-            onUpdate={onUpdate}
-          />
-        </TabsContent>
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Preparation Days</CardTitle>
+              <CardDescription>Set days needed between bookings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PropertyPreparationDays 
+                propertyId={propertyId} 
+                currentPreparationDays={preparationDays}
+                onUpdate={onUpdate}
+              />
+            </CardContent>
+          </Card>
 
-        <TabsContent value="smartlock" className="mt-6">
-          <SmartLockSetup propertyId={propertyId} />
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Check-in / Check-out Times</CardTitle>
+              <CardDescription>Set your property's check-in and check-out times</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CheckInOutTimes propertyId={propertyId} onUpdate={onUpdate} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="pricing" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Pricing Rules</CardTitle>
-              <CardDescription>
-                Additional pricing features coming soon
-              </CardDescription>
+              <CardDescription>Add extra fees and services</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                You can currently set seasonal prices directly in the Calendar tab.
-              </p>
+              <PropertyPricingRules propertyId={propertyId} />
             </CardContent>
           </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Special Pricing</CardTitle>
+              <CardDescription>Set special prices for specific dates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PropertySpecialPricing 
+                propertyId={propertyId}
+                basePrice={0}
+                currency="SEK"
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Coupons</CardTitle>
+              <CardDescription>Create discount coupons for your guests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CouponForm onSubmitted={onUpdate} propertyId={propertyId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="smartlock" className="mt-6">
+          <SmartLockSetup propertyId={propertyId} />
         </TabsContent>
       </Tabs>
     </div>

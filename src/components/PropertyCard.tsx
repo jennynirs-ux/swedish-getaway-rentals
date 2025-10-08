@@ -254,7 +254,9 @@ const PropertyCard = memo(({
               </h3>
               <div className="flex items-center text-muted-foreground text-sm mt-1">
                 <MapPin className="w-4 h-4 mr-1" />
-                {safeProperty.location || "Sverige"}
+                {safeProperty.city 
+                  ? `${safeProperty.city.charAt(0).toUpperCase() + safeProperty.city.slice(1)}, Sweden`
+                  : (safeProperty.location || "Sweden")}
               </div>
               {safeProperty.latitude && safeProperty.longitude && (() => {
                 const coords: Coordinates = { 
