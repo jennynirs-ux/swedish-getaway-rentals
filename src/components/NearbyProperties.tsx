@@ -24,7 +24,7 @@ const NearbyProperties = memo(({ currentPropertyId, currentCoordinates, allPrope
     const MAX_DISTANCE_KM = 25;
     const MAX_RESULTS = 3;
 
-    const propertiesWithDistance = allProperties
+    const propertiesWithDistance = (allProperties || [])
       .filter(p => p.id !== currentPropertyId)
       .filter(p => p.latitude && p.longitude)
       .map(p => {
