@@ -55,15 +55,6 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
             <p>{property.tagline_line2 || 'Your perfect escape awaits.'}</p>
           </div>
 
-          {/* Price Display */}
-          <div className="mb-6">
-            <div className="text-4xl md:text-5xl font-bold">
-              {Math.round(property.price_per_night * 1.1).toLocaleString()} {property.currency}
-              <span className="text-2xl font-normal opacity-90"> /night</span>
-            </div>
-            <div className="text-sm opacity-75 mt-1">Including platform fee</div>
-          </div>
-
           {/* Quick Info */}
           <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-lg">
             <div className="flex items-center gap-2">
