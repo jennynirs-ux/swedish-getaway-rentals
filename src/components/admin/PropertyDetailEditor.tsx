@@ -567,49 +567,164 @@ const PropertyDetailEditor = ({ propertyId, open, onClose, onSave }: PropertyDet
 
           {/* AMENITIES */}
           <TabsContent value="amenities" className="space-y-6">
-            {/* Quick add överst */}
+            {/* 1️⃣ Checkbox amenities */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Add Amenity</CardTitle>
+                <CardTitle>Select Amenities</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    value={quickAmenity}
-                    onChange={(e) => setQuickAmenity(e.target.value)}
-                    placeholder="Add amenity (e.g. Badtunna, Bastu, Grillplats...)"
-                    list="amenities-suggestions"
-                  />
-                  <Button onClick={addAmenityTop}>Add</Button>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Choose all amenities that apply to your property. These will appear on your listing page.
+                </p>
+          
+                {/* Visa fler / färre */}
+                <div className="flex justify-end mb-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setShowAllAmenities((prev) => !prev)
+                    }
+                  >
+                    {showAllAmenities ? "Show fewer" : "Show all"}
+                  </Button>
                 </div>
-                <datalist id="amenities-suggestions">
-                  {AMENITY_SUGGESTIONS.map((s) => (
-                    <option value={s} key={s} />
-                  ))}
-                </datalist>
+          
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {(showAllAmenities ? AMENITY_SUGGESTIONS : AMENITY_SUGGESTIONS.slice(0, 20)).map(
+                    (amenity) => (
+                      <label
+                        key={amenity}
+                        className="flex items-center space-x-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300"
+                          checked={form.amenities.includes(amenity)}
+                          onChange={(e) => {
+                            const selected = e.target.checked
+                              ? [...form.amenities, amenity]
+                              : form.amenities.filter((a) => a !== amenity);
+                            setForm((prev) => ({ ...prev, amenities: selected }));
+                          }}
+                        />
+                        <span>{amenity}</span>
+                      </label>
+                    )
+                  )}
+                </div>
               </CardContent>
             </Card>
-
-            <AmenitiesEditor
-              amenities={form.amenities_data}
-              onChange={(amenities) => {
-                setForm((prev) => ({ ...prev, amenities_data: amenities }));
-              }}
-              onSave={handleSave}
-              saving={saving}
-              // Om din komponent stödjer props för att dölja text vid ikoner/ändra ordning,
-              // kan du lägga till t.ex. insertAtTop / hideIconLabels här.
-            />
-
-            <FeaturedAmenitiesSelector
-              amenities={form.amenities_data}
-              featuredAmenities={form.featured_amenities || []}
-              onChange={(featured) => {
-                setForm((prev) => ({ ...prev, featured_amenities: featured }));
-              }}
-              onSave={handleSave}
-              saving={saving}
-            />
+          
+            {/* 2️⃣ Egna (custom) amenities */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Amenities (up to 11)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add unique amenities that make your property stand out. These will appear under “Extra amenities”.
+                </p>
+          
+                <div className="space-y-2">
+                  {form.amenities_data.map((a, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <Input
+                        value={a.title || ""}
+                        onChange={(e) => {
+                          const updated = [...form.amenities_data];
+                          updated[index].title = e.target.value;
+                          setForm((prev) => ({ ...prev, amenities_data: updated }));
+                        }}
+                        placeholder={`Amenity ${index + 1}`}
+                      />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const filtered = form.amenities_data.filter((_, i) => i !== index);
+                          setForm((prev) => ({ ...prev, amenities_data: filtered }));
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+          
+                  {form.amenities_data.length < 11 && (
+                    <Button
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          amenities_data: [...prev.amenities_data, { title: "" }],
+                        }))
+                      }
+                    >
+                      + Add Amenity
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          
+            {/* 3️⃣ Special amenities (max 3) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Special Amenities (max 3)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Choose up to 3 amenities that best represent what makes your property special.
+                </p>
+          
+                {form.amenities_data.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic mb-4">
+                    Add custom amenities above first to select your top 3 special ones.
+                  </p>
+                )}
+          
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {form.amenities_data.map((a) => (
+                    <label key={a.title} className="flex items-center space-x-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300"
+                        checked={form.featured_amenities.some((f) => f.title === a.title)}
+                        onChange={(e) => {
+                          let updated = [...form.featured_amenities];
+                          if (e.target.checked) {
+                            if (updated.length < 3) {
+                              updated.push({ title: a.title });
+                            } else {
+                              toast({
+                                title: "Limit reached",
+                                description:
+                                  "You can only select up to 3 special amenities.",
+                                variant: "destructive",
+                              });
+                            }
+                          } else {
+                            updated = updated.filter((f) => f.title !== a.title);
+                          }
+                          setForm((prev) => ({ ...prev, featured_amenities: updated }));
+                        }}
+                      />
+                      <span>{a.title}</span>
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          
+            {/* Save buttons */}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </TabsContent>
 
           {/* GUIDEBOOK */}
