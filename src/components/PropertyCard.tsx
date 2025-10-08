@@ -258,20 +258,6 @@ const PropertyCard = memo(({
                   ? `${safeProperty.city.charAt(0).toUpperCase() + safeProperty.city.slice(1)}, Sweden`
                   : (safeProperty.location || "Sweden")}
               </div>
-              {safeProperty.latitude && safeProperty.longitude && (() => {
-                const coords: Coordinates = { 
-                  latitude: safeProperty.latitude, 
-                  longitude: safeProperty.longitude 
-                };
-                const closestCity = getClosestMajorCity(coords);
-                if (!closestCity) return null;
-                const driveTime = calculateDriveTime(closestCity.distance);
-                return (
-                  <div className="text-muted-foreground text-xs mt-1">
-                    {formatDistanceText(closestCity.distance, driveTime)}
-                  </div>
-                );
-              })()}
             </div>
           </div>
         </CardHeader>
