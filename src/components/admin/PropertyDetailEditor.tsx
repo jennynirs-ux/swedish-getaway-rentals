@@ -702,12 +702,12 @@ const PropertyDetailEditor = ({
             <Card>
               <CardHeader>
                 <CardTitle>Special Amenities (max 3)</CardTitle>
-                <CardDescription>Välj 3 som bäst representerar “What makes it special”.</CardDescription>
+                <CardDescription>Select 3 that best represent “What makes it special”.</CardDescription>
               </CardHeader>
               <CardContent>
                 {form.amenities_data.length === 0 && (
                   <p className="text-xs text-muted-foreground italic mb-4">
-                    Lägg till “Custom Amenities” ovan först, välj sedan 3 här.
+                    First add “Custom Amenities” above, then 3 here.
                   </p>
                 )}
 
