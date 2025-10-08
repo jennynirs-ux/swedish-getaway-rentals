@@ -293,7 +293,6 @@ const HostDashboard = () => {
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="properties" className="space-y-6">
@@ -374,49 +373,6 @@ const HostDashboard = () => {
               )}
             </TabsContent>
 
-            <TabsContent value="pricing" className="space-y-6">
-              {properties.length === 0 ? (
-                <Card>
-                  <CardContent className="py-16 text-center">
-                    <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">Create a property first to manage pricing and calendar</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-6">
-                  <div>
-                    <Label>Select Property</Label>
-                    <select
-                      className="w-full mt-2 p-2 border rounded-md"
-                      value={pricingPropertyId || ''}
-                      onChange={(e) => setPricingPropertyId(e.target.value || null)}
-                    >
-                      <option value="">Choose a property...</option>
-                      {properties.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  {pricingPropertyId && (() => {
-                    const selectedProperty = properties.find((p) => p.id === pricingPropertyId);
-                    return selectedProperty ? (
-                      <HostPropertyEditor
-                        propertyId={pricingPropertyId}
-                        propertyTitle={selectedProperty.title}
-                        preparationDays={selectedProperty.preparation_days || 0}
-                        onUpdate={() => {
-                          refetchProperties();
-                          fetchHostStats();
-                        }}
-                      />
-                    ) : null;
-                  })()}
-                </div>
-              )}
-            </TabsContent>
           </Tabs>
 
           {editingPropertyId && (
