@@ -39,7 +39,7 @@ import {
   MapPin,
   DollarSign,
 } from "lucide-react";
-import { GuidebookEditor } from "./GuidebookEditor";
+import { GuidebookEditor } from "./GuidebookEditorEnhanced";
 import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
 import { AirbnbSyncManager } from "./AirbnbSyncManager";
 import { PropertyPricingRulesEnhanced } from "./PropertyPricingRulesEnhanced";
@@ -49,7 +49,7 @@ import { CancellationPolicyDisplay } from "../CancellationPolicyDisplay";
 import { LocationEditor } from "../LocationEditor";
 import { HostBasicTab } from "../host/HostBasicTab";
 import { HostAmenitiesTab } from "../host/HostAmenitiesTab";
-import { HostGalleryTab } from "../host/HostGalleryTab";
+import { HostGalleryTab } from "../host/HostGalleryTabEnhanced";
 
 interface PropertyDetailEditorProps {
   propertyId: string;

@@ -220,18 +220,37 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                 <Trash2 className="h-4 w-4" />
               </Button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-sm">Icon (optional)</Label>
-                  <Input
+              <div className="flex gap-3">
+                <div className="space-y-1.5 w-24">
+                  <Label className="text-sm">Icon</Label>
+                  <select
                     value={amenity.icon || ""}
                     onChange={(e) => updateCustomAmenity(index, 'icon', e.target.value)}
-                    placeholder="e.g., sauna, wifi"
-                    className="text-sm"
-                  />
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
+                  >
+                    <option value="">None</option>
+                    <option value="🔥">🔥</option>
+                    <option value="🌊">🌊</option>
+                    <option value="🏔️">🏔️</option>
+                    <option value="🧖">🧖</option>
+                    <option value="🎿">🎿</option>
+                    <option value="🚣">🚣</option>
+                    <option value="🏊">🏊</option>
+                    <option value="🎣">🎣</option>
+                    <option value="🍷">🍷</option>
+                    <option value="☕">☕</option>
+                    <option value="📶">📶</option>
+                    <option value="🅿️">🅿️</option>
+                    <option value="🐕">🐕</option>
+                    <option value="👨‍👩‍👧">👨‍👩‍👧</option>
+                    <option value="🔒">🔒</option>
+                    <option value="🌲">🌲</option>
+                    <option value="⛰️">⛰️</option>
+                    <option value="🌅">🌅</option>
+                  </select>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 flex-1">
                   <Label className="text-sm">Title</Label>
                   <Input
                     value={amenity.title || ""}
