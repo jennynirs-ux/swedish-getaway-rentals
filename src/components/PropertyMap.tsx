@@ -13,7 +13,7 @@ interface PropertyMapProps {
 }
 
 // Inner map is lazy-loaded to avoid context issues
-const PropertyLeaflet = lazy(() => import('./maps/LeafletPropertyMapInner'));
+const PropertyLeaflet = lazy(() => import('./maps/LeafletPropertyMapBasic'));
 
 function PropertyMap({ latitude, longitude, propertyTitle, className = '', showRoute = false }: PropertyMapProps) {
   const [route, setRoute] = useState<RouteInfo | null>(null);
@@ -21,7 +21,7 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
   const [mounted, setMounted] = useState(false);
   const isValid = Number.isFinite(latitude) && Number.isFinite(longitude);
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-  const position: LatLngExpression = [latitude, longitude];
+  const position: [number, number] = [latitude, longitude];
 
   useEffect(() => setMounted(true), []);
 
@@ -55,8 +55,8 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
 
 
   // Convert route geometry to Leaflet LatLng format
-  const routePositions: LatLngExpression[] = route?.geometry.map(
-    ([lng, lat]) => [lat, lng] as LatLngExpression
+  const routePositions: [number, number][] = route?.geometry.map(
+    ([lng, lat]) => [lat, lng] as [number, number]
   ) || [];
 
   if (!mounted) {

@@ -8,7 +8,7 @@ import { geocodeAddress } from '@/lib/geocoding';
 import { toast } from '@/hooks/use-toast';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 
-const EditorMap = lazy(() => import('./maps/LeafletEditorInner'));
+const EditorMap = lazy(() => import('./maps/LeafletEditorBasic'));
 
 interface LocationData {
   street?: string;
