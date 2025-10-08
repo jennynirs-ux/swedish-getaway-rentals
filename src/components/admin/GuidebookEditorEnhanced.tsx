@@ -25,7 +25,6 @@ import {
   Recycle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import LeafletEditorBasic from "@/components/maps/LeafletEditorBasic";
 
 interface GuidebookBlock {
   id: string;
@@ -369,36 +368,46 @@ export const GuidebookEditor = ({
 
                   {block.type === "map" && (
                     <div className="space-y-3">
-                      <div className="h-64 rounded-md overflow-hidden border">
-                        <LeafletEditorBasic
-                          center={[
-                            block.mapPins?.[0]?.lat || 57.7,
-                            block.mapPins?.[0]?.lng || 12.0
-                          ]}
-                          onPositionChange={(lat, lng) => {
-                            if (block.mapPins && block.mapPins.length > 0) {
-                              updateMapPin(section.id, block.id, 0, { lat, lng });
-                            } else {
-                              addMapPin(section.id, block.id);
-                              updateMapPin(section.id, block.id, 0, { lat, lng });
-                            }
-                          }}
-                        />
+                      <div className="h-48 rounded-md bg-muted/30 border-2 border-dashed flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Map will be shown to guests</p>
+                          <p className="text-xs">Add pins below to mark locations</p>
+                        </div>
                       </div>
                       {block.mapPins?.map((pin, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 border rounded">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          <Input
-                            value={pin.label}
-                            onChange={(e) => updateMapPin(section.id, block.id, i, { label: e.target.value })}
-                            placeholder="Pin label"
-                          />
+                        <div key={i} className="flex items-start gap-2 p-3 border rounded bg-background">
+                          <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <Input
+                              value={pin.label}
+                              onChange={(e) => updateMapPin(section.id, block.id, i, { label: e.target.value })}
+                              placeholder="Location name"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                type="number"
+                                step="0.0001"
+                                value={pin.lat}
+                                onChange={(e) => updateMapPin(section.id, block.id, i, { lat: parseFloat(e.target.value) })}
+                                placeholder="Latitude"
+                              />
+                              <Input
+                                type="number"
+                                step="0.0001"
+                                value={pin.lng}
+                                onChange={(e) => updateMapPin(section.id, block.id, i, { lng: parseFloat(e.target.value) })}
+                                placeholder="Longitude"
+                              />
+                            </div>
+                          </div>
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="flex-shrink-0"
                             onClick={() => removeMapPin(section.id, block.id, i)}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       ))}
