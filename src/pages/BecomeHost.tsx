@@ -35,17 +35,40 @@ const BecomeHost = () => {
 
     setLoading(true);
     try {
-      // Update user profile to become a host
-      const { error: profileError } = await supabase
+      // First, check if profile exists, if not create it
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          is_host: true,
-          host_approved: true,
-          host_application_date: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-      if (profileError) throw profileError;
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email,
+            is_host: true,
+            host_approved: true,
+            host_application_date: new Date().toISOString(),
+          });
+
+        if (createError) throw createError;
+      } else {
+        // Update existing profile to become a host
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            is_host: true,
+            host_approved: true,
+            host_application_date: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+
+        if (updateError) throw updateError;
+      }
 
       toast({
         title: "Welcome to Nordic Getaways Hosting!",
