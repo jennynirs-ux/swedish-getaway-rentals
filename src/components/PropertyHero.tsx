@@ -80,14 +80,6 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
             >
               Book Your Stay
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-lg px-8 py-6 border-white text-white hover:bg-white/10"
-              onClick={scrollToGallery}
-            >
-              View Gallery
-            </Button>
           </div>
         </div>
       </div>
