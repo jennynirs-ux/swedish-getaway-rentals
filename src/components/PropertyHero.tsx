@@ -13,10 +13,6 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const scrollToGallery = () => {
-    document.getElementById('gallery-section')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Hero Background Image - Use hero_image_url first */}
