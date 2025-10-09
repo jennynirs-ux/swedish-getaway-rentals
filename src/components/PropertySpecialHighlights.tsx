@@ -58,11 +58,9 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
     }
   };
 
+  // Show only the 3 special amenities that the host selected
   const featuredAmenities = (property.featured_amenities as AmenityData[]) || [];
-  const allAmenities = (property.amenities_data as AmenityData[]) || [];
-  const displayAmenities = featuredAmenities.length > 0 
-    ? featuredAmenities.slice(0, 4)
-    : allAmenities.slice(0, 4);
+  const displayAmenities = featuredAmenities.slice(0, 3);
 
   const handleAmenityClick = (amenity: AmenityData) => {
     const IconComponent = getAmenityIcon(amenity.icon);

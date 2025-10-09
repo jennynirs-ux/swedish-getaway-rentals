@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarDays } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
 import { usePricingRules } from "@/hooks/usePricingRules";
@@ -78,6 +79,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [availabilityPrices, setAvailabilityPrices] = useState<Record<string, number>>({});
   const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
   const [guestCountConfirmed, setGuestCountConfirmed] = useState(false);
+  const [bringPet, setBringPet] = useState(false);
 
   // Load availability prices when dates change
   useEffect(() => {
@@ -247,6 +249,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
   };
 
   const availableServices = getAvailableServices();
+  const petFeeService = availableServices.find(s => s.name.toLowerCase().includes('pet'));
+  const otherServices = availableServices.filter(s => !s.name.toLowerCase().includes('pet'));
 
   return (
     <Card className="w-full">
@@ -303,22 +307,56 @@ const BookingForm: React.FC<BookingFormProps> = ({
             </div>
             <div>
               <Label htmlFor="guests">Number of Guests</Label>
-              <Input
-                id="guests"
-                type="number"
-                min="1"
-                max={maxGuests}
-                value={formData.number_of_guests}
-                onChange={(e) => setFormData(prev => ({ ...prev, number_of_guests: parseInt(e.target.value) || 1 }))}
-              />
+              <Select
+                value={formData.number_of_guests.toString()}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, number_of_guests: parseInt(value) }))}
+              >
+                <SelectTrigger id="guests">
+                  <SelectValue placeholder="Select number of guests" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: maxGuests }, (_, i) => i + 1).map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} {num === 1 ? 'Guest' : 'Guests'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
+          {/* Pet Fee */}
+          {petFeeService && (
+            <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
+              <Label>Bringing a Pet?</Label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="bring-pet"
+                  checked={bringPet}
+                  onCheckedChange={(checked) => {
+                    setBringPet(checked === true);
+                    if (checked) {
+                      if (!selectedServices.includes(petFeeService.id)) {
+                        setSelectedServices([...selectedServices, petFeeService.id]);
+                      }
+                    } else {
+                      setSelectedServices(selectedServices.filter(id => id !== petFeeService.id));
+                    }
+                  }}
+                />
+                <Label htmlFor="bring-pet" className="text-sm">
+                  Yes, I'm bringing a pet (+{petFeeService.price.toLocaleString()} {petFeeService.currency}
+                  {petFeeService.is_per_night ? ' per night' : ' one-time fee'})
+                </Label>
+              </div>
+            </div>
+          )}
+
           {/* Extra Services */}
-          {availableServices.length > 0 && (
+          {otherServices.length > 0 && (
             <div className="space-y-2">
               <Label>Extra Services</Label>
-              {availableServices.map((service) => (
+              {otherServices.map((service) => (
                 <div key={service.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={service.id}
@@ -432,9 +470,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    // This would open the GuestGuideDialog - you can implement this based on your needs
                     const event = new CustomEvent('open-guest-guide', { 
-                      detail: { section: 'house-rules' } 
+                      detail: { section: 'rules' } 
                     });
                     window.dispatchEvent(event);
                   }}

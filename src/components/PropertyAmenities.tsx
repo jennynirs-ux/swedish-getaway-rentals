@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { Property } from "@/hooks/useProperties";
 import { AmenityDialog } from "@/components/AmenityDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { 
   Wifi, Car, Coffee, Utensils, Waves, TreePine, Mountain, Home, 
   Bed, Bath, Users, Flame, UtensilsCrossed, Car as Parking,
@@ -23,6 +25,7 @@ interface AmenityData {
 const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
   const [selectedAmenity, setSelectedAmenity] = useState<AmenityData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   // Icon mapping for amenities
   const getAmenityIcon = (amenity: string) => {
@@ -47,56 +50,99 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return Home;
   };
 
-  // Combine amenities from both amenities_data and amenities arrays, excluding featured ones
-  const amenitiesData: AmenityData[] = useMemo(() => {
-    const allAmenities: AmenityData[] = [];
-    
-    // Get featured amenities titles for filtering
-    const featuredTitles = new Set((property.featured_amenities || []).map((amenity: any) => amenity.title?.toLowerCase()));
-    
-    // Add from amenities_data if it exists
-    if (property.amenities_data && Array.isArray(property.amenities_data) && property.amenities_data.length > 0) {
-      const dataAmenities = property.amenities_data
+  // Premium amenities are from featured_amenities
+  const premiumAmenities: AmenityData[] = useMemo(() => {
+    const featuredAmenities = (property.featured_amenities || []) as any[];
+    return featuredAmenities.map((amenity: any) => ({
+      icon: getAmenityIcon(amenity.icon || amenity.title || amenity.name),
+      title: amenity.title || amenity.name || '',
+      tagline: amenity.tagline || amenity.description || '',
+      description: amenity.description || '',
+      image_url: amenity.image_url,
+      features: amenity.features || []
+    }));
+  }, [property.featured_amenities]);
+
+  // Standard amenities - categorized like in host dashboard
+  const standardAmenitiesByCategory = useMemo(() => {
+    const categories: Record<string, AmenityData[]> = {
+      "Essentials": [],
+      "Kitchen & Dining": [],
+      "Comfort": [],
+      "Entertainment": [],
+      "Outdoor": [],
+      "Other": []
+    };
+
+    // Get featured amenity titles to exclude from standard
+    const featuredTitles = new Set((property.featured_amenities || []).map((a: any) => (a.title || a.name || '').toLowerCase()));
+
+    // Process amenities_data
+    if (property.amenities_data && Array.isArray(property.amenities_data)) {
+      property.amenities_data
         .filter((amenity: any) => !featuredTitles.has((amenity.title || amenity.name || '').toLowerCase()))
-        .map((amenity: any) => ({
-          icon: getAmenityIcon(amenity.name || amenity.title || ''),
-          title: amenity.title || amenity.name || '',
-          tagline: amenity.tagline || amenity.description || '',
-          description: amenity.description || '',
-          image_url: amenity.image_url,
-          features: amenity.features || []
-        }));
-      allAmenities.push(...dataAmenities);
+        .forEach((amenity: any) => {
+          const amenityData: AmenityData = {
+            icon: getAmenityIcon(amenity.name || amenity.title || ''),
+            title: amenity.title || amenity.name || '',
+            tagline: amenity.tagline || amenity.description || '',
+            description: amenity.description || '',
+            image_url: amenity.image_url,
+            features: amenity.features || []
+          };
+          
+          const category = categorizeAmenity(amenityData.title);
+          categories[category].push(amenityData);
+        });
     }
-    
-    // Add from amenities array (avoid duplicates and featured ones)
-    if (property.amenities && property.amenities.length > 0) {
-      const existingTitles = new Set(allAmenities.map(a => a.title.toLowerCase()));
-      const basicAmenities = property.amenities
+
+    // Process basic amenities array
+    if (property.amenities && Array.isArray(property.amenities)) {
+      const existingTitles = new Set(
+        Object.values(categories).flat().map(a => a.title.toLowerCase())
+      );
+      
+      property.amenities
         .filter((amenity: string) => 
           !existingTitles.has(amenity.toLowerCase()) && 
           !featuredTitles.has(amenity.toLowerCase())
         )
-        .map((amenity: string) => ({
-          icon: getAmenityIcon(amenity),
-          title: amenity,
-          tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
-          description: property.amenities_descriptions?.[amenity] || `Experience premium ${amenity.toLowerCase()} facilities during your stay at our property.`,
-          image_url: undefined,
-          features: []
-        }));
-      allAmenities.push(...basicAmenities);
+        .forEach((amenity: string) => {
+          const amenityData: AmenityData = {
+            icon: getAmenityIcon(amenity),
+            title: amenity,
+            tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
+            description: property.amenities_descriptions?.[amenity] || `Experience ${amenity.toLowerCase()} during your stay.`,
+            image_url: undefined,
+            features: []
+          };
+          
+          const category = categorizeAmenity(amenity);
+          categories[category].push(amenityData);
+        });
     }
-    
-    return allAmenities.slice(0, 8);
+
+    return categories;
   }, [property.amenities_data, property.amenities, property.amenities_descriptions, property.featured_amenities]);
+
+  const categorizeAmenity = (title: string): string => {
+    const lower = title.toLowerCase();
+    if (lower.includes('wifi') || lower.includes('parking') || lower.includes('heating')) return "Essentials";
+    if (lower.includes('kitchen') || lower.includes('coffee') || lower.includes('dining')) return "Kitchen & Dining";
+    if (lower.includes('bed') || lower.includes('bath') || lower.includes('towel') || lower.includes('linen')) return "Comfort";
+    if (lower.includes('tv') || lower.includes('game') || lower.includes('book')) return "Entertainment";
+    if (lower.includes('outdoor') || lower.includes('garden') || lower.includes('bbq') || lower.includes('pool') || lower.includes('sauna')) return "Outdoor";
+    return "Other";
+  };
+
+  const totalStandardAmenities = Object.values(standardAmenitiesByCategory).flat().length;
 
   const handleAmenityClick = (amenity: AmenityData) => {
     setSelectedAmenity(amenity);
     setIsDialogOpen(true);
   };
 
-  if (!amenitiesData.length) {
+  if (!premiumAmenities.length && totalStandardAmenities === 0) {
     return null;
   }
 
@@ -115,34 +161,49 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
             </p>
           </div>
 
-          {/* Check if amenities exist */}
-          {amenitiesData.length === 0 ? (
+          {/* Premium Amenities Grid */}
+          {premiumAmenities.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {premiumAmenities.map((amenity, index) => (
+                  <div 
+                    key={index} 
+                    className="text-center p-6 rounded-lg bg-background hover:bg-muted/50 transition-all duration-300 cursor-pointer group hover:scale-105"
+                    onClick={() => handleAmenityClick(amenity)}
+                  >
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-xl mb-4 group-hover:bg-primary/20 transition-colors duration-300">
+                      <amenity.icon className="h-8 w-8 text-primary" />
+                    </div>
+                    
+                    <h3 className="text-lg font-semibold mb-2">
+                      {amenity.title}
+                    </h3>
+                    
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {amenity.tagline}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Show Standard Amenities Button */}
+              {totalStandardAmenities > 0 && (
+                <div className="text-center mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAllAmenities(true)}
+                    className="text-primary"
+                  >
+                    +{totalStandardAmenities} Standard Amenities
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">
-                No amenities listed for this property yet.
+                No premium amenities listed for this property yet.
               </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {amenitiesData.map((amenity, index) => (
-              <div 
-                key={index} 
-                className="text-center p-6 rounded-lg bg-background hover:bg-muted/50 transition-all duration-300 cursor-pointer group hover:scale-105"
-                onClick={() => handleAmenityClick(amenity)}
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-xl mb-4 group-hover:bg-primary/20 transition-colors duration-300">
-                  <amenity.icon className="h-8 w-8 text-primary" />
-                </div>
-                
-                <h3 className="text-lg font-semibold mb-2">
-                  {amenity.title}
-                </h3>
-                
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {amenity.tagline}
-                </p>
-              </div>
-              ))}
             </div>
           )}
         </div>
@@ -154,6 +215,42 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
       />
+
+      {/* All Standard Amenities Dialog */}
+      <Dialog open={showAllAmenities} onOpenChange={setShowAllAmenities}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Standard Amenities</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            {Object.entries(standardAmenitiesByCategory).map(([category, amenities]) => {
+              if (amenities.length === 0) return null;
+              return (
+                <div key={category}>
+                  <h3 className="text-lg font-semibold mb-3">{category}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {amenities.map((amenity, index) => (
+                      <div 
+                        key={index}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          handleAmenityClick(amenity);
+                          setShowAllAmenities(false);
+                        }}
+                      >
+                        <div className="flex-shrink-0">
+                          <amenity.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium">{amenity.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
