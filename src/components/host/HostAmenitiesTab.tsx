@@ -5,11 +5,54 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2 } from "lucide-react";
+import { 
+  Trash2, 
+  Flame, 
+  Waves, 
+  Mountain, 
+  Sparkles, 
+  Activity, 
+  Palmtree, 
+  Fish, 
+  Wine, 
+  Coffee, 
+  Wifi, 
+  ParkingCircle, 
+  Dog, 
+  Users, 
+  Lock, 
+  Trees, 
+  Sunrise,
+  Home,
+  Star,
+  Heart
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+
+const ICON_OPTIONS = [
+  { value: "Flame", label: "Fire", icon: Flame },
+  { value: "Waves", label: "Water", icon: Waves },
+  { value: "Mountain", label: "Mountain", icon: Mountain },
+  { value: "Sparkles", label: "Sauna/Spa", icon: Sparkles },
+  { value: "Activity", label: "Activity", icon: Activity },
+  { value: "Palmtree", label: "Nature", icon: Palmtree },
+  { value: "Fish", label: "Fishing", icon: Fish },
+  { value: "Wine", label: "Wine", icon: Wine },
+  { value: "Coffee", label: "Coffee", icon: Coffee },
+  { value: "Wifi", label: "WiFi", icon: Wifi },
+  { value: "ParkingCircle", label: "Parking", icon: ParkingCircle },
+  { value: "Dog", label: "Pet Friendly", icon: Dog },
+  { value: "Users", label: "Family", icon: Users },
+  { value: "Lock", label: "Secure", icon: Lock },
+  { value: "Trees", label: "Forest", icon: Trees },
+  { value: "Sunrise", label: "View", icon: Sunrise },
+  { value: "Home", label: "Home", icon: Home },
+  { value: "Star", label: "Premium", icon: Star },
+  { value: "Heart", label: "Special", icon: Heart },
+];
 
 interface HostAmenitiesTabProps {
   propertyId: string;
@@ -222,7 +265,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
               </Button>
 
               <div className="flex gap-3">
-                <div className="space-y-1.5 w-24">
+                <div className="space-y-1.5 w-32">
                   <Label className="text-sm">Icon</Label>
                   <select
                     value={amenity.icon || ""}
@@ -230,24 +273,11 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                     className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
                   >
                     <option value="">None</option>
-                    <option value="🔥">🔥</option>
-                    <option value="🌊">🌊</option>
-                    <option value="🏔️">🏔️</option>
-                    <option value="🧖">🧖</option>
-                    <option value="🎿">🎿</option>
-                    <option value="🚣">🚣</option>
-                    <option value="🏊">🏊</option>
-                    <option value="🎣">🎣</option>
-                    <option value="🍷">🍷</option>
-                    <option value="☕">☕</option>
-                    <option value="📶">📶</option>
-                    <option value="🅿️">🅿️</option>
-                    <option value="🐕">🐕</option>
-                    <option value="👨‍👩‍👧">👨‍👩‍👧</option>
-                    <option value="🔒">🔒</option>
-                    <option value="🌲">🌲</option>
-                    <option value="⛰️">⛰️</option>
-                    <option value="🌅">🌅</option>
+                    {ICON_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
