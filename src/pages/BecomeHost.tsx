@@ -164,7 +164,7 @@ const BecomeHost = () => {
             Become a Host
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto opacity-90">
-            Share your Nordic property and earn up to 90% of every booking
+            Share your property and start earning money.
           </p>
           <Button 
             size="lg" 
@@ -222,36 +222,43 @@ const BecomeHost = () => {
           </div>
         </div>
 
-        {/* Earnings Calculator */}
+        {/* Earnings Example */}
         <div className="mb-20 max-w-4xl mx-auto">
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="p-8">
               <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">
-                Potential Earnings Example
+                Transparent Earnings Example
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                 <div>
-                  <div className="text-4xl font-bold text-primary mb-2">2,500 SEK</div>
-                  <div className="text-muted-foreground">Nightly Rate</div>
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    2,500 SEK
+                  </div>
+                  <div className="text-muted-foreground">Your Price</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-primary mb-2">15</div>
-                  <div className="text-muted-foreground">Nights/Month</div>
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    +10%
+                  </div>
+                  <div className="text-muted-foreground">Platform Fee</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-green-600 mb-2">33,750 SEK</div>
-                  <div className="text-muted-foreground">Monthly Earnings (90%)</div>
+                  <div className="text-4xl font-bold text-green-600 mb-2">
+                    2,750 SEK
+                  </div>
+                  <div className="text-muted-foreground">Guest Pays</div>
                 </div>
               </div>
-              
+
               <p className="text-center text-sm text-muted-foreground mt-6">
-                *Based on average pricing and occupancy. Platform fee: 10%
+                The 10% covers marketing, support, secure payments, and ongoing
+                platform development — keeping hosting transparent and fair.
               </p>
             </CardContent>
           </Card>
         </div>
-
+        
         {/* CTA Section */}
         <div className="text-center bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
