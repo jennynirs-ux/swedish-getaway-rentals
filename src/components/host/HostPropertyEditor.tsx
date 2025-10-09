@@ -14,8 +14,8 @@ import { HostAmenitiesTab } from "./HostAmenitiesTab";
 import { HostGalleryTab } from "./HostGalleryTab";
 import { HostLocationTab } from "./HostLocationTab";
 import { HostPricingCalculator } from "./HostPricingCalculator";
-import PropertyPricingRules from "@/components/PropertyPricingRules";
-import PropertySpecialPricing from "@/components/admin/PropertySpecialPricing";
+import { PropertyPricingRulesEnhanced } from "@/components/admin/PropertyPricingRulesEnhanced";
+import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
 import CouponForm from "@/components/CouponForm";
 import { GuidebookEditor } from "@/components/admin/GuidebookEditorEnhanced";
 
@@ -92,11 +92,6 @@ export const HostPropertyEditor = ({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">{propertyTitle}</h2>
-        <p className="text-muted-foreground">Manage your property settings, availability, and pricing</p>
-      </div>
-
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-1">
           <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
@@ -133,27 +128,48 @@ export const HostPropertyEditor = ({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="basic" className="mt-6">
+        <TabsContent value="basic" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">{propertyTitle}</h2>
+            <p className="text-muted-foreground">Basic property information and settings</p>
+          </div>
           <HostBasicTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
 
-        <TabsContent value="amenities" className="mt-6">
+        <TabsContent value="amenities" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Amenities</h2>
+            <p className="text-muted-foreground">Configure property features and highlights</p>
+          </div>
           <HostAmenitiesTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
 
-        <TabsContent value="gallery" className="mt-6">
+        <TabsContent value="gallery" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Gallery</h2>
+            <p className="text-muted-foreground">Manage property images and photos</p>
+          </div>
           <HostGalleryTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
 
         <TabsContent value="location" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Location</h2>
+            <p className="text-muted-foreground">Set location and nearby points of interest</p>
+          </div>
           <HostLocationTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-6">
+        <TabsContent value="calendar" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Calendar</h2>
+            <p className="text-muted-foreground">Manage availability and booking dates</p>
+          </div>
+          
           <Card>
             <CardHeader>
               <CardTitle>Availability Calendar</CardTitle>
-              <CardDescription>Manage available dates and block preparation days</CardDescription>
+              <CardDescription>Block dates or adjust availability (synced dates are read-only)</CardDescription>
             </CardHeader>
             <CardContent>
               <AvailabilityCalendar defaultPropertyId={propertyId} />
@@ -186,35 +202,18 @@ export const HostPropertyEditor = ({
         </TabsContent>
 
         <TabsContent value="pricing" className="mt-6 space-y-6">
-          <HostPricingCalculator 
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Pricing</h2>
+            <p className="text-muted-foreground">Configure pricing rules and special rates</p>
+          </div>
+
+          <PropertyPricingRulesEnhanced propertyId={propertyId} currency={currency} />
+
+          <PropertySpecialPricingEnhanced
             propertyId={propertyId}
             basePrice={basePrice}
             currency={currency}
           />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing Rules</CardTitle>
-              <CardDescription>Add extra fees and services</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PropertyPricingRules propertyId={propertyId} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Special Pricing</CardTitle>
-              <CardDescription>Set special prices for specific dates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PropertySpecialPricing 
-                propertyId={propertyId}
-                basePrice={basePrice}
-                currency={currency}
-              />
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>
@@ -225,9 +224,19 @@ export const HostPropertyEditor = ({
               <CouponForm onSubmitted={onUpdate} propertyId={propertyId} />
             </CardContent>
           </Card>
+
+          <HostPricingCalculator 
+            propertyId={propertyId}
+            basePrice={basePrice}
+            currency={currency}
+          />
         </TabsContent>
 
-        <TabsContent value="guide" className="mt-6">
+        <TabsContent value="guide" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Guest Guide</h2>
+            <p className="text-muted-foreground">Create helpful information for your guests</p>
+          </div>
           <GuidebookEditor
             sections={guidebookSections}
             onChange={setGuidebookSections}
@@ -237,11 +246,15 @@ export const HostPropertyEditor = ({
           />
         </TabsContent>
 
-        <TabsContent value="smartlock" className="mt-6">
+        <TabsContent value="smartlock" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Smart Lock</h2>
+            <p className="text-muted-foreground">Connect Yale Doorman for automatic access codes</p>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Yale Doorman Lock Integration</CardTitle>
-              <CardDescription>Connect your Yale Doorman lock for automatic access code management</CardDescription>
+              <CardDescription>Automatic access code management for your guests</CardDescription>
             </CardHeader>
             <CardContent>
               <SmartLockSetup propertyId={propertyId} />

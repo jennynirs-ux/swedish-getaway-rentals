@@ -63,6 +63,7 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
   const platformFee = Math.round(subtotal * 0.1); // 10% platform fee
   const guestPays = subtotal + platformFee;
   const hostEarns = subtotal;
+  const commissionRate = 10;
 
   return (
     <Card>
@@ -128,8 +129,8 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
             <span>{subtotal.toLocaleString()} {currency}</span>
           </div>
 
-          <div className="flex justify-between text-sm text-orange-600">
-            <span>Platform Fee (10%)</span>
+          <div className="flex justify-between text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
+            <span>Platform Fee ({commissionRate}%)</span>
             <span>+{platformFee.toLocaleString()} {currency}</span>
           </div>
 

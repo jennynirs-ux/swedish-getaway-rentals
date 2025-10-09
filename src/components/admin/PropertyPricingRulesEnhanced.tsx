@@ -149,9 +149,9 @@ export const PropertyPricingRulesEnhanced = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Pricing Rules</CardTitle>
+        <CardTitle>Price Rules</CardTitle>
         <CardDescription>
-          Activate and configure additional fees for your property
+          Activate and set prices for additional fees
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

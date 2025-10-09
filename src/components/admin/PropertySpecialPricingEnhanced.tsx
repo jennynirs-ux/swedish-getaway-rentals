@@ -178,9 +178,9 @@ export const PropertySpecialPricingEnhanced = ({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Special Pricing Calendar</CardTitle>
+          <CardTitle>Special Pricing</CardTitle>
           <CardDescription>
-            Select dates and set special prices. Unavailable dates are shown in red.
+            Select multiple dates to set special pricing
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { cn } from "@/lib/utils";
 
 const ICON_OPTIONS = [
   { value: "Flame", label: "Fire", icon: Flame },
@@ -265,20 +266,30 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
               </Button>
 
               <div className="flex gap-3">
-                <div className="space-y-1.5 w-32">
+                <div className="space-y-1.5">
                   <Label className="text-sm">Icon</Label>
-                  <select
-                    value={amenity.icon || ""}
-                    onChange={(e) => updateCustomAmenity(index, 'icon', e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
-                  >
-                    <option value="">None</option>
-                    {ICON_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex flex-wrap gap-2">
+                    {ICON_OPTIONS.map((option) => {
+                      const IconComponent = option.icon;
+                      const isSelected = amenity.icon === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => updateCustomAmenity(index, 'icon', option.value)}
+                          className={cn(
+                            "p-2 rounded-md border transition-colors",
+                            isSelected 
+                              ? "border-primary bg-primary/10" 
+                              : "border-input hover:border-primary/50"
+                          )}
+                          title={option.label}
+                        >
+                          <IconComponent className="h-5 w-5" />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-1.5 flex-1">
