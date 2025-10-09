@@ -50,6 +50,17 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return Home;
   };
 
+  // Helper function to categorize amenities
+  const categorizeAmenity = (title: string): string => {
+    const lower = title.toLowerCase();
+    if (lower.includes('wifi') || lower.includes('parking') || lower.includes('heating')) return "Essentials";
+    if (lower.includes('kitchen') || lower.includes('coffee') || lower.includes('dining')) return "Kitchen & Dining";
+    if (lower.includes('bed') || lower.includes('bath') || lower.includes('towel') || lower.includes('linen')) return "Comfort";
+    if (lower.includes('tv') || lower.includes('game') || lower.includes('book')) return "Entertainment";
+    if (lower.includes('outdoor') || lower.includes('garden') || lower.includes('bbq') || lower.includes('pool') || lower.includes('sauna')) return "Outdoor";
+    return "Other";
+  };
+
   // Premium amenities are from featured_amenities
   const premiumAmenities: AmenityData[] = useMemo(() => {
     const featuredAmenities = (property.featured_amenities || []) as any[];
@@ -124,16 +135,6 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
 
     return categories;
   }, [property.amenities_data, property.amenities, property.amenities_descriptions, property.featured_amenities]);
-
-  const categorizeAmenity = (title: string): string => {
-    const lower = title.toLowerCase();
-    if (lower.includes('wifi') || lower.includes('parking') || lower.includes('heating')) return "Essentials";
-    if (lower.includes('kitchen') || lower.includes('coffee') || lower.includes('dining')) return "Kitchen & Dining";
-    if (lower.includes('bed') || lower.includes('bath') || lower.includes('towel') || lower.includes('linen')) return "Comfort";
-    if (lower.includes('tv') || lower.includes('game') || lower.includes('book')) return "Entertainment";
-    if (lower.includes('outdoor') || lower.includes('garden') || lower.includes('bbq') || lower.includes('pool') || lower.includes('sauna')) return "Outdoor";
-    return "Other";
-  };
 
   const totalStandardAmenities = Object.values(standardAmenitiesByCategory).flat().length;
 
