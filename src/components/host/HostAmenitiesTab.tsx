@@ -32,6 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ICON_OPTIONS = [
   { value: "Flame", label: "Fire", icon: Flame },
@@ -268,28 +269,24 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
               <div className="flex gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-sm">Icon</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {ICON_OPTIONS.map((option) => {
-                      const IconComponent = option.icon;
-                      const isSelected = amenity.icon === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => updateCustomAmenity(index, 'icon', option.value)}
-                          className={cn(
-                            "p-2 rounded-md border transition-colors",
-                            isSelected 
-                              ? "border-primary bg-primary/10" 
-                              : "border-input hover:border-primary/50"
-                          )}
-                          title={option.label}
-                        >
-                          <IconComponent className="h-5 w-5" />
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <Select
+                    value={amenity.icon || undefined}
+                    onValueChange={(v) => updateCustomAmenity(index, 'icon', v)}
+                  >
+                    <SelectTrigger className="w-[220px]">
+                      <SelectValue placeholder="Choose icon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ICON_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <span className="flex items-center gap-2">
+                            <option.icon className="h-4 w-4" />
+                            {option.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5 flex-1">

@@ -4,14 +4,16 @@ import { PropertyPreparationDays } from "@/components/admin/PropertyPreparationD
 import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Settings, DollarSign, Lock, Clock, MapPin } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar, Settings, DollarSign, Lock, Clock, MapPin, Image } from "lucide-react";
 import { SmartLockSetup } from "@/components/host/SmartLockSetup";
 import { CheckInOutTimes } from "@/components/admin/CheckInOutTimes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { HostBasicTab } from "./HostBasicTab";
 import { HostAmenitiesTab } from "./HostAmenitiesTab";
-import { HostGalleryTab } from "./HostGalleryTab";
+import { HostGalleryTab } from "./HostGalleryTabEnhanced";
 import { HostLocationTab } from "./HostLocationTab";
 import { HostPricingCalculator } from "./HostPricingCalculator";
 import { PropertyPricingRulesEnhanced } from "@/components/admin/PropertyPricingRulesEnhanced";
@@ -38,6 +40,8 @@ export const HostPropertyEditor = ({
 }: HostPropertyEditorProps) => {
   const [guidebookSections, setGuidebookSections] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [nightlyPrice, setNightlyPrice] = useState<number>(basePrice);
 
   useEffect(() => {
     loadGuidebookData();
@@ -60,40 +64,61 @@ export const HostPropertyEditor = ({
     }
   };
 
-  const handleSaveGuidebook = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('properties')
-        .update({
-          guidebook_sections: guidebookSections,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', propertyId);
+   const handleSaveGuidebook = async () => {
+     setSaving(true);
+     try {
+       const { error } = await supabase
+         .from('properties')
+         .update({
+           guidebook_sections: guidebookSections,
+           updated_at: new Date().toISOString()
+         })
+         .eq('id', propertyId);
+ 
+       if (error) throw error;
+ 
+       toast({
+         title: 'Success',
+         description: 'Guest guide updated successfully'
+       });
+       onUpdate?.();
+     } catch (error) {
+       console.error('Error saving guidebook:', error);
+       toast({
+         title: 'Error',
+         description: 'Failed to save guest guide',
+         variant: 'destructive'
+       });
+     } finally {
+       setSaving(false);
+     }
+   };
 
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Guest guide updated successfully'
-      });
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error saving guidebook:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save guest guide',
-        variant: 'destructive'
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+   const handleSaveNightlyPrice = async () => {
+     setSavingPrice(true);
+     try {
+       const { error } = await supabase
+         .from('properties')
+         .update({
+           price_per_night: nightlyPrice,
+           updated_at: new Date().toISOString()
+         })
+         .eq('id', propertyId);
+       if (error) throw error;
+       toast({ title: 'Success', description: 'Nightly price updated' });
+       onUpdate?.();
+     } catch (error) {
+       console.error('Error updating nightly price:', error);
+       toast({ title: 'Error', description: 'Failed to update nightly price', variant: 'destructive' });
+     } finally {
+       setSavingPrice(false);
+     }
+   };
 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-1 mb-2">
           <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Basic</span>
@@ -103,7 +128,7 @@ export const HostPropertyEditor = ({
             <span className="hidden sm:inline">Amenities</span>
           </TabsTrigger>
           <TabsTrigger value="gallery" className="flex items-center gap-2 text-xs sm:text-sm">
-            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <Image className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Gallery</span>
           </TabsTrigger>
           <TabsTrigger value="location" className="flex items-center gap-2 text-xs sm:text-sm">
@@ -206,6 +231,25 @@ export const HostPropertyEditor = ({
             <h2 className="text-2xl font-bold mb-1">Pricing</h2>
             <p className="text-muted-foreground">Configure pricing rules and special rates</p>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Nightly Base Price</CardTitle>
+              <CardDescription>Set your standard nightly rate</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="nightly-price">Price per night</Label>
+                <Input id="nightly-price" type="number" value={nightlyPrice}
+                  onChange={(e) => setNightlyPrice(parseInt(e.target.value) || 0)} />
+              </div>
+              <div className="flex items-end">
+                <Button onClick={handleSaveNightlyPrice} disabled={savingPrice}>
+                  {savingPrice ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           <PropertyPricingRulesEnhanced propertyId={propertyId} currency={currency} />
 

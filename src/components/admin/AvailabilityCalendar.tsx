@@ -86,36 +86,35 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
     seasonalPrice?: number,
     minimumNights?: number
   ) => {
-    try {
-      setLoading(true);
+     try {
+       setLoading(true);
 
-      for (const date of dates) {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        
-        const { error } = await supabase
-          .from('availability')
-          .upsert({
-            property_id: selectedProperty,
-            date: dateStr,
-            available,
-            seasonal_price: seasonalPrice || null,
-            minimum_nights: minimumNights || 1,
-            reason: available ? null : 'host_blocked'
-          }, {
-            onConflict: 'property_id,date'
-          });
+       const filteredDates = dates.filter((d) => !isSyncedDate(d));
+       const skipped = dates.length - filteredDates.length;
 
-        if (error) throw error;
-      }
+       for (const date of filteredDates) {
+         const dateStr = format(date, 'yyyy-MM-dd');
+         const { error } = await supabase
+           .from('availability')
+           .upsert({
+             property_id: selectedProperty,
+             date: dateStr,
+             available,
+             seasonal_price: seasonalPrice || null,
+             minimum_nights: minimumNights || 1,
+             reason: available ? null : 'host_blocked'
+           }, { onConflict: 'property_id,date' });
+         if (error) throw error;
+       }
 
-      toast({
-        title: 'Success',
-        description: `Updated ${dates.length} dates`,
-      });
+       toast({
+         title: 'Success',
+         description: `Updated ${filteredDates.length} date(s)${skipped > 0 ? ` (skipped ${skipped} synced date(s))` : ''}`,
+       });
 
-      fetchAvailability();
-      setSelectedDates([]);
-    } catch (error) {
+       fetchAvailability();
+       setSelectedDates([]);
+     } catch (error) {
       console.error('Error updating availability:', error);
       toast({
         title: 'Error',
@@ -241,11 +240,11 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                 Block Dates
               </Button>
               
-              <Button 
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={selectedDates.length === 0 || loading}
-                onClick={() => updateAvailability(selectedDates, true)}
-              >
+               <Button 
+                 className="w-full bg-green-600 hover:bg-green-700"
+                 disabled={selectedDates.length === 0 || loading || selectedDates.some(d => isSyncedDate(d))}
+                 onClick={() => updateAvailability(selectedDates, true)}
+               >
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 Make Available
               </Button>
