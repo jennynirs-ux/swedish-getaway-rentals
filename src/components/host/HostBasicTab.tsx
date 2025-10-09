@@ -31,19 +31,20 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('title, tagline_line1, introduction_text')
+        .select('title, tagline_line1, introduction_text, get_in_touch_info')
         .eq('id', propertyId)
         .single();
 
       if (error) throw error;
 
       if (data) {
+        const getInTouchInfo = data.get_in_touch_info as any;
         setFormData({
           title: data.title || "",
           tagline_line1: data.tagline_line1 || "",
           introduction_text: data.introduction_text || "",
-          contact_email: "",
-          contact_phone: "",
+          contact_email: getInTouchInfo?.contact_email || "",
+          contact_phone: getInTouchInfo?.contact_phone || "",
         });
       }
     } catch (error) {
@@ -60,6 +61,11 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
           title: formData.title,
           tagline_line1: formData.tagline_line1,
           introduction_text: formData.introduction_text,
+          get_in_touch_info: {
+            type: 'custom',
+            contact_email: formData.contact_email,
+            contact_phone: formData.contact_phone
+          },
           updated_at: new Date().toISOString()
         })
         .eq('id', propertyId);
@@ -68,7 +74,7 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
 
       toast({
         title: 'Success',
-        description: 'Property information updated successfully'
+        description: 'Property information and contact details updated successfully'
       });
       onUpdate?.();
     } catch (error) {

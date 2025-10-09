@@ -151,6 +151,12 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
   const modifiers = getDateModifiers();
 
   const handleDateClick = (date: Date) => {
+    const dateAvail = getDateAvailability(date);
+    // Don't allow selecting dates that are from synced calendars (reason: 'booked' from iCal)
+    if (dateAvail && dateAvail.reason === 'ical_sync') {
+      return;
+    }
+    
     const isSelected = selectedDates.some(d => isSameDay(d, date));
     if (isSelected) {
       setSelectedDates(prev => prev.filter(d => !isSameDay(d, date)));
@@ -163,10 +169,6 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Tillgänglighet & Priser</h2>
-        <p className="text-muted-foreground">Hantera tillgänglighet och säsongspriser för dina properties</p>
-      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -174,23 +176,11 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Kalender</CardTitle>
+                  <CardTitle>Calendar</CardTitle>
                   <CardDescription>
-                    Klicka på datum för att välja dagar att uppdatera
+                    Click on dates to select days to update. Dates synced from external calendars cannot be modified.
                   </CardDescription>
                 </div>
-                <Select value={selectedProperty} onValueChange={setSelectedProperty}>
-                  <SelectTrigger className="w-64">
-                    <SelectValue placeholder="Välj property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map(property => (
-                      <SelectItem key={property.id} value={property.id}>
-                        {property.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </CardHeader>
             <CardContent>
@@ -234,11 +224,11 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Snabbåtgärder</CardTitle>
+              <CardTitle>Quick Actions</CardTitle>
               <CardDescription>
                 {selectedDates.length > 0 
-                  ? `${selectedDates.length} dagar valda`
-                  : 'Välj dagar i kalendern'
+                  ? `${selectedDates.length} days selected`
+                  : 'Select days in the calendar'
                 }
               </CardDescription>
             </CardHeader>

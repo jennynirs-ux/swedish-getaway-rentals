@@ -72,10 +72,11 @@ const BecomeHost = () => {
     }
 
     setSupportLoading(true);
-    const { error } = await supabase.from("support_messages").insert({
+    const { error } = await supabase.from("guest_messages").insert({
       name: supportForm.name,
       email: supportForm.email,
       message: supportForm.message,
+      subject: "Become a Host - Support Request",
       created_at: new Date().toISOString(),
     });
 

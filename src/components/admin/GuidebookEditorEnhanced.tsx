@@ -32,7 +32,7 @@ interface GuidebookBlock {
   title?: string;
   content?: string;
   items?: string[];
-  mapPins?: Array<{ lat: number; lng: number; label: string }>;
+  mapPins?: Array<{ lat: number; lng: number; label: string; address?: string }>;
 }
 
 interface GuidebookSection {
@@ -209,7 +209,7 @@ export const GuidebookEditor = ({
     onChange(newSections);
   };
 
-  const updateMapPin = (sectionId: string, blockId: string, pinIndex: number, updates: Partial<{ lat: number; lng: number; label: string }>) => {
+  const updateMapPin = (sectionId: string, blockId: string, pinIndex: number, updates: Partial<{ lat: number; lng: number; label: string; address: string }>) => {
     const newSections = localSections.map((s) =>
       s.id === sectionId
         ? {
@@ -287,6 +287,18 @@ export const GuidebookEditor = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor={`section-image-${section.id}`}>Section Image URL (optional)</Label>
+                <Input
+                  id={`section-image-${section.id}`}
+                  value={section.image_url || ""}
+                  onChange={(e) => updateSection(section.id, { image_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This image will be shown in the guest guide for this section
+                </p>
+              </div>
               {section.blocks.map((block) => (
                 <div key={block.id} className="border rounded p-3 bg-muted/10 space-y-2">
                   {block.title && <Label className="font-medium">{block.title}</Label>}
@@ -372,7 +384,7 @@ export const GuidebookEditor = ({
                         <div className="text-center text-muted-foreground">
                           <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
                           <p className="text-sm">Map will be shown to guests</p>
-                          <p className="text-xs">Add pins below to mark locations</p>
+                          <p className="text-xs">Add pins by address below</p>
                         </div>
                       </div>
                       {block.mapPins?.map((pin, i) => (
@@ -384,22 +396,14 @@ export const GuidebookEditor = ({
                               onChange={(e) => updateMapPin(section.id, block.id, i, { label: e.target.value })}
                               placeholder="Location name"
                             />
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                step="0.0001"
-                                value={pin.lat}
-                                onChange={(e) => updateMapPin(section.id, block.id, i, { lat: parseFloat(e.target.value) })}
-                                placeholder="Latitude"
-                              />
-                              <Input
-                                type="number"
-                                step="0.0001"
-                                value={pin.lng}
-                                onChange={(e) => updateMapPin(section.id, block.id, i, { lng: parseFloat(e.target.value) })}
-                                placeholder="Longitude"
-                              />
-                            </div>
+                            <Input
+                              value={pin.address || ""}
+                              onChange={(e) => updateMapPin(section.id, block.id, i, { address: e.target.value })}
+                              placeholder="Address (e.g., Storgatan 1, Gothenburg)"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Enter an address. Coordinates will be calculated automatically.
+                            </p>
                           </div>
                           <Button
                             size="icon"

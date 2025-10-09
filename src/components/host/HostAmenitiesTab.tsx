@@ -281,6 +281,19 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                   className="text-sm"
                 />
               </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm">Image URL (optional)</Label>
+                <Input
+                  value={amenity.image_url || ""}
+                  onChange={(e) => updateCustomAmenity(index, 'image_url', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste an image URL or upload to your storage
+                </p>
+              </div>
             </div>
           ))}
 

@@ -7,20 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Settings, DollarSign, Lock, Clock, MapPin } from "lucide-react";
 import { SmartLockSetup } from "@/components/host/SmartLockSetup";
 import { CheckInOutTimes } from "@/components/admin/CheckInOutTimes";
-import { LocationEditor } from "@/components/LocationEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { HostBasicTab } from "./HostBasicTab";
 import { HostAmenitiesTab } from "./HostAmenitiesTab";
 import { HostGalleryTab } from "./HostGalleryTab";
+import { HostLocationTab } from "./HostLocationTab";
+import { HostPricingCalculator } from "./HostPricingCalculator";
 import PropertyPricingRules from "@/components/PropertyPricingRules";
 import PropertySpecialPricing from "@/components/admin/PropertySpecialPricing";
 import CouponForm from "@/components/CouponForm";
+import { GuidebookEditor } from "@/components/admin/GuidebookEditorEnhanced";
 
 interface HostPropertyEditorProps {
   propertyId: string;
   propertyTitle: string;
   preparationDays: number;
+  basePrice: number;
+  currency: string;
   onUpdate?: () => void;
 }
 
@@ -28,59 +32,41 @@ export const HostPropertyEditor = ({
   propertyId, 
   propertyTitle, 
   preparationDays,
+  basePrice,
+  currency,
   onUpdate 
 }: HostPropertyEditorProps) => {
-  const [locationData, setLocationData] = useState({
-    street: "",
-    postal_code: "",
-    city: "",
-    country: "Sweden",
-    latitude: null as number | null,
-    longitude: null as number | null
-  });
+  const [guidebookSections, setGuidebookSections] = useState([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadLocationData();
+    loadGuidebookData();
   }, [propertyId]);
 
-  const loadLocationData = async () => {
+  const loadGuidebookData = async () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('street, postal_code, city, country, latitude, longitude')
+        .select('guidebook_sections')
         .eq('id', propertyId)
         .single();
 
       if (error) throw error;
-
-      if (data) {
-        setLocationData({
-          street: data.street || "",
-          postal_code: data.postal_code || "",
-          city: data.city || "",
-          country: data.country || "Sweden",
-          latitude: data.latitude || null,
-          longitude: data.longitude || null
-        });
+      if (data?.guidebook_sections) {
+        setGuidebookSections(Array.isArray(data.guidebook_sections) ? data.guidebook_sections : []);
       }
     } catch (error) {
-      console.error('Error loading location data:', error);
+      console.error('Error loading guidebook:', error);
     }
   };
 
-  const handleSaveLocation = async () => {
+  const handleSaveGuidebook = async () => {
     setSaving(true);
     try {
       const { error } = await supabase
         .from('properties')
         .update({
-          street: locationData.street,
-          postal_code: locationData.postal_code,
-          city: locationData.city ? locationData.city.toLowerCase() : null,
-          country: locationData.country,
-          latitude: locationData.latitude,
-          longitude: locationData.longitude,
+          guidebook_sections: guidebookSections,
           updated_at: new Date().toISOString()
         })
         .eq('id', propertyId);
@@ -89,14 +75,14 @@ export const HostPropertyEditor = ({
 
       toast({
         title: 'Success',
-        description: 'Location updated successfully'
+        description: 'Guest guide updated successfully'
       });
       onUpdate?.();
     } catch (error) {
-      console.error('Error saving location:', error);
+      console.error('Error saving guidebook:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save location',
+        description: 'Failed to save guest guide',
         variant: 'destructive'
       });
     } finally {
@@ -112,7 +98,7 @@ export const HostPropertyEditor = ({
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-1">
           <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Basic</span>
@@ -141,6 +127,10 @@ export const HostPropertyEditor = ({
             <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Smart Lock</span>
           </TabsTrigger>
+          <TabsTrigger value="guide" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Guide</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="mt-6">
@@ -156,22 +146,7 @@ export const HostPropertyEditor = ({
         </TabsContent>
 
         <TabsContent value="location" className="mt-6 space-y-4">
-          <LocationEditor
-            value={locationData}
-            onChange={(data) => setLocationData({
-              street: data.street || "",
-              postal_code: data.postal_code || "",
-              city: data.city || "",
-              country: data.country || "Sweden",
-              latitude: data.latitude || null,
-              longitude: data.longitude || null
-            })}
-          />
-          <div className="flex justify-end">
-            <Button onClick={handleSaveLocation} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Location'}
-            </Button>
-          </div>
+          <HostLocationTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-6">
@@ -210,7 +185,13 @@ export const HostPropertyEditor = ({
           </Card>
         </TabsContent>
 
-        <TabsContent value="pricing" className="mt-6">
+        <TabsContent value="pricing" className="mt-6 space-y-6">
+          <HostPricingCalculator 
+            propertyId={propertyId}
+            basePrice={basePrice}
+            currency={currency}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle>Pricing Rules</CardTitle>
@@ -221,7 +202,7 @@ export const HostPropertyEditor = ({
             </CardContent>
           </Card>
 
-          <Card className="mt-6">
+          <Card>
             <CardHeader>
               <CardTitle>Special Pricing</CardTitle>
               <CardDescription>Set special prices for specific dates</CardDescription>
@@ -229,13 +210,13 @@ export const HostPropertyEditor = ({
             <CardContent>
               <PropertySpecialPricing 
                 propertyId={propertyId}
-                basePrice={0}
-                currency="SEK"
+                basePrice={basePrice}
+                currency={currency}
               />
             </CardContent>
           </Card>
 
-          <Card className="mt-6">
+          <Card>
             <CardHeader>
               <CardTitle>Coupons</CardTitle>
               <CardDescription>Create discount coupons for your guests</CardDescription>
@@ -244,6 +225,16 @@ export const HostPropertyEditor = ({
               <CouponForm onSubmitted={onUpdate} propertyId={propertyId} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="guide" className="mt-6">
+          <GuidebookEditor
+            sections={guidebookSections}
+            onChange={setGuidebookSections}
+            onSave={handleSaveGuidebook}
+            saving={saving}
+            propertyTitle={propertyTitle}
+          />
         </TabsContent>
 
         <TabsContent value="smartlock" className="mt-6">
