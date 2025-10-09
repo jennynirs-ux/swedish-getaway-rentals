@@ -3,13 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar as CalendarIcon, Settings, DollarSign, Ban } from 'lucide-react';
+import { Calendar as CalendarIcon, Settings, DollarSign, Clock, Ban } from 'lucide-react';
 import { format, addDays, isSameDay } from 'date-fns';
+import { sv } from 'date-fns/locale';
 
 interface Property {
   id: string;
@@ -30,6 +32,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
   const [selectedProperty, setSelectedProperty] = useState<string>('');
   const [availability, setAvailability] = useState<AvailabilityDate[]>([]);
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [isBlocking, setIsBlocking] = useState(false);
   const [seasonalPrice, setSeasonalPrice] = useState('');
   const [minimumNights, setMinimumNights] = useState('1');
   const [loading, setLoading] = useState(false);
@@ -80,37 +83,29 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
     }
   };
 
-  const updateAvailability = async (
-    dates: Date[],
-    available: boolean,
-    seasonalPrice?: number,
-    minimumNights?: number
-  ) => {
+  const updateAvailability = async (dates: Date[], available: boolean, price?: number, nights?: number) => {
+    setLoading(true);
     try {
-      setLoading(true);
+      const updates = dates.map(date => ({
+        property_id: selectedProperty,
+        date: format(date, 'yyyy-MM-dd'),
+        available,
+        reason: available ? null : 'blocked',
+        seasonal_price: price || null,
+        minimum_nights: nights || 1
+      }));
 
-      for (const date of dates) {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        
+      for (const update of updates) {
         const { error } = await supabase
           .from('availability')
-          .upsert({
-            property_id: selectedProperty,
-            date: dateStr,
-            available,
-            seasonal_price: seasonalPrice || null,
-            minimum_nights: minimumNights || 1,
-            reason: available ? null : 'host_blocked'
-          }, {
-            onConflict: 'property_id,date'
-          });
+          .upsert(update, { onConflict: 'property_id,date' });
 
         if (error) throw error;
       }
 
       toast({
-        title: 'Success',
-        description: `Updated ${dates.length} dates`,
+        title: "Framgång",
+        description: `Tillgänglighet uppdaterad för ${dates.length} dagar`
       });
 
       fetchAvailability();
@@ -118,9 +113,9 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
     } catch (error) {
       console.error('Error updating availability:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update availability',
-        variant: 'destructive',
+        title: "Fel",
+        description: "Kunde inte uppdatera tillgänglighet",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -128,46 +123,55 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
   };
 
   const getDateAvailability = (date: Date) => {
-    return availability.find(a => isSameDay(new Date(a.date), date));
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return availability.find(a => a.date === dateStr);
   };
 
-  const isCurrentOrPastDate = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date < today;
+  const getDateModifiers = () => {
+    const blocked: Date[] = [];
+    const special: Date[] = [];
+    const preparation: Date[] = [];
+    
+    availability.forEach(avail => {
+      const date = new Date(avail.date + 'T00:00:00');
+      if (!avail.available) {
+        if (avail.reason === 'preparation') {
+          preparation.push(date);
+        } else {
+          blocked.push(date);
+        }
+      } else if (avail.seasonal_price) {
+        special.push(date);
+      }
+    });
+    
+    return { blocked, special, preparation };
   };
 
-  const isSyncedDate = (date: Date) => {
-    const avail = getDateAvailability(date);
-    return avail?.reason === 'ical_sync';
+  const modifiers = getDateModifiers();
+
+  const handleDateClick = (date: Date) => {
+    const dateAvail = getDateAvailability(date);
+    // Don't allow selecting dates that are from synced calendars (reason: 'booked' from iCal)
+    if (dateAvail && dateAvail.reason === 'ical_sync') {
+      return;
+    }
+    
+    const isSelected = selectedDates.some(d => isSameDay(d, date));
+    if (isSelected) {
+      setSelectedDates(prev => prev.filter(d => !isSameDay(d, date)));
+    } else {
+      setSelectedDates(prev => [...prev, date]);
+    }
   };
 
-  const modifiers = {
-    blocked: availability
-      .filter(a => !a.available && a.reason !== 'preparation' && a.reason !== 'ical_sync')
-      .map(a => new Date(a.date)),
-    special: availability
-      .filter(a => a.seasonal_price !== null)
-      .map(a => new Date(a.date)),
-    preparation: availability
-      .filter(a => a.reason === 'preparation')
-      .map(a => new Date(a.date)),
-    synced: availability
-      .filter(a => a.reason === 'ical_sync')
-      .map(a => new Date(a.date))
-  };
-
-  const selectedProperty_obj = properties.find((p) => p.id === selectedProperty);
+  const selectedProperty_obj = properties.find(p => p.id === selectedProperty);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+    <div className="space-y-6">
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -189,16 +193,13 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                   modifiers={{
                     blocked: modifiers.blocked,
                     special: modifiers.special,
-                    preparation: modifiers.preparation,
-                    synced: modifiers.synced
+                    preparation: modifiers.preparation
                   }}
                   modifiersClassNames={{
                     blocked: "bg-destructive/20 text-destructive line-through",
                     special: "bg-blue-100 text-blue-900 font-semibold",
-                    preparation: "bg-orange-100 text-orange-900 italic",
-                    synced: "bg-orange-100 text-orange-900 cursor-not-allowed"
+                    preparation: "bg-orange-100 text-orange-900 italic"
                   }}
-                  disabled={(date) => isCurrentOrPastDate(date) || isSyncedDate(date)}
                   components={{
                     DayContent: ({ date }) => {
                       const avail = getDateAvailability(date);
@@ -238,7 +239,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                 onClick={() => updateAvailability(selectedDates, false)}
               >
                 <Ban className="h-4 w-4 mr-2" />
-                Block Dates
+                Blockera valda dagar
               </Button>
               
               <Button 
@@ -247,7 +248,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                 onClick={() => updateAvailability(selectedDates, true)}
               >
                 <CalendarIcon className="h-4 w-4 mr-2" />
-                Make Available
+                Gör tillgängliga
               </Button>
 
               <Dialog>
@@ -340,8 +341,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
           </Card>
         </div>
       </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 };
 

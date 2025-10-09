@@ -9,6 +9,7 @@ import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 interface HostAmenitiesTabProps {
   propertyId: string;
@@ -283,16 +284,12 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm">Image URL (optional)</Label>
-                <Input
+                <ImageUpload
+                  label="Amenity Image (optional)"
                   value={amenity.image_url || ""}
-                  onChange={(e) => updateCustomAmenity(index, 'image_url', e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="text-sm"
+                  onChange={(url) => updateCustomAmenity(index, 'image_url', url)}
+                  onRemove={() => updateCustomAmenity(index, 'image_url', '')}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Paste an image URL or upload to your storage
-                </p>
               </div>
             </div>
           ))}

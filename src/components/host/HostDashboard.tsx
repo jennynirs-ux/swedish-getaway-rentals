@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen } from "lucide-react";
 import { useHostProperties } from "@/hooks/useHostProperties";
-import PropertyDetailEditor from "@/components/admin/PropertyDetailEditor";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingChatList } from "../BookingChatList";
@@ -375,17 +374,31 @@ const HostDashboard = () => {
 
           </Tabs>
 
-          {editingPropertyId && (
-            <PropertyDetailEditor
-              propertyId={editingPropertyId}
-              open={!!editingPropertyId}
-              onClose={() => setEditingPropertyId(null)}
-              onSave={() => {
-                refetchProperties();
-                fetchHostStats();
-              }}
-            />
-          )}
+          {editingPropertyId && (() => {
+            const property = properties.find(p => p.id === editingPropertyId);
+            return property ? (
+              <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-y-auto">
+                <div className="container mx-auto py-8">
+                  <div className="flex justify-end mb-4">
+                    <Button variant="outline" onClick={() => setEditingPropertyId(null)}>
+                      Close
+                    </Button>
+                  </div>
+                  <HostPropertyEditor
+                    propertyId={editingPropertyId}
+                    propertyTitle={property.title}
+                    preparationDays={property.preparation_days || 0}
+                    basePrice={property.price_per_night}
+                    currency={property.currency || 'SEK'}
+                    onUpdate={() => {
+                      refetchProperties();
+                      fetchHostStats();
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null;
+          })()}
 
           <HostGuidebookDialog
             isOpen={isGuidebookOpen}

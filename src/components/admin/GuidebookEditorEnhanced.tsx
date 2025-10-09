@@ -25,6 +25,7 @@ import {
   Recycle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 interface GuidebookBlock {
   id: string;
@@ -287,18 +288,12 @@ export const GuidebookEditor = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`section-image-${section.id}`}>Section Image URL (optional)</Label>
-                <Input
-                  id={`section-image-${section.id}`}
-                  value={section.image_url || ""}
-                  onChange={(e) => updateSection(section.id, { image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This image will be shown in the guest guide for this section
-                </p>
-              </div>
+              <ImageUpload
+                label="Section Image (optional)"
+                value={section.image_url || ""}
+                onChange={(url) => updateSection(section.id, { image_url: url })}
+                onRemove={() => updateSection(section.id, { image_url: '' })}
+              />
               {section.blocks.map((block) => (
                 <div key={block.id} className="border rounded p-3 bg-muted/10 space-y-2">
                   {block.title && <Label className="font-medium">{block.title}</Label>}

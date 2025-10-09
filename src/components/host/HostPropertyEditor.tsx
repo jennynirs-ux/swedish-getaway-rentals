@@ -123,13 +123,13 @@ export const HostPropertyEditor = ({
             <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Pricing</span>
           </TabsTrigger>
-          <TabsTrigger value="smartlock" className="flex items-center gap-2 text-xs sm:text-sm">
-            <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Smart Lock</span>
-          </TabsTrigger>
           <TabsTrigger value="guide" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Guide</span>
+          </TabsTrigger>
+          <TabsTrigger value="smartlock" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Smart Lock</span>
           </TabsTrigger>
         </TabsList>
 
@@ -238,7 +238,15 @@ export const HostPropertyEditor = ({
         </TabsContent>
 
         <TabsContent value="smartlock" className="mt-6">
-          <SmartLockSetup propertyId={propertyId} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Yale Doorman Lock Integration</CardTitle>
+              <CardDescription>Connect your Yale Doorman lock for automatic access code management</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SmartLockSetup propertyId={propertyId} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
