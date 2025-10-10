@@ -252,19 +252,52 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
       <Card>
         <CardHeader>
           <CardTitle>Custom Amenities</CardTitle>
-          <CardDescription>Add unique amenities with details</CardDescription>
+          <CardDescription>Add unique amenities with details (use arrows to reorder)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {customAmenities.map((amenity, index) => (
-            <div key={index} className="border rounded-lg p-4 space-y-3 relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 h-8 w-8 text-destructive hover:text-destructive"
-                onClick={() => removeCustomAmenity(index)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <div key={index} className="border rounded-lg p-4 space-y-3 relative bg-card hover:bg-muted/30 transition-colors">
+              <div className="absolute top-2 right-2 flex items-center gap-1">
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      const updated = [...customAmenities];
+                      [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                      setCustomAmenities(updated);
+                    }}
+                    title="Move up"
+                  >
+                    <span>↑</span>
+                  </Button>
+                )}
+                {index < customAmenities.length - 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      const updated = [...customAmenities];
+                      [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                      setCustomAmenities(updated);
+                    }}
+                    title="Move down"
+                  >
+                    <span>↓</span>
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => removeCustomAmenity(index)}
+                  title="Remove"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
 
               <div className="flex gap-3">
                 <div className="space-y-1.5">

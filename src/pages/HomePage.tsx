@@ -85,10 +85,19 @@ const HomePage = memo(() => {
     return Array.from(all).sort();
   }, [properties]);
 
-  /** Filtrera efter sökkriterier */
+  /** Filtrera efter sökkriterier - show ALL if no filters applied */
   const filteredProperties = useMemo(() => {
     if (!properties || !Array.isArray(properties)) return [];
-    if (!filters) return properties;
+    
+    // If no filters at all, show all properties
+    if (!filters || (
+      !filters.guests && 
+      !filters.propertyType && 
+      (!filters.amenities || filters.amenities.length === 0) && 
+      !filters.location
+    )) {
+      return properties;
+    }
 
     return properties.filter((p: any) => {
       // Guest filter
@@ -218,7 +227,7 @@ const HomePage = memo(() => {
                   No properties found
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  No properties are currently available.
+                  Try adjusting your filters to see more results.
                 </p>
               </div>
             </div>
@@ -227,7 +236,7 @@ const HomePage = memo(() => {
       </main>
 
       {/* Book Promotion Section */}
-      <BookPromotion /> {/* 👈 nu används bara komponenten */}
+      <BookPromotion />
 
       {/* Featured Products Section */}
       <MemoizedHomepageProducts />

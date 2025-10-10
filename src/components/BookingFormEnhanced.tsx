@@ -265,13 +265,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {/* Calendar */}
           <div>
             <Label className="text-base font-medium mb-3 block">Select Dates</Label>
-            <PropertyCalendarOptimized
-              propertyId={propertyId}
-              basePrice={pricePerNight}
-              currency={currency}
-              onDateSelect={handleDateSelect}
-              mode="guest"
-            />
+            <div className="bg-muted/30 rounded-lg border p-4">
+              <PropertyCalendarOptimized
+                propertyId={propertyId}
+                basePrice={pricePerNight}
+                currency={currency}
+                onDateSelect={handleDateSelect}
+                mode="guest"
+              />
+            </div>
           </div>
 
           {/* Guest Information */}
