@@ -291,15 +291,21 @@ const PropertyCard = memo(({
             </div>
           </div>
 
-          {/* Special Amenities - Icon, Title, Tagline (non-clickable) */}
+          {/* Special Amenities - Icon, Title, Tagline */}
           {safeProperty.featured_amenities.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {safeProperty.featured_amenities.slice(0, 3).map((amenity: any, index: number) => (
                 <div
                   key={index}
-                  className="flex items-start gap-2 bg-primary/5 p-2 rounded-lg border border-primary/20 flex-1 min-w-[140px]"
+                  className="flex items-start gap-2 bg-primary/5 hover:bg-primary/10 p-2 rounded-lg transition-colors cursor-pointer border border-primary/20 flex-1 min-w-[140px]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedAmenity(amenity);
+                    setIsAmenityDialogOpen(true);
+                  }}
                 >
-                  <div className="text-primary mt-0.5 shrink-0">
+                  <div className="text-primary mt-0.5">
                     {getAmenityIcon(amenity.icon || amenity.title)}
                   </div>
                   <div className="flex-1 min-w-0">
