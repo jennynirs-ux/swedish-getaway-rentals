@@ -355,48 +355,6 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm">Features (optional)</Label>
-                <div className="space-y-2">
-                  {(amenity.features || []).map((feature: string, fIndex: number) => (
-                    <div key={fIndex} className="flex gap-2">
-                      <Input
-                        value={feature}
-                        onChange={(e) => {
-                          const updatedFeatures = [...(amenity.features || [])];
-                          updatedFeatures[fIndex] = e.target.value;
-                          updateCustomAmenity(index, 'features', updatedFeatures);
-                        }}
-                        placeholder="Feature description"
-                        className="text-sm"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-destructive"
-                        onClick={() => {
-                          const updatedFeatures = (amenity.features || []).filter((_: any, i: number) => i !== fIndex);
-                          updateCustomAmenity(index, 'features', updatedFeatures);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const updatedFeatures = [...(amenity.features || []), ''];
-                      updateCustomAmenity(index, 'features', updatedFeatures);
-                    }}
-                    className="w-full text-xs"
-                  >
-                    + Add Feature
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
                 <ImageUpload
                   label="Amenity Image (optional)"
                   value={amenity.image_url || ""}
