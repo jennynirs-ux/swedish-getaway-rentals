@@ -67,7 +67,7 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return featuredAmenities.map((amenity: any) => ({
       icon: getAmenityIcon(amenity.icon || amenity.title || amenity.name),
       title: amenity.title || amenity.name || '',
-      tagline: amenity.tagline || amenity.description || '',
+      tagline: amenity.tagline || '',
       description: amenity.description || '',
       image_url: amenity.image_url,
       features: amenity.features || []
@@ -96,7 +96,7 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
           const amenityData: AmenityData = {
             icon: getAmenityIcon(amenity.name || amenity.title || ''),
             title: amenity.title || amenity.name || '',
-            tagline: amenity.tagline || amenity.description || '',
+            tagline: amenity.tagline || '',
             description: amenity.description || '',
             image_url: amenity.image_url,
             features: amenity.features || []
@@ -233,16 +233,21 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
                     {amenities.map((amenity, index) => (
                       <div 
                         key={index}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer text-center"
                         onClick={() => {
                           handleAmenityClick(amenity);
                           setShowAllAmenities(false);
                         }}
                       >
                         <div className="flex-shrink-0">
-                          <amenity.icon className="h-5 w-5 text-primary" />
+                          <amenity.icon className="h-6 w-6 text-primary" />
                         </div>
-                        <span className="text-sm font-medium">{amenity.title}</span>
+                        <div>
+                          <span className="text-sm font-semibold block">{amenity.title}</span>
+                          {amenity.tagline && (
+                            <span className="text-xs text-muted-foreground block mt-1">{amenity.tagline}</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
