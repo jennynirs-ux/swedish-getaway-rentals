@@ -126,12 +126,28 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Build featured amenities with full data
+      const featuredAmenitiesData = featuredAmenities.map(title => {
+        const amenity = customAmenities.find(a => a.title === title);
+        if (amenity) {
+          return {
+            icon: amenity.icon || "",
+            title: amenity.title || "",
+            tagline: amenity.tagline || "",
+            description: amenity.description || "",
+            image_url: amenity.image_url || "",
+            features: amenity.features || []
+          };
+        }
+        return { title };
+      });
+
       const { error } = await supabase
         .from('properties')
         .update({
           amenities: selectedAmenities,
           amenities_data: customAmenities,
-          featured_amenities: featuredAmenities.map(title => ({ title })),
+          featured_amenities: featuredAmenitiesData,
           updated_at: new Date().toISOString()
         })
         .eq('id', propertyId);
@@ -361,6 +377,46 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                   onChange={(url) => updateCustomAmenity(index, 'image_url', url)}
                   onRemove={() => updateCustomAmenity(index, 'image_url', '')}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm">Features (optional)</Label>
+                {(amenity.features || []).map((feature: string, featureIndex: number) => (
+                  <div key={featureIndex} className="flex gap-2">
+                    <Input
+                      value={feature}
+                      onChange={(e) => {
+                        const updatedFeatures = [...(amenity.features || [])];
+                        updatedFeatures[featureIndex] = e.target.value;
+                        updateCustomAmenity(index, 'features', updatedFeatures);
+                      }}
+                      placeholder="Feature description"
+                      className="text-sm"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-destructive hover:text-destructive flex-shrink-0"
+                      onClick={() => {
+                        const updatedFeatures = (amenity.features || []).filter((_: string, i: number) => i !== featureIndex);
+                        updateCustomAmenity(index, 'features', updatedFeatures);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    const updatedFeatures = [...(amenity.features || []), ""];
+                    updateCustomAmenity(index, 'features', updatedFeatures);
+                  }}
+                >
+                  + Add Feature
+                </Button>
               </div>
             </div>
           ))}

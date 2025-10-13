@@ -61,10 +61,10 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return "Other";
   };
 
-  // Premium amenities are from featured_amenities
+  // Premium amenities are from amenities_data (not featured)
   const premiumAmenities: AmenityData[] = useMemo(() => {
-    const featuredAmenities = (property.featured_amenities || []) as any[];
-    return featuredAmenities.map((amenity: any) => ({
+    const amenitiesData = (property.amenities_data || []) as any[];
+    return amenitiesData.map((amenity: any) => ({
       icon: getAmenityIcon(amenity.icon || amenity.title || amenity.name),
       title: amenity.title || amenity.name || '',
       tagline: amenity.tagline || amenity.description || '',
@@ -72,9 +72,9 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
       image_url: amenity.image_url,
       features: amenity.features || []
     }));
-  }, [property.featured_amenities]);
+  }, [property.amenities_data]);
 
-  // Standard amenities - categorized like in host dashboard
+  // Standard amenities - from basic amenities array only
   const standardAmenitiesByCategory = useMemo(() => {
     const categories: Record<string, AmenityData[]> = {
       "Essentials": [],
@@ -85,56 +85,25 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
       "Other": []
     };
 
-    // Get featured amenity titles to exclude from standard
-    const featuredTitles = new Set((property.featured_amenities || []).map((a: any) => (a.title || a.name || '').toLowerCase()));
-
-    // Process amenities_data
-    if (property.amenities_data && Array.isArray(property.amenities_data)) {
-      property.amenities_data
-        .filter((amenity: any) => !featuredTitles.has((amenity.title || amenity.name || '').toLowerCase()))
-        .forEach((amenity: any) => {
-          const amenityData: AmenityData = {
-            icon: getAmenityIcon(amenity.name || amenity.title || ''),
-            title: amenity.title || amenity.name || '',
-            tagline: amenity.tagline || amenity.description || '',
-            description: amenity.description || '',
-            image_url: amenity.image_url,
-            features: amenity.features || []
-          };
-          
-          const category = categorizeAmenity(amenityData.title);
-          categories[category].push(amenityData);
-        });
-    }
-
-    // Process basic amenities array
+    // Process basic amenities array only
     if (property.amenities && Array.isArray(property.amenities)) {
-      const existingTitles = new Set(
-        Object.values(categories).flat().map(a => a.title.toLowerCase())
-      );
-      
-      property.amenities
-        .filter((amenity: string) => 
-          !existingTitles.has(amenity.toLowerCase()) && 
-          !featuredTitles.has(amenity.toLowerCase())
-        )
-        .forEach((amenity: string) => {
-          const amenityData: AmenityData = {
-            icon: getAmenityIcon(amenity),
-            title: amenity,
-            tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
-            description: property.amenities_descriptions?.[amenity] || `Experience ${amenity.toLowerCase()} during your stay.`,
-            image_url: undefined,
-            features: []
-          };
-          
-          const category = categorizeAmenity(amenity);
-          categories[category].push(amenityData);
-        });
+      property.amenities.forEach((amenity: string) => {
+        const amenityData: AmenityData = {
+          icon: getAmenityIcon(amenity),
+          title: amenity,
+          tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
+          description: property.amenities_descriptions?.[amenity] || `Experience ${amenity.toLowerCase()} during your stay.`,
+          image_url: undefined,
+          features: []
+        };
+        
+        const category = categorizeAmenity(amenity);
+        categories[category].push(amenityData);
+      });
     }
 
     return categories;
-  }, [property.amenities_data, property.amenities, property.amenities_descriptions, property.featured_amenities]);
+  }, [property.amenities, property.amenities_descriptions]);
 
   const totalStandardAmenities = Object.values(standardAmenitiesByCategory).flat().length;
 
@@ -233,11 +202,7 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
                     {amenities.map((amenity, index) => (
                       <div 
                         key={index}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          handleAmenityClick(amenity);
-                          setShowAllAmenities(false);
-                        }}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/30"
                       >
                         <div className="flex-shrink-0">
                           <amenity.icon className="h-5 w-5 text-primary" />
