@@ -61,18 +61,26 @@ const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return "Other";
   };
 
-  // Premium amenities are from amenities_data (not featured)
+  // Premium amenities are from amenities_data, excluding featured ones
   const premiumAmenities: AmenityData[] = useMemo(() => {
     const amenitiesData = (property.amenities_data || []) as any[];
-    return amenitiesData.map((amenity: any) => ({
-      icon: getAmenityIcon(amenity.icon || amenity.title || amenity.name),
-      title: amenity.title || amenity.name || '',
-      tagline: amenity.tagline || amenity.description || '',
-      description: amenity.description || '',
-      image_url: amenity.image_url,
-      features: amenity.features || []
-    }));
-  }, [property.amenities_data]);
+    const featuredAmenities = (property.featured_amenities || []) as any[];
+    const featuredTitles = featuredAmenities.map((fa: any) => fa.title?.toLowerCase());
+    
+    return amenitiesData
+      .filter((amenity: any) => {
+        const title = (amenity.title || amenity.name || '').toLowerCase();
+        return !featuredTitles.includes(title);
+      })
+      .map((amenity: any) => ({
+        icon: getAmenityIcon(amenity.icon || amenity.title || amenity.name),
+        title: amenity.title || amenity.name || '',
+        tagline: amenity.tagline || amenity.description || '',
+        description: amenity.description || '',
+        image_url: amenity.image_url,
+        features: amenity.features || []
+      }));
+  }, [property.amenities_data, property.featured_amenities]);
 
   // Standard amenities - from basic amenities array only
   const standardAmenitiesByCategory = useMemo(() => {
