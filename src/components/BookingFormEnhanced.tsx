@@ -318,7 +318,36 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <Calendar
                 mode="range"
                 selected={selectedDateRange}
-                onSelect={(range) => setSelectedDateRange(range)}
+                onSelect={(range) => {
+                  if (!range) {
+                    setSelectedDateRange(undefined);
+                    return;
+                  }
+                  
+                  // Prevent selection if from date is unavailable
+                  if (range.from && isDateUnavailable(range.from)) {
+                    return;
+                  }
+                  
+                  // Prevent selection if to date is unavailable
+                  if (range.to && isDateUnavailable(range.to)) {
+                    return;
+                  }
+                  
+                  // Check if any date in the range is unavailable
+                  if (range.from && range.to) {
+                    let checkDate = new Date(range.from);
+                    while (checkDate <= range.to) {
+                      if (isDateUnavailable(checkDate)) {
+                        // Don't allow selecting this range
+                        return;
+                      }
+                      checkDate.setDate(checkDate.getDate() + 1);
+                    }
+                  }
+                  
+                  setSelectedDateRange(range);
+                }}
                 className="rounded-md border"
                 disabled={isDateUnavailable}
                 modifiers={modifiers}
