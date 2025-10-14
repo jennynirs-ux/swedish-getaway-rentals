@@ -6,15 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
 import { CalendarDays } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
 import { usePricingRules } from "@/hooks/usePricingRules";
 import { supabase } from "@/integrations/supabase/client";
-import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { z } from 'zod';
 import DOMPurify from 'dompurify';
+import { format, addDays } from "date-fns";
+import type { DateRange } from "react-day-picker";
 
 // Input validation schema
 const bookingSchema = z.object({
@@ -70,16 +72,66 @@ const BookingForm: React.FC<BookingFormProps> = ({
     special_requests: ''
   });
 
-  const [selectedDates, setSelectedDates] = useState<{ checkIn: Date | null; checkOut: Date | null }>({
-    checkIn: null,
-    checkOut: null
-  });
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | undefined>(undefined);
+
+  const [availability, setAvailability] = useState<Array<{
+    date: string;
+    available: boolean;
+    reason: string | null;
+    seasonal_price: number | null;
+  }>>([]);
 
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [availabilityPrices, setAvailabilityPrices] = useState<Record<string, number>>({});
   const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
   const [guestCountConfirmed, setGuestCountConfirmed] = useState(false);
   const [bringPet, setBringPet] = useState(false);
+
+  // Load availability data
+  useEffect(() => {
+    loadAvailability();
+  }, [propertyId]);
+
+  const loadAvailability = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("availability")
+        .select("*")
+        .eq("property_id", propertyId)
+        .gte("date", format(new Date(), "yyyy-MM-dd"))
+        .lte("date", format(addDays(new Date(), 365), "yyyy-MM-dd"));
+
+      if (error) throw error;
+      setAvailability(data || []);
+    } catch (error) {
+      console.error("Error loading availability:", error);
+    }
+  };
+
+  const getDateAvailability = (date: Date) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    return availability.find((a) => a.date === dateStr);
+  };
+
+  const isDateUnavailable = (date: Date) => {
+    const avail = getDateAvailability(date);
+    return avail && !avail.available;
+  };
+
+  const modifiers = {
+    unavailable: availability
+      .filter((a) => !a.available)
+      .map((a) => new Date(a.date + "T00:00:00")),
+    specialPrice: availability
+      .filter((a) => a.seasonal_price)
+      .map((a) => new Date(a.date + "T00:00:00")),
+  };
+
+  // Convert selected date range to checkIn/checkOut
+  const selectedDates = useMemo(() => ({
+    checkIn: selectedDateRange?.from || null,
+    checkOut: selectedDateRange?.to || null
+  }), [selectedDateRange]);
 
   // Load availability prices when dates change
   useEffect(() => {
@@ -232,7 +284,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           number_of_guests: 1,
           special_requests: ''
         });
-        setSelectedDates({ checkIn: null, checkOut: null });
+        setSelectedDateRange(undefined);
         setSelectedServices([]);
       }
     } catch (error) {
@@ -244,9 +296,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   };
 
-  const handleDateSelect = (dates: { checkIn: Date | null; checkOut: Date | null }) => {
-    setSelectedDates(dates);
-  };
 
   const availableServices = getAvailableServices();
   const petFeeService = availableServices.find(s => s.name.toLowerCase().includes('pet'));
@@ -266,13 +315,48 @@ const BookingForm: React.FC<BookingFormProps> = ({
           <div>
             <Label className="text-base font-medium mb-3 block">Select Dates</Label>
             <div className="bg-muted/30 rounded-lg border p-4">
-              <PropertyCalendarOptimized
-                propertyId={propertyId}
-                basePrice={pricePerNight}
-                currency={currency}
-                onDateSelect={handleDateSelect}
-                mode="guest"
+              <Calendar
+                mode="range"
+                selected={selectedDateRange}
+                onSelect={(range) => setSelectedDateRange(range)}
+                className="rounded-md border"
+                disabled={isDateUnavailable}
+                modifiers={modifiers}
+                modifiersClassNames={{
+                  unavailable: "bg-destructive/20 text-destructive line-through",
+                  specialPrice: "bg-blue-100 text-blue-900 font-semibold",
+                }}
+                numberOfMonths={1}
+                components={{
+                  DayContent: ({ date }) => {
+                    const avail = getDateAvailability(date);
+                    return (
+                      <div className="flex flex-col items-center leading-none">
+                        <span>{date.getDate()}</span>
+                        {avail?.seasonal_price && (
+                          <span className="text-[10px] mt-0.5">
+                            {avail.seasonal_price}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  },
+                }}
               />
+              <div className="flex flex-wrap gap-4 text-sm mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-primary rounded"></div>
+                  <span>Selected</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
+                  <span>Special Price</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-destructive/20 rounded"></div>
+                  <span>Unavailable</span>
+                </div>
+              </div>
             </div>
           </div>
 
