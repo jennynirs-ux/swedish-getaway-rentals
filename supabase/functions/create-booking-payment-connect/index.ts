@@ -35,10 +35,10 @@ serve(async (req) => {
 
     logStep("Request data received", { propertyId, checkInDate, checkOutDate, numberOfGuests, totalAmount, currency });
 
-    // Supabase client
+    // Supabase client with service role to bypass RLS
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Kolla användare (om auth-token skickas med)
