@@ -15,11 +15,15 @@ import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distan
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
 
 interface PropertyFilters {
+  location?: string;
+  checkIn?: Date | undefined;
+  checkOut?: Date | undefined;
   guests?: number;
   propertyType?: string;
   amenities?: string[];
+  priceRange?: [number, number];
+  dateFlexibility?: number;
   destinationCoords?: { latitude: number; longitude: number } | null;
-  location?: string;
 }
 
 const MemoizedPropertyCard = memo(PropertyCard);
@@ -94,7 +98,10 @@ const HomePage = memo(() => {
       !filters.guests && 
       !filters.propertyType && 
       (!filters.amenities || filters.amenities.length === 0) && 
-      !filters.location
+      !filters.location &&
+      !filters.checkIn &&
+      !filters.checkOut &&
+      (!filters.priceRange || (filters.priceRange[0] === 0 && filters.priceRange[1] === 10000))
     )) {
       return properties;
     }
@@ -103,9 +110,22 @@ const HomePage = memo(() => {
       // Guest filter
       if (filters.guests && p.max_guests < filters.guests) return false;
       
+      // Price range filter
+      if (filters.priceRange) {
+        if (p.price_per_night < filters.priceRange[0] || p.price_per_night > filters.priceRange[1]) {
+          return false;
+        }
+      }
+      
       // Property type filter
       if (filters.propertyType && filters.propertyType !== "all") {
-        if (!p.title.toLowerCase().includes(filters.propertyType.toLowerCase())) return false;
+        const title = p.title?.toLowerCase() || "";
+        const type = filters.propertyType.toLowerCase();
+        
+        if (type === 'villa' && !title.includes('villa')) return false;
+        if (type === 'lakehouse' && !title.includes('lakehouse') && !title.includes('lake')) return false;
+        if (type === 'cabin' && !title.includes('cabin') && !title.includes('stuga')) return false;
+        if (type === 'apartment' && !title.includes('apartment') && !title.includes('lägenhet')) return false;
       }
       
       // Amenities filter
