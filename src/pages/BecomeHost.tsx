@@ -346,12 +346,12 @@ const BecomeHost = () => {
                   <div className="text-muted-foreground">Platform Fee</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-green-600 mb-2">2 750 SEK</div>
+                  <div className="text-4xl font-bold text-primary mb-2">2 750 SEK</div>
                   <div className="text-muted-foreground">Guest Pays</div>
                 </div>
               </div>
               <p className="text-center text-sm text-muted-foreground mt-6">
-                The 10% covers marketing, support, secure payments, and platform improvements.
+                The 10% covers secure payments (up to 5,5% depending on country and currency of the guest) marketing, support, and platform improvements.
               </p>
             </CardContent>
           </Card>
