@@ -104,7 +104,7 @@ const BecomeHost = () => {
       icon: DollarSign,
       title: "You keep what you set",
       description:
-        "Set your own price. Guests see a transparent 10% platform fee added on top.",
+        "Set your own price. We will add a 10% fee on top of your price to cover transactions, marketing, plattform development and support.",
     },
     {
       icon: Shield,
@@ -116,13 +116,13 @@ const BecomeHost = () => {
       icon: Calendar,
       title: "Full flexibility",
       description:
-        "Rent out on your schedule — a weekend, a month, or the whole summer.",
+        "Rent out on your schedule — a weekend, a month, or the whole summer. Sync with other plattforms to avoid dubble booking",
     },
     {
       icon: TrendingUp,
-      title: "Built for hosts",
+      title: "Guidebooks included",
       description:
-        "Our 10% covers marketing, platform development, and support — nothing hidden.",
+        "Stand out with built-in guidebooks that elevate your hosting experience and delight your guests.",
     },
   ];
 
@@ -131,10 +131,11 @@ const BecomeHost = () => {
       question: "Do I need a company to host?",
       answer: (
         <>
-          No, you can host as a private individual. If you rent out frequently or
-          have multiple properties, you may need to register for taxes or business
-          activity. In Sweden, you can earn up to 40,000 SEK tax-free per year from
-          private rentals, plus a 20% deduction on the rest. See{" "}
+          No, you can host as a private individual. If you rent out frequently or have multiple 
+          properties, you may need to register a business or report income for taxes.  
+          In Sweden, you can earn up to <strong>40,000 SEK tax-free</strong> per year from private rentals, 
+          plus a 20% deduction on the rest.  
+          Learn more at{" "}
           <a
             href="https://www.skatteverket.se/privat/skatter/bostad/uthyrningavprivatbostad"
             target="_blank"
@@ -142,35 +143,138 @@ const BecomeHost = () => {
             className="underline text-primary"
           >
             Skatteverket
-          </a>{" "}
-          for more info.
+          </a>.
         </>
       ),
     },
     {
       question: "How do payments work?",
-      answer:
-        "Guests pay securely through our payment provider (Stripe). You receive your full listed amount directly. The guest sees a transparent 10% platform fee that covers marketing, support, and payment transfer. You always see exactly what you earn.",
+      answer: (
+        <>
+          Guests pay securely through our payment provider (<strong>Stripe</strong>).  
+          You receive your full listed amount directly, and the guest sees a 
+          transparent 10% platform fee covering marketing, support, and payment handling.  
+          You always see exactly what you earn before confirming your listing.
+        </>
+      ),
     },
     {
       question: "What about insurance?",
-      answer:
-        "Nordic Getaways doesn’t include insurance — you keep full control. Most Swedish home insurances cover short-term rentals with an add-on, and guests agree to take full responsibility for any damage caused during their stay.",
+      answer: (
+        <>
+          To keep platform fees low, insurance is not included — this gives you full control.  
+          Most Swedish home insurance plans already cover short-term rentals with an add-on.  
+          We recommend confirming with your insurer and ensuring guests agree to your house rules.
+        </>
+      ),
     },
     {
       question: "How does check-in work?",
-      answer:
-        "You can manage check-ins yourself or connect your Yale Doorman smart lock in your host dashboard. Each guest receives a unique access code valid only during their stay.",
+      answer: (
+        <>
+          You can manage check-ins yourself or connect your <strong>Yale Doorman</strong> smart lock directly 
+          from your Host Dashboard.  
+          Each guest receives a unique access code valid only during their stay for extra safety.
+        </>
+      ),
     },
     {
       question: "How do I manage my listing?",
-      answer:
-        "Once you’ve signed up and created your property, you can update details, pricing, and availability anytime in your host dashboard. Everything syncs automatically — simple and transparent.",
+      answer: (
+        <>
+          Once your property is created, you can easily update photos, prices, and availability 
+          from your Host Dashboard.  
+          All changes sync automatically across the platform — simple, transparent, and fast.
+        </>
+      ),
     },
     {
-      question: "What if something goes wrong with a guest?",
-      answer:
-        "In rare cases, communication is key. Guests agree to terms that make them responsible for damages. You can report incidents directly in your dashboard, and our team will help you resolve them.",
+      question: "How much can I earn?",
+      answer: (
+        <>
+          Your earnings depend on your home’s location, size, and season.  
+          You set your own nightly price, and we make it easy to see both your payout 
+          and what the guest pays, including our transparent platform fee.
+        </>
+      ),
+    },
+    {
+      question: "What about cleaning and maintenance?",
+      answer: (
+        <>
+          You decide! You can handle cleaning yourself or work with a trusted local partner.  
+          We can also connect you with professional cleaning services in your area.  
+          A clean and well-prepared home brings happier guests — and better reviews.
+        </>
+      ),
+    },
+    {
+      question: "How do cancellations and refunds work?",
+      answer: (
+        <>
+          You can choose your preferred cancellation policy — <strong>Flexible</strong>, 
+          <strong> Moderate</strong>, or <strong>Strict</strong>.  
+          If a guest cancels within the allowed time frame, the system automatically 
+          processes the refund and updates your calendar.
+        </>
+      ),
+    },
+    {
+      question: "What about taxes?",
+      answer: (
+        <>
+          You’re responsible for declaring your rental income based on local tax rules.  
+          In Sweden, most hosts can rent out part of their home tax-free up to a certain limit.  
+          Always double-check with <a
+            href="https://www.skatteverket.se"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-primary"
+          >
+            Skatteverket
+          </a> for updated details.
+        </>
+      ),
+    },
+    {
+      question: "Is a digital guidebook included?",
+      answer: (
+        <>
+          Yes! Every host gets an automatically generated guidebook with check-in details, 
+          directions, and local tips.  
+          You can easily personalize it by adding your own recommendations, photos, and must-do’s nearby.
+        </>
+      ),
+    },
+    {
+      question: "How are guests verified?",
+      answer: (
+        <>
+          All guests must verify their identity and agree to our house rules before booking.  
+          You always have the right to decline a request if something doesn’t feel right.
+        </>
+      ),
+    },
+    {
+      question: "Can I block certain dates?",
+      answer: (
+        <>
+          Yes, your calendar is fully under your control.  
+          You can block any dates when you don’t want to rent out your home — perfect 
+          for personal use or maintenance days.
+        </>
+      ),
+    },
+    {
+      question: "What makes Nordic Getaways different?",
+      answer: (
+        <>
+          We focus on <strong>authentic Nordic experiences</strong>, not mass tourism.  
+          Our platform connects guests with real homes and local hosts who care about sustainability, 
+          design, and hospitality.  
+          We celebrate the people and places that make the Nordics unique.
+        </>
+      ),
     },
   ];
 
