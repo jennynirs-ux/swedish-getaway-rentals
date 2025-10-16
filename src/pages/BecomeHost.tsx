@@ -439,7 +439,7 @@ const BecomeHost = () => {
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-6">
-          Nordic Getaways is 100% transparent. You set the price — guests see what they pay, and you see what goes to marketing, support, payment handling, and platform improvement.
+          Nordic Getaways is 100% transparent. You set the price — see what the guests pay, and you see what goes to marketing, support, payment handling, and platform improvement.
         </p>
       </div>
     </div>
