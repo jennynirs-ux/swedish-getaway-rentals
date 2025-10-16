@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Search, MapPin, Users, Calendar, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { Search, MapPin, Users, Calendar, SlidersHorizontal, X, Loader2, ChevronDown } from "lucide-react";
 import { geocodeAddress } from "@/lib/geocoding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,9 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, addDays, subDays } from "date-fns";
+import type { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 
 interface SearchFilters {
   location: string;
@@ -19,6 +21,7 @@ interface SearchFilters {
   priceRange: [number, number];
   amenities: string[];
   propertyType: string;
+  dateFlexibility: number;
   destinationCoords?: { latitude: number; longitude: number } | null;
 }
 
@@ -30,14 +33,16 @@ interface PropertySearchProps {
 const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySearchProps) => {
   const [showFilters, setShowFilters] = useState(false);
   const [isGeocodingLocation, setIsGeocodingLocation] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filters, setFilters] = useState<SearchFilters>({
     location: "",
     checkIn: undefined,
     checkOut: undefined,
     guests: 2,
-    priceRange: [0, 5000],
+    priceRange: [0, 10000],
     amenities: [],
     propertyType: "all",
+    dateFlexibility: 0,
     destinationCoords: null,
   });
 
@@ -76,12 +81,14 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       checkIn: undefined,
       checkOut: undefined,
       guests: 2,
-      priceRange: [0, 5000],
+      priceRange: [0, 10000],
       amenities: [],
       propertyType: "all",
+      dateFlexibility: 0,
       destinationCoords: null,
     };
     setFilters(clearedFilters);
+    setDateRange(undefined);
     onFiltersChange(clearedFilters);
   };
 
@@ -92,10 +99,19 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
     updateFilters({ amenities: newAmenities });
   };
 
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+    updateFilters({
+      checkIn: range?.from,
+      checkOut: range?.to,
+    });
+  };
+
   const activeFiltersCount = [
     filters.propertyType !== "all",
     filters.amenities.length > 0,
-    filters.priceRange[0] > 0 || filters.priceRange[1] < 5000,
+    filters.priceRange[0] > 0 || filters.priceRange[1] < 10000,
+    filters.dateFlexibility > 0,
   ].filter(Boolean).length;
 
   return (
@@ -118,38 +134,39 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             )}
           </div>
 
-          {/* Check-in */}
+          {/* Date Range Picker */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1 justify-start text-left">
-                <Calendar className="mr-1 h-4 w-4" />
-                {filters.checkIn ? format(filters.checkIn, "dd MMM") : "Check-in"}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={cn(
+                  "flex-[2] justify-start text-left font-normal",
+                  !dateRange && "text-muted-foreground"
+                )}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd MMM")} - {format(dateRange.to, "dd MMM")}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd MMM")
+                  )
+                ) : (
+                  <span>Check-in / Check-out</span>
+                )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" align="start">
               <CalendarComponent
-                mode="single"
-                selected={filters.checkIn}
-                onSelect={(date) => updateFilters({ checkIn: date })}
+                mode="range"
+                selected={dateRange}
+                onSelect={handleDateRangeChange}
                 disabled={(date) => date < new Date()}
-              />
-            </PopoverContent>
-          </Popover>
-
-          {/* Check-out */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1 justify-start text-left">
-                <Calendar className="mr-1 h-4 w-4" />
-                {filters.checkOut ? format(filters.checkOut, "dd MMM") : "Check-out"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <CalendarComponent
-                mode="single"
-                selected={filters.checkOut}
-                onSelect={(date) => updateFilters({ checkOut: date })}
-                disabled={(date) => date < new Date() || (filters.checkIn && date <= filters.checkIn)}
+                numberOfMonths={2}
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
@@ -206,12 +223,12 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
 
       {/* Advanced Filters */}
       {showFilters && (
-        <Card className="mt-3 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold">Filters</h3>
+        <Card className="mt-3 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold">Advanced Filters</h3>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear
+                Clear all
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
                 <X className="h-4 w-4" />
@@ -219,60 +236,85 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-6">
             {/* Price Range */}
             <div>
-              <label className="text-xs font-medium mb-2 block">Price / night</label>
+              <label className="text-sm font-semibold mb-3 block">Price per night (SEK)</label>
               <Slider
                 value={filters.priceRange}
                 onValueChange={(value) => updateFilters({ priceRange: value as [number, number] })}
-                max={5000}
+                max={10000}
                 min={0}
-                step={100}
-                className="mb-1"
+                step={250}
+                className="mb-3"
               />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{filters.priceRange[0]} kr</span>
-                <span>{filters.priceRange[1]} kr</span>
+              <div className="flex justify-between text-sm font-medium">
+                <span className="text-primary">{filters.priceRange[0].toLocaleString()} kr</span>
+                <span className="text-primary">{filters.priceRange[1] === 10000 ? '10,000+ kr' : `${filters.priceRange[1].toLocaleString()} kr`}</span>
               </div>
             </div>
 
-            {/* Property Type */}
-            <div>
-              <label className="text-xs font-medium mb-2 block">Type</label>
-              <Select
-                value={filters.propertyType}
-                onValueChange={(value) => updateFilters({ propertyType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="villa">Villa</SelectItem>
-                  <SelectItem value="lakehouse">Lakehouse</SelectItem>
-                  <SelectItem value="cabin">Cabin</SelectItem>
-                  <SelectItem value="apartment">Apartment</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Property Type */}
+              <div>
+                <label className="text-sm font-semibold mb-3 block">Property Type</label>
+                <Select
+                  value={filters.propertyType}
+                  onValueChange={(value) => updateFilters({ propertyType: value })}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="All Properties" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Properties</SelectItem>
+                    <SelectItem value="villa">Villa</SelectItem>
+                    <SelectItem value="lakehouse">Lakehouse</SelectItem>
+                    <SelectItem value="cabin">Cabin</SelectItem>
+                    <SelectItem value="apartment">Apartment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Flexibility */}
+              <div>
+                <label className="text-sm font-semibold mb-3 block">Date Flexibility</label>
+                <Select
+                  value={filters.dateFlexibility.toString()}
+                  onValueChange={(value) => updateFilters({ dateFlexibility: parseInt(value) })}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Exact dates</SelectItem>
+                    <SelectItem value="1">± 1 day</SelectItem>
+                    <SelectItem value="2">± 2 days</SelectItem>
+                    <SelectItem value="3">± 3 days</SelectItem>
+                    <SelectItem value="7">± 1 week</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Amenities */}
-            <div className="md:col-span-2">
-              <label className="text-xs font-medium mb-2 block">Amenities</label>
-              <div className="flex flex-wrap gap-2">
-                {availableAmenities.map((amenity) => (
-                  <Button
-                    key={amenity}
-                    variant={filters.amenities.includes(amenity) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleAmenity(amenity)}
-                  >
-                    {amenity}
-                  </Button>
-                ))}
+            {availableAmenities.length > 0 && (
+              <div>
+                <label className="text-sm font-semibold mb-3 block">Amenities</label>
+                <div className="flex flex-wrap gap-2">
+                  {availableAmenities.slice(0, 12).map((amenity) => (
+                    <Button
+                      key={amenity}
+                      variant={filters.amenities.includes(amenity) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleAmenity(amenity)}
+                      className="capitalize"
+                    >
+                      {amenity}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </Card>
       )}
