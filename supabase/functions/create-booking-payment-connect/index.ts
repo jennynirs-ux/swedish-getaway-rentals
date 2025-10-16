@@ -125,6 +125,7 @@ serve(async (req) => {
       metadata: {
         type: "booking",
         propertyId,
+        propertyTitle: property.title,
         checkInDate,
         checkOutDate,
         numberOfGuests: numberOfGuests.toString(),
@@ -133,9 +134,12 @@ serve(async (req) => {
         guestPhone: guestPhone || "",
         specialRequests: specialRequests || "",
         userId: user?.id || "",
+        currency: (currency || property.currency || "sek").toLowerCase(),
+        totalAmount: totalAmount.toString(),
         hostAmount: hostAmount.toString(),
         platformCommission: platformCommission.toString(),
         commissionRate: commissionRate.toString(),
+        hostId: property.host_id,
       },
     };
 

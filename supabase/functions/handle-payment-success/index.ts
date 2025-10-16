@@ -49,29 +49,55 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    let result = { success: true, type: 'unknown' };
+    let result = { success: true, type: 'unknown', bookingId: null };
 
     if (session.metadata?.type === 'booking') {
-      const bookingData = JSON.parse(session.metadata.booking_data);
+      const metadata = session.metadata;
       
-      const { error: bookingError } = await supabase
+      const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          property_id: bookingData.property_id,
-          guest_name: bookingData.guest_name,
-          guest_email: bookingData.guest_email,
-          guest_phone: bookingData.guest_phone,
-          check_in_date: bookingData.check_in_date,
-          check_out_date: bookingData.check_out_date,
-          number_of_guests: bookingData.number_of_guests,
-          special_requests: bookingData.special_requests,
-          total_amount: bookingData.total_amount,
-          currency: bookingData.currency,
+          property_id: metadata.propertyId,
+          user_id: metadata.userId || null,
+          guest_name: metadata.guestName,
+          guest_email: metadata.guestEmail,
+          guest_phone: metadata.guestPhone || null,
+          check_in_date: metadata.checkInDate,
+          check_out_date: metadata.checkOutDate,
+          number_of_guests: parseInt(metadata.numberOfGuests),
+          special_requests: metadata.specialRequests || null,
+          total_amount: parseInt(metadata.totalAmount),
+          currency: metadata.currency?.toUpperCase() || 'SEK',
           status: 'confirmed',
-          stripe_payment_intent_id: session.payment_intent
-        });
+          stripe_payment_intent_id: session.payment_intent as string
+        })
+        .select()
+        .single();
 
       if (bookingError) throw bookingError;
+      
+      // Send notification emails
+      if (booking) {
+        result.bookingId = booking.id;
+        
+        try {
+          await supabase.functions.invoke('send-booking-notifications', {
+            body: {
+              bookingId: booking.id,
+              propertyId: metadata.propertyId,
+              propertyTitle: metadata.propertyTitle,
+              guestName: metadata.guestName,
+              guestEmail: metadata.guestEmail,
+              checkInDate: metadata.checkInDate,
+              checkOutDate: metadata.checkOutDate,
+              hostId: metadata.hostId,
+            }
+          });
+        } catch (notificationError) {
+          console.error('Failed to send notifications:', notificationError);
+        }
+      }
+      
       result.type = 'booking';
 
     } else if (session.metadata?.type === 'product') {

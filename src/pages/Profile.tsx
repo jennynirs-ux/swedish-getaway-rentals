@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, MapPin, Star, LogOut, Heart } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, MapPin, Star, LogOut, Heart, Calendar } from "lucide-react";
 import MainNavigation from "@/components/MainNavigation";
 import ReviewCard from "@/components/ReviewCard";
 import PropertyCard from "@/components/PropertyCard";
@@ -37,6 +38,7 @@ const Profile = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [hostReviews, setHostReviews] = useState<any[]>([]);
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -66,6 +68,7 @@ const Profile = () => {
       await fetchReviews(user.id);
       await fetchHostReviews(user.id);
       await loadFavorites(user.id);
+      await fetchBookings(user.id);
     } catch (error) {
       console.error('Auth check error:', error);
       navigate('/auth');
@@ -146,6 +149,29 @@ const Profile = () => {
       setFavoriteProperties(properties);
     } catch (error) {
       console.error('Failed to load favorites:', error);
+    }
+  };
+
+  const fetchBookings = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          property:properties(
+            id,
+            title,
+            hero_image_url,
+            location
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setBookings(data || []);
+    } catch (error: any) {
+      console.error('Failed to load bookings:', error);
     }
   };
 
@@ -252,6 +278,7 @@ const Profile = () => {
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList>
               <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="bookings">My Bookings</TabsTrigger>
               <TabsTrigger value="favorites">Favorites ({favoriteProperties.length})</TabsTrigger>
               <TabsTrigger value="reviews">Guest Reviews ({reviews.length})</TabsTrigger>
               {profile.is_host && (
@@ -261,6 +288,92 @@ const Profile = () => {
                 <TabsTrigger value="hosting">Hosting</TabsTrigger>
               )}
             </TabsList>
+
+            <TabsContent value="bookings">
+              <div className="space-y-4">
+                {bookings.length > 0 ? (
+                  bookings.map((booking) => (
+                    <Card key={booking.id}>
+                      <CardContent className="p-6">
+                        <div className="flex gap-4">
+                          {booking.property?.hero_image_url && (
+                            <img
+                              src={booking.property.hero_image_url}
+                              alt={booking.property.title}
+                              className="w-32 h-32 object-cover rounded-lg"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-lg">
+                                  {booking.property?.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {booking.property?.location}
+                                </p>
+                              </div>
+                              <Badge
+                                variant={
+                                  booking.status === 'confirmed'
+                                    ? 'default'
+                                    : booking.status === 'pending'
+                                    ? 'secondary'
+                                    : 'destructive'
+                                }
+                              >
+                                {booking.status}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Check-in</p>
+                                <p className="font-medium">
+                                  {new Date(booking.check_in_date).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Check-out</p>
+                                <p className="font-medium">
+                                  {new Date(booking.check_out_date).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Guests</p>
+                                <p className="font-medium">{booking.number_of_guests}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Total</p>
+                                <p className="font-medium">
+                                  {booking.total_amount} {booking.currency}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-4">
+                              <Link to={`/property/${booking.property_id}/guide`}>
+                                <Button variant="outline" size="sm">
+                                  View Guidebook
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="text-center py-12">
+                      <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground mb-4">No bookings yet</p>
+                      <Button onClick={() => navigate('/')}>
+                        Browse Properties
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
 
             <TabsContent value="profile">
               <Card>
