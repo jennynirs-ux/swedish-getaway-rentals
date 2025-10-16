@@ -288,7 +288,7 @@ const BecomeHost = () => {
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "url('/public/lovable-uploads/93c33182-c9b7-4857-831a-49ed13df4375.png')",
+              "url('src/assets/forest-hero-light.jpg')",
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-background" />
@@ -363,7 +363,7 @@ const BecomeHost = () => {
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-lg font-medium flex items-center gap-2">
+                <AccordionTrigger className="text-lg font-medium flex items-center gap-2 text-left justify-start w-full">
                   <HelpCircle className="h-5 w-5 text-primary" />
                   {faq.question}
                 </AccordionTrigger>
