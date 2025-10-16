@@ -168,6 +168,26 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
                 numberOfMonths={2}
                 className={cn("p-3 pointer-events-auto")}
               />
+              <div className="border-t p-3 space-y-2">
+                <div className="text-xs font-medium">Date flexibility</div>
+                <div className="flex gap-2">
+                  {[0,1,2,3,7].map((d) => (
+                    <Button
+                      key={d}
+                      variant={filters.dateFlexibility === d ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => updateFilters({ dateFlexibility: d })}
+                    >
+                      {d === 0 ? 'Exact' : d === 7 ? '± 1w' : `± ${d}d`}
+                    </Button>
+                  ))}
+                </div>
+                {filters.dateFlexibility > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    We’ll also consider availability within ±{filters.dateFlexibility} days.
+                  </div>
+                )}
+              </div>
             </PopoverContent>
           </Popover>
 
@@ -275,25 +295,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
                 </Select>
               </div>
 
-              {/* Date Flexibility */}
-              <div>
-                <label className="text-sm font-semibold mb-3 block">Date Flexibility</label>
-                <Select
-                  value={filters.dateFlexibility.toString()}
-                  onValueChange={(value) => updateFilters({ dateFlexibility: parseInt(value) })}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Exact dates</SelectItem>
-                    <SelectItem value="1">± 1 day</SelectItem>
-                    <SelectItem value="2">± 2 days</SelectItem>
-                    <SelectItem value="3">± 3 days</SelectItem>
-                    <SelectItem value="7">± 1 week</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Date Flexibility moved into calendar popover */}
             </div>
 
             {/* Amenities */}

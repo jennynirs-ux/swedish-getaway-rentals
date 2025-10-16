@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
@@ -13,6 +13,7 @@ import BookPromotion from "@/components/BookPromotion";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
 
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
+import { addDays, subDays, differenceInCalendarDays } from "date-fns";
 
 interface PropertyFilters {
   location?: string;
@@ -75,6 +76,8 @@ const HomePage = memo(() => {
   );
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
+  const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   /** Bygg lista med amenities */
   const availableAmenities = useMemo(() => {
@@ -88,6 +91,71 @@ const HomePage = memo(() => {
     });
     return Array.from(all).sort();
   }, [properties]);
+
+  // Check availability against selected dates (+/- flexibility)
+  useEffect(() => {
+    const run = async () => {
+      try {
+        if (!filters?.checkIn || !filters?.checkOut) {
+          setAvailablePropertyIds(null);
+          return;
+        }
+        setCheckingAvailability(true);
+        const propertyIds = (properties as any[]).map((p: any) => p.id);
+        if (propertyIds.length === 0) {
+          setAvailablePropertyIds(new Set());
+          setCheckingAvailability(false);
+          return;
+        }
+
+        const flex = filters?.dateFlexibility || 0;
+        const nights = differenceInCalendarDays(filters.checkOut as Date, filters.checkIn as Date);
+        const startMin = subDays(filters.checkIn as Date, flex);
+        const startMax = addDays(filters.checkIn as Date, flex);
+        const endMax = addDays(filters.checkOut as Date, flex);
+
+        const startStr = startMin.toISOString().slice(0, 10);
+        const endStr = endMax.toISOString().slice(0, 10);
+
+        const { data, error } = await supabase
+          .from('availability')
+          .select('property_id,date,available')
+          .in('property_id', propertyIds)
+          .gte('date', startStr)
+          .lt('date', endStr)
+          .eq('available', false);
+
+        if (error) throw error;
+
+        const blockMap = new Map<string, Set<string>>();
+        (data || []).forEach((row: any) => {
+          const pid = row.property_id as string;
+          const d = new Date(row.date).toISOString().slice(0, 10);
+          if (!blockMap.has(pid)) blockMap.set(pid, new Set());
+          blockMap.get(pid)!.add(d);
+        });
+
+        const okIds = new Set<string>();
+        propertyIds.forEach((pid) => {
+          const blocked = blockMap.get(pid) || new Set<string>();
+          for (let s = new Date(startMin); s <= startMax; s = addDays(s, 1)) {
+            let ok = true;
+            for (let i = 0; i < nights; i++) {
+              const d = addDays(s, i).toISOString().slice(0, 10);
+              if (blocked.has(d)) { ok = false; break; }
+            }
+            if (ok) { okIds.add(pid); break; }
+          }
+        });
+
+        setAvailablePropertyIds(okIds);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    };
+
+    run();
+  }, [filters?.checkIn, filters?.checkOut, filters?.dateFlexibility, properties]);
 
   /** Filtrera efter sökkriterier - show ALL if no filters applied */
   const filteredProperties = useMemo(() => {
@@ -137,6 +205,12 @@ const HomePage = memo(() => {
         for (const w of wanted) {
           if (!names.some((n) => n.includes(w))) return false;
         }
+      }
+      
+      // Date availability filter
+      if (filters.checkIn && filters.checkOut) {
+        if (!availablePropertyIds) return false;
+        if (!availablePropertyIds.has(p.id)) return false;
       }
       
       // Location/City filter with distance calculation
