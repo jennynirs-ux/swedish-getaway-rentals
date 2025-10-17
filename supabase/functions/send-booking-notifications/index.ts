@@ -19,8 +19,12 @@ serve(async (req) => {
       propertyTitle,
       guestName,
       guestEmail,
+      guestPhone,
+      numberOfGuests,
       checkInDate,
       checkOutDate,
+      totalAmount,
+      currency,
       hostId,
     } = await req.json();
 
@@ -29,10 +33,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get property details for guidebook link
+    // Get property details including address
     const { data: property } = await supabase
       .from("properties")
-      .select("*")
+      .select("street, city, postal_code, country, check_in_time, check_out_time")
       .eq("id", propertyId)
       .single();
 
@@ -50,6 +54,14 @@ serve(async (req) => {
     ) || "https://jolofsson.lovable.app";
 
     const guidebookUrl = `${baseUrl}/property/${propertyId}/guide`;
+    
+    // Format property address
+    const propertyAddress = [
+      property?.street,
+      property?.postal_code,
+      property?.city,
+      property?.country
+    ].filter(Boolean).join(", ");
 
     // Send email to guest
     const guestEmailHtml = `
@@ -57,11 +69,17 @@ serve(async (req) => {
       <p>Hi ${guestName},</p>
       <p>Your booking for <strong>${propertyTitle}</strong> has been confirmed!</p>
       
+      <h2>Property Address:</h2>
+      <p style="font-size: 16px; line-height: 1.5;">
+        ${propertyAddress || propertyTitle}
+      </p>
+
       <h2>Booking Details:</h2>
       <ul>
-        <li><strong>Check-in:</strong> ${new Date(checkInDate).toLocaleDateString()}</li>
-        <li><strong>Check-out:</strong> ${new Date(checkOutDate).toLocaleDateString()}</li>
-        <li><strong>Property:</strong> ${propertyTitle}</li>
+        <li><strong>Check-in:</strong> ${new Date(checkInDate).toLocaleDateString()} ${property?.check_in_time ? `at ${property.check_in_time.slice(0, 5)}` : ''}</li>
+        <li><strong>Check-out:</strong> ${new Date(checkOutDate).toLocaleDateString()} ${property?.check_out_time ? `at ${property.check_out_time.slice(0, 5)}` : ''}</li>
+        <li><strong>Guests:</strong> ${numberOfGuests}</li>
+        <li><strong>Total Amount:</strong> ${totalAmount} ${currency}</li>
       </ul>
 
       <p><a href="${guidebookUrl}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; margin: 20px 0;">View Guest Guidebook</a></p>
@@ -93,12 +111,20 @@ serve(async (req) => {
         <p>Hi ${hostProfile.full_name || "Host"},</p>
         <p>You have a new booking for <strong>${propertyTitle}</strong>!</p>
         
+        <h2>Guest Information:</h2>
+        <ul>
+          <li><strong>Name:</strong> ${guestName}</li>
+          <li><strong>Email:</strong> ${guestEmail}</li>
+          ${guestPhone ? `<li><strong>Phone:</strong> ${guestPhone}</li>` : ''}
+          <li><strong>Number of Guests:</strong> ${numberOfGuests}</li>
+        </ul>
+
         <h2>Booking Details:</h2>
         <ul>
-          <li><strong>Guest:</strong> ${guestName}</li>
-          <li><strong>Email:</strong> ${guestEmail}</li>
-          <li><strong>Check-in:</strong> ${new Date(checkInDate).toLocaleDateString()}</li>
-          <li><strong>Check-out:</strong> ${new Date(checkOutDate).toLocaleDateString()}</li>
+          <li><strong>Check-in:</strong> ${new Date(checkInDate).toLocaleDateString()} ${property?.check_in_time ? `at ${property.check_in_time.slice(0, 5)}` : ''}</li>
+          <li><strong>Check-out:</strong> ${new Date(checkOutDate).toLocaleDateString()} ${property?.check_out_time ? `at ${property.check_out_time.slice(0, 5)}` : ''}</li>
+          <li><strong>Total Amount:</strong> ${totalAmount} ${currency}</li>
+          <li><strong>Booking ID:</strong> ${bookingId}</li>
         </ul>
 
         <p><a href="${baseUrl}/host-dashboard" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; margin: 20px 0;">View in Dashboard</a></p>

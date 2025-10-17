@@ -88,8 +88,12 @@ serve(async (req) => {
               propertyTitle: metadata.propertyTitle,
               guestName: metadata.guestName,
               guestEmail: metadata.guestEmail,
+              guestPhone: metadata.guestPhone || null,
+              numberOfGuests: parseInt(metadata.numberOfGuests),
               checkInDate: metadata.checkInDate,
               checkOutDate: metadata.checkOutDate,
+              totalAmount: parseInt(metadata.totalAmount),
+              currency: metadata.currency?.toUpperCase() || 'SEK',
               hostId: metadata.hostId,
             }
           });
