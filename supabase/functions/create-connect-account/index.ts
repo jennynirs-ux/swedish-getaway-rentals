@@ -13,7 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    // Auth client to verify user
+    const authClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
@@ -23,12 +24,17 @@ serve(async (req) => {
       }
     );
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
     
     if (authError || !user?.email) {
       throw new Error("User not authenticated");
     }
 
+    // Service role client for profile updates (bypasses RLS trigger)
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
     const { returnUrl, refreshUrl } = await req.json();
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
