@@ -267,8 +267,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const bookingData = {
         property_id: propertyId,
         ...sanitizedData,
-        check_in_date: selectedDates.checkIn.toISOString().split('T')[0],
-        check_out_date: selectedDates.checkOut.toISOString().split('T')[0],
+        check_in_date: `${selectedDates.checkIn.getFullYear()}-${String(selectedDates.checkIn.getMonth() + 1).padStart(2, '0')}-${String(selectedDates.checkIn.getDate()).padStart(2, '0')}`,
+        check_out_date: `${selectedDates.checkOut.getFullYear()}-${String(selectedDates.checkOut.getMonth() + 1).padStart(2, '0')}-${String(selectedDates.checkOut.getDate()).padStart(2, '0')}`,
         number_of_guests: formData.number_of_guests,
         total_amount: pricingCalculation.total,
         property_title: propertyTitle,

@@ -108,7 +108,7 @@ serve(async (req) => {
             name: `${property.title}`,
             description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
           },
-          unit_amount: totalAmount,
+          unit_amount: Math.round(Number(totalAmount) * 100),
         },
         quantity: 1,
       },
@@ -146,7 +146,7 @@ serve(async (req) => {
     // Stripe Connect payout
     if (profileData?.stripe_connect_account_id) {
       sessionConfig.payment_intent_data = {
-        application_fee_amount: platformCommission,
+        application_fee_amount: Math.round(Number(platformCommission) * 100),
         transfer_data: {
           destination: profileData.stripe_connect_account_id,
         },
