@@ -103,14 +103,13 @@ const PropertyCalendarOptimized = memo(({
       return;
     }
 
-    // Blockera val av otillgängliga datum
+    // Only block selection if check-in date is unavailable
     if (r.from && !isDateAvailable(r.from)) return;
-    if (r.to && !isDateAvailable(r.to)) return;
 
-    // Blockera intervall som korsar otillgängliga datum
+    // Check if there are any unavailable dates between check-in and check-out (exclusive of check-out)
     if (r.from && r.to) {
       const d = new Date(r.from);
-      while (d <= r.to) {
+      while (d < r.to) {
         if (!isDateAvailable(d)) return;
         d.setDate(d.getDate() + 1);
       }

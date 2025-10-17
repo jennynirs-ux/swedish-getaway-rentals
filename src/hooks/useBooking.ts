@@ -51,8 +51,8 @@ export const useBooking = () => {
 
       if (!isAvailable) {
         toast({
-          title: "Tyvärr",
-          description: "De valda datumen är inte tillgängliga. Välj andra datum.",
+          title: "Sorry",
+          description: "The selected dates are not available. Please choose different dates.",
           variant: "destructive",
         });
         return { success: false, error: 'Dates not available' };
@@ -100,8 +100,8 @@ export const useBooking = () => {
         window.open(data.url, '_blank');
         
         toast({
-          title: "Omdirigerar till betalning",
-          description: "Du kommer att omdirigeras för att slutföra betalningen.",
+          title: "Redirecting to payment",
+          description: "You will be redirected to complete the payment.",
         });
       }
 
@@ -109,8 +109,8 @@ export const useBooking = () => {
     } catch (error) {
       console.error('Error creating booking payment:', error);
       toast({
-        title: "Fel",
-        description: "Kunde inte skapa betalning. Försök igen.",
+        title: "Error",
+        description: "Could not create payment. Please try again.",
         variant: "destructive",
       });
       return { success: false, error };

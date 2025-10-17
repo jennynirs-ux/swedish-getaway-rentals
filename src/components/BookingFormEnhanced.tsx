@@ -324,20 +324,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     return;
                   }
                   
-                  // Prevent selection if from date is unavailable
+                  // Only prevent selection if check-in date is unavailable
                   if (range.from && isDateUnavailable(range.from)) {
                     return;
                   }
                   
-                  // Prevent selection if to date is unavailable
-                  if (range.to && isDateUnavailable(range.to)) {
-                    return;
-                  }
-                  
-                  // Check if any date in the range is unavailable
+                  // Check if any date between check-in and check-out (exclusive) is unavailable
                   if (range.from && range.to) {
                     let checkDate = new Date(range.from);
-                    while (checkDate <= range.to) {
+                    while (checkDate < range.to) {
                       if (isDateUnavailable(checkDate)) {
                         // Don't allow selecting this range
                         return;
