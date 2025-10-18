@@ -1367,6 +1367,30 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_host_bookings_masked: {
+        Args: { host_user_id: string }
+        Returns: {
+          access_code: string
+          access_code_expires_at: string
+          check_in_date: string
+          check_out_date: string
+          created_at: string
+          currency: string
+          guest_email: string
+          guest_name: string
+          guest_phone: string
+          id: string
+          number_of_guests: number
+          pre_checkin_reminder_sent_at: string
+          property_id: string
+          special_requests: string
+          status: string
+          stripe_payment_intent_id: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -166,9 +166,17 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    // Log detailed error server-side
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-booking-payment-connect", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    logStep("ERROR in create-booking-payment-connect", { 
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return sanitized error to client
+    return new Response(JSON.stringify({ 
+      error: "Unable to create payment session. Please try again or contact support." 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

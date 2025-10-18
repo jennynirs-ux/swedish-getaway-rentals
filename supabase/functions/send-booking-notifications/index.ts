@@ -145,9 +145,17 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Error sending booking notifications:", error);
+    // Log detailed error server-side for debugging
+    console.error("Error sending booking notifications:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return generic error to client
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: "Unable to send booking notifications. The booking was created successfully." 
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

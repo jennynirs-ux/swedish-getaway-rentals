@@ -240,9 +240,16 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Error handling payment success:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    // Log detailed error server-side for debugging
+    console.error("Error handling payment success:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return generic error message to client
+    return new Response(JSON.stringify({ 
+      error: "Unable to process payment confirmation. Please contact support if the issue persists." 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
