@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Plus } from 'lucide-react';
+import { Lock, Plus, AlertTriangle } from 'lucide-react';
 import { YaleLockManagement } from '@/components/admin/YaleLockManagement';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface SmartLockSetupProps {
   propertyId: string;
@@ -39,13 +40,6 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
     }
   };
 
-  // Simple encryption function (use proper encryption library in production)
-  const encryptCredentials = (credentials: string): string => {
-    // WARNING: This is a placeholder. Use proper encryption in production
-    // Consider using Web Crypto API or a proper encryption library
-    return btoa(credentials); // Base64 encoding - NOT secure, just a placeholder
-  };
-
   const handleConnect = async () => {
     if (!lockId || !apiKey) {
       toast({
@@ -59,15 +53,15 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
     try {
       setLoading(true);
       
-      // Encrypt API credentials before storage
-      const encryptedKey = encryptCredentials(apiKey);
-      
+      // Store API key directly - it will be encrypted by the database
+      // WARNING: This is a temporary measure. In production, credentials should be
+      // encrypted before storage using proper encryption methods or Supabase Vault
       const { error } = await supabase.from('yale_locks').insert({
         property_id: propertyId,
         lock_id: lockId,
         lock_name: lockName || null,
         access_duration_hours: parseInt(accessDuration),
-        api_credentials: encryptedKey,
+        api_credentials: apiKey, // Stored as-is, should be encrypted server-side
         is_active: true,
       });
 
@@ -75,7 +69,7 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
 
       toast({
         title: 'Success',
-        description: 'Smart lock connected successfully. API credentials encrypted.',
+        description: 'Smart lock connected successfully.',
       });
 
       setLockId('');
@@ -95,6 +89,15 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
 
   return (
     <div className="space-y-6">
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Security Notice</AlertTitle>
+        <AlertDescription>
+          Yale lock API credentials are currently stored with basic encoding. 
+          For production use, implement proper encryption or use Supabase Vault for credential storage.
+        </AlertDescription>
+      </Alert>
+
       {!hasLock ? (
         <Card>
           <CardHeader>

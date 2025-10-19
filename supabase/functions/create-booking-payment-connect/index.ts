@@ -20,6 +20,9 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
+    const requestData = await req.json();
+    
+    // Input validation - validate all required fields
     const {
       propertyId,
       checkInDate,
@@ -31,9 +34,41 @@ serve(async (req) => {
       specialRequests,
       totalAmount,
       currency
-    } = await req.json();
+    } = requestData;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!propertyId || !uuidRegex.test(propertyId)) {
+      throw new Error('Invalid property ID format');
+    }
+    
+    // Validate dates
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+      throw new Error('Invalid date format');
+    }
+    if (checkOut <= checkIn) {
+      throw new Error('Check-out date must be after check-in date');
+    }
+    
+    // Validate guest count
+    if (!numberOfGuests || numberOfGuests < 1 || numberOfGuests > 50) {
+      throw new Error('Invalid number of guests');
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!guestEmail || !emailRegex.test(guestEmail)) {
+      throw new Error('Invalid email format');
+    }
+    
+    // Validate required fields
+    if (!guestName || guestName.length < 2) {
+      throw new Error('Guest name is required');
+    }
 
-    logStep("Request data received", { propertyId, checkInDate, checkOutDate, numberOfGuests, totalAmount, currency });
+    logStep("Request data validated", { propertyId, checkInDate, checkOutDate, numberOfGuests });
 
     // Supabase client with service role to bypass RLS
     const supabaseClient = createClient(
@@ -51,11 +86,11 @@ serve(async (req) => {
       logStep("User authenticated", { userId: user?.id });
     }
 
-    // Hämta property med hostens Stripe-konto
+    // Fetch property and validate it exists and is active
     const { data: property, error: propertyError } = await supabaseClient
       .from("properties")
       .select(`
-        id, title, currency, host_id,
+        id, title, currency, host_id, max_guests, price_per_night,
         profiles!properties_host_id_fkey(stripe_connect_account_id, commission_rate)
       `)
       .eq("id", propertyId)
@@ -69,6 +104,41 @@ serve(async (req) => {
         status: 404,
       });
     }
+    
+    // Validate guest count against property max
+    if (numberOfGuests > property.max_guests) {
+      logStep("Too many guests", { numberOfGuests, maxGuests: property.max_guests });
+      return new Response(JSON.stringify({ error: `Property can accommodate maximum ${property.max_guests} guests` }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
+    // CRITICAL: Recalculate total amount server-side - never trust client-supplied amounts
+    const nightCount = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    const serverCalculatedAmount = property.price_per_night * nightCount;
+    
+    // Allow small rounding differences (1% tolerance) but reject significant discrepancies
+    const amountDifference = Math.abs(totalAmount - serverCalculatedAmount);
+    const tolerance = serverCalculatedAmount * 0.01;
+    
+    if (amountDifference > tolerance) {
+      logStep("Amount mismatch detected", { 
+        clientAmount: totalAmount, 
+        serverAmount: serverCalculatedAmount,
+        difference: amountDifference 
+      });
+      return new Response(JSON.stringify({ 
+        error: "Price calculation error. Please refresh and try again.",
+        serverCalculatedAmount // Return correct amount for client to update
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
+    // Use server-calculated amount for payment
+    const validatedAmount = serverCalculatedAmount;
 
     const profileData = property.profiles as any;
     logStep("Property found", {
@@ -77,12 +147,12 @@ serve(async (req) => {
       commissionRate: profileData?.commission_rate,
     });
 
-    // Kommission
+    // Commission calculation using validated amount
     const commissionRate = profileData?.commission_rate || 10;
-    const platformCommission = Math.ceil(totalAmount * (commissionRate / 100));
-    const hostAmount = totalAmount - platformCommission;
+    const platformCommission = Math.ceil(validatedAmount * (commissionRate / 100));
+    const hostAmount = validatedAmount - platformCommission;
 
-    logStep("Commission calculation", { commissionRate, platformCommission, hostAmount });
+    logStep("Commission calculation", { commissionRate, platformCommission, hostAmount, validatedAmount });
 
     // Stripe init
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -99,16 +169,16 @@ serve(async (req) => {
       }
     }
 
-    // Stripe line item
+    // Stripe line item using validated amount
     const lineItems = [
       {
         price_data: {
           currency: (currency || property.currency || "sek").toLowerCase(),
           product_data: {
             name: `${property.title}`,
-            description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate}`,
+            description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate} (${nightCount} nights)`,
           },
-          unit_amount: Math.round(Number(totalAmount) * 100),
+          unit_amount: Math.round(Number(validatedAmount) * 100),
         },
         quantity: 1,
       },
@@ -135,7 +205,7 @@ serve(async (req) => {
         specialRequests: specialRequests || "",
         userId: user?.id || "",
         currency: (currency || property.currency || "sek").toLowerCase(),
-        totalAmount: totalAmount.toString(),
+        totalAmount: validatedAmount.toString(),
         hostAmount: hostAmount.toString(),
         platformCommission: platformCommission.toString(),
         commissionRate: commissionRate.toString(),

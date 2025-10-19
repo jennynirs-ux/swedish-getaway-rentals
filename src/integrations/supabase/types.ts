@@ -631,6 +631,36 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_sessions: {
+        Row: {
+          created_record_id: string | null
+          id: string
+          ip_address: unknown | null
+          processed_at: string
+          session_id: string
+          session_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_record_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          processed_at?: string
+          session_id: string
+          session_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_record_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          processed_at?: string
+          session_id?: string
+          session_type?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -4,7 +4,29 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+};
+
+// Verify Stripe webhook signature
+const verifyStripeSignature = (req: Request, body: string): boolean => {
+  const signature = req.headers.get('stripe-signature');
+  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+  
+  if (!signature || !webhookSecret) {
+    console.error('Missing signature or webhook secret');
+    return false;
+  }
+  
+  try {
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
+    stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    return true;
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err);
+    return false;
+  }
 };
 
 serve(async (req) => {
@@ -13,8 +35,20 @@ serve(async (req) => {
   }
 
   try {
-    // Input validation and sanitization
-    const requestBody = await req.json();
+    // Get raw body for signature verification
+    const rawBody = await req.text();
+    
+    // Verify webhook signature for security
+    if (!verifyStripeSignature(req, rawBody)) {
+      console.error('Invalid webhook signature');
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+    
+    // Parse request body
+    const requestBody = JSON.parse(rawBody);
     const { session_id } = requestBody;
     
     if (!session_id) {
@@ -49,10 +83,39 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Check for duplicate processing (idempotency)
+    const { data: existingSession } = await supabase
+      .from('processed_sessions')
+      .select('id, session_type, created_record_id')
+      .eq('session_id', session_id)
+      .single();
+    
+    if (existingSession) {
+      console.log('Session already processed:', session_id);
+      return new Response(JSON.stringify({
+        success: true,
+        type: existingSession.session_type,
+        bookingId: existingSession.created_record_id,
+        message: 'Already processed'
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     let result = { success: true, type: 'unknown', bookingId: null };
 
     if (session.metadata?.type === 'booking') {
       const metadata = session.metadata;
+      
+      // Verify the amount paid matches the booking amount (critical security check)
+      const paidAmount = session.amount_total || 0;
+      const expectedAmount = parseInt(metadata.totalAmount) * 100; // Convert to cents
+      
+      if (paidAmount !== expectedAmount) {
+        console.error('Payment amount mismatch:', { paidAmount, expectedAmount });
+        throw new Error('Payment amount verification failed');
+      }
       
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
@@ -75,6 +138,15 @@ serve(async (req) => {
         .single();
 
       if (bookingError) throw bookingError;
+      
+      // Record processed session to prevent replay attacks
+      await supabase.from('processed_sessions').insert({
+        session_id,
+        session_type: 'booking',
+        ip_address: clientIP,
+        user_agent: userAgent,
+        created_record_id: booking.id
+      });
       
       // Send notification emails
       if (booking) {
@@ -149,6 +221,15 @@ serve(async (req) => {
         .single();
 
       if (orderError) throw orderError;
+      
+      // Record processed session
+      await supabase.from('processed_sessions').insert({
+        session_id,
+        session_type: 'product',
+        ip_address: clientIP,
+        user_agent: userAgent,
+        created_record_id: order.id
+      });
 
       // Create Printful order if we have the necessary data
       if (printfulVariantId && session.shipping_details) {
@@ -217,7 +298,7 @@ serve(async (req) => {
         amount_total: li.amount_total,
       }));
 
-      const { error: orderError } = await supabase
+      const { data: cartOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_name: session.customer_details?.name || session.shipping_details?.name || '',
@@ -229,8 +310,20 @@ serve(async (req) => {
           product_data: items,
           shipping_address: session.shipping_details,
           stripe_payment_intent_id: session.payment_intent
-        });
+        })
+        .select()
+        .single();
       if (orderError) throw orderError;
+      
+      // Record processed session
+      await supabase.from('processed_sessions').insert({
+        session_id,
+        session_type: 'cart',
+        ip_address: clientIP,
+        user_agent: userAgent,
+        created_record_id: cartOrder.id
+      });
+      
       result.type = 'cart';
     }
 

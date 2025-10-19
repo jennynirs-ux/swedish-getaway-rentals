@@ -13,6 +13,7 @@ serve(async (req) => {
   }
 
   try {
+    const requestData = await req.json();
     const {
       bookingId,
       propertyId,
@@ -26,7 +27,14 @@ serve(async (req) => {
       totalAmount,
       currency,
       hostId,
-    } = await req.json();
+    } = requestData;
+    
+    // Validate email format before sending
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!guestEmail || !emailRegex.test(guestEmail)) {
+      console.error('Invalid guest email format:', guestEmail);
+      throw new Error('Invalid email format');
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
