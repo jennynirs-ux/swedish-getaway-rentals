@@ -679,7 +679,6 @@ export type Database = {
           host_description: string | null
           host_onboarding_completed: boolean | null
           id: string
-          is_admin: boolean
           is_host: boolean
           location: string | null
           phone: string | null
@@ -708,7 +707,6 @@ export type Database = {
           host_description?: string | null
           host_onboarding_completed?: boolean | null
           id?: string
-          is_admin?: boolean
           is_host?: boolean
           location?: string | null
           phone?: string | null
@@ -737,7 +735,6 @@ export type Database = {
           host_description?: string | null
           host_onboarding_completed?: boolean | null
           id?: string
-          is_admin?: boolean
           is_host?: boolean
           location?: string | null
           phone?: string | null
@@ -1428,24 +1425,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin_secure: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
       is_admin_secure_new: {
         Args: { user_id_param: string }
         Returns: boolean
       }
-      is_admin_user: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
       is_booking_accessible: {
         Args: { booking_id: string }
-        Returns: boolean
-      }
-      is_user_admin_safe: {
-        Args: { user_id_param: string }
         Returns: boolean
       }
       validate_coupon: {
