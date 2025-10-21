@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen } from "lucide-react";
+import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -43,14 +44,16 @@ interface Booking {
 const HostPropertyCard = ({
   property,
   onEdit,
+  onDelete,
 }: {
   property: PropertyCardData;
   onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
 }) => {
   return (
     <div className="relative">
       <PropertyCard property={property} />
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-2 right-2 flex gap-2">
         <Button
           size="sm"
           variant="secondary"
@@ -61,6 +64,17 @@ const HostPropertyCard = ({
           }}
         >
           Edit
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete(property.id);
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -82,6 +96,7 @@ const HostDashboard = () => {
   const [pricingPropertyId, setPricingPropertyId] = useState<string | null>(null);
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
 
   const { properties, refetch: refetchProperties } = useHostProperties();
 
@@ -187,6 +202,24 @@ const HostDashboard = () => {
     } catch (error) {
       console.error("Error creating property:", error);
       toast.error("Failed to create property");
+    }
+  };
+
+  const deleteProperty = async () => {
+    if (!deletingPropertyId) return;
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', deletingPropertyId);
+      if (error) throw error;
+      toast.success("Property deleted successfully");
+      setDeletingPropertyId(null);
+      refetchProperties();
+      fetchHostStats();
+    } catch (error) {
+      console.error("Error deleting property:", error);
+      toast.error("Failed to delete property");
     }
   };
 
@@ -328,6 +361,7 @@ const HostDashboard = () => {
                         amenities_data: Array.isArray(p.amenities_data) ? p.amenities_data : [],
                       }}
                       onEdit={setEditingPropertyId}
+                      onDelete={setDeletingPropertyId}
                     />
                   ))
                 )}
@@ -404,6 +438,24 @@ const HostDashboard = () => {
             isOpen={isGuidebookOpen}
             onClose={() => setIsGuidebookOpen(false)}
           />
+
+          {/* Delete Confirmation */}
+          <AlertDialog open={!!deletingPropertyId} onOpenChange={(open) => !open && setDeletingPropertyId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this property? This action cannot be undone and will remove all associated data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteProperty} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </TooltipProvider>
     </div>

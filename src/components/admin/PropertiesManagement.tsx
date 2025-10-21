@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Edit2, Calendar, Settings } from "lucide-react";
+import { Edit2, Calendar, Settings, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import PropertyDetailEditor from "./PropertyDetailEditor";
 
@@ -29,6 +30,7 @@ const PropertiesManagement = () => {
   const [editing, setEditing] = useState<Property | null>(null);
   const [showCalendarFor, setShowCalendarFor] = useState<Property | null>(null);
   const [editingDetailPropertyId, setEditingDetailPropertyId] = useState<string | null>(null);
+  const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
   const [form, setForm] = useState({
     title: "",
     location: "",
@@ -109,6 +111,23 @@ const PropertiesManagement = () => {
     }
   };
 
+  const deleteProperty = async () => {
+    if (!deletingProperty) return;
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', deletingProperty.id);
+      if (error) throw error;
+      toast({ title: 'Deleted', description: 'Property deleted successfully' });
+      setDeletingProperty(null);
+      await loadProperties();
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({ title: 'Error', description: 'Failed to delete property', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -172,6 +191,13 @@ const PropertiesManagement = () => {
                         <Switch checked={p.active} onCheckedChange={(v) => toggleActive(p, v)} />
                         <span className="text-sm text-muted-foreground">Visible</span>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        onClick={() => setDeletingProperty(p)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -238,6 +264,24 @@ const PropertiesManagement = () => {
           }}
         />
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingProperty} onOpenChange={(open) => !open && setDeletingProperty(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Property</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingProperty?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteProperty} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
