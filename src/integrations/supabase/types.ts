@@ -435,24 +435,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "host_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "host_applications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "host_applications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -928,13 +914,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "properties_host_id_fkey"
-            columns: ["host_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       properties_pricing_rules: {
@@ -1276,71 +1255,7 @@ export type Database = {
       }
     }
     Views: {
-      booking_statistics: {
-        Row: {
-          booking_count: number | null
-          booking_month: string | null
-          property_id: string | null
-          status: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profile_statistics: {
-        Row: {
-          approved_hosts: number | null
-          avg_guest_rating: number | null
-          total_hosts: number | null
-          total_profiles: number | null
-        }
-        Relationships: []
-      }
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          display_name: string | null
-          guest_rating: number | null
-          guest_review_count: number | null
-          host_approved: boolean | null
-          id: string | null
-          is_host: boolean | null
-          location: string | null
-          user_id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          display_name?: string | null
-          guest_rating?: number | null
-          guest_review_count?: number | null
-          host_approved?: boolean | null
-          id?: string | null
-          is_host?: boolean | null
-          location?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          display_name?: string | null
-          guest_rating?: number | null
-          guest_review_count?: number | null
-          host_approved?: boolean | null
-          id?: string | null
-          is_host?: boolean | null
-          location?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       approve_host_application: {
@@ -1390,6 +1305,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_booking_statistics: {
+        Args: { property_id_filter?: string }
+        Returns: {
+          booking_count: number
+          month: string
+          property_id: string
+          status: string
+        }[]
+      }
       get_dashboard_stats: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1415,6 +1339,29 @@ export type Database = {
           stripe_payment_intent_id: string
           total_amount: number
           updated_at: string
+          user_id: string
+        }[]
+      }
+      get_profile_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          approved_hosts: number
+          avg_host_rating: number
+          total_hosts: number
+          total_users: number
+        }[]
+      }
+      get_public_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          bio: string
+          full_name: string
+          host_rating: number
+          id: string
+          location: string
+          properties_count: number
+          total_reviews: number
           user_id: string
         }[]
       }
