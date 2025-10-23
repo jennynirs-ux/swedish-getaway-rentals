@@ -621,7 +621,7 @@ export type Database = {
         Row: {
           created_record_id: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           processed_at: string
           session_id: string
           session_type: string
@@ -630,7 +630,7 @@ export type Database = {
         Insert: {
           created_record_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           processed_at?: string
           session_id: string
           session_type: string
@@ -639,7 +639,7 @@ export type Database = {
         Update: {
           created_record_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           processed_at?: string
           session_id?: string
           session_type?: string
@@ -1040,7 +1040,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           record_id: string | null
           table_name: string
           user_agent: string | null
@@ -1050,7 +1050,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           record_id?: string | null
           table_name: string
           user_agent?: string | null
@@ -1060,7 +1060,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
@@ -1314,10 +1314,7 @@ export type Database = {
           status: string
         }[]
       }
-      get_dashboard_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_dashboard_stats: { Args: never; Returns: Json }
       get_host_bookings_masked: {
         Args: { host_user_id: string }
         Returns: {
@@ -1343,7 +1340,7 @@ export type Database = {
         }[]
       }
       get_profile_statistics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           approved_hosts: number
           avg_host_rating: number
@@ -1352,7 +1349,7 @@ export type Database = {
         }[]
       }
       get_public_profiles: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string
           bio: string
@@ -1372,14 +1369,8 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin_secure_new: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
-      is_booking_accessible: {
-        Args: { booking_id: string }
-        Returns: boolean
-      }
+      is_admin_secure_new: { Args: { user_id_param: string }; Returns: boolean }
+      is_booking_accessible: { Args: { booking_id: string }; Returns: boolean }
       validate_coupon: {
         Args: {
           booking_amount?: number
