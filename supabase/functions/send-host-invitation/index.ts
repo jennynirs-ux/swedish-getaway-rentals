@@ -21,7 +21,10 @@ serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("Missing authorization header");
+      return new Response(JSON.stringify({ error: "Missing authorization header" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     const supabase = createClient(
@@ -37,10 +40,20 @@ serve(async (req: Request) => {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     const { refereeEmail }: InvitationRequest = await req.json();
+
+    if (!refereeEmail || !/^\S+@\S+\.\S+$/.test(refereeEmail)) {
+      return new Response(JSON.stringify({ error: "Invalid email" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     console.log("Processing invitation from user:", user.id, "to:", refereeEmail);
 
@@ -52,7 +65,10 @@ serve(async (req: Request) => {
       .single();
 
     if (profileError || !referrerProfile || !referrerProfile.is_host || !referrerProfile.host_approved) {
-      throw new Error("Only approved hosts can send invitations");
+      return new Response(
+        JSON.stringify({ error: "Only approved hosts can send invitations" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Generate unique referral code
@@ -77,10 +93,10 @@ serve(async (req: Request) => {
     console.log("Referral created:", referral.id);
 
     // Send invitation email
-    const appUrl = Deno.env.get("SUPABASE_URL")?.replace("https://", "https://") || "http://localhost:5173";
-    const invitationLink = `${appUrl.replace(".supabase.co", "")}/become-host?ref=${referralCode}`;
+    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") || "http://localhost:5173";
+    const invitationLink = `${origin}/become-host?ref=${referralCode}`;
 
-    const emailResponse = await resend.emails.send({
+    const { error: emailError } = await resend.emails.send({
       from: "Nordic Collection <onboarding@resend.dev>",
       to: [refereeEmail],
       subject: `${referrerProfile.full_name || "A host"} invited you to become a host!`,
@@ -109,7 +125,13 @@ serve(async (req: Request) => {
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (emailError) {
+      console.error("Resend email error:", emailError);
+      return new Response(
+        JSON.stringify({ error: "Failed to send invitation email" }),
+        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     return new Response(
       JSON.stringify({ 
