@@ -1,16 +1,20 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
+import { Gift } from "lucide-react";
 
 const HostApplication = () => {
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [referralCode, setReferralCode] = useState("");
   const [formData, setFormData] = useState({
     businessName: '',
     description: '',
@@ -18,6 +22,13 @@ const HostApplication = () => {
     contactPhone: ''
   });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setReferralCode(ref);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +40,33 @@ const HostApplication = () => {
         toast.error('Please log in to submit an application');
         navigate('/auth');
         return;
+      }
+
+      // Validate referral code if provided
+      if (referralCode) {
+        const { data: referralData, error: referralError } = await supabase
+          .from("host_referrals")
+          .select("id, status, expires_at")
+          .eq("referral_code", referralCode)
+          .single();
+
+        if (referralError || !referralData) {
+          toast.error("Invalid referral code");
+          setLoading(false);
+          return;
+        }
+
+        if (referralData.status !== "pending") {
+          toast.error("This referral code has already been used");
+          setLoading(false);
+          return;
+        }
+
+        if (new Date(referralData.expires_at) < new Date()) {
+          toast.error("This referral code has expired");
+          setLoading(false);
+          return;
+        }
       }
 
       // Check if user already has an application
@@ -54,6 +92,24 @@ const HostApplication = () => {
         });
 
       if (error) throw error;
+
+      // If referral code was used and application approved, trigger completion
+      if (referralCode) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("user_id", user.user.id)
+          .single();
+
+        if (profileData) {
+          await supabase.functions.invoke("complete-host-referral", {
+            body: { 
+              referralCode,
+              newHostProfileId: profileData.id 
+            },
+          });
+        }
+      }
 
       toast.success('Host application submitted successfully! We will review it and get back to you.');
       navigate('/');
@@ -90,6 +146,15 @@ const HostApplication = () => {
               <CardTitle>Host Application</CardTitle>
             </CardHeader>
             <CardContent>
+              {referralCode && (
+                <Alert className="mb-6 border-primary/20 bg-primary/5">
+                  <Gift className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
+                    You're using a referral code! Complete your application to help your referrer earn a reward.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="businessName">Business Name *</Label>

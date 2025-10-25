@@ -443,6 +443,67 @@ export type Database = {
           },
         ]
       }
+      host_referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          referee_email: string
+          referee_user_id: string | null
+          referral_code: string
+          referrer_id: string
+          referrer_reward_coupon_id: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          referee_email: string
+          referee_user_id?: string | null
+          referral_code: string
+          referrer_id: string
+          referrer_reward_coupon_id?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          referee_email?: string
+          referee_user_id?: string | null
+          referral_code?: string
+          referrer_id?: string
+          referrer_reward_coupon_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_referrals_referee_user_id_fkey"
+            columns: ["referee_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_referrals_referrer_reward_coupon_id_fkey"
+            columns: ["referrer_reward_coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ical_feeds: {
         Row: {
           active: boolean

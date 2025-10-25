@@ -15,6 +15,7 @@ import MainNavigation from "@/components/MainNavigation";
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import HostGuidebookDialog from "./HostGuidebookDialog";
 import { HostPropertyEditor } from "./HostPropertyEditor";
+import { HostInvitationDialog } from "./HostInvitationDialog";
 
 interface HostStats {
   total_properties: number;
@@ -330,10 +331,13 @@ const HostDashboard = () => {
             <TabsContent value="properties" className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Your Properties</h2>
-                <Button onClick={createNewProperty} className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Property
-                </Button>
+                <div className="flex gap-2">
+                  <HostInvitationDialog />
+                  <Button onClick={createNewProperty} className="flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Property
+                  </Button>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
