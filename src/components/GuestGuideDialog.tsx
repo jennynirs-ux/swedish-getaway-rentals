@@ -1,4 +1,4 @@
-import { useState, useMemo, type ElementType } from "react";
+import { useState, useMemo, type ElementType, lazy, Suspense } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -42,7 +42,27 @@ import {
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
 
+const LeafletPropertyMapBasic = lazy(() => import("@/components/maps/LeafletPropertyMapBasic"));
+
 type SectionType = "text" | "list" | "checkbox" | "custom";
+type BlockType = "text" | "list" | "checkbox" | "map";
+
+interface GuidebookBlock {
+  id: string;
+  type: BlockType;
+  title?: string;
+  content?: string;
+  items?: string[];
+  mapPins?: Array<{ lat: number; lng: number; label: string; address?: string }>;
+}
+
+interface GuidebookSection {
+  id: string;
+  icon: ElementType;
+  title: string;
+  blocks?: GuidebookBlock[];
+  image_url?: string;
+}
 
 interface GuideSection {
   id: string;
@@ -52,6 +72,7 @@ interface GuideSection {
   type?: SectionType;
   image_url?: string;
   icon?: ElementType;
+  blocks?: GuidebookBlock[];
 }
 
 interface GuestGuideDialogProps {
@@ -84,12 +105,20 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
     { id: "hoststory", title: "Host Story", icon: Heart, type: "text", content: "We bought Villa Häcken in 2020 and love sharing it with guests." },
   ];
 
-  const customSections = (property.guidebook_sections as GuideSection[]) || [];
+  const customSections = (property.guidebook_sections as any[]) || [];
 
   const allSections = useMemo(() => {
     return defaultSections.map((section) => {
-      const custom = customSections.find((s) => s.id === section.id);
-      return { ...section, ...custom, icon: section.icon };
+      const custom = customSections.find((s: any) => s.id === section.id);
+      if (custom) {
+        return {
+          ...section,
+          ...custom,
+          icon: section.icon,
+          blocks: custom.blocks || undefined,
+        };
+      }
+      return section;
     });
   }, [customSections]);
 
@@ -159,6 +188,78 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
   };
 
   const renderSectionContent = (section: GuideSection) => {
+    // If the section has blocks (new format from GuidebookEditorEnhanced), render those
+    if (section.blocks && section.blocks.length > 0) {
+      return (
+        <div className="space-y-6">
+          {section.blocks.map((block) => (
+            <div key={block.id}>
+              {block.title && <h3 className="font-semibold text-lg mb-2">{block.title}</h3>}
+              
+              {block.type === "text" && block.content && (
+                <p className="text-muted-foreground whitespace-pre-wrap">{block.content}</p>
+              )}
+              
+              {block.type === "list" && block.items && block.items.length > 0 && (
+                <ul className="list-disc pl-5 space-y-2">
+                  {block.items.map((item, idx) => (
+                    <li key={idx} className="text-muted-foreground">{item}</li>
+                  ))}
+                </ul>
+              )}
+              
+              {block.type === "checkbox" && block.items && block.items.length > 0 && (
+                <ul className="space-y-2">
+                  {block.items.map((item, idx) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <CheckSquare className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span className="text-muted-foreground">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              
+              {block.type === "map" && block.mapPins && block.mapPins.length > 0 && (
+                <div className="mt-4">
+                  <div className="h-[400px] rounded-lg overflow-hidden border">
+                    <Suspense fallback={
+                      <div className="h-full bg-muted flex items-center justify-center">
+                        <p className="text-muted-foreground">Loading map...</p>
+                      </div>
+                    }>
+                      <LeafletPropertyMapBasic
+                        position={[block.mapPins[0].lat, block.mapPins[0].lng] as [number, number]}
+                        propertyTitle={block.mapPins[0].label}
+                        googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${block.mapPins[0].lat},${block.mapPins[0].lng}`}
+                        routePositions={block.mapPins.slice(1).map(pin => [pin.lat, pin.lng] as [number, number])}
+                      />
+                    </Suspense>
+                  </div>
+                  {block.mapPins.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <h4 className="font-medium text-sm">Locations:</h4>
+                      <ul className="space-y-1">
+                        {block.mapPins.map((pin, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm">
+                            <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                            <div>
+                              <span className="font-medium">{pin.label}</span>
+                              {pin.address && <p className="text-muted-foreground text-xs">{pin.address}</p>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Fallback to old format for backwards compatibility
     if (section.id === "waste") {
       const wasteCategories = [
         {
