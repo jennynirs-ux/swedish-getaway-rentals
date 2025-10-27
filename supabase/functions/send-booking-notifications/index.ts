@@ -29,11 +29,16 @@ serve(async (req) => {
       hostId,
     } = requestData;
     
+    console.log('Processing booking notification:', { bookingId, guestEmail, propertyTitle });
+    
     // Validate email format before sending
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!guestEmail || !emailRegex.test(guestEmail)) {
       console.error('Invalid guest email format:', guestEmail);
-      throw new Error('Invalid email format');
+      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     const supabase = createClient(
@@ -55,12 +60,17 @@ serve(async (req) => {
       .eq("id", hostId)
       .single();
 
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
-    const baseUrl = Deno.env.get("SUPABASE_URL")?.replace(
-      "https://bbuutvozqfzbsnllsiai.supabase.co",
-      "https://jolofsson.lovable.app"
-    ) || "https://jolofsson.lovable.app";
-
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error('Missing RESEND_API_KEY');
+      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+    
+    const resend = new Resend(resendApiKey);
+    const baseUrl = Deno.env.get("SITE_URL") || "https://jolofsson.lovable.app";
     const guidebookUrl = `${baseUrl}/property/${propertyId}/guide`;
     
     // Format property address
@@ -72,6 +82,7 @@ serve(async (req) => {
     ].filter(Boolean).join(", ");
 
     // Send email to guest
+    console.log('Sending confirmation email to guest:', guestEmail);
     const guestEmailHtml = `
       <h1>Booking Confirmed! 🎉</h1>
       <p>Hi ${guestName},</p>
@@ -105,15 +116,26 @@ serve(async (req) => {
       <p>We look forward to hosting you!</p>
     `;
 
-    await resend.emails.send({
+    const { error: guestEmailError } = await resend.emails.send({
       from: "Bookings <onboarding@resend.dev>",
       to: [guestEmail],
       subject: `Booking Confirmed - ${propertyTitle}`,
       html: guestEmailHtml,
     });
 
+    if (guestEmailError) {
+      console.error('Failed to send guest email:', guestEmailError);
+      return new Response(JSON.stringify({ error: 'Failed to send guest confirmation email' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502,
+      });
+    }
+    
+    console.log('Guest email sent successfully');
+
     // Send email to host if host email exists
     if (hostProfile?.email) {
+      console.log('Sending notification email to host:', hostProfile.email);
       const hostEmailHtml = `
         <h1>New Booking Received! 📅</h1>
         <p>Hi ${hostProfile.full_name || "Host"},</p>
@@ -140,12 +162,21 @@ serve(async (req) => {
         <p>The booking dates have been automatically marked as unavailable in your calendar.</p>
       `;
 
-      await resend.emails.send({
+      const { error: hostEmailError } = await resend.emails.send({
         from: "Bookings <onboarding@resend.dev>",
         to: [hostProfile.email],
         subject: `New Booking - ${propertyTitle}`,
         html: hostEmailHtml,
       });
+
+      if (hostEmailError) {
+        console.error('Failed to send host email:', hostEmailError);
+        // Don't fail the whole request if host email fails
+      } else {
+        console.log('Host email sent successfully');
+      }
+    } else {
+      console.log('No host email found, skipping host notification');
     }
 
     return new Response(JSON.stringify({ success: true }), {
