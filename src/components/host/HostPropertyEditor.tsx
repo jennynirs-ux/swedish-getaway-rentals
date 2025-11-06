@@ -16,7 +16,7 @@ import { HostAmenitiesTab } from "./HostAmenitiesTab";
 import { HostGalleryTab } from "./HostGalleryTabEnhanced";
 import { HostLocationTab } from "./HostLocationTab";
 import { HostPricingCalculator } from "./HostPricingCalculator";
-import { PropertyPricingRulesEnhanced } from "@/components/admin/PropertyPricingRulesEnhanced";
+import PropertyPricingRules from "@/components/PropertyPricingRules";
 import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
 import CouponForm from "@/components/CouponForm";
 import { GuidebookEditor } from "@/components/admin/GuidebookEditorEnhanced";
@@ -251,7 +251,7 @@ export const HostPropertyEditor = ({
             </CardContent>
           </Card>
 
-          <PropertyPricingRulesEnhanced propertyId={propertyId} currency={currency} />
+          <PropertyPricingRules propertyId={propertyId} />
 
           <PropertySpecialPricingEnhanced
             propertyId={propertyId}

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Edit2, DollarSign } from 'lucide-react';
 import PropertyPricingRules from '@/components/PropertyPricingRules';
-import PropertySpecialPricing from './PropertySpecialPricing';
+import { PropertySpecialPricingEnhanced } from './PropertySpecialPricingEnhanced';
 
 interface Property {
   id: string;
@@ -91,7 +91,7 @@ const PricingManagement: React.FC = () => {
 
           <PropertyPricingRules propertyId={selectedProperty.id} />
           
-          <PropertySpecialPricing
+          <PropertySpecialPricingEnhanced
             propertyId={selectedProperty.id}
             basePrice={selectedProperty.price_per_night}
             currency={selectedProperty.currency}

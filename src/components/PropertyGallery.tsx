@@ -1,69 +1,49 @@
-import React, { useState } from "react";
-import { Property } from "@/hooks/useProperties";
+import { useState, memo, useCallback, useMemo } from "react";
+import { Property } from '@/hooks/useProperties';
+import LazyImage from "@/components/LazyImage";
+import { ImageDialog } from "@/components/ImageDialog";
 import { MediaDialog } from "@/components/MediaDialog";
 
 interface PropertyGalleryProps {
   property: Property;
 }
 
-interface MediaItem {
-  type: "image" | "video";
-  url: string;
-  title?: string;
-  description?: string;
-  alt?: string;
-}
+const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
 
-const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleImageClick = useCallback((index: number) => {
+    setSelectedImageIndex(index);
+  }, []);
 
-  // 🔹 Hjälpfunktion för att alltid returnera en sträng
-  const safeString = (value: unknown, fallback: string = ""): string => {
-    if (typeof value === "string") return value;
-    if (value == null) return fallback;
-    try {
-      return String(value);
-    } catch {
-      return fallback;
-    }
-  };
-
-  // ✅ Bygg upp mediaItems med säker stränghantering
-  const mediaItems: MediaItem[] = [
-    ...(property.gallery_images || []).map((url, index) => ({
-      type: "image" as const,
-      url: safeString(url),
-      title: safeString(
-        property.gallery_metadata?.[index]?.title,
-        `Image ${index + 1}`
-      ),
-      description: property.gallery_metadata?.[index]?.description
-        ? safeString(property.gallery_metadata[index].description)
-        : undefined,
-      alt: safeString(
-        property.gallery_metadata?.[index]?.alt,
-        `${property.title} photo ${index + 1}`
-      ),
-    })),
-    ...(property.video_urls || []).map((url, index) => ({
-      type: "video" as const,
-      url: safeString(url),
-      title: safeString(
-        property.video_metadata?.[index]?.title,
-        `Video ${index + 1}`
-      ),
-      description: property.video_metadata?.[index]?.description
-        ? safeString(property.video_metadata[index].description)
-        : undefined,
-      alt: `${property.title} video ${index + 1}`,
-    })),
-  ];
-
-  const openDialog = (index: number) => {
+  const handleVideoClick = useCallback((index: number) => {
     setSelectedMediaIndex(index);
-    setIsDialogOpen(true);
-  };
+  }, []);
+
+  const handleCloseImageDialog = useCallback(() => {
+    setSelectedImageIndex(null);
+  }, []);
+
+  const handleCloseMediaDialog = useCallback(() => {
+    setSelectedMediaIndex(null);
+  }, []);
+
+  // Memoized media items to prevent recalculation
+  const mediaItems = useMemo(() => {
+    return [
+      ...(property.gallery_images || []).map((image, index) => ({
+        type: 'image' as const,
+        url: image,
+        alt: `${property.title} gallery image ${index + 1}`
+      })),
+      ...(property.video_urls || []).map((video, index) => ({
+        type: 'video' as const,
+        url: video,
+        alt: `${property.title} video ${index + 1}`
+      }))
+    ];
+  }, [property.gallery_images, property.video_urls, property.title]);
 
   if (!mediaItems.length) {
     return null;
@@ -72,89 +52,90 @@ const PropertyGallery: React.FC<PropertyGalleryProps> = ({ property }) => {
   return (
     <section id="gallery-section" className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">
-              Discover your getaway
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Every moment has been carefully designed to give you the perfect
-              balance of comfort and Nordic nature.
-            </p>
-          </div>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-foreground mb-4">Photo Gallery</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Explore our stunning property through these carefully curated images and videos
+          </p>
+        </div>
 
-          {/* First 3 images as thumbnails */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {mediaItems.slice(0, 3).map((media, index) => (
-              <div
-                key={`thumb-${index}`}
-                className="group relative overflow-hidden rounded-lg aspect-[4/3] cursor-pointer"
-                onClick={() => openDialog(index)}
-              >
-                <img
-                  src={media.url}
-                  alt={media.alt || media.title || ""}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <h3 className="text-lg font-semibold">{media.title}</h3>
+        {/* Images Grid */}
+        {property.gallery_images && property.gallery_images.length > 0 && (
+          <div className="mb-12">
+            <h3 className="text-xl font-semibold mb-6 text-foreground">Images</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {property.gallery_images.map((image, index) => (
+                <div key={`image-${index}`} className="relative group overflow-hidden rounded-lg">
+                  <div onClick={() => handleImageClick(index)}>
+                    <LazyImage
+                      src={image}
+                      alt={`Gallery image ${index + 1}`}
+                      className="w-full h-48 object-cover cursor-pointer hover:opacity-80 transition-opacity group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Videos Grid */}
+        {property.video_urls && property.video_urls.length > 0 && (
+          <div>
+            <h3 className="text-xl font-semibold mb-6 text-foreground">Videos</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {property.video_urls.map((video, index) => (
+                <div key={`video-${index}`} className="relative group overflow-hidden rounded-lg">
+                  <video
+                    src={video}
+                    className="w-full h-48 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => handleVideoClick(index)}
+                    muted
+                    playsInline
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-black/50 rounded-full flex items-center justify-center group-hover:bg-black/70 transition-colors">
+                      <svg className="w-8 h-8 text-white ml-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-
-          {/* 4th image displayed larger with title and description */}
-          {mediaItems.length > 3 && (
-            <div
-              className="relative overflow-hidden rounded-lg h-[400px] cursor-pointer group"
-              onClick={() => openDialog(3)}
-            >
-              <img
-                src={mediaItems[3].url}
-                alt={mediaItems[3].alt || mediaItems[3].title || ""}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center">
-                <div className="text-white p-8 max-w-2xl">
-                  <h3 className="text-3xl md:text-4xl font-bold mb-4">
-                    {mediaItems[3].title}
-                  </h3>
-                  {mediaItems[3].description && (
-                    <p className="text-lg opacity-90 leading-relaxed">
-                      {mediaItems[3].description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Show gallery count if more than 4 images */}
-          {mediaItems.length > 4 && (
-            <div className="text-center mt-6">
-              <button
-                onClick={() => openDialog(0)}
-                className="text-primary hover:underline font-medium"
-              >
-                View all {mediaItems.length} photos
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Media Dialog */}
+      {/* Dialogs with optimized props */}
+      <ImageDialog
+        images={(property.gallery_images || []).map((image, index) => ({
+          src: image,
+          alt: `Gallery image ${index + 1}`,
+          title: `${property.title} - Image ${index + 1}`,
+          description: `Gallery image from ${property.title}`
+        }))}
+        isOpen={selectedImageIndex !== null}
+        onClose={handleCloseImageDialog}
+        initialIndex={selectedImageIndex || 0}
+      />
+      
       <MediaDialog
-        media={mediaItems}
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        initialIndex={selectedMediaIndex}
+        media={(property.video_urls || []).map((video, index) => ({
+          type: 'video' as const,
+          url: video,
+          title: `${property.title} - Video ${index + 1}`,
+          alt: `Video from ${property.title}`
+        }))}
+        isOpen={selectedMediaIndex !== null}
+        onClose={handleCloseMediaDialog}
+        initialIndex={selectedMediaIndex || 0}
       />
     </section>
   );
-};
+});
 
-export default PropertyGallery;
+PropertyGalleryOptimized.displayName = 'PropertyGalleryOptimized';
+
+export default PropertyGalleryOptimized;

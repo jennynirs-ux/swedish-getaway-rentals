@@ -1,7 +1,10 @@
 project_id = "bbuutvozqfzbsnllsiai"
 
 [functions.generate-yale-code]
-verify_jwt = false
+verify_jwt = true
+
+[functions.complete-host-referral]
+verify_jwt = true
 
 [functions.fetch-printful-products]
 verify_jwt = true
@@ -40,4 +43,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.create-connect-dashboard-link]
+verify_jwt = true
+
+[functions.send-booking-notifications]
+verify_jwt = false
+
+[functions.send-host-invitation]
 verify_jwt = true

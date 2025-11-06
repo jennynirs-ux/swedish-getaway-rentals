@@ -1,6 +1,6 @@
 import { Property } from "@/hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import BookingForm from "./BookingFormEnhanced";
+import BookingForm from "./BookingForm";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { MessageCircle } from "lucide-react";

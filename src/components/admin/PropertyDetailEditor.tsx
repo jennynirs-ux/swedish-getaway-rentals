@@ -42,7 +42,7 @@ import {
 import { GuidebookEditor } from "./GuidebookEditorEnhanced";
 import { PropertyCalendarWidget } from "./PropertyCalendarWidget";
 import { AirbnbSyncManager } from "./AirbnbSyncManager";
-import { PropertyPricingRulesEnhanced } from "./PropertyPricingRulesEnhanced";
+import PropertyPricingRules from "@/components/PropertyPricingRules";
 import { PropertySpecialPricingEnhanced } from "./PropertySpecialPricingEnhanced";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import { CancellationPolicyDisplay } from "../CancellationPolicyDisplay";
@@ -420,9 +420,8 @@ const PropertyDetailEditor = ({
               </CardContent>
             </Card>
 
-            <PropertyPricingRulesEnhanced 
+            <PropertyPricingRules 
               propertyId={propertyId} 
-              currency={form.currency || "SEK"}
             />
 
             <PropertySpecialPricingEnhanced

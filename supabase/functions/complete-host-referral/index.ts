@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "npm:resend@2.0.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -8,6 +9,12 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Validate input data format
+const referralSchema = z.object({
+  referralCode: z.string().regex(/^HOST-[A-Z0-9]{8}$/, "Invalid referral code format"),
+  newHostProfileId: z.string().uuid("Invalid profile ID format"),
+});
 
 interface CompleteReferralRequest {
   referralCode: string;
@@ -20,14 +27,71 @@ serve(async (req: Request) => {
   }
 
   try {
+    // 🔒 SECURITY: Authenticate the user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Initialize Supabase with ANON key for authentication
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: { headers: { Authorization: authHeader } }
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Parse and validate input
+    const requestData: CompleteReferralRequest = await req.json();
+    
+    // Validate input format
+    try {
+      referralSchema.parse(requestData);
+    } catch (validationError) {
+      return new Response(JSON.stringify({ 
+        error: "Invalid input format", 
+        details: validationError instanceof z.ZodError ? validationError.errors : undefined 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const { referralCode, newHostProfileId } = requestData;
+
+    console.log("Completing referral:", referralCode, "for new host:", newHostProfileId, "by user:", user.id);
+
+    // 🔒 SECURITY: Verify user owns the newHostProfileId
+    const { data: profileCheck } = await supabaseAuth
+      .from("profiles")
+      .select("user_id")
+      .eq("id", newHostProfileId)
+      .single();
+
+    if (!profileCheck || profileCheck.user_id !== user.id) {
+      return new Response(JSON.stringify({ error: "You can only complete referrals for your own profile" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Use service role ONLY for operations that require bypassing RLS
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
-
-    const { referralCode, newHostProfileId }: CompleteReferralRequest = await req.json();
-
-    console.log("Completing referral:", referralCode, "for new host:", newHostProfileId);
 
     // Get the referral
     const { data: referral, error: referralError } = await supabase
@@ -134,8 +198,14 @@ serve(async (req: Request) => {
     );
   } catch (error: any) {
     console.error("Error in complete-host-referral:", error);
+    
+    // Return safe error messages to client
+    const clientMessage = error.message?.includes('Invalid') || error.message?.includes('expired')
+      ? error.message 
+      : 'An error occurred processing your request. Please try again.';
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: clientMessage }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
