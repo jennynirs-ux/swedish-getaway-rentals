@@ -16,6 +16,7 @@ import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import HostGuidebookDialog from "./HostGuidebookDialog";
 import { HostPropertyEditor } from "./HostPropertyEditor";
 import { HostInvitationDialog } from "./HostInvitationDialog";
+import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
 
 interface HostStats {
   total_properties: number;
@@ -326,7 +327,12 @@ const HostDashboard = () => {
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
+              <TabsTrigger value="payouts">Bank Account</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="payouts" className="space-y-6">
+              <BankAccountSetup />
+            </TabsContent>
 
             <TabsContent value="properties" className="space-y-6">
               <div className="flex justify-between items-center">

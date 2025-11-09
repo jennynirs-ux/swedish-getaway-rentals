@@ -4,16 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { Building2, CheckCircle2, ExternalLink, AlertCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { Building2, CheckCircle2, ExternalLink, AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 export const BankAccountSetup = () => {
   const [loading, setLoading] = useState(false);
-  const [accountStatus, setAccountStatus] = useState<'connected' | 'pending' | 'not_connected'>('not_connected');
 
-  const { data: profile, refetch } = useQuery({
-    queryKey: ["host-profile"],
+  const { data: profile, isLoading, refetch } = useQuery({
+    queryKey: ["host-stripe-connect"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -26,45 +25,55 @@ export const BankAccountSetup = () => {
 
       if (error) throw error;
       
-      // Update status based on account ID presence
-      if (data?.stripe_connect_account_id) {
-        setAccountStatus('connected');
-      } else {
-        setAccountStatus('not_connected');
-      }
-      
       return data;
-    }
+    },
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
   });
 
   const handleConnectStripe = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("You must be logged in to connect a bank account");
+      }
+
       const { data, error } = await supabase.functions.invoke("create-connect-account", {
         body: { 
           returnUrl: window.location.href,
           refreshUrl: window.location.href
-        }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Stripe Connect error:", error);
+        throw new Error(error.message || "Failed to connect to Stripe. Please try again.");
+      }
 
       if (data?.url) {
-        window.open(data.url, "_blank");
-        toast({
-          title: "Opening Stripe Connect",
+        toast.success("Opening Stripe Connect", {
           description: "Complete the setup in the new window, then return here.",
         });
         
+        // Open in new window
+        window.open(data.url, "_blank");
+        
         // Refetch profile after a delay to check if connection was successful
-        setTimeout(() => refetch(), 5000);
+        setTimeout(() => {
+          refetch();
+          toast.info("Checking connection status...");
+        }, 5000);
+      } else {
+        throw new Error("No onboarding URL received from Stripe");
       }
     } catch (error: any) {
       console.error("Error connecting Stripe:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to connect to Stripe",
-        variant: "destructive",
+      toast.error("Connection Failed", {
+        description: error.message || "We couldn't connect your bank account. Please try again or contact support.",
       });
     } finally {
       setLoading(false);
@@ -74,30 +83,62 @@ export const BankAccountSetup = () => {
   const handleManageAccount = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-connect-dashboard-link");
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("You must be logged in to manage your account");
+      }
 
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("create-connect-dashboard-link", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error("Dashboard link error:", error);
+        throw new Error(error.message || "Failed to open Stripe dashboard");
+      }
 
       if (data?.url) {
         window.open(data.url, "_blank");
+        toast.success("Opening Stripe Dashboard");
+      } else {
+        throw new Error("No dashboard URL received from Stripe");
       }
     } catch (error: any) {
       console.error("Error opening Stripe dashboard:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to open Stripe dashboard",
-        variant: "destructive",
+      toast.error("Error", {
+        description: error.message || "Failed to open Stripe dashboard. Please try again.",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const isConnected = accountStatus === 'connected';
-  const isPending = accountStatus === 'pending';
+  const isConnected = !!profile?.stripe_connect_account_id;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            <CardTitle>Bank Account & Payouts</CardTitle>
+          </div>
+          <CardDescription>
+            Connect your bank account to receive payouts from bookings
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card>
+    <Card className="border-2">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -105,31 +146,35 @@ export const BankAccountSetup = () => {
             <CardTitle>Bank Account & Payouts</CardTitle>
           </div>
           {isConnected && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-emerald-200">
               <CheckCircle2 className="h-3 w-3 mr-1" />
-              Connected
-            </Badge>
-          )}
-          {isPending && (
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-              <AlertCircle className="h-3 w-3 mr-1" />
-              Pending
+              Connected ✅
             </Badge>
           )}
         </div>
         <CardDescription>
-          Connect your bank account to receive payouts from bookings
+          Connect your bank account via Stripe to receive automatic payouts from bookings
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isConnected ? (
           <>
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                Your bank account is connected. Payouts will be sent after each booking, minus the 10% platform fee.
+            <Alert className="bg-emerald-50 border-emerald-200">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <AlertDescription className="text-emerald-800 font-medium">
+                ✅ Your bank account is successfully connected! Payouts will be sent automatically after each booking, minus the platform commission.
               </AlertDescription>
             </Alert>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Platform Fee:</span>
+                <span className="font-medium">10% per booking</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">You Receive:</span>
+                <span className="font-medium text-emerald-600">90% of booking amount</span>
+              </div>
+            </div>
             <div className="grid gap-2">
               <Button 
                 onClick={handleManageAccount} 
@@ -137,66 +182,62 @@ export const BankAccountSetup = () => {
                 variant="outline"
                 className="w-full"
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Manage Payout Settings
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                )}
+                Manage Payout Settings in Stripe
               </Button>
               <Button 
-                onClick={() => refetch()} 
+                onClick={() => {
+                  refetch();
+                  toast.info("Refreshing connection status...");
+                }} 
                 disabled={loading}
                 variant="ghost"
                 size="sm"
                 className="w-full"
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Verify Connection Status
-              </Button>
-            </div>
-          </>
-        ) : isPending ? (
-          <>
-            <Alert className="bg-yellow-50 border-yellow-200">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800">
-                Your Stripe Connect account setup is pending. Please complete the setup process or verify your account details.
-              </AlertDescription>
-            </Alert>
-            <div className="grid gap-2">
-              <Button 
-                onClick={handleConnectStripe} 
-                disabled={loading}
-                className="w-full"
-              >
-                <Building2 className="mr-2 h-4 w-4" />
-                Complete Setup
-              </Button>
-              <Button 
-                onClick={() => refetch()} 
-                disabled={loading}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Check Status
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh Status
               </Button>
             </div>
           </>
         ) : (
           <>
-            <Alert>
-              <AlertDescription>
-                You need to connect your bank account via Stripe to receive payouts from your bookings. 
-                The platform fee is 10% per booking.
+            <Alert className="border-2 border-primary/20">
+              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-foreground">
+                <p className="font-medium mb-2">Connect your bank account to start receiving payouts</p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>Secure setup through Stripe Connect</li>
+                  <li>Automatic payouts after bookings</li>
+                  <li>10% platform commission per booking</li>
+                  <li>Support for multiple currencies (SEK, EUR, GBP)</li>
+                </ul>
               </AlertDescription>
             </Alert>
             <Button 
               onClick={handleConnectStripe} 
               disabled={loading}
-              className="w-full"
+              className="w-full h-12 text-base"
             >
-              <Building2 className="mr-2 h-4 w-4" />
-              Connect Bank Account
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Building2 className="mr-2 h-5 w-5" />
+                  Connect Bank Account
+                </>
+              )}
             </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              You'll be redirected to Stripe to securely connect your bank account. No sensitive information is stored on our servers.
+            </p>
           </>
         )}
       </CardContent>
