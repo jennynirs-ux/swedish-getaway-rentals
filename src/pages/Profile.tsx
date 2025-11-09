@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, MapPin, Star, LogOut, Heart, Calendar } from "lucide-react";
 import MainNavigation from "@/components/MainNavigation";
-import ReviewCard from "@/components/ReviewCard";
+
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -35,8 +35,6 @@ interface Profile {
 
 const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [hostReviews, setHostReviews] = useState<any[]>([]);
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,8 +63,6 @@ const Profile = () => {
       }
 
       await fetchProfile(user.id);
-      await fetchReviews(user.id);
-      await fetchHostReviews(user.id);
       await loadFavorites(user.id);
       await fetchBookings(user.id);
     } catch (error) {
@@ -101,47 +97,6 @@ const Profile = () => {
     }
   };
 
-  const fetchReviews = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          reviewer:profiles!reviews_reviewer_id_fkey(full_name, display_name, avatar_url)
-        `)
-        .eq('reviewee_id', userId)
-        .eq('is_published', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setReviews(data || []);
-    } catch (error: any) {
-      console.error('Failed to load reviews:', error);
-    }
-  };
-
-  const fetchHostReviews = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          reviewer:profiles!reviews_reviewer_id_fkey(full_name, display_name, avatar_url),
-          booking:bookings!reviews_booking_id_fkey(
-            property:properties(title)
-          )
-        `)
-        .eq('reviewee_id', userId)
-        .eq('review_type', 'host')
-        .eq('is_published', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setHostReviews(data || []);
-    } catch (error: any) {
-      console.error('Failed to load host reviews:', error);
-    }
-  };
 
   const loadFavorites = async (userId: string) => {
     try {
@@ -280,10 +235,6 @@ const Profile = () => {
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="bookings">My Bookings</TabsTrigger>
               <TabsTrigger value="favorites">Favorites ({favoriteProperties.length})</TabsTrigger>
-              <TabsTrigger value="reviews">Guest Reviews ({reviews.length})</TabsTrigger>
-              {profile.is_host && (
-                <TabsTrigger value="host-reviews">Host Reviews ({hostReviews.length})</TabsTrigger>
-              )}
               {profile.is_host && (
                 <TabsTrigger value="hosting">Hosting</TabsTrigger>
               )}
@@ -510,53 +461,6 @@ const Profile = () => {
                 )}
               </div>
             </TabsContent>
-
-            <TabsContent value="reviews">
-              <div className="space-y-4">
-                {reviews.length > 0 ? (
-                  reviews.map((review) => (
-                    <ReviewCard
-                      key={review.id}
-                      reviewer={review.reviewer}
-                      rating={review.rating}
-                      comment={review.comment}
-                      created_at={review.created_at}
-                    />
-                  ))
-                ) : (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <p className="text-muted-foreground">No guest reviews yet</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            {profile.is_host && (
-              <TabsContent value="host-reviews">
-                <div className="space-y-4">
-                  {hostReviews.length > 0 ? (
-                    hostReviews.map((review) => (
-                      <ReviewCard
-                        key={review.id}
-                        reviewer={review.reviewer}
-                        rating={review.rating}
-                        comment={review.comment}
-                        created_at={review.created_at}
-                        propertyTitle={review.booking?.property?.title}
-                      />
-                    ))
-                  ) : (
-                    <Card>
-                      <CardContent className="text-center py-12">
-                        <p className="text-muted-foreground">No host reviews yet</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </TabsContent>
-            )}
 
             {profile.is_host && (
               <TabsContent value="hosting">
