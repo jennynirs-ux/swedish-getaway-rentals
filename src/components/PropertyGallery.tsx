@@ -62,9 +62,19 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
         {/* Images Grid */}
         {property.gallery_images && property.gallery_images.length > 0 && (
           <div className="mb-12">
-            <h3 className="text-xl font-semibold mb-6 text-foreground">Images</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {property.gallery_images.map((image, index) => (
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-foreground">Images</h3>
+              {property.gallery_images.length > 4 && (
+                <button
+                  onClick={() => handleImageClick(0)}
+                  className="text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  View All Images ({property.gallery_images.length})
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {property.gallery_images.slice(0, 4).map((image, index) => (
                 <div key={`image-${index}`} className="relative group overflow-hidden rounded-lg">
                   <div onClick={() => handleImageClick(index)}>
                     <LazyImage
