@@ -258,6 +258,13 @@ const PropertyPage = memo(() => {
         <PropertySpecialHighlights property={property} onViewGuide={handleGuideOpen} />
       </Suspense>
 
+      {/* Guestbook Section */}
+      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+        <section className="container mx-auto px-4 py-16">
+          <PropertyGuestbook propertyId={property.id} />
+        </section>
+      </Suspense>
+
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <PropertyBooking property={property} />
       </Suspense>
@@ -269,13 +276,6 @@ const PropertyPage = memo(() => {
           propertyTitle={property.title}
           location={property.location}
         />
-      </Suspense>
-
-      {/* Guestbook Section */}
-      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-        <section className="container mx-auto px-4 py-16">
-          <PropertyGuestbook propertyId={property.id} />
-        </section>
       </Suspense>
 
       {property.latitude && property.longitude && (

@@ -63,30 +63,49 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
         {property.gallery_images && property.gallery_images.length > 0 && (
           <div className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-foreground">Images</h3>
               {property.gallery_images.length > 4 && (
                 <button
                   onClick={() => handleImageClick(0)}
-                  className="text-primary hover:text-primary/80 transition-colors font-medium"
+                  className="text-primary hover:text-primary/80 transition-colors font-medium ml-auto"
                 >
                   View All Images ({property.gallery_images.length})
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {property.gallery_images.slice(0, 4).map((image, index) => (
-                <div key={`image-${index}`} className="relative group overflow-hidden rounded-lg">
-                  <div onClick={() => handleImageClick(index)}>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {property.gallery_images.slice(0, 3).map((image, index) => (
+                <div key={`image-${index}`} className="relative group overflow-hidden rounded-lg h-48">
+                  <div onClick={() => handleImageClick(index)} className="relative h-full">
                     <LazyImage
                       src={image}
                       alt={`Gallery image ${index + 1}`}
-                      className="w-full h-48 object-cover cursor-pointer hover:opacity-80 transition-opacity group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-end p-4">
+                      <span className="text-white font-semibold text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {property.title}
+                      </span>
+                    </div>
                   </div>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                 </div>
               ))}
             </div>
+            {property.gallery_images[3] && (
+              <div className="relative group overflow-hidden rounded-lg h-96">
+                <div onClick={() => handleImageClick(3)} className="relative h-full">
+                  <LazyImage
+                    src={property.gallery_images[3]}
+                    alt={`Gallery image 4`}
+                    className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-6">
+                    <span className="text-white font-bold text-2xl">
+                      {property.title}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
