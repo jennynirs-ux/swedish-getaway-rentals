@@ -1,4 +1,4 @@
-import { Star, MapPin, Users, Calendar, ChevronDown } from "lucide-react";
+import { MapPin, Users, Calendar, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LazyImage from "@/components/LazyImage";
 import { Property } from "@/hooks/useProperties";
@@ -28,18 +28,6 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
       {/* Hero Content */}
       <div className="relative z-10 container mx-auto px-4 text-center text-white">
         <div className="max-w-4xl mx-auto">
-          {/* Rating */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              ))}
-            </div>
-            <span className="text-lg font-medium">
-              {property.review_rating || 5.0} • {property.review_count || 0} reviews
-            </span>
-          </div>
-
           {/* Property Title */}
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
             {property.title}

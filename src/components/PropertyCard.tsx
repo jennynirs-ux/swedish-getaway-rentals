@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import LazyImage from "@/components/LazyImage";
 import { 
   MapPin, 
-  Star, 
   Users, 
   Wifi, 
   TreePine, 
@@ -207,17 +206,6 @@ const PropertyCard = memo(({
 
           {/* Image Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-          {/* Top Badges */}
-          <div className="absolute top-4 left-4 flex gap-2">
-            {safeProperty.review_rating && (
-              <Badge className="bg-primary text-primary-foreground shadow-md">
-                <Star className="w-3 h-3 mr-1 fill-current" />
-                {safeProperty.review_rating.toFixed(1)}{" "}
-                {safeProperty.review_count ? `(${safeProperty.review_count})` : ""}
-              </Badge>
-            )}
-          </div>
 
           {/* Action Buttons */}
           <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
