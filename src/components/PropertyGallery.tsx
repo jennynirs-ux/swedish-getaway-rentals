@@ -73,35 +73,49 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
               )}
             </div>
             <div className="grid grid-cols-3 gap-4 mb-4">
-              {property.gallery_images.slice(0, 3).map((image, index) => (
-                <div key={`image-${index}`} className="relative group overflow-hidden rounded-lg h-48">
-                  <div onClick={() => handleImageClick(index)} className="relative h-full">
-                    <LazyImage
-                      src={image}
-                      alt={`Gallery image ${index + 1}`}
-                      className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-end p-4">
-                      <span className="text-white font-semibold text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {property.title}
-                      </span>
+              {property.gallery_images.slice(0, 3).map((image, index) => {
+                const metadata = property.gallery_metadata?.[index];
+                return (
+                  <div key={`image-${index}`} className="relative group overflow-hidden rounded-lg h-48">
+                    <div onClick={() => handleImageClick(index)} className="relative h-full">
+                      <LazyImage
+                        src={image}
+                        alt={metadata?.alt || `Gallery image ${index + 1}`}
+                        className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end p-4">
+                        {metadata?.title && (
+                          <span className="text-white font-semibold text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
+                            {metadata.title}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {property.gallery_images[3] && (
               <div className="relative group overflow-hidden rounded-lg h-96">
                 <div onClick={() => handleImageClick(3)} className="relative h-full">
                   <LazyImage
                     src={property.gallery_images[3]}
-                    alt={`Gallery image 4`}
+                    alt={property.gallery_metadata?.[3]?.alt || 'Gallery image 4'}
                     className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-6">
-                    <span className="text-white font-bold text-2xl">
-                      {property.title}
-                    </span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                    <div className="text-white">
+                      {property.gallery_metadata?.[3]?.title && (
+                        <h3 className="font-bold text-2xl mb-2 drop-shadow-lg">
+                          {property.gallery_metadata[3].title}
+                        </h3>
+                      )}
+                      {property.gallery_metadata?.[3]?.description && (
+                        <p className="text-sm text-white/90 drop-shadow-lg">
+                          {property.gallery_metadata[3].description}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
