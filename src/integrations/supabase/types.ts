@@ -383,6 +383,107 @@ export type Database = {
           },
         ]
       }
+      guestbook_entries: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          guest_email: string
+          guest_name: string | null
+          id: string
+          image_url: string | null
+          message: string
+          moderated_at: string | null
+          moderated_by: string | null
+          property_id: string
+          rating: number | null
+          status: string
+          stay_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          guest_email: string
+          guest_name?: string | null
+          id?: string
+          image_url?: string | null
+          message: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          property_id: string
+          rating?: number | null
+          status?: string
+          stay_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          guest_email?: string
+          guest_name?: string | null
+          id?: string
+          image_url?: string | null
+          message?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          property_id?: string
+          rating?: number | null
+          status?: string
+          stay_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guestbook_entries_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guestbook_entries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guestbook_tokens: {
+        Row: {
+          booking_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guestbook_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       host_applications: {
         Row: {
           admin_notes: string | null

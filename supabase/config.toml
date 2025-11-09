@@ -33,6 +33,8 @@ verify_jwt = false
 [functions.export-ical]
 verify_jwt = false
 
+[functions.send-guestbook-invitations]
+verify_jwt = false
 [functions.sync-ical]
 verify_jwt = true
 

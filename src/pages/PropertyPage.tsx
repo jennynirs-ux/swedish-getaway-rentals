@@ -17,6 +17,7 @@ const PropertySpecialHighlights = lazy(() => import("@/components/PropertySpecia
 const PropertyBooking = lazy(() => import("@/components/PropertyBooking"));
 const PropertyFooter = lazy(() => import("@/components/PropertyFooter"));
 const PropertyLocation = lazy(() => import("@/components/PropertyLocation"));
+const PropertyGuestbook = lazy(() => import("@/components/PropertyGuestbook"));
 const NearbyProperties = lazy(() => import("@/components/NearbyProperties"));
 
 // Wrapper component to fetch nearby properties
@@ -268,6 +269,13 @@ const PropertyPage = memo(() => {
           propertyTitle={property.title}
           location={property.location}
         />
+      </Suspense>
+
+      {/* Guestbook Section */}
+      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+        <section className="container mx-auto px-4 py-16">
+          <PropertyGuestbook propertyId={property.id} />
+        </section>
       </Suspense>
 
       {property.latitude && property.longitude && (

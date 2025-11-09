@@ -9,6 +9,7 @@ import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import BookingSuccess from "./pages/BookingSuccess";
 import PropertyGuide from "./pages/PropertyGuide";
+import PropertyGuestbookPage from "./pages/PropertyGuestbookPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -56,6 +57,7 @@ const App = () => {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/amenities" element={<Amenities />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/property/:id/guestbook" element={<PropertyGuestbookPage />} />
             <Route path="/book-now" element={<BookNow />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/first-time-in-sweden" element={<FirstTimeInSweden />} />

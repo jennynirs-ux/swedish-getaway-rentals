@@ -12,7 +12,9 @@ import { ContentEditor } from "./ContentEditor";
 import { ShippingEditor } from "./ShippingEditor";
 import PricingManagement from "./PricingManagement";
 import ReviewsManagement from "./ReviewsManagement";
+import GuestbookManagement from "./GuestbookManagement";
 import CouponsManagement from "./CouponsManagement";
+import MessagesInbox from "./MessagesInbox";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -65,6 +67,7 @@ const UnifiedAdmin = () => {
               <TabsTrigger value="hosts">Hosts</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
+              <TabsTrigger value="guestbook">Guestbook</TabsTrigger>
               <TabsTrigger value="coupons">Coupons</TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
@@ -85,8 +88,16 @@ const UnifiedAdmin = () => {
               <ReviewsManagement />
             </TabsContent>
             
+            <TabsContent value="guestbook">
+              <GuestbookManagement />
+            </TabsContent>
+            
             <TabsContent value="coupons">
               <CouponsManagement />
+            </TabsContent>
+            
+            <TabsContent value="messages">
+              <MessagesInbox />
             </TabsContent>
             
             <TabsContent value="pricing">
