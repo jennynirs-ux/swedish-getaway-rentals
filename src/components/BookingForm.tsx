@@ -350,7 +350,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full" 
             disabled={loading || totalAmount <= 0 || !houseRulesAccepted}
           >
-            {loading ? 'Sending...' : 'Send booking request'}
+            {loading ? 'Processing...' : `Complete Your Booking • ${totalAmount.toLocaleString()} ${currency}`}
           </Button>
         </form>
       </CardContent>
