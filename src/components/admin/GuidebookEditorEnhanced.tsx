@@ -109,7 +109,7 @@ const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
     { id: "cu2", type: "text", title: "Fika", content: "Take a coffee break with something sweet, like a cinnamon bun." },
   ],
   rules: [
-    { id: "r1", type: "list", title: "House rules", items: ["No smoking indoors", "Respect quiet hours 22–07", "No parties"] },
+    { id: "r1", type: "list", title: "House rules", items: ["No smoking indoors", "Respect quiet hours 22–07", "No parties", "If you break it you buy it"] },
   ],
   checkout: [
     { id: "co1", type: "text", content: "Check-out time: 11:00" },
