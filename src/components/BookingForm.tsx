@@ -209,28 +209,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
           }}
         />
 
-        {/* Sammanställning */}
-        {checkIn && checkOut && (
-          <div className="mt-4 p-4 bg-accent rounded-lg space-y-2">
-            <div className="flex justify-between">
-              <span>Check-in:</span>
-              <span className="font-medium">{checkIn.toDateString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Check-out:</span>
-              <span className="font-medium">{checkOut.toDateString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Number of nights:</span>
-              <span className="font-medium">{nights}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold border-t pt-2">
-              <span>Total:</span>
-              <span>{totalAmount.toLocaleString()} {currency}</span>
-            </div>
-          </div>
-        )}
-
         {/* Gästinfo */}
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           <div className="space-y-2">
@@ -246,6 +224,28 @@ const BookingForm: React.FC<BookingFormProps> = ({
               required
             />
           </div>
+
+          {/* Sammanställning */}
+          {checkIn && checkOut && (
+            <div className="p-4 bg-accent rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span>Check-in:</span>
+                <span className="font-medium">{checkIn.toDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Check-out:</span>
+                <span className="font-medium">{checkOut.toDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Number of nights:</span>
+                <span className="font-medium">{nights}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <span>Total:</span>
+                <span>{totalAmount.toLocaleString()} {currency}</span>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="guest_name">Your name</Label>
