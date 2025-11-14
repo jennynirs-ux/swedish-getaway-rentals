@@ -9,6 +9,7 @@ import { CalendarDays, Shield } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
+import { usePricingRules } from "@/hooks/usePricingRules";
 import { z } from "zod";
 import DOMPurify from "dompurify";
 
@@ -28,6 +29,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   maxGuests
 }) => {
   const { createBooking, loading } = useBooking();
+  const { calculatePrice } = usePricingRules(propertyId);
   
   // Enable real-time calendar updates when bookings are made
   useBookingRealtime({
@@ -76,6 +78,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return 0;
     const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    // Simple calculation matching server-side: nights * pricePerNight
     return nights > 0 ? nights * pricePerNight : 0;
   };
 
