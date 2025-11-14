@@ -77,9 +77,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return 0;
-    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-    // Simple calculation matching server-side: nights * pricePerNight
-    return nights > 0 ? nights * pricePerNight : 0;
+    const calculation = calculatePrice(
+      pricePerNight,
+      checkIn,
+      checkOut,
+      formData.number_of_guests
+    );
+    return calculation.total;
   };
 
   const nights = checkIn && checkOut
