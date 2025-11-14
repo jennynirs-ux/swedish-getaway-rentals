@@ -31,23 +31,49 @@ serve(async (req) => {
         .from('shop_products')
         .select('*')
         .eq('id', it.productId)
-        .single();
-      if (error || !product) throw new Error('Product not found');
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching product:', error);
+        throw new Error(`Error fetching product: ${error.message}`);
+      }
+      
+      if (!product) {
+        console.error('Product not found:', it.productId);
+        throw new Error(`Product not found: ${it.productId}`);
+      }
 
-      currency = product.currency.toLowerCase();
+      currency = product.currency?.toLowerCase() || 'sek';
+
+      // Parse printful_data if it's a string
+      const printfulData = typeof product.printful_data === 'string' 
+        ? JSON.parse(product.printful_data) 
+        : product.printful_data;
 
       let selectedVariant: any = null;
-      if (it.variantId && product.printful_data?.variants) {
-        selectedVariant = product.printful_data.variants.find((v: any) => v.id?.toString() === it.variantId);
+      if (it.variantId && printfulData?.variants) {
+        selectedVariant = printfulData.variants.find((v: any) => v.id?.toString() === it.variantId);
+        if (!selectedVariant) {
+          console.error('Variant not found:', it.variantId, 'in product:', it.productId);
+          throw new Error(`Variant ${it.variantId} not found for product ${it.productId}`);
+        }
       }
 
       const finalPrice = selectedVariant
         ? Math.round(parseFloat(selectedVariant.retail_price || '0') * 100)
-        : (product.price_override || product.custom_price || product.price);
+        : (product.price_override || product.custom_price || product.price || 0);
 
-      const finalTitle = product.title_override || product.title;
-      const finalDescription = product.description_override || product.custom_description || product.description;
+      const finalTitle = product.title_override || product.title || 'Product';
+      const finalDescription = product.description_override || product.custom_description || product.description || '';
       const finalImage = product.main_image_override || product.image_url;
+
+      console.log('Processing item:', {
+        productId: it.productId,
+        variantId: it.variantId,
+        finalPrice,
+        finalTitle,
+        selectedVariant: selectedVariant ? selectedVariant.name : 'none'
+      });
 
       lineItems.push({
         price_data: {
