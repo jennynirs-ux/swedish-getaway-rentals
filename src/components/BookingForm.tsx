@@ -19,6 +19,7 @@ interface BookingFormProps {
   pricePerNight: number;
   currency: string;
   maxGuests: number;
+  onOpenGuidebook?: () => void;
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({
@@ -26,7 +27,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
   propertyTitle,
   pricePerNight,
   currency,
-  maxGuests
+  maxGuests,
+  onOpenGuidebook
 }) => {
   const { createBooking, loading } = useBooking();
   const { calculatePrice } = usePricingRules(propertyId);
@@ -341,7 +343,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 cursor-pointer"
                 >
                   <Shield className="h-4 w-4 text-primary" />
-                  I have read and agree to the House Rules
+                  I have read and agree to the{" "}
+                  {onOpenGuidebook ? (
+                    <button
+                      type="button"
+                      onClick={onOpenGuidebook}
+                      className="text-primary underline hover:text-primary/80"
+                    >
+                      House Rules
+                    </button>
+                  ) : (
+                    "House Rules"
+                  )}
                 </label>
                 <p className="text-sm text-muted-foreground">
                   You'll receive a link to the full guest guidebook after booking
