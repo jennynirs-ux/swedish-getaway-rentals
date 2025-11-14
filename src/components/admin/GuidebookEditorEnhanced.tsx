@@ -52,21 +52,37 @@ interface GuidebookEditorProps {
   propertyTitle?: string;
 }
 
-const FIXED_SECTIONS: Omit<GuidebookSection, "blocks">[] = [
-  { id: "home", icon: Home, title: "Welcome Home" },
-  { id: "directions", icon: MapPin, title: "Directions" },
-  { id: "stop", icon: Coffee, title: "Stop on the way" },
-  { id: "checkin", icon: Key, title: "Check-in" },
-  { id: "wifi", icon: Wifi, title: "Wi-Fi" },
-  { id: "kitchen", icon: Utensils, title: "Kitchen" },
-  { id: "howthingswork", icon: Cog, title: "How things work" },
-  { id: "waste", icon: Recycle, title: "Waste & Recycling" },
-  { id: "places", icon: Landmark, title: "Places to visit" },
-  { id: "customs", icon: BookOpen, title: "Swedish customs" },
-  { id: "rules", icon: Shield, title: "House rules" },
-  { id: "checkout", icon: LogOut, title: "Check-out" },
-  { id: "hoststory", icon: Heart, title: "Host Story" },
-];
+const SECTION_ICONS: Record<string, React.ElementType> = {
+  home: Home,
+  directions: MapPin,
+  stop: Coffee,
+  checkin: Key,
+  wifi: Wifi,
+  kitchen: Utensils,
+  howthingswork: Cog,
+  waste: Recycle,
+  places: Landmark,
+  customs: BookOpen,
+  rules: Shield,
+  checkout: LogOut,
+  hoststory: Heart,
+};
+
+const DEFAULT_SECTION_TITLES: Record<string, string> = {
+  home: "Welcome Home",
+  directions: "Directions",
+  stop: "Stop on the way",
+  checkin: "Check-in",
+  wifi: "Wi-Fi",
+  kitchen: "Kitchen",
+  howthingswork: "How things work",
+  waste: "Waste & Recycling",
+  places: "Places to visit",
+  customs: "Swedish customs",
+  rules: "House rules",
+  checkout: "Check-out",
+  hoststory: "Host Story",
+};
 
 const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
   home: [
@@ -130,11 +146,13 @@ export const GuidebookEditor = ({
   const { toast } = useToast();
 
   const [localSections, setLocalSections] = useState<GuidebookSection[]>(
-    FIXED_SECTIONS.map((s) => {
-      const existing = sections.find((sec) => sec.id === s.id);
+    Object.keys(DEFAULT_SECTION_TITLES).map((id) => {
+      const existing = sections.find((sec) => sec.id === id);
       return {
-        ...s,
-        blocks: existing?.blocks?.length ? existing.blocks : DEFAULT_BLOCKS[s.id] || [],
+        id,
+        icon: SECTION_ICONS[id],
+        title: existing?.title || DEFAULT_SECTION_TITLES[id],
+        blocks: existing?.blocks?.length ? existing.blocks : DEFAULT_BLOCKS[id] || [],
         image_url: existing?.image_url,
       };
     })
@@ -249,6 +267,34 @@ export const GuidebookEditor = ({
     onChange(newSections);
   };
 
+  const addBlock = (sectionId: string, type: "text" | "list" | "checkbox" | "map") => {
+    const newBlock: GuidebookBlock = {
+      id: `${sectionId}_${Date.now()}`,
+      type,
+      title: "",
+      content: type === "text" ? "" : undefined,
+      items: type === "list" || type === "checkbox" ? [] : undefined,
+      mapPins: type === "map" ? [] : undefined,
+    };
+    const newSections = localSections.map((s) =>
+      s.id === sectionId
+        ? { ...s, blocks: [...s.blocks, newBlock] }
+        : s
+    );
+    setLocalSections(newSections);
+    onChange(newSections);
+  };
+
+  const removeBlock = (sectionId: string, blockId: string) => {
+    const newSections = localSections.map((s) =>
+      s.id === sectionId
+        ? { ...s, blocks: s.blocks.filter((b) => b.id !== blockId) }
+        : s
+    );
+    setLocalSections(newSections);
+    onChange(newSections);
+  };
+
   const handleSave = async () => {
     if (onSave) {
       try {
@@ -269,7 +315,13 @@ export const GuidebookEditor = ({
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm"><Share className="h-4 w-4 mr-2" /> Share</Button>
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" /> PDF</Button>
+          <Button 
+            variant="default" 
+            size="lg"
+            className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+          >
+            <Download className="h-5 w-5 mr-2" /> Download PDF
+          </Button>
           {onSave && (
             <Button variant="default" size="sm" onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save"}
@@ -283,9 +335,14 @@ export const GuidebookEditor = ({
         return (
           <Card key={section.id}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon className="h-5 w-5 text-primary" /> {section.title}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Icon className="h-5 w-5 text-primary flex-shrink-0" />
+                <Input
+                  value={section.title}
+                  onChange={(e) => updateSection(section.id, { title: e.target.value })}
+                  className="text-lg font-semibold border-none shadow-none p-0 h-auto focus-visible:ring-0"
+                />
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <ImageUpload
@@ -295,8 +352,23 @@ export const GuidebookEditor = ({
                 onRemove={() => updateSection(section.id, { image_url: '' })}
               />
               {section.blocks.map((block) => (
-                <div key={block.id} className="border rounded p-3 bg-muted/10 space-y-2">
-                  {block.title && <Label className="font-medium">{block.title}</Label>}
+                <div key={block.id} className="border rounded p-3 bg-muted/10 space-y-2 relative group">
+                  <div className="flex items-center justify-between gap-2">
+                    <Input
+                      value={block.title || ""}
+                      onChange={(e) => updateBlock(section.id, block.id, { title: e.target.value })}
+                      placeholder="Block title (optional)"
+                      className="font-medium bg-transparent border-none shadow-none p-0 h-auto focus-visible:ring-1"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeBlock(section.id, block.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
 
                   {block.type === "text" && (
                     <Textarea
@@ -421,6 +493,37 @@ export const GuidebookEditor = ({
                   )}
                 </div>
               ))}
+              
+              <div className="flex gap-2 pt-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addBlock(section.id, "text")}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Text
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addBlock(section.id, "list")}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add List
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addBlock(section.id, "checkbox")}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Checklist
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addBlock(section.id, "map")}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Map
+                </Button>
+              </div>
             </CardContent>
           </Card>
         );
