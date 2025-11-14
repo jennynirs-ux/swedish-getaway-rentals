@@ -77,6 +77,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return 0;
+    // pricePerNight is in cents, so we use it directly
     const calculation = calculatePrice(
       pricePerNight,
       checkIn,
@@ -246,7 +247,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Total:</span>
-                <span>{totalAmount.toLocaleString()} {currency}</span>
+                <span>{(totalAmount / 100).toLocaleString()} {currency}</span>
               </div>
             </div>
           )}
@@ -357,7 +358,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full" 
             disabled={loading || totalAmount <= 0 || !houseRulesAccepted}
           >
-            {loading ? 'Processing...' : `Complete Your Booking • ${totalAmount.toLocaleString()} ${currency}`}
+            {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
           </Button>
         </form>
       </CardContent>
