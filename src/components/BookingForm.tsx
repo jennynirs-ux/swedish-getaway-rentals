@@ -77,9 +77,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return 0;
-    // pricePerNight is in cents, so we use it directly
+    // pricePerNight is in SEK, convert to cents for calculation
     const calculation = calculatePrice(
-      pricePerNight,
+      pricePerNight * 100,
       checkIn,
       checkOut,
       formData.number_of_guests
