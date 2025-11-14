@@ -1,4 +1,4 @@
-import { useState, useMemo, type ElementType, lazy, Suspense } from "react";
+import { useState, useMemo, useEffect, type ElementType, lazy, Suspense } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -79,9 +79,10 @@ interface GuestGuideDialogProps {
   isOpen: boolean;
   onClose: () => void;
   property: Property;
+  initialSectionId?: string;
 }
 
-const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) => {
+const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: GuestGuideDialogProps) => {
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -121,6 +122,18 @@ const GuestGuideDialog = ({ isOpen, onClose, property }: GuestGuideDialogProps) 
       return section;
     });
   }, [customSections]);
+
+  // Set initial section when dialog opens
+  useEffect(() => {
+    if (isOpen && initialSectionId) {
+      const index = allSections.findIndex((s) => s.id === initialSectionId);
+      if (index !== -1) {
+        setActiveIndex(index);
+      }
+    } else if (isOpen) {
+      setActiveIndex(0);
+    }
+  }, [isOpen, initialSectionId, allSections]);
 
   const getIndexById = (id: string) => allSections.findIndex((s) => s.id === id);
 

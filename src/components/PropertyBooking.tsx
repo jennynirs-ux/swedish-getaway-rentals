@@ -12,9 +12,10 @@ const BookingChat = lazy(() => import("./BookingChat").then(module => ({ default
 
 interface PropertyBookingProps {
   property: Property;
+  onOpenGuidebook?: (sectionId?: string) => void;
 }
 
-const PropertyBooking = ({ property }: PropertyBookingProps) => {
+const PropertyBooking = ({ property, onOpenGuidebook }: PropertyBookingProps) => {
   const [showChat, setShowChat] = useState(false);
   
   return (
@@ -44,6 +45,7 @@ const PropertyBooking = ({ property }: PropertyBookingProps) => {
               pricePerNight={Math.round(property.price_per_night * 1.1)}
               currency={property.currency}
               maxGuests={property.max_guests}
+              onOpenGuidebook={onOpenGuidebook ? () => onOpenGuidebook("rules") : undefined}
             />
 
           {/* Contact Information */}

@@ -62,6 +62,7 @@ const PropertyPage = memo(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
+  const [guideSectionId, setGuideSectionId] = useState<string | undefined>();
 
   /** Resolve legacy routes → actual property id */
   const resolvePropertyId = useCallback(async (incomingId: string) => {
@@ -174,8 +175,14 @@ const PropertyPage = memo(() => {
     }
   );
 
-  const handleGuideOpen = useCallback(() => setIsGuideDialogOpen(true), []);
-  const handleGuideClose = useCallback(() => setIsGuideDialogOpen(false), []);
+  const handleGuideOpen = useCallback((sectionId?: string) => {
+    setGuideSectionId(sectionId);
+    setIsGuideDialogOpen(true);
+  }, []);
+  const handleGuideClose = useCallback(() => {
+    setIsGuideDialogOpen(false);
+    setGuideSectionId(undefined);
+  }, []);
   const handleBackToHome = useCallback(() => navigate("/"), [navigate]);
 
   /** Merge queries */
@@ -266,7 +273,7 @@ const PropertyPage = memo(() => {
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-        <PropertyBooking property={property} />
+        <PropertyBooking property={property} onOpenGuidebook={handleGuideOpen} />
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
@@ -298,6 +305,7 @@ const PropertyPage = memo(() => {
         isOpen={isGuideDialogOpen}
         onClose={handleGuideClose}
         property={property}
+        initialSectionId={guideSectionId}
       />
     </div>
   );
