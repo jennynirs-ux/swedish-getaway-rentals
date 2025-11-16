@@ -950,6 +950,7 @@ export type Database = {
           bathrooms: number
           bedrooms: number
           cancellation_policy: string | null
+          check_in_instructions: string | null
           check_in_time: string | null
           check_out_time: string | null
           city: string | null
@@ -971,10 +972,12 @@ export type Database = {
           id: string
           introduction_text: string | null
           latitude: number | null
+          local_tips: string | null
           location: string | null
           longitude: number | null
           max_guests: number
           monthly_discount_percentage: number | null
+          parking_info: string | null
           pending_approval: boolean
           postal_code: string | null
           pre_checkin_reminder_enabled: boolean
@@ -1007,6 +1010,7 @@ export type Database = {
           bathrooms?: number
           bedrooms?: number
           cancellation_policy?: string | null
+          check_in_instructions?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
           city?: string | null
@@ -1028,10 +1032,12 @@ export type Database = {
           id?: string
           introduction_text?: string | null
           latitude?: number | null
+          local_tips?: string | null
           location?: string | null
           longitude?: number | null
           max_guests?: number
           monthly_discount_percentage?: number | null
+          parking_info?: string | null
           pending_approval?: boolean
           postal_code?: string | null
           pre_checkin_reminder_enabled?: boolean
@@ -1064,6 +1070,7 @@ export type Database = {
           bathrooms?: number
           bedrooms?: number
           cancellation_policy?: string | null
+          check_in_instructions?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
           city?: string | null
@@ -1085,10 +1092,12 @@ export type Database = {
           id?: string
           introduction_text?: string | null
           latitude?: number | null
+          local_tips?: string | null
           location?: string | null
           longitude?: number | null
           max_guests?: number
           monthly_discount_percentage?: number | null
+          parking_info?: string | null
           pending_approval?: boolean
           postal_code?: string | null
           pre_checkin_reminder_enabled?: boolean

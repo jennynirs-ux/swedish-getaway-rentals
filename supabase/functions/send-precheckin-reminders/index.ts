@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,10 +23,14 @@ interface Booking {
     city: string | null;
     country: string;
     check_in_time: string | null;
+    check_out_time: string | null;
     street: string | null;
     postal_code: string | null;
     property_timezone: string;
     get_in_touch_info: any;
+    check_in_instructions: string | null;
+    parking_info: string | null;
+    local_tips: string | null;
   };
 }
 
@@ -37,7 +42,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const resendKey = Deno.env.get('RESEND_API_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const resend = new Resend(resendKey);
 
     console.log('Starting pre-check-in reminder job...');
 
@@ -64,10 +71,14 @@ serve(async (req) => {
           city,
           country,
           check_in_time,
+          check_out_time,
           street,
           postal_code,
           property_timezone,
-          get_in_touch_info
+          get_in_touch_info,
+          check_in_instructions,
+          parking_info,
+          local_tips
         )
       `)
       .eq('check_in_date', tomorrowStr)
@@ -151,31 +162,55 @@ serve(async (req) => {
         const checkOutDate = new Date(booking.check_out_date + 'T00:00:00');
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-        const emailData = {
-          to: booking.guest_email,
-          subject: `Your stay at ${booking.properties.title} starts tomorrow – directions & check-in details`,
-          html: generateEmailHTML({
-            guestName: booking.guest_name,
-            propertyTitle: booking.properties.title,
-            city: booking.properties.city || booking.properties.country,
-            checkInDate: `${dayNames[checkInDate.getDay()]}, ${checkInDate.toLocaleDateString()}`,
-            checkOutDate: `${dayNames[checkOutDate.getDay()]}, ${checkOutDate.toLocaleDateString()}`,
-            checkInTime: booking.properties.check_in_time || '15:00',
-            googleMapsUrl,
-            appleMapsUrl,
-            travelInfo,
-            contactInfo: booking.properties.get_in_touch_info,
-            address: {
-              street: booking.properties.street,
-              postal_code: booking.properties.postal_code,
-              city: booking.properties.city,
-              country: booking.properties.country
-            }
-          })
-        };
+        // Generate tracking ID for email opens
+        const trackingId = `pre-checkin-${booking.id}-${Date.now()}`;
 
-        // Log the email data (in production, send via your email provider)
-        console.log('Email prepared for booking:', booking.id, emailData);
+        const emailHTML = generateEmailHTML({
+          guestName: booking.guest_name,
+          propertyTitle: booking.properties.title,
+          city: booking.properties.city || booking.properties.country,
+          checkInDate: `${dayNames[checkInDate.getDay()]}, ${checkInDate.toLocaleDateString()}`,
+          checkOutDate: `${dayNames[checkOutDate.getDay()]}, ${checkOutDate.toLocaleDateString()}`,
+          checkInTime: booking.properties.check_in_time || '15:00',
+          checkOutTime: booking.properties.check_out_time || '11:00',
+          googleMapsUrl,
+          appleMapsUrl,
+          travelInfo,
+          contactInfo: booking.properties.get_in_touch_info,
+          address: {
+            street: booking.properties.street,
+            postal_code: booking.properties.postal_code,
+            city: booking.properties.city,
+            country: booking.properties.country
+          },
+          checkInInstructions: booking.properties.check_in_instructions,
+          parkingInfo: booking.properties.parking_info,
+          localTips: booking.properties.local_tips,
+          trackingId,
+          supabaseUrl
+        });
+
+        // Send email via Resend
+        const { error: emailError } = await resend.emails.send({
+          from: 'Nordic Getaways <bookings@nordicgetaways.com>',
+          to: booking.guest_email,
+          subject: `Your stay at ${booking.properties.title} starts tomorrow – all details inside`,
+          html: emailHTML,
+        });
+
+        if (emailError) {
+          console.error('Error sending email:', emailError);
+          throw emailError;
+        }
+
+        // Track email sent
+        await supabase.from('booking_email_tracking').insert({
+          booking_id: booking.id,
+          tracking_id: trackingId,
+          recipient_email: booking.guest_email,
+          email_type: 'pre_checkin',
+          sent_at: new Date().toISOString(),
+        });
 
         // Mark as sent
         await supabase
@@ -183,7 +218,7 @@ serve(async (req) => {
           .update({ pre_checkin_reminder_sent_at: new Date().toISOString() })
           .eq('id', booking.id);
 
-        results.push({ booking_id: booking.id, status: 'prepared', email: booking.guest_email });
+        results.push({ booking_id: booking.id, status: 'sent', email: booking.guest_email });
 
       } catch (error) {
         console.error(`Error processing booking ${booking.id}:`, error);
@@ -206,7 +241,25 @@ serve(async (req) => {
 });
 
 function generateEmailHTML(data: any): string {
-  const { guestName, propertyTitle, city, checkInDate, checkOutDate, checkInTime, googleMapsUrl, appleMapsUrl, travelInfo, contactInfo, address } = data;
+  const { 
+    guestName, 
+    propertyTitle, 
+    city, 
+    checkInDate, 
+    checkOutDate, 
+    checkInTime, 
+    checkOutTime,
+    googleMapsUrl, 
+    appleMapsUrl, 
+    travelInfo, 
+    contactInfo, 
+    address,
+    checkInInstructions,
+    parkingInfo,
+    localTips,
+    trackingId,
+    supabaseUrl
+  } = data;
 
   return `
 <!DOCTYPE html>
@@ -215,67 +268,116 @@ function generateEmailHTML(data: any): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    h1 { color: #1a1a1a; margin-bottom: 10px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
-    .card { background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }
-    .btn { display: inline-block; background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin: 10px 10px 10px 0; }
-    .btn-secondary { background: #6c757d; }
-    .info-row { margin: 10px 0; }
-    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    .container { background: white; border-radius: 12px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0 0 10px 0; font-size: 28px; }
+    .header p { margin: 0; opacity: 0.9; font-size: 16px; }
+    .content { padding: 30px; }
+    .card { background: #f8fafc; border-left: 4px solid #2c5282; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .card h2 { margin: 0 0 15px 0; color: #1a365d; font-size: 18px; }
+    .card p { margin: 8px 0; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+    .info-item { background: #f8fafc; padding: 15px; border-radius: 8px; }
+    .info-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+    .info-value { font-size: 16px; font-weight: 600; color: #1a365d; }
+    .btn { display: inline-block; background: #2c5282; color: white !important; text-decoration: none; padding: 14px 28px; border-radius: 8px; margin: 10px 10px 10px 0; font-weight: 600; }
+    .btn:hover { background: #1a365d; }
+    .section { margin: 30px 0; }
+    .section h3 { color: #1a365d; margin-bottom: 12px; font-size: 16px; }
+    .tips-list { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; border-radius: 8px; }
+    .tips-list li { margin: 8px 0; }
+    .footer { margin-top: 30px; padding: 20px 30px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 14px; }
+    @media only screen and (max-width: 600px) {
+      .info-grid { grid-template-columns: 1fr; }
+      body { padding: 10px; }
+      .content { padding: 20px; }
+      .header { padding: 30px 20px; }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>${propertyTitle}</h1>
-    <p>${city}</p>
+  <div class="container">
+    <div class="header">
+      <h1>🏡 Your Stay Starts Tomorrow!</h1>
+      <p>${propertyTitle} · ${city}</p>
+    </div>
+    
+    <div class="content">
+      <p>Dear ${guestName},</p>
+      <p>We're excited to welcome you tomorrow! Here's everything you need for a smooth check-in.</p>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Check-In</div>
+          <div class="info-value">${checkInDate}<br>${checkInTime}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Check-Out</div>
+          <div class="info-value">${checkOutDate}<br>${checkOutTime}</div>
+        </div>
+      </div>
+
+      ${checkInInstructions ? `
+      <div class="card">
+        <h2>🔑 Check-In Instructions</h2>
+        <p>${checkInInstructions.replace(/\n/g, '<br>')}</p>
+      </div>
+      ` : ''}
+
+      <div class="card">
+        <h2>📍 Property Address</h2>
+        <p>
+          ${address.street ? `${address.street}<br>` : ''}
+          ${address.postal_code || ''} ${address.city || ''}<br>
+          ${address.country || ''}
+        </p>
+        ${googleMapsUrl || appleMapsUrl ? `
+        <div style="margin-top: 15px;">
+          ${googleMapsUrl ? `<a href="${googleMapsUrl}" class="btn">🗺️ Open in Google Maps</a>` : ''}
+          ${appleMapsUrl ? `<a href="${appleMapsUrl}" class="btn">🍎 Open in Apple Maps</a>` : ''}
+        </div>
+        ` : ''}
+        ${travelInfo ? `
+        <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #64748b;">
+          📏 Approx. ${travelInfo.drive_distance_km} km (${travelInfo.drive_time_min} min) from ${travelInfo.nearest_city_name}
+        </p>
+        ` : ''}
+      </div>
+
+      ${parkingInfo ? `
+      <div class="card">
+        <h2>🚗 Parking Information</h2>
+        <p>${parkingInfo.replace(/\n/g, '<br>')}</p>
+      </div>
+      ` : ''}
+
+      ${localTips ? `
+      <div class="tips-list">
+        <h3 style="margin-top: 0; color: #92400e;">💡 Local Tips</h3>
+        <p>${localTips.replace(/\n/g, '<br>')}</p>
+      </div>
+      ` : ''}
+
+      ${contactInfo?.email || contactInfo?.phone ? `
+      <div class="section">
+        <h3>📞 Need Help?</h3>
+        <p>
+          ${contactInfo.email ? `Email: <a href="mailto:${contactInfo.email}" style="color: #2c5282;">${contactInfo.email}</a><br>` : ''}
+          ${contactInfo.phone ? `Phone: ${contactInfo.phone}` : ''}
+        </p>
+      </div>
+      ` : ''}
+
+      <p style="margin-top: 30px;">We hope you have a wonderful stay! If you have any questions, don't hesitate to reach out.</p>
+      <p style="margin-bottom: 0;">Warm regards,<br><strong>The Nordic Getaways Team</strong></p>
+    </div>
+
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} Nordic Getaways. All rights reserved.</p>
+    </div>
   </div>
-
-  <p>Hi ${guestName},</p>
-  <p>Your stay begins tomorrow! Here's everything you need for a smooth check-in.</p>
-
-  <div class="card">
-    <h2>📅 Your Stay</h2>
-    <div class="info-row"><strong>Check-in:</strong> ${checkInDate} at ${checkInTime}</div>
-    <div class="info-row"><strong>Check-out:</strong> ${checkOutDate}</div>
-  </div>
-
-  ${googleMapsUrl ? `
-  <div class="card">
-    <h2>🗺️ Directions</h2>
-    ${travelInfo ? `
-      <p>Approximately <strong>${travelInfo.drive_distance_km} km</strong> (≈ ${travelInfo.drive_time_min} min) from ${travelInfo.nearest_city_name}.</p>
-    ` : ''}
-    ${address.street ? `
-      <p><strong>Address:</strong><br>
-      ${address.street}<br>
-      ${address.postal_code} ${address.city}<br>
-      ${address.country}</p>
-    ` : ''}
-    <a href="${googleMapsUrl}" class="btn">📍 View Directions in Google Maps</a>
-    ${appleMapsUrl ? `<a href="${appleMapsUrl}" class="btn btn-secondary">🍎 Open in Apple Maps</a>` : ''}
-  </div>
-  ` : ''}
-
-  <div class="card">
-    <h2>🏠 Check-in Information</h2>
-    <p><strong>Check-in time:</strong> ${checkInTime}</p>
-    <p>Please review the House Rules and Guest Guidebook before arrival.</p>
-  </div>
-
-  ${contactInfo?.contact_email || contactInfo?.contact_phone ? `
-  <div class="card">
-    <h2>📞 Contact</h2>
-    ${contactInfo.contact_email ? `<p><strong>Email:</strong> ${contactInfo.contact_email}</p>` : ''}
-    ${contactInfo.contact_phone ? `<p><strong>Phone:</strong> ${contactInfo.contact_phone}</p>` : ''}
-  </div>
-  ` : ''}
-
-  <p>We're excited to host you! If you have any questions, don't hesitate to reach out.</p>
-
-  <div class="footer">
-    <p>Map data © OpenStreetMap contributors</p>
-  </div>
+  <img src="${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}" width="1" height="1" style="display:none;" alt="">
 </body>
 </html>
   `;
