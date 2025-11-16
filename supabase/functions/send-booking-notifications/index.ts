@@ -53,6 +53,8 @@ serve(async (req) => {
           country,
           check_in_time,
           check_out_time,
+          cancellation_policy,
+          guidebook_sections,
           host_id,
           profiles (
             email,
@@ -105,20 +107,304 @@ serve(async (req) => {
       property?.country
     ].filter(Boolean).join(", ");
 
+    // Extract house rules from guidebook sections
+    const guidebookSections = property.guidebook_sections || [];
+    const rulesSection = guidebookSections.find((s: any) => s.id === 'rules');
+    const houseRules = rulesSection?.blocks?.filter((b: any) => b.type === 'list')
+      .flatMap((b: any) => b.items || []) || [];
+
+    // Get cancellation policy details
+    const cancellationPolicyMap = {
+      flexible: {
+        title: "Flexible Cancellation",
+        description: "Full refund up to 1 day before check-in. Cancellations made within 24 hours are non-refundable."
+      },
+      moderate: {
+        title: "Moderate Cancellation",
+        description: "Full refund up to 5 days before check-in. Cancellations made within 5 days receive a 50% refund."
+      },
+      strict: {
+        title: "Strict Cancellation",
+        description: "50% refund up to 7 days before check-in. Cancellations made within 7 days are non-refundable."
+      }
+    };
+    const policyKey = (property.cancellation_policy || 'moderate') as keyof typeof cancellationPolicyMap;
+    const cancellationPolicy = cancellationPolicyMap[policyKey];
+
+    // Format check-in and check-out times
+    const formatDateTime = (date: string, time: string) => {
+      const d = new Date(date);
+      const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      return `${dateStr} at ${time}`;
+    };
+
+    const checkInDateTime = formatDateTime(booking.check_in_date, property.check_in_time || '15:00');
+    const checkOutDateTime = formatDateTime(booking.check_out_date, property.check_out_time || '11:00');
+
+    // Create email open tracking pixel
+    const trackingId = `${bookingId}-${Date.now()}`;
+    const trackingPixel = `${baseUrl}/api/track-email-open?id=${trackingId}`;
+
     // Send email to guest
     console.log('Sending confirmation email to guest:', booking.guest_email);
     const guestEmailHtml = `
-      <h1>Booking Confirmed! 🎉</h1>
-      <p>Hi ${booking.guest_name},</p>
-      <p>Your booking for <strong>${property.title}</strong> has been confirmed!</p>
-      
-      <h2>Property Address:</h2>
-      <p style="font-size: 16px; line-height: 1.5;">
-        ${propertyAddress || property.title}
-      </p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Booking Confirmation - Nordic Getaways</title>
+        <style>
+          body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+          .header { background: linear-gradient(135deg, #2D5F5D 0%, #1a3635 100%); color: white; padding: 40px 30px; text-align: center; }
+          .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+          .content { padding: 40px 30px; }
+          .section { margin-bottom: 30px; }
+          .section-title { font-size: 20px; font-weight: 600; color: #2D5F5D; margin-bottom: 15px; border-bottom: 2px solid #2D5F5D; padding-bottom: 8px; }
+          .info-box { background: #f8f9fa; border-left: 4px solid #2D5F5D; padding: 20px; margin: 15px 0; border-radius: 4px; }
+          .info-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+          .info-label { font-weight: 600; color: #495057; }
+          .info-value { color: #212529; }
+          .rules-list { list-style: none; padding: 0; margin: 15px 0; }
+          .rules-list li { padding: 12px; background: #f8f9fa; margin: 8px 0; border-radius: 4px; border-left: 3px solid #2D5F5D; }
+          .cta-button { display: inline-block; background: linear-gradient(135deg, #2D5F5D 0%, #1a3635 100%); color: white !important; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 20px 0; }
+          .cta-button:hover { background: linear-gradient(135deg, #1a3635 0%, #0f2221 100%); }
+          .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; font-size: 14px; border-top: 1px solid #dee2e6; }
+          @media only screen and (max-width: 600px) {
+            .content { padding: 20px 15px; }
+            .header { padding: 30px 20px; }
+            .header h1 { font-size: 24px; }
+            .info-row { flex-direction: column; }
+            .info-label, .info-value { margin: 5px 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Booking Confirmed!</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Thank you for choosing Nordic Getaways</p>
+          </div>
+          
+          <div class="content">
+            <p style="font-size: 16px; line-height: 1.6;">Hi ${booking.guest_name},</p>
+            <p style="font-size: 16px; line-height: 1.6;">Your booking for <strong>${property.title}</strong> has been confirmed! We're excited to host you.</p>
+            
+            <div class="section">
+              <div class="section-title">Check-In & Check-Out</div>
+              <div class="info-box">
+                <div class="info-row">
+                  <span class="info-label">Check-In:</span>
+                  <span class="info-value">${checkInDateTime}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Check-Out:</span>
+                  <span class="info-value">${checkOutDateTime}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Guests:</span>
+                  <span class="info-value">${booking.number_of_guests}</span>
+                </div>
+              </div>
+            </div>
 
-      <h2>Booking Details:</h2>
-      <ul>
+            <div class="section">
+              <div class="section-title">Property Location</div>
+              <p style="font-size: 16px; line-height: 1.6; color: #495057;">${propertyAddress || property.title}</p>
+            </div>
+
+            ${houseRules.length > 0 ? `
+            <div class="section">
+              <div class="section-title">House Rules</div>
+              <ul class="rules-list">
+                ${houseRules.map((rule: string) => `<li>${rule}</li>`).join('')}
+              </ul>
+            </div>
+            ` : ''}
+
+            <div class="section">
+              <div class="section-title">Cancellation Policy</div>
+              <div class="info-box">
+                <strong style="color: #2D5F5D;">${cancellationPolicy.title}</strong>
+                <p style="margin: 10px 0 0 0; line-height: 1.6; color: #495057;">${cancellationPolicy.description}</p>
+              </div>
+            </div>
+
+            <div style="text-align: center; margin: 40px 0;">
+              <a href="${guidebookUrl}" class="cta-button">View Your Complete Guest Guide</a>
+              <p style="margin: 15px 0; color: #6c757d; font-size: 14px;">Access directions, amenities, local recommendations, and more</p>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Booking Summary</div>
+              <div class="info-box">
+                <div class="info-row">
+                  <span class="info-label">Booking ID:</span>
+                  <span class="info-value">${booking.id}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Total Amount:</span>
+                  <span class="info-value">${booking.total_amount} ${booking.currency}</span>
+                </div>
+              </div>
+            </div>
+
+            <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">If you have any questions, feel free to reach out to us. We're here to help make your stay unforgettable!</p>
+            
+            <p style="font-size: 16px; line-height: 1.6; margin-top: 20px;">Best regards,<br><strong>The Nordic Getaways Team</strong></p>
+          </div>
+          
+          <div class="footer">
+            <p style="margin: 5px 0;">Nordic Getaways - Your Home Away from Home</p>
+            <p style="margin: 5px 0;">This is an automated confirmation email</p>
+          </div>
+        </div>
+        <img src="${trackingPixel}" width="1" height="1" alt="" style="display:none;" />
+      </body>
+      </html>
+    `;
+
+    // Send email to guest with plain text fallback
+    const guestEmailPlainText = `
+Booking Confirmed!
+
+Hi ${booking.guest_name},
+
+Your booking for ${property.title} has been confirmed!
+
+CHECK-IN & CHECK-OUT:
+- Check-In: ${checkInDateTime}
+- Check-Out: ${checkOutDateTime}
+- Guests: ${booking.number_of_guests}
+
+PROPERTY LOCATION:
+${propertyAddress || property.title}
+
+${houseRules.length > 0 ? `
+HOUSE RULES:
+${houseRules.map((rule: string, i: number) => `${i + 1}. ${rule}`).join('\n')}
+` : ''}
+
+CANCELLATION POLICY:
+${cancellationPolicy.title}
+${cancellationPolicy.description}
+
+VIEW YOUR COMPLETE GUEST GUIDE:
+${guidebookUrl}
+
+BOOKING SUMMARY:
+- Booking ID: ${booking.id}
+- Total Amount: ${booking.total_amount} ${booking.currency}
+
+If you have any questions, feel free to reach out to us.
+
+Best regards,
+The Nordic Getaways Team
+    `;
+
+    try {
+      const guestEmailResponse = await resend.emails.send({
+        from: "Nordic Getaways <bookings@nordicgetaways.com>",
+        to: [booking.guest_email],
+        subject: `Booking Confirmed - ${property.title}`,
+        html: guestEmailHtml,
+        text: guestEmailPlainText,
+      });
+
+      console.log('Guest email sent successfully:', guestEmailResponse);
+
+      // Record email tracking
+      await supabase.from('booking_email_tracking').insert({
+        booking_id: bookingId,
+        tracking_id: trackingId,
+        recipient_email: booking.guest_email,
+        email_type: 'booking_confirmation',
+        sent_at: new Date().toISOString(),
+      });
+
+    } catch (emailError) {
+      console.error('Failed to send guest email:', emailError);
+      throw emailError;
+    }
+
+    // Send notification to host
+    const hostEmail = hostProfile?.email;
+    if (hostEmail) {
+      console.log('Sending notification to host:', hostEmail);
+      
+      const hostEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>New Booking - Nordic Getaways</title>
+          <style>
+            body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+            .header { background: linear-gradient(135deg, #2D5F5D 0%, #1a3635 100%); color: white; padding: 40px 30px; text-align: center; }
+            .content { padding: 40px 30px; }
+            .info-box { background: #f8f9fa; border-left: 4px solid #2D5F5D; padding: 20px; margin: 15px 0; border-radius: 4px; }
+            .info-row { margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🏡 New Booking Received</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${hostProfile.full_name || 'Host'},</p>
+              <p>You have a new booking for <strong>${property.title}</strong>.</p>
+              <div class="info-box">
+                <div class="info-row"><strong>Guest:</strong> ${booking.guest_name}</div>
+                <div class="info-row"><strong>Check-In:</strong> ${checkInDateTime}</div>
+                <div class="info-row"><strong>Check-Out:</strong> ${checkOutDateTime}</div>
+                <div class="info-row"><strong>Guests:</strong> ${booking.number_of_guests}</div>
+                <div class="info-row"><strong>Total:</strong> ${booking.total_amount} ${booking.currency}</div>
+              </div>
+              <p>Log in to your admin panel to view full booking details.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      try {
+        await resend.emails.send({
+          from: "Nordic Getaways <bookings@nordicgetaways.com>",
+          to: [hostEmail],
+          subject: `New Booking - ${property.title}`,
+          html: hostEmailHtml,
+        });
+        console.log('Host notification sent successfully');
+      } catch (hostEmailError) {
+        console.error('Failed to send host notification:', hostEmailError);
+        // Don't throw - guest email is more critical
+      }
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Booking notification sent successfully',
+      trackingId: trackingId
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+
+  } catch (error: any) {
+    console.error('Error in send-booking-notifications:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Failed to send booking notifications'
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
+
         <li><strong>Check-in:</strong> ${new Date(booking.check_in_date).toLocaleDateString()} ${property?.check_in_time ? `at ${property.check_in_time.slice(0, 5)}` : ''}</li>
         <li><strong>Check-out:</strong> ${new Date(booking.check_out_date).toLocaleDateString()} ${property?.check_out_time ? `at ${property.check_out_time.slice(0, 5)}` : ''}</li>
         <li><strong>Guests:</strong> ${booking.number_of_guests}</li>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck } from "lucide-react";
+import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail } from "lucide-react";
 import DashboardOverview from "./DashboardOverview";
 import BookingsManagement from "./BookingsManagement";
 import ShopProductsManagement from "./ShopProductsManagement";
@@ -15,6 +15,7 @@ import ReviewsManagement from "./ReviewsManagement";
 import GuestbookManagement from "./GuestbookManagement";
 import CouponsManagement from "./CouponsManagement";
 import MessagesInbox from "./MessagesInbox";
+import { BookingEmailSettings } from "./BookingEmailSettings";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -69,6 +70,10 @@ const UnifiedAdmin = () => {
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
               <TabsTrigger value="guestbook">Guestbook</TabsTrigger>
               <TabsTrigger value="coupons">Coupons</TabsTrigger>
+              <TabsTrigger value="email">
+                <Mail className="w-4 h-4 mr-2" />
+                Email Settings
+              </TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
             
@@ -94,6 +99,10 @@ const UnifiedAdmin = () => {
             
             <TabsContent value="coupons">
               <CouponsManagement />
+            </TabsContent>
+            
+            <TabsContent value="email">
+              <BookingEmailSettings />
             </TabsContent>
             
             <TabsContent value="messages">
