@@ -55,6 +55,50 @@ export type Database = {
           },
         ]
       }
+      booking_email_tracking: {
+        Row: {
+          booking_id: string
+          created_at: string
+          email_type: string
+          id: string
+          opened_at: string | null
+          opened_count: number | null
+          recipient_email: string
+          sent_at: string
+          tracking_id: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          email_type?: string
+          id?: string
+          opened_at?: string | null
+          opened_count?: number | null
+          recipient_email: string
+          sent_at?: string
+          tracking_id: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          email_type?: string
+          id?: string
+          opened_at?: string | null
+          opened_count?: number | null
+          recipient_email?: string
+          sent_at?: string
+          tracking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_email_tracking_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_messages: {
         Row: {
           attachment_url: string | null
