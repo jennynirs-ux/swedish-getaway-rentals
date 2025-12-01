@@ -46,15 +46,37 @@ const CouponsManagement = () => {
       const { data, error } = await supabase
         .from('coupons')
         .select(`
-          *,
+          id,
+          code,
+          name,
+          description,
+          discount_type,
+          discount_value,
+          currency,
+          minimum_amount,
+          maximum_discount_amount,
+          valid_from,
+          valid_until,
+          usage_limit,
+          used_count,
+          property_id,
+          is_active,
+          created_at,
+          applicable_to,
           property:properties(title)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Coupon fetch error:', error);
+        throw error;
+      }
+      
+      console.log('Fetched coupons:', data);
       setCoupons((data as any) || []);
     } catch (error: any) {
-      toast.error('Failed to load coupons');
+      console.error('Failed to load coupons:', error);
+      toast.error(`Failed to load coupons: ${error.message}`);
     } finally {
       setLoading(false);
     }
