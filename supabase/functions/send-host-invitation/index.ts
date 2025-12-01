@@ -145,9 +145,19 @@ serve(async (req: Request) => {
       }
     );
   } catch (error: any) {
-    console.error("Error in send-host-invitation:", error);
+    console.error("Error in send-host-invitation:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return safe error message to client
+    const isUserError = error.message?.includes('Invalid') || error.message?.includes('Failed to create');
+    const clientMessage = isUserError 
+      ? error.message 
+      : 'Unable to send invitation. Please try again or contact support.';
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: clientMessage }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

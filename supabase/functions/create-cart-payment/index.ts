@@ -116,8 +116,21 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ url: session.url }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
   } catch (error) {
-    console.error('Error creating cart payment:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return new Response(JSON.stringify({ error: errorMessage }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+    console.error('Error creating cart payment:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return safe error message to client
+    const isUserError = error instanceof Error && (
+      error.message?.includes('No items') || 
+      error.message?.includes('not found') ||
+      error.message?.includes('Variant')
+    );
+    const clientMessage = isUserError 
+      ? error.message 
+      : 'Unable to create payment session. Please try again or contact support.';
+    
+    return new Response(JSON.stringify({ error: clientMessage }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
   }
 });
