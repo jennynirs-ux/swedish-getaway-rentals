@@ -172,9 +172,8 @@ const BecomeHost = () => {
       question: "How does check-in work?",
       answer: (
         <>
-          You can manage check-ins yourself or connect your <strong>Yale Doorman</strong> smart lock directly 
-          from your Host Dashboard.  
-          Each guest receives a unique access code valid only during their stay for extra safety.
+          You can manage check-ins yourself and coordinate with guests directly.  
+          You have full control over how you share access details and instructions with your guests.
         </>
       ),
     },
