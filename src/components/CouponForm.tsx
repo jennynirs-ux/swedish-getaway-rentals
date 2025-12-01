@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,13 @@ interface CouponFormProps {
 }
 
 const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
+  // Set default valid_until to 1 year from now
+  const getDefaultValidUntil = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() + 1);
+    return date.toISOString().slice(0, 16); // Format for datetime-local input
+  };
+
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -23,7 +30,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
     discount_value: '',
     minimum_amount: '',
     maximum_discount_amount: '',
-    valid_until: '',
+    valid_until: getDefaultValidUntil(),
     usage_limit: '',
     is_active: true
   });
@@ -61,7 +68,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
 
       if (error) throw error;
 
-      toast.success("Coupon created successfully!");
+      toast.success(propertyId ? "Property-specific coupon created successfully!" : "Global coupon created successfully!");
       setFormData({
         code: '',
         name: '',
@@ -70,7 +77,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
         discount_value: '',
         minimum_amount: '',
         maximum_discount_amount: '',
-        valid_until: '',
+        valid_until: getDefaultValidUntil(),
         usage_limit: '',
         is_active: true
       });
@@ -86,8 +93,13 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
     <Card>
       <CardHeader>
         <CardTitle>
-          Create {propertyId ? 'Property' : 'Global'} Coupon
+          Create {propertyId ? 'Property-Specific' : 'Global'} Coupon
         </CardTitle>
+        {propertyId && (
+          <CardDescription>
+            This coupon will only work for this property and will be visible to guests as long as it's marked as active.
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -213,13 +225,20 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+            <div className="space-y-0.5">
+              <Label htmlFor="is_active" className="text-base font-semibold cursor-pointer">
+                Coupon Active Status
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Control whether this coupon is available for use. Toggle off to pause without deleting.
+              </p>
+            </div>
             <Switch
               id="is_active"
               checked={formData.is_active}
               onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
             />
-            <Label htmlFor="is_active">Active</Label>
           </div>
 
           <Button type="submit" disabled={loading}>
