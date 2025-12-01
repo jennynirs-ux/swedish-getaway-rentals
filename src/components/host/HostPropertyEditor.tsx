@@ -19,6 +19,7 @@ import { HostPricingCalculator } from "./HostPricingCalculator";
 import PropertyPricingRules from "@/components/PropertyPricingRules";
 import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
 import CouponForm from "@/components/CouponForm";
+import { PropertyCouponsList } from "@/components/PropertyCouponsList";
 import { GuidebookEditor } from "@/components/admin/GuidebookEditorEnhanced";
 
 interface HostPropertyEditorProps {
@@ -264,8 +265,15 @@ export const HostPropertyEditor = ({
               <CardTitle>Coupons</CardTitle>
               <CardDescription>Create discount coupons for your guests</CardDescription>
             </CardHeader>
-            <CardContent>
-              <CouponForm onSubmitted={onUpdate} propertyId={propertyId} />
+            <CardContent className="space-y-6">
+              {/* Display existing coupons */}
+              <PropertyCouponsList propertyId={propertyId} onUpdate={onUpdate} />
+              
+              {/* Create new coupon */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Create New Coupon</h3>
+                <CouponForm onSubmitted={onUpdate} propertyId={propertyId} />
+              </div>
             </CardContent>
           </Card>
 
