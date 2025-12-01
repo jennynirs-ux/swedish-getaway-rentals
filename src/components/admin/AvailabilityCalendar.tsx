@@ -185,6 +185,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                   selected={selectedDates}
                   onSelect={(dates) => setSelectedDates(dates || [])}
                   className="rounded-md border"
+                  weekStartsOn={1}
                   modifiers={{
                     blocked: modifiers.blocked,
                     special: modifiers.special,
