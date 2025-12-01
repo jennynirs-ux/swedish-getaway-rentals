@@ -27,6 +27,7 @@ const PropertyCalendarOptimized = memo(({
   mode = 'guest' 
 }: PropertyCalendarOptimizedProps) => {
   const today = new Date();
+  const maxDate = new Date(today.getFullYear() + 2, 11, 31); // 2 years ahead
 
   // Hämta availability
   const availabilityQueryFn = useCallback(async () => {
@@ -141,6 +142,7 @@ const PropertyCalendarOptimized = memo(({
         onSelect={handleSelect}
         disabled={disabledMatchers}
         fromDate={today}
+        toDate={maxDate}
         initialFocus
         numberOfMonths={1}
         weekStartsOn={1}
