@@ -78,7 +78,8 @@ serve(async (req) => {
           get_in_touch_info,
           check_in_instructions,
           parking_info,
-          local_tips
+          local_tips,
+          email_templates
         )
       `)
       .eq('check_in_date', tomorrowStr)
@@ -165,7 +166,62 @@ serve(async (req) => {
         // Generate tracking ID for email opens
         const trackingId = `pre-checkin-${booking.id}-${Date.now()}`;
 
-        const emailHTML = generateEmailHTML({
+        // Check if property has custom pre-arrival email template
+        const templates = booking.properties.email_templates || {};
+        const preArrivalTemplate = templates.pre_arrival;
+
+        let emailHTML = "";
+        let emailSubject = "";
+
+        if (preArrivalTemplate && preArrivalTemplate.enabled) {
+          // Format address
+          const address = [
+            booking.properties.street,
+            booking.properties.postal_code,
+            booking.properties.city,
+            booking.properties.country
+          ].filter(Boolean).join(", ");
+
+          // Use custom template with placeholders
+          const replacements: Record<string, string> = {
+            "{guest_name}": booking.guest_name,
+            "{property_name}": booking.properties.title,
+            "{check_in_date}": checkInDate,
+            "{check_out_date}": checkOutDate,
+            "{check_in_time}": booking.properties.check_in_time || "15:00",
+            "{check_out_time}": booking.properties.check_out_time || "11:00",
+            "{property_address}": address,
+            "{check_in_instructions}": booking.properties.check_in_instructions || "Check-in instructions will be provided.",
+          };
+
+          emailSubject = preArrivalTemplate.subject;
+          let message = preArrivalTemplate.message;
+
+          Object.entries(replacements).forEach(([placeholder, value]) => {
+            emailSubject = emailSubject.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), "g"), value);
+            message = message.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), "g"), value);
+          });
+
+          emailHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; }
+              </style>
+            </head>
+            <body>
+              ${message.split('\n').map(line => `<p style="margin: 10px 0;">${line}</p>`).join('')}
+              <img src="${supabaseUrl}/functions/v1/track-email-open?id=${trackingId}" width="1" height="1" style="display:none;" alt="">
+            </body>
+            </html>
+          `;
+        } else {
+          // Use default template
+          emailSubject = `Your stay at ${booking.properties.title} starts tomorrow – all details inside`;
+          emailHTML = generateEmailHTML({
           guestName: booking.guest_name,
           propertyTitle: booking.properties.title,
           city: booking.properties.city || booking.properties.country,
@@ -186,15 +242,16 @@ serve(async (req) => {
           checkInInstructions: booking.properties.check_in_instructions,
           parkingInfo: booking.properties.parking_info,
           localTips: booking.properties.local_tips,
-          trackingId,
-          supabaseUrl
-        });
+            trackingId,
+            supabaseUrl
+          });
+        }
 
         // Send email via Resend
         const { error: emailError } = await resend.emails.send({
           from: 'Nordic Getaways <bookings@nordicgetaways.com>',
           to: booking.guest_email,
-          subject: `Your stay at ${booking.properties.title} starts tomorrow – all details inside`,
+          subject: emailSubject,
           html: emailHTML,
         });
 

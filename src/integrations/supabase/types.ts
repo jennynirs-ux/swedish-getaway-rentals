@@ -963,6 +963,7 @@ export type Database = {
           created_at: string
           currency: string
           description: string | null
+          email_templates: Json | null
           featured_amenities: Json | null
           footer_quick_links: Json | null
           gallery_images: string[] | null
@@ -1023,6 +1024,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          email_templates?: Json | null
           featured_amenities?: Json | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
@@ -1083,6 +1085,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string | null
+          email_templates?: Json | null
           featured_amenities?: Json | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
