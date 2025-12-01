@@ -26,6 +26,7 @@ interface Coupon {
   property_id?: string;
   is_active: boolean;
   created_at: string;
+  applicable_to: 'bookings' | 'products' | 'both';
   property?: {
     title: string;
   };
@@ -104,6 +105,8 @@ const CouponsManagement = () => {
 
   const globalCoupons = coupons.filter(c => !c.property_id);
   const propertyCoupons = coupons.filter(c => c.property_id);
+  const bookingCoupons = coupons.filter(c => !c.property_id && (c.applicable_to === 'bookings' || c.applicable_to === 'both'));
+  const productCoupons = coupons.filter(c => !c.property_id && (c.applicable_to === 'products' || c.applicable_to === 'both'));
 
   if (loading) {
     return <div className="text-center py-8">Loading coupons...</div>;
@@ -132,13 +135,14 @@ const CouponsManagement = () => {
         )}
       </Card>
 
-      <Tabs defaultValue="global" className="space-y-4">
+      <Tabs defaultValue="bookings" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="global">Global Coupons ({globalCoupons.length})</TabsTrigger>
+          <TabsTrigger value="bookings">Booking Coupons ({bookingCoupons.length})</TabsTrigger>
+          <TabsTrigger value="products">Product Coupons ({productCoupons.length})</TabsTrigger>
           <TabsTrigger value="property">Property Coupons ({propertyCoupons.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="global">
+        <TabsContent value="bookings">
           <Card>
             <CardContent className="pt-6">
               <Table>
@@ -154,7 +158,7 @@ const CouponsManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {globalCoupons.map((coupon) => (
+                  {bookingCoupons.map((coupon) => (
                     <TableRow key={coupon.id}>
                       <TableCell className="font-mono font-bold">
                         {coupon.code}
@@ -217,9 +221,97 @@ const CouponsManagement = () => {
                 </TableBody>
               </Table>
               
-              {globalCoupons.length === 0 && (
+              {bookingCoupons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  No global coupons found
+                  No booking coupons found
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="products">
+          <Card>
+            <CardContent className="pt-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Discount</TableHead>
+                    <TableHead>Valid Until</TableHead>
+                    <TableHead>Usage</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productCoupons.map((coupon) => (
+                    <TableRow key={coupon.id}>
+                      <TableCell className="font-mono font-bold">
+                        {coupon.code}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{coupon.name}</div>
+                          {coupon.description && (
+                            <div className="text-sm text-muted-foreground">
+                              {coupon.description}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Percent className="h-3 w-3" />
+                          {getDiscountDisplay(coupon)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span className={isExpired(coupon.valid_until) ? 'text-red-600' : ''}>
+                            {new Date(coupon.valid_until).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {coupon.used_count}
+                        {coupon.usage_limit && ` / ${coupon.usage_limit}`}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Badge 
+                            variant={coupon.is_active ? "default" : "secondary"}
+                            className="cursor-pointer"
+                            onClick={() => handleToggleStatus(coupon.id, coupon.is_active)}
+                          >
+                            {coupon.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                          {isExpired(coupon.valid_until) && (
+                            <Badge variant="destructive">Expired</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(coupon.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {productCoupons.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No product coupons found
                 </div>
               )}
             </CardContent>
