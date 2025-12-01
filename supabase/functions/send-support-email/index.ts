@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email to support
     const emailResponse = await resend.emails.send({
-      from: "Nordic Getaways <onboarding@resend.dev>",
+      from: "Nordic Getaways <support@mojjo.se>",
       to: ["support@mojjo.se"],
       replyTo: email,
       subject: `Support Request: ${subject}`,
@@ -51,7 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send confirmation to user
     await resend.emails.send({
-      from: "Nordic Getaways <onboarding@resend.dev>",
+      from: "Nordic Getaways <support@mojjo.se>",
       to: [email],
       subject: "We received your message",
       html: `
