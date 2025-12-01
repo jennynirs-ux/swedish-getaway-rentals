@@ -2,6 +2,8 @@ import React, { memo, useMemo, useCallback, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
+import { format, isSameDay } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface AvailabilityDate {
   date: string;
@@ -92,33 +94,93 @@ const PropertyCalendarOptimized = memo(({
     return !isDateAvailable(date);
   }, [today, isDateAvailable]);
 
-  const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+  const [selectedDates, setSelectedDates] = useState<{
+    checkIn: Date | null;
+    checkOut: Date | null;
+  }>({ checkIn: null, checkOut: null });
+  
+  const { toast } = useToast();
 
-  const handleSelect = (r: { from: Date | null; to: Date | null } | undefined) => {
-    if (!r) {
-      setRange({ from: null, to: null });
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    
+    if (!isDateAvailable(date)) {
+      toast({
+        title: "Date unavailable",
+        description: "This date is not available for booking",
+        variant: "destructive"
+      });
       return;
     }
 
-    // Only block selection if check-in date is unavailable
-    if (r.from && !isDateAvailable(r.from)) return;
+    const { checkIn, checkOut } = selectedDates;
 
-    // Check if there are any unavailable dates between check-in and check-out (exclusive of check-out)
-    if (r.from && r.to) {
-      const d = new Date(r.from);
-      while (d < r.to) {
-        if (!isDateAvailable(d)) return;
-        d.setDate(d.getDate() + 1);
+    if (!checkIn || (checkIn && checkOut)) {
+      // Start new selection
+      setSelectedDates({ checkIn: date, checkOut: null });
+      if (onDateSelect) {
+        onDateSelect({ checkIn: date, checkOut: null });
+      }
+    } else if (checkIn && !checkOut) {
+      // Complete the selection
+      if (date < checkIn) {
+        // If selected date is before check-in, make it the new check-in
+        setSelectedDates({ checkIn: date, checkOut: null });
+        if (onDateSelect) {
+          onDateSelect({ checkIn: date, checkOut: null });
+        }
+      } else {
+        // Check if there are any unavailable dates between check-in and check-out
+        const d = new Date(checkIn);
+        let hasUnavailable = false;
+        while (d < date) {
+          if (!isDateAvailable(d)) {
+            hasUnavailable = true;
+            break;
+          }
+          d.setDate(d.getDate() + 1);
+        }
+        
+        if (hasUnavailable) {
+          toast({
+            title: "Cannot select range",
+            description: "There are unavailable dates in the selected range",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Set as check-out date
+        setSelectedDates({ checkIn, checkOut: date });
+        if (onDateSelect) {
+          onDateSelect({ checkIn, checkOut: date });
+        }
       }
     }
+  };
 
-    setRange(r);
-    if (onDateSelect) {
-      onDateSelect({
-        checkIn: r.from || null,
-        checkOut: r.to || null,
-      });
+  const getDayClassName = (date: Date) => {
+    const { checkIn, checkOut } = selectedDates;
+    const info = availabilityMap.get(date.toISOString().split('T')[0]);
+    const available = isDateAvailable(date);
+    const isSelected = (checkIn && isSameDay(date, checkIn)) || (checkOut && isSameDay(date, checkOut));
+    const isInRange = checkIn && checkOut && date > checkIn && date < checkOut;
+    
+    let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-colors ";
+    
+    if (!available) {
+      className += "bg-red-100 text-red-700 cursor-not-allowed opacity-50 ";
+    } else if (isSelected) {
+      className += "bg-primary text-primary-foreground ";
+    } else if (isInRange) {
+      className += "bg-primary/20 text-primary ";
+    } else if (info?.price && info.price !== basePrice) {
+      className += "bg-blue-50 text-blue-900 hover:bg-blue-100 ";
+    } else {
+      className += "hover:bg-accent hover:text-accent-foreground ";
     }
+
+    return className;
   };
 
   if (loading) {
@@ -133,48 +195,40 @@ const PropertyCalendarOptimized = memo(({
   return (
     <div>
       <Calendar
-        mode="range"
-        selected={range}
-        onSelect={handleSelect}
+        mode="single"
+        selected={selectedDates.checkIn || undefined}
+        onSelect={handleDateSelect}
         disabled={isDateDisabled}
         fromDate={today}
         toDate={maxDate}
-        initialFocus
         numberOfMonths={1}
         weekStartsOn={1}
-        className="rounded-md border"
+        className="rounded-md border w-full"
         components={{
-          DayContent: (props) => {
-            const date = props.date;
+          Day: ({ date }) => {
             const dateStr = date.toISOString().split('T')[0];
             const info = availabilityMap.get(dateStr);
             const available = isDateAvailable(date);
             const price = getDatePrice(date);
-            const showPrice = mode === "guest" && available && price !== basePrice;
             const isPreparation = info?.reason === 'preparation';
             const isBooked = info?.reason === 'booked';
 
             return (
-              <div className="flex flex-col items-center leading-none">
-                <span className={
-                  !available 
-                    ? isPreparation 
-                      ? "opacity-40 text-orange-600" 
-                      : isBooked 
-                        ? "line-through opacity-50 text-red-600"
-                        : "line-through opacity-50" 
-                    : ""
-                }>
-                  {date.getDate()}
-                </span>
-                {showPrice && (
-                  <span className="text-[10px] opacity-70 mt-0.5">
-                    {price}
-                  </span>
-                )}
-                {!available && isPreparation && mode === "admin" && (
-                  <span className="text-[8px] text-orange-600 mt-0.5">prep</span>
-                )}
+              <div className={getDayClassName(date)} onClick={() => handleDateSelect(date)}>
+                <div className="text-center w-full">
+                  <div className="font-medium">{date.getDate()}</div>
+                  {mode === 'guest' && available && price !== basePrice && (
+                    <div className="text-xs opacity-75">
+                      {price}
+                    </div>
+                  )}
+                  {!available && (
+                    <div className="text-xs">✕</div>
+                  )}
+                  {!available && isPreparation && mode === "admin" && (
+                    <span className="text-[8px] text-orange-600 mt-0.5">prep</span>
+                  )}
+                </div>
               </div>
             );
           }
