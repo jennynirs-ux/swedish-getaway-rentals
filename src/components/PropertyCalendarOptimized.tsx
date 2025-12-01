@@ -116,45 +116,15 @@ const PropertyCalendarOptimized = memo(({
     const { checkIn, checkOut } = selectedDates;
 
     if (!checkIn || (checkIn && checkOut)) {
-      // Start new selection
       setSelectedDates({ checkIn: date, checkOut: null });
-      if (onDateSelect) {
-        onDateSelect({ checkIn: date, checkOut: null });
-      }
+      onDateSelect?.({ checkIn: date, checkOut: null });
     } else if (checkIn && !checkOut) {
-      // Complete the selection
       if (date < checkIn) {
-        // If selected date is before check-in, make it the new check-in
         setSelectedDates({ checkIn: date, checkOut: null });
-        if (onDateSelect) {
-          onDateSelect({ checkIn: date, checkOut: null });
-        }
+        onDateSelect?.({ checkIn: date, checkOut: null });
       } else {
-        // Check if there are any unavailable dates between check-in and check-out
-        const d = new Date(checkIn);
-        let hasUnavailable = false;
-        while (d < date) {
-          if (!isDateAvailable(d)) {
-            hasUnavailable = true;
-            break;
-          }
-          d.setDate(d.getDate() + 1);
-        }
-        
-        if (hasUnavailable) {
-          toast({
-            title: "Cannot select range",
-            description: "There are unavailable dates in the selected range",
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        // Set as check-out date
         setSelectedDates({ checkIn, checkOut: date });
-        if (onDateSelect) {
-          onDateSelect({ checkIn, checkOut: date });
-        }
+        onDateSelect?.({ checkIn, checkOut: date });
       }
     }
   };
@@ -183,6 +153,32 @@ const PropertyCalendarOptimized = memo(({
     return className;
   };
 
+  const renderDay = (date: Date) => {
+    const info = availabilityMap.get(date.toISOString().split('T')[0]);
+    const available = isDateAvailable(date);
+    const price = getDatePrice(date);
+    const isPreparation = info?.reason === 'preparation';
+
+    return (
+      <div className={getDayClassName(date)} onClick={() => handleDateSelect(date)}>
+        <div className="text-center w-full">
+          <div className="font-medium">{date.getDate()}</div>
+          {mode === 'guest' && available && price !== basePrice && (
+            <div className="text-xs opacity-75">
+              {price}
+            </div>
+          )}
+          {!available && (
+            <div className="text-xs">✕</div>
+          )}
+          {!available && isPreparation && mode === "admin" && (
+            <span className="text-[8px] text-orange-600 mt-0.5">prep</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div>
@@ -198,40 +194,14 @@ const PropertyCalendarOptimized = memo(({
         mode="single"
         selected={selectedDates.checkIn || undefined}
         onSelect={handleDateSelect}
-        disabled={isDateDisabled}
+        disabled={(date) => date < today || !isDateAvailable(date)}
         fromDate={today}
         toDate={maxDate}
         numberOfMonths={1}
         weekStartsOn={1}
         className="rounded-md border w-full"
         components={{
-          Day: ({ date }) => {
-            const dateStr = date.toISOString().split('T')[0];
-            const info = availabilityMap.get(dateStr);
-            const available = isDateAvailable(date);
-            const price = getDatePrice(date);
-            const isPreparation = info?.reason === 'preparation';
-            const isBooked = info?.reason === 'booked';
-
-            return (
-              <div className={getDayClassName(date)} onClick={() => handleDateSelect(date)}>
-                <div className="text-center w-full">
-                  <div className="font-medium">{date.getDate()}</div>
-                  {mode === 'guest' && available && price !== basePrice && (
-                    <div className="text-xs opacity-75">
-                      {price}
-                    </div>
-                  )}
-                  {!available && (
-                    <div className="text-xs">✕</div>
-                  )}
-                  {!available && isPreparation && mode === "admin" && (
-                    <span className="text-[8px] text-orange-600 mt-0.5">prep</span>
-                  )}
-                </div>
-              </div>
-            );
-          }
+          Day: ({ date }) => renderDay(date)
         }}
       />
     </div>
