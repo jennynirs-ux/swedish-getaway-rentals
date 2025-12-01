@@ -50,9 +50,27 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You must be logged in to create a coupon");
 
-      // Convert datetime-local to UTC ISO string
-      const validUntilDate = new Date(formData.valid_until);
-      const validUntilUTC = validUntilDate.toISOString();
+      // Parse datetime-local value and convert to UTC timestamp
+      // datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
+      const [datePart, timePart] = formData.valid_until.split('T');
+      const [year, month, day] = datePart.split('-');
+      const [hour, minute] = timePart.split(':');
+      
+      // Create date in local timezone
+      const localDate = new Date(
+        parseInt(year),
+        parseInt(month) - 1, // month is 0-indexed
+        parseInt(day),
+        parseInt(hour),
+        parseInt(minute),
+        0
+      );
+      const validUntilUTC = localDate.toISOString();
+      
+      console.log('Form date input:', formData.valid_until);
+      console.log('Parsed values:', { year, month, day, hour, minute });
+      console.log('Local date:', localDate);
+      console.log('UTC ISO string:', validUntilUTC);
 
       const { error } = await supabase
         .from('coupons')
