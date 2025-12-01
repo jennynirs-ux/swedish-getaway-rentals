@@ -84,7 +84,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      // Save to database
+      const { error: dbError } = await supabase
         .from('guest_messages')
         .insert([{
           name: validatedData.name,
@@ -95,7 +96,23 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
           property_id: propertyId || null
         }]);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
+
+      // Send email to support
+      const { error: emailError } = await supabase.functions.invoke('send-support-email', {
+        body: {
+          name: validatedData.name,
+          email: validatedData.email,
+          phone: validatedData.phone,
+          subject: validatedData.subject,
+          message: validatedData.message,
+        },
+      });
+
+      if (emailError) {
+        console.error('Email send error:', emailError);
+        // Don't throw - message is saved in DB
+      }
 
       toast({
         title: "Meddelande skickat!",
