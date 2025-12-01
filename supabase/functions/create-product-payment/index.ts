@@ -97,7 +97,7 @@ serve(async (req) => {
     const finalDescription = product.description_override || product.custom_description || product.description;
     const finalImage = product.main_image_override || product.image_url;
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY_SHOP") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
