@@ -62,8 +62,7 @@ const CouponsManagement = () => {
           property_id,
           is_active,
           created_at,
-          applicable_to,
-          property:properties(title)
+          applicable_to
         `)
         .order('created_at', { ascending: false });
 
@@ -374,7 +373,7 @@ const CouponsManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {coupon.property?.title || 'Unknown Property'}
+                          Property ID: {coupon.property_id}
                         </Badge>
                       </TableCell>
                       <TableCell>
