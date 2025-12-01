@@ -76,7 +76,8 @@ const PropertyCalendarOptimized = memo(({
   const isDateAvailable = useCallback((date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     const info = availabilityMap.get(dateStr);
-    return info?.available !== false;
+    // Default to available if no specific entry exists
+    return info ? info.available : true;
   }, [availabilityMap]);
 
   const getDatePrice = useCallback((date: Date) => {
@@ -85,16 +86,11 @@ const PropertyCalendarOptimized = memo(({
     return info?.price || basePrice;
   }, [availabilityMap, basePrice]);
 
-  // Markera disabled datum
-  const disabledMatchers = useMemo(() => {
-    const matchers: any[] = [{ before: today }];
-    (availability || []).forEach((item: AvailabilityDate) => {
-      if (!item.available) {
-        matchers.push(new Date(item.date + 'T00:00:00'));
-      }
-    });
-    return matchers;
-  }, [availability, today]);
+  // Disabled dates: only past dates and explicitly unavailable dates
+  const isDateDisabled = useCallback((date: Date) => {
+    if (date < today) return true;
+    return !isDateAvailable(date);
+  }, [today, isDateAvailable]);
 
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
 
@@ -140,7 +136,7 @@ const PropertyCalendarOptimized = memo(({
         mode="range"
         selected={range}
         onSelect={handleSelect}
-        disabled={disabledMatchers}
+        disabled={isDateDisabled}
         fromDate={today}
         toDate={maxDate}
         initialFocus
