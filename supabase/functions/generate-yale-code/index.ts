@@ -144,9 +144,19 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
-    console.error('Error in generate-yale-code:', error);
+    console.error('Error in generate-yale-code:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return safe error message to client
+    const isUserError = error instanceof Error && error.message?.includes('No smart lock');
+    const clientMessage = isUserError 
+      ? error.message 
+      : 'Unable to generate access code. Please contact support.';
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: clientMessage }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }

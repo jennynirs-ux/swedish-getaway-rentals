@@ -80,8 +80,8 @@ serve(async (req) => {
         `UID:${uid}`,
         `DTSTART;VALUE=DATE:${startDate.toISOString().split('T')[0].replace(/-/g, '')}`,
         `DTEND;VALUE=DATE:${endDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-        `SUMMARY:Booking - ${booking.guest_name}`,
-        `DESCRIPTION:Guest: ${booking.guest_name}\\nEmail: ${booking.guest_email}\\nGuests: ${booking.number_of_guests}`,
+        `SUMMARY:Reserved`,
+        `DESCRIPTION:Property is booked for these dates`,
         'STATUS:CONFIRMED',
         'TRANSP:OPAQUE',
         'END:VEVENT'
@@ -118,10 +118,22 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in export-ical:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    console.error('Error exporting iCal:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Return safe error message to client
+    const isUserError = error instanceof Error && (
+      error.message?.includes('Invalid') || 
+      error.message?.includes('Unauthorized')
+    );
+    const clientMessage = isUserError 
+      ? 'Invalid calendar request' 
+      : 'Unable to export calendar. Please try again or contact support.';
+    
+    return new Response(JSON.stringify({ error: clientMessage }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
