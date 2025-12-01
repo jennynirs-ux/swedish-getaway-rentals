@@ -140,6 +140,7 @@ const PropertyCalendarOptimized = memo(({
         selected={range}
         onSelect={handleSelect}
         disabled={disabledMatchers}
+        fromDate={today}
         initialFocus
         numberOfMonths={1}
         weekStartsOn={1}
