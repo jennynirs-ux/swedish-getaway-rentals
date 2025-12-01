@@ -32,7 +32,8 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
     maximum_discount_amount: '',
     valid_until: getDefaultValidUntil(),
     usage_limit: '',
-    is_active: true
+    is_active: true,
+    applicable_to: propertyId ? 'bookings' : 'both' as 'bookings' | 'products' | 'both'
   });
   const [loading, setLoading] = useState(false);
 
@@ -63,7 +64,8 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
           usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : null,
           property_id: propertyId || null,
           created_by: user.id,
-          is_active: formData.is_active
+          is_active: formData.is_active,
+          applicable_to: formData.applicable_to
         });
 
       if (error) throw error;
@@ -79,7 +81,8 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
         maximum_discount_amount: '',
         valid_until: getDefaultValidUntil(),
         usage_limit: '',
-        is_active: true
+        is_active: true,
+        applicable_to: propertyId ? 'bookings' : 'both'
       });
       onSubmitted?.();
     } catch (error: any) {
@@ -137,6 +140,27 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
               rows={2}
             />
           </div>
+
+          {!propertyId && (
+            <div>
+              <Label htmlFor="applicable_to">Applicable To *</Label>
+              <Select
+                value={formData.applicable_to}
+                onValueChange={(value: 'bookings' | 'products' | 'both') => 
+                  setFormData(prev => ({ ...prev, applicable_to: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bookings">Property Bookings Only</SelectItem>
+                  <SelectItem value="products">Shop Products Only</SelectItem>
+                  <SelectItem value="both">Both Bookings & Products</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

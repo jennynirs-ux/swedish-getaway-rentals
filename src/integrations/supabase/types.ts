@@ -310,6 +310,7 @@ export type Database = {
       }
       coupons: {
         Row: {
+          applicable_to: string
           code: string
           created_at: string | null
           created_by: string
@@ -331,6 +332,7 @@ export type Database = {
           valid_until: string
         }
         Insert: {
+          applicable_to?: string
           code: string
           created_at?: string | null
           created_by: string
@@ -352,6 +354,7 @@ export type Database = {
           valid_until: string
         }
         Update: {
+          applicable_to?: string
           code?: string
           created_at?: string | null
           created_by?: string
