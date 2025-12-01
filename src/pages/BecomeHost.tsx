@@ -72,31 +72,50 @@ const BecomeHost = () => {
     }
 
     setSupportLoading(true);
-    const { error } = await supabase.from("guest_messages").insert({
-      name: supportForm.name,
-      email: supportForm.email,
-      message: supportForm.message,
-      subject: "Become a Host - Support Request",
-      created_at: new Date().toISOString(),
-    });
+    
+    try {
+      // Save to database
+      const { error: dbError } = await supabase.from("guest_messages").insert({
+        name: supportForm.name,
+        email: supportForm.email,
+        message: supportForm.message,
+        subject: "Become a Host - Support Request",
+        created_at: new Date().toISOString(),
+      });
 
-    setSupportLoading(false);
+      if (dbError) throw dbError;
 
-    if (error) {
+      // Send email to support
+      const { error: emailError } = await supabase.functions.invoke('send-support-email', {
+        body: {
+          name: supportForm.name,
+          email: supportForm.email,
+          subject: "Become a Host - Support Request",
+          message: supportForm.message,
+        },
+      });
+
+      if (emailError) {
+        console.error("Email send error:", emailError);
+        // Don't throw - message is saved in DB
+      }
+
+      toast({
+        title: "Message sent!",
+        description: "Our team will get back to you shortly.",
+      });
+      setSupportForm({ name: "", email: user?.email || "", message: "" });
+      setShowSupport(false);
+    } catch (error: any) {
+      console.error("Support form error:", error);
       toast({
         title: "Error",
         description: "Something went wrong while sending your message.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setSupportLoading(false);
     }
-
-    toast({
-      title: "Message sent!",
-      description: "Our team will get back to you shortly.",
-    });
-    setSupportForm({ name: "", email: user?.email || "", message: "" });
-    setShowSupport(false);
   };
 
   const benefits = [
