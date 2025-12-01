@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.send-host-invitation]
 verify_jwt = true
+
+[functions.handle-shop-payment-success]
+verify_jwt = false
