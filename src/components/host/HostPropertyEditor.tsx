@@ -15,6 +15,7 @@ import { HostBasicTab } from "./HostBasicTab";
 import { HostAmenitiesTab } from "./HostAmenitiesTab";
 import { HostGalleryTab } from "./HostGalleryTabEnhanced";
 import { HostLocationTab } from "./HostLocationTab";
+import { EmailTemplatesEditor } from "@/components/admin/EmailTemplatesEditor";
 import { HostPricingCalculator } from "./HostPricingCalculator";
 import PropertyPricingRules from "@/components/PropertyPricingRules";
 import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
@@ -40,19 +41,20 @@ export const HostPropertyEditor = ({
   onUpdate 
 }: HostPropertyEditorProps) => {
   const [guidebookSections, setGuidebookSections] = useState([]);
+  const [emailTemplates, setEmailTemplates] = useState({});
   const [saving, setSaving] = useState(false);
   const [savingPrice, setSavingPrice] = useState(false);
   const [nightlyPrice, setNightlyPrice] = useState<number>(basePrice);
 
   useEffect(() => {
-    loadGuidebookData();
+    loadPropertyData();
   }, [propertyId]);
 
-  const loadGuidebookData = async () => {
+  const loadPropertyData = async () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('guidebook_sections')
+        .select('guidebook_sections, email_templates')
         .eq('id', propertyId)
         .single();
 
@@ -60,8 +62,11 @@ export const HostPropertyEditor = ({
       if (data?.guidebook_sections) {
         setGuidebookSections(Array.isArray(data.guidebook_sections) ? data.guidebook_sections : []);
       }
+      if (data?.email_templates) {
+        setEmailTemplates(data.email_templates);
+      }
     } catch (error) {
-      console.error('Error loading guidebook:', error);
+      console.error('Error loading property data:', error);
     }
   };
 
@@ -82,18 +87,18 @@ export const HostPropertyEditor = ({
          title: 'Success',
          description: 'Guest guide updated successfully'
        });
-       onUpdate?.();
-     } catch (error) {
-       console.error('Error saving guidebook:', error);
-       toast({
-         title: 'Error',
-         description: 'Failed to save guest guide',
-         variant: 'destructive'
-       });
-     } finally {
-       setSaving(false);
-     }
-   };
+        onUpdate?.();
+      } catch (error) {
+        console.error('Error saving guidebook:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save guest guide',
+          variant: 'destructive'
+        });
+      } finally {
+        setSaving(false);
+      }
+    };
 
    const handleSaveNightlyPrice = async () => {
      setSavingPrice(true);
@@ -119,7 +124,7 @@ export const HostPropertyEditor = ({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-1 mb-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-1 mb-2">
           <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Basic</span>
@@ -147,6 +152,10 @@ export const HostPropertyEditor = ({
           <TabsTrigger value="guide" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Guide</span>
+          </TabsTrigger>
+          <TabsTrigger value="emails" className="flex items-center gap-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Emails</span>
           </TabsTrigger>
           <TabsTrigger value="smartlock" className="flex items-center gap-2 text-xs sm:text-sm">
             <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -295,6 +304,17 @@ export const HostPropertyEditor = ({
             onSave={handleSaveGuidebook}
             saving={saving}
             propertyTitle={propertyTitle}
+          />
+        </TabsContent>
+
+        <TabsContent value="emails" className="mt-6 space-y-4">
+          <EmailTemplatesEditor 
+            propertyId={propertyId} 
+            templates={emailTemplates}
+            onUpdate={() => {
+              loadPropertyData();
+              onUpdate?.();
+            }}
           />
         </TabsContent>
 
