@@ -50,6 +50,10 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You must be logged in to create a coupon");
 
+      // Convert datetime-local to UTC ISO string
+      const validUntilDate = new Date(formData.valid_until);
+      const validUntilUTC = validUntilDate.toISOString();
+
       const { error } = await supabase
         .from('coupons')
         .insert({
@@ -60,7 +64,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
           discount_value: parseFloat(formData.discount_value),
           minimum_amount: formData.minimum_amount ? parseInt(formData.minimum_amount) : null,
           maximum_discount_amount: formData.maximum_discount_amount ? parseInt(formData.maximum_discount_amount) : null,
-          valid_until: formData.valid_until,
+          valid_until: validUntilUTC,
           usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : null,
           property_id: propertyId || null,
           created_by: user.id,
