@@ -22,7 +22,7 @@ interface AmenityData {
   features?: string[];
 }
 
-const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
+export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
   const [selectedAmenity, setSelectedAmenity] = useState<AmenityData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
