@@ -113,13 +113,19 @@ const PropertyCalendarOptimized = memo(({
     const avail = getDateAvailability(date);
     const isSelected = (checkIn && isSameDay(date, checkIn)) || (checkOut && isSameDay(date, checkOut));
     const isInRange = checkIn && checkOut && date > checkIn && date < checkOut;
+    const isUnavailable = !isDateAvailable(date);
     
     let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-all hover:scale-105 ";
     
     if (isSelected) {
       className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
+    } else if (isInRange && isUnavailable) {
+      // Unavailable date within range - lighter styling to show it's a checkout-only date
+      className += "bg-muted/40 text-muted-foreground line-through ";
     } else if (isInRange) {
       className += "bg-primary/20 text-primary font-medium ";
+    } else if (isUnavailable) {
+      className += "bg-muted-foreground/20 text-muted-foreground opacity-60 line-through ";
     } else if (avail?.seasonal_price) {
       className += "bg-accent text-accent-foreground hover:bg-accent/80 font-medium ";
     } else {
@@ -150,19 +156,20 @@ const PropertyCalendarOptimized = memo(({
   return (
     <div className="w-full">
       <div className="mb-4 space-y-2">
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-4 text-sm flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-primary"></div>
             <span>Selected</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-primary/20"></div>
-            <span>In Range</span>
+            <span>Available</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-muted-foreground/20 line-through"></div>
+            <span>Unavailable</span>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Note: Unavailable nights can still be used as check-out dates
-        </p>
       </div>
       <Calendar
         mode="single"
