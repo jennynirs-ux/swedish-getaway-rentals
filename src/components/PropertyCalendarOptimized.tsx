@@ -120,8 +120,8 @@ const PropertyCalendarOptimized = memo(({
     if (isSelected) {
       className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
     } else if (isInRange && isUnavailable) {
-      // Unavailable date within range - lighter styling to show it's a checkout-only date
-      className += "bg-muted/40 text-muted-foreground line-through ";
+      // Checkout-only date - just lighter text, no background or strikethrough
+      className += "text-muted-foreground/50 ";
     } else if (isInRange) {
       className += "bg-primary/20 text-primary font-medium ";
     } else if (isUnavailable) {
