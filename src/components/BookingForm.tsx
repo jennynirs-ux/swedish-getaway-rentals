@@ -321,20 +321,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
-            <Input
-              id="number_of_guests"
-              name="number_of_guests"
-              type="number"
-              min="1"
-              max={maxGuests}
-              value={formData.number_of_guests}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="guest_name">Your name</Label>
             <Input
               id="guest_name"
