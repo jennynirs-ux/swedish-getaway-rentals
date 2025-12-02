@@ -252,7 +252,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               {/* Price Breakdown */}
               <div className="border-t pt-3 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>{nights} night{nights !== 1 ? 's' : ''} × {(pricePerNight).toLocaleString()} {currency}</span>
+                  <span>{nights} night{nights !== 1 ? 's' : ''} × {(pricePerNight / 100).toLocaleString()} {currency}</span>
                   <span>{(priceCalculation.breakdown.accommodation / 100).toLocaleString()} {currency}</span>
                 </div>
                 
