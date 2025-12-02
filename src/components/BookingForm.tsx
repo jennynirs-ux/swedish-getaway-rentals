@@ -78,7 +78,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
 
   const calculateTotalAmount = () => {
-    if (!checkIn || !checkOut) return 0;
+    if (!checkIn || !checkOut) return null;
     // pricePerNight is in SEK, convert to cents for calculation
     const calculation = calculatePrice(
       pricePerNight * 100,
@@ -86,14 +86,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
       checkOut,
       formData.number_of_guests
     );
-    return calculation.total;
+    return calculation;
   };
 
   const nights = checkIn && checkOut
     ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
-  const totalAmount = calculateTotalAmount();
+  const priceCalculation = calculateTotalAmount();
+  const totalAmount = priceCalculation?.total || 0;
 
   const validateForm = () => {
     try {
@@ -233,8 +234,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           {/* Sammanställning */}
-          {checkIn && checkOut && (
-            <div className="p-4 bg-accent rounded-lg space-y-2">
+          {checkIn && checkOut && priceCalculation && (
+            <div className="p-4 bg-accent rounded-lg space-y-3">
               <div className="flex justify-between">
                 <span>Check-in:</span>
                 <span className="font-medium">{checkIn.toDateString()}</span>
@@ -247,7 +248,37 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 <span>Number of nights:</span>
                 <span className="font-medium">{nights}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold border-t pt-2">
+              
+              {/* Price Breakdown */}
+              <div className="border-t pt-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>{nights} night{nights !== 1 ? 's' : ''} × {(pricePerNight).toLocaleString()} {currency}</span>
+                  <span>{(priceCalculation.breakdown.accommodation / 100).toLocaleString()} {currency}</span>
+                </div>
+                
+                {priceCalculation.cleaningFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Cleaning fee</span>
+                    <span>{(priceCalculation.cleaningFee / 100).toLocaleString()} {currency}</span>
+                  </div>
+                )}
+                
+                {priceCalculation.extraGuestFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Extra guest fee</span>
+                    <span>{(priceCalculation.extraGuestFee / 100).toLocaleString()} {currency}</span>
+                  </div>
+                )}
+                
+                {priceCalculation.extraServices > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Additional services</span>
+                    <span>{(priceCalculation.extraServices / 100).toLocaleString()} {currency}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-between text-lg font-bold border-t pt-3">
                 <span>Total:</span>
                 <span>{(totalAmount / 100).toLocaleString()} {currency}</span>
               </div>
