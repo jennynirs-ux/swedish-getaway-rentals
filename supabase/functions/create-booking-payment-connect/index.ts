@@ -33,7 +33,8 @@ serve(async (req) => {
       guestPhone,
       specialRequests,
       totalAmount,
-      currency
+      currency,
+      couponId
     } = requestData;
     
     // Validate UUID format
@@ -68,7 +69,7 @@ serve(async (req) => {
       throw new Error('Guest name is required');
     }
 
-    logStep("Request data validated", { propertyId, checkInDate, checkOutDate, numberOfGuests });
+    logStep("Request data validated", { propertyId, checkInDate, checkOutDate, numberOfGuests, couponId });
 
     // Supabase client with service role to bypass RLS
     const supabaseClient = createClient(
@@ -159,13 +160,134 @@ serve(async (req) => {
       });
     }
     
-    const serverCalculatedAmount = accommodationTotal + cleaningTotal + extraGuestTotal;
+    const subtotal = accommodationTotal + cleaningTotal + extraGuestTotal;
     
     logStep("Price calculation", {
       nightCount,
       accommodationTotal,
       cleaningTotal,
       extraGuestTotal,
+      subtotal
+    });
+    
+    // Validate and apply coupon discount if provided
+    let discountAmount = 0;
+    let validatedCoupon = null;
+    
+    if (couponId) {
+      // Validate coupon via RPC
+      const { data: couponValidation, error: couponError } = await supabaseClient.rpc('validate_coupon', {
+        coupon_code: '', // We have the ID, so we fetch directly
+        property_id_param: propertyId,
+        booking_amount: subtotal,
+        user_id_param: user?.id || null
+      });
+      
+      // Fetch coupon directly by ID to validate
+      const { data: coupon, error: fetchError } = await supabaseClient
+        .from('coupons')
+        .select('*')
+        .eq('id', couponId)
+        .eq('is_active', true)
+        .single();
+      
+      if (fetchError || !coupon) {
+        logStep("Coupon not found or inactive", { couponId, error: fetchError });
+        return new Response(JSON.stringify({ error: "Invalid or expired coupon" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      
+      // Validate coupon is still valid
+      const now = new Date();
+      const validUntil = new Date(coupon.valid_until);
+      const validFrom = coupon.valid_from ? new Date(coupon.valid_from) : null;
+      
+      if (validUntil < now) {
+        logStep("Coupon expired", { couponId, validUntil });
+        return new Response(JSON.stringify({ error: "Coupon has expired" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      
+      if (validFrom && validFrom > now) {
+        logStep("Coupon not yet valid", { couponId, validFrom });
+        return new Response(JSON.stringify({ error: "Coupon is not yet valid" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      
+      // Check if coupon applies to bookings
+      if (coupon.applicable_to !== 'all' && coupon.applicable_to !== 'bookings') {
+        logStep("Coupon not applicable to bookings", { couponId, applicableTo: coupon.applicable_to });
+        return new Response(JSON.stringify({ error: "Coupon is not valid for bookings" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      
+      // Check property restriction
+      if (coupon.property_id && coupon.property_id !== propertyId) {
+        logStep("Coupon not valid for this property", { couponId, couponPropertyId: coupon.property_id, propertyId });
+        return new Response(JSON.stringify({ error: "Coupon is not valid for this property" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      
+      // Check usage limit
+      if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+        logStep("Coupon usage limit reached", { couponId, usageLimit: coupon.usage_limit, usedCount: coupon.used_count });
+        return new Response(JSON.stringify({ error: "Coupon usage limit has been reached" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      
+      // Check minimum amount
+      if (coupon.minimum_amount && subtotal < coupon.minimum_amount) {
+        logStep("Minimum amount not met", { couponId, minimumAmount: coupon.minimum_amount, subtotal });
+        return new Response(JSON.stringify({ error: `Minimum booking amount of ${coupon.minimum_amount / 100} required for this coupon` }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+      
+      // Calculate discount
+      if (coupon.discount_type === 'percentage') {
+        discountAmount = Math.round(subtotal * (coupon.discount_value / 100));
+        // Apply maximum discount cap if set
+        if (coupon.maximum_discount_amount && discountAmount > coupon.maximum_discount_amount) {
+          discountAmount = coupon.maximum_discount_amount;
+        }
+      } else {
+        // Fixed amount discount (stored in cents)
+        discountAmount = coupon.discount_value;
+      }
+      
+      // Ensure discount doesn't exceed subtotal
+      if (discountAmount > subtotal) {
+        discountAmount = subtotal;
+      }
+      
+      validatedCoupon = coupon;
+      logStep("Coupon validated and applied", { 
+        couponId, 
+        couponCode: coupon.code,
+        discountType: coupon.discount_type,
+        discountValue: coupon.discount_value,
+        discountAmount 
+      });
+    }
+    
+    const serverCalculatedAmount = subtotal - discountAmount;
+    
+    logStep("Final amount calculation", {
+      subtotal,
+      discountAmount,
       serverCalculatedAmount
     });
     
@@ -220,6 +342,12 @@ serve(async (req) => {
       }
     }
 
+    // Build product description
+    let productDescription = `Check-in: ${checkInDate}, Check-out: ${checkOutDate} (${nightCount} nights)`;
+    if (validatedCoupon) {
+      productDescription += ` | Coupon: ${validatedCoupon.code} (-${discountAmount / 100} ${currency || property.currency || 'SEK'})`;
+    }
+
     // Stripe line item using validated amount (already in cents)
     const lineItems = [
       {
@@ -227,7 +355,7 @@ serve(async (req) => {
           currency: (currency || property.currency || "sek").toLowerCase(),
           product_data: {
             name: `${property.title}`,
-            description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate} (${nightCount} nights)`,
+            description: productDescription,
           },
           unit_amount: Math.round(Number(validatedAmount)),
         },
@@ -257,6 +385,10 @@ serve(async (req) => {
         userId: user?.id || "",
         currency: (currency || property.currency || "sek").toLowerCase(),
         totalAmount: validatedAmount.toString(),
+        subtotal: subtotal.toString(),
+        discountAmount: discountAmount.toString(),
+        couponId: validatedCoupon?.id || "",
+        couponCode: validatedCoupon?.code || "",
         hostAmount: hostAmount.toString(),
         platformCommission: platformCommission.toString(),
         commissionRate: commissionRate.toString(),
