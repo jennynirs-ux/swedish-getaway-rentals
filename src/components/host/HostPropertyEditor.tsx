@@ -22,6 +22,7 @@ import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpeci
 import CouponForm from "@/components/CouponForm";
 import { PropertyCouponsList } from "@/components/PropertyCouponsList";
 import { GuidebookEditor } from "@/components/admin/GuidebookEditorEnhanced";
+import { AirbnbSyncManager } from "@/components/admin/AirbnbSyncManager";
 
 interface HostPropertyEditorProps {
   propertyId: string;
@@ -210,6 +211,8 @@ export const HostPropertyEditor = ({
               <AvailabilityCalendar defaultPropertyId={propertyId} />
             </CardContent>
           </Card>
+
+          <AirbnbSyncManager propertyId={propertyId} propertyTitle={propertyTitle} />
 
           <Card className="mt-6">
             <CardHeader>
