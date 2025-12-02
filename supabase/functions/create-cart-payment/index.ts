@@ -170,23 +170,23 @@ serve(async (req) => {
         discount: validatedDiscount,
         clientDiscount: discountAmount
       });
-
-      // Add discount as negative line item
-      if (validatedDiscount > 0) {
-        lineItems.push({
-          price_data: {
-            currency,
-            product_data: { name: `Discount (${validatedCouponCode})` },
-            unit_amount: -validatedDiscount,
-          },
-          quantity: 1,
-        });
-      }
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY_SHOP") || "", { apiVersion: "2025-08-27.basil" });
 
-    const session = await stripe.checkout.sessions.create({
+    // Create Stripe coupon if we have a validated discount
+    let stripeCouponId: string | undefined;
+    if (validatedDiscount > 0 && validatedCouponCode) {
+      const stripeCoupon = await stripe.coupons.create({
+        amount_off: validatedDiscount,
+        currency: currency,
+        duration: 'once',
+        name: `Discount: ${validatedCouponCode}`,
+      });
+      stripeCouponId = stripeCoupon.id;
+    }
+
+    const sessionParams: any = {
       customer_email: customerEmail || undefined,
       line_items: lineItems,
       mode: 'payment',
@@ -203,7 +203,14 @@ serve(async (req) => {
         coupon_code: validatedCouponCode || '',
         discount_amount: String(validatedDiscount)
       }
-    });
+    };
+
+    // Apply Stripe coupon if created
+    if (stripeCouponId) {
+      sessionParams.discounts = [{ coupon: stripeCouponId }];
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return new Response(JSON.stringify({ url: session.url }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
   } catch (error) {
