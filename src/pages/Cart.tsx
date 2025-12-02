@@ -62,6 +62,22 @@ const CartPage = () => {
 
       if (error) throw error;
 
+      // Find products that no longer exist in the database
+      const existingProductIds = new Set(data?.map(p => p.id) || []);
+      const invalidItems = items.filter(item => !existingProductIds.has(item.productId));
+      
+      // Remove invalid items from cart
+      if (invalidItems.length > 0) {
+        invalidItems.forEach(item => {
+          removeItem(item.productId, item.variantId || null);
+        });
+        toast({
+          title: 'Cart updated',
+          description: `${invalidItems.length} unavailable item(s) removed from your cart`,
+          variant: 'destructive',
+        });
+      }
+
       const variantsMap = new Map();
       data?.forEach(product => {
         const printfulData = product.printful_data as any;
