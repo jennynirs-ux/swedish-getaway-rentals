@@ -221,7 +221,8 @@ serve(async (req) => {
       }
       
       // Check if coupon applies to bookings
-      if (coupon.applicable_to !== 'all' && coupon.applicable_to !== 'bookings') {
+      const validApplicableTo = ['all', 'bookings', 'both'];
+      if (!validApplicableTo.includes(coupon.applicable_to)) {
         logStep("Coupon not applicable to bookings", { couponId, applicableTo: coupon.applicable_to });
         return new Response(JSON.stringify({ error: "Coupon is not valid for bookings" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
