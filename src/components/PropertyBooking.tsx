@@ -42,7 +42,7 @@ const PropertyBooking = ({ property, onOpenGuidebook }: PropertyBookingProps) =>
             <BookingForm
               propertyId={property.id}
               propertyTitle={property.title}
-              pricePerNight={Math.round(property.price_per_night * 1.1)}
+              pricePerNight={property.price_per_night}
               currency={property.currency}
               maxGuests={property.max_guests}
               onOpenGuidebook={onOpenGuidebook ? () => onOpenGuidebook("rules") : undefined}
