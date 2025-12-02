@@ -107,18 +107,18 @@ const PropertyCalendarOptimized = memo(({
     const isSelected = (checkIn && isSameDay(date, checkIn)) || (checkOut && isSameDay(date, checkOut));
     const isInRange = checkIn && checkOut && date > checkIn && date < checkOut;
     
-    let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-colors ";
+    let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-all hover:scale-105 ";
     
     if (!isDateAvailable(date)) {
-      className += "bg-red-100 text-red-700 cursor-not-allowed opacity-50 ";
+      className += "bg-muted-foreground/20 text-muted-foreground cursor-not-allowed opacity-60 line-through ";
     } else if (isSelected) {
-      className += "bg-primary text-primary-foreground ";
+      className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
     } else if (isInRange) {
-      className += "bg-primary/20 text-primary ";
+      className += "bg-primary/20 text-primary font-medium ";
     } else if (avail?.seasonal_price) {
-      className += "bg-blue-50 text-blue-900 hover:bg-blue-100 ";
+      className += "bg-accent text-accent-foreground hover:bg-accent/80 font-medium ";
     } else {
-      className += "hover:bg-accent hover:text-accent-foreground ";
+      className += "hover:bg-accent/50 ";
     }
 
     return className;
@@ -131,15 +131,12 @@ const PropertyCalendarOptimized = memo(({
 
     return (
       <div className={getDayClassName(date)} onClick={() => handleDateSelect(date)}>
-        <div className="text-center w-full">
-          <div className="font-medium">{date.getDate()}</div>
-          {mode === 'guest' && !isUnavailable && (
-            <div className="text-xs opacity-75">
-              {price !== basePrice ? `${price} ${currency}` : ''}
+        <div className="text-center w-full py-1">
+          <div className="font-semibold text-base">{date.getDate()}</div>
+          {mode === 'guest' && !isUnavailable && price !== basePrice && (
+            <div className="text-xs mt-0.5 font-medium">
+              {Math.round(price / 100)} {currency}
             </div>
-          )}
-          {isUnavailable && (
-            <div className="text-xs">✕</div>
           )}
         </div>
       </div>
@@ -147,12 +144,27 @@ const PropertyCalendarOptimized = memo(({
   };
 
   return (
-    <div>
+    <div className="w-full">
+      <div className="mb-4 flex gap-4 text-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-primary"></div>
+          <span>Selected</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-primary/20"></div>
+          <span>In Range</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-muted-foreground/20"></div>
+          <span>Unavailable</span>
+        </div>
+      </div>
       <Calendar
         mode="single"
         selected={selectedDates.checkIn || undefined}
         onSelect={handleDateSelect}
         disabled={(date) => date < new Date() || !isDateAvailable(date)}
+        weekStartsOn={1}
         className="rounded-md border w-full"
         components={{
           Day: ({ date }) => renderDay(date)
