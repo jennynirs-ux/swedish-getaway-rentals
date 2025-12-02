@@ -12,6 +12,7 @@ export interface BookingData {
   number_of_guests: number;
   special_requests?: string;
   total_amount: number;
+  coupon_id?: string;
 }
 
 export const useBooking = () => {
@@ -70,7 +71,8 @@ export const useBooking = () => {
           guestPhone: bookingData.guest_phone,
           specialRequests: bookingData.special_requests,
           totalAmount: bookingData.total_amount,
-          currency: bookingData.currency
+          currency: bookingData.currency,
+          couponId: bookingData.coupon_id
         }
       });
 

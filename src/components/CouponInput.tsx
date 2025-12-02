@@ -9,7 +9,7 @@ import { toast } from "sonner";
 interface CouponInputProps {
   propertyId?: string;
   totalAmount: number;
-  onCouponApplied: (couponId: string, discountAmount: number) => void;
+  onCouponApplied: (couponId: string, discountAmount: number, code: string) => void;
   onCouponRemoved: () => void;
   appliedCoupon?: {
     id: string;
@@ -50,7 +50,7 @@ const CouponInput = ({
         return;
       }
 
-      onCouponApplied(result.coupon_id, result.discount_amount);
+      onCouponApplied(result.coupon_id, result.discount_amount, couponCode.toUpperCase());
       toast.success(`Coupon applied! You saved ${result.discount_amount} SEK`);
       setCouponCode("");
     } catch (error: any) {
