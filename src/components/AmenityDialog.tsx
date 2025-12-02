@@ -24,6 +24,14 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-0 bg-card">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-3 top-3 z-20 rounded-full"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
         <DialogHeader className="p-4 sm:p-6 pb-0 sticky top-0 bg-card z-10">
           <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground pr-8">{amenity.title}</DialogTitle>
           <p className="text-primary font-medium mt-1 text-sm sm:text-base">{amenity.tagline}</p>
