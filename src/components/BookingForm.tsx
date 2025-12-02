@@ -303,6 +303,37 @@ const BookingForm: React.FC<BookingFormProps> = ({
             </div>
           )}
 
+          {/* Coupon Input */}
+          {checkIn && checkOut && subtotal > 0 && (
+            <CouponInput
+              propertyId={propertyId}
+              totalAmount={subtotal}
+              onCouponApplied={(couponId, discountAmount, code) => {
+                setAppliedCoupon({
+                  id: couponId,
+                  code: code,
+                  discountAmount
+                });
+              }}
+              onCouponRemoved={() => setAppliedCoupon(undefined)}
+              appliedCoupon={appliedCoupon}
+            />
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
+            <Input
+              id="number_of_guests"
+              name="number_of_guests"
+              type="number"
+              min="1"
+              max={maxGuests}
+              value={formData.number_of_guests}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="guest_name">Your name</Label>
             <Input
@@ -367,23 +398,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <p className="text-destructive text-sm">{validationErrors.special_requests}</p>
             )}
           </div>
-
-          {/* Coupon Input */}
-          {checkIn && checkOut && subtotal > 0 && (
-            <CouponInput
-              propertyId={propertyId}
-              totalAmount={subtotal}
-              onCouponApplied={(couponId, discountAmount, code) => {
-                setAppliedCoupon({
-                  id: couponId,
-                  code: code,
-                  discountAmount
-                });
-              }}
-              onCouponRemoved={() => setAppliedCoupon(undefined)}
-              appliedCoupon={appliedCoupon}
-            />
-          )}
 
           {/* House Rules Acceptance */}
           <div className="border rounded-lg p-4 bg-muted/30">
