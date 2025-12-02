@@ -116,7 +116,55 @@ serve(async (req) => {
     
     // CRITICAL: Recalculate total amount server-side - never trust client-supplied amounts
     const nightCount = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-    const serverCalculatedAmount = property.price_per_night * nightCount;
+    
+    // Fetch pricing rules for this property
+    const { data: pricingRules, error: rulesError } = await supabaseClient
+      .from("properties_pricing_rules")
+      .select("*")
+      .eq("property_id", propertyId)
+      .eq("is_active", true);
+    
+    if (rulesError) {
+      logStep("Error fetching pricing rules", { error: rulesError });
+    }
+    
+    // Calculate base accommodation cost
+    let accommodationTotal = property.price_per_night * nightCount;
+    
+    // Calculate cleaning fees (one-time fees)
+    let cleaningTotal = 0;
+    if (pricingRules) {
+      const cleaningRules = pricingRules.filter(r => r.rule_type === 'cleaning_fee');
+      cleaningRules.forEach(rule => {
+        cleaningTotal += rule.price;
+      });
+    }
+    
+    // Calculate extra guest fees
+    let extraGuestTotal = 0;
+    if (pricingRules) {
+      const extraGuestRules = pricingRules.filter(r => r.rule_type === 'extra_guest');
+      extraGuestRules.forEach(rule => {
+        const extraGuests = Math.max(0, numberOfGuests - 1); // Base price includes 1 guest
+        if (extraGuests > 0) {
+          if (rule.is_per_night) {
+            extraGuestTotal += rule.price * extraGuests * nightCount;
+          } else {
+            extraGuestTotal += rule.price * extraGuests;
+          }
+        }
+      });
+    }
+    
+    const serverCalculatedAmount = accommodationTotal + cleaningTotal + extraGuestTotal;
+    
+    logStep("Price calculation", {
+      nightCount,
+      accommodationTotal,
+      cleaningTotal,
+      extraGuestTotal,
+      serverCalculatedAmount
+    });
     
     // Allow small rounding differences (1% tolerance) but reject significant discrepancies
     const amountDifference = Math.abs(totalAmount - serverCalculatedAmount);
@@ -169,7 +217,7 @@ serve(async (req) => {
       }
     }
 
-    // Stripe line item using validated amount
+    // Stripe line item using validated amount (already in cents)
     const lineItems = [
       {
         price_data: {
@@ -178,7 +226,7 @@ serve(async (req) => {
             name: `${property.title}`,
             description: `Check-in: ${checkInDate}, Check-out: ${checkOutDate} (${nightCount} nights)`,
           },
-          unit_amount: Math.round(Number(validatedAmount) * 100),
+          unit_amount: Math.round(Number(validatedAmount)),
         },
         quantity: 1,
       },
@@ -216,7 +264,7 @@ serve(async (req) => {
     // Stripe Connect payout
     if (profileData?.stripe_connect_account_id) {
       sessionConfig.payment_intent_data = {
-        application_fee_amount: Math.round(Number(platformCommission) * 100),
+        application_fee_amount: Math.round(Number(platformCommission)),
         transfer_data: {
           destination: profileData.stripe_connect_account_id,
         },
