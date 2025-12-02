@@ -72,29 +72,36 @@ const PropertyCalendarOptimized = memo(({
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     
-    if (!isDateAvailable(date)) {
-      toast({
-        title: "Date unavailable",
-        description: "This date is not available for booking",
-        variant: "destructive"
-      });
-      return;
-    }
-
     const { checkIn, checkOut } = selectedDates;
 
     if (!checkIn || (checkIn && checkOut)) {
-      // Start new selection
+      // Start new selection - check if check-in date is available
+      if (!isDateAvailable(date)) {
+        toast({
+          title: "Date unavailable",
+          description: "This date is not available for check-in",
+          variant: "destructive"
+        });
+        return;
+      }
       setSelectedDates({ checkIn: date, checkOut: null });
       onDateSelect?.({ checkIn: date, checkOut: null });
     } else if (checkIn && !checkOut) {
       // Complete the selection
       if (date < checkIn) {
         // If selected date is before check-in, make it the new check-in
+        if (!isDateAvailable(date)) {
+          toast({
+            title: "Date unavailable",
+            description: "This date is not available for check-in",
+            variant: "destructive"
+          });
+          return;
+        }
         setSelectedDates({ checkIn: date, checkOut: null });
         onDateSelect?.({ checkIn: date, checkOut: null });
       } else {
-        // Set as check-out date
+        // Set as check-out date - don't check availability for check-out
         setSelectedDates({ checkIn, checkOut: date });
         onDateSelect?.({ checkIn, checkOut: date });
       }
@@ -163,7 +170,7 @@ const PropertyCalendarOptimized = memo(({
         mode="single"
         selected={selectedDates.checkIn || undefined}
         onSelect={handleDateSelect}
-        disabled={(date) => date < new Date() || !isDateAvailable(date)}
+        disabled={(date) => date < new Date()}
         weekStartsOn={1}
         className="rounded-md border w-full"
         components={{
