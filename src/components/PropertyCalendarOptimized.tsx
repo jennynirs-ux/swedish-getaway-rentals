@@ -108,23 +108,42 @@ const PropertyCalendarOptimized = memo(({
     }
   };
 
+  const isCheckoutEligible = (date: Date) => {
+    if (isDateAvailable(date)) return false; // Available dates aren't checkout-only
+    
+    // Check if there are any available dates in the past 30 days
+    // This makes the date eligible as a checkout date
+    for (let i = 1; i <= 30; i++) {
+      const prevDate = addDays(date, -i);
+      if (isDateAvailable(prevDate)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const getDayClassName = (date: Date) => {
     const { checkIn, checkOut } = selectedDates;
     const avail = getDateAvailability(date);
     const isSelected = (checkIn && isSameDay(date, checkIn)) || (checkOut && isSameDay(date, checkOut));
     const isInRange = checkIn && checkOut && date > checkIn && date < checkOut;
     const isUnavailable = !isDateAvailable(date);
+    const canBeCheckout = isCheckoutEligible(date);
     
     let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-all hover:scale-105 ";
     
     if (isSelected) {
       className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
     } else if (isInRange && isUnavailable) {
-      // Checkout-only date - just lighter text, no background or strikethrough
+      // Checkout-only date within range - just lighter text
       className += "text-muted-foreground/50 ";
     } else if (isInRange) {
       className += "bg-primary/20 text-primary font-medium ";
+    } else if (isUnavailable && canBeCheckout) {
+      // Unavailable but can be used as checkout - just lighter text, no strikethrough
+      className += "text-muted-foreground/50 ";
     } else if (isUnavailable) {
+      // Completely unavailable - strikethrough + background
       className += "bg-muted-foreground/20 text-muted-foreground opacity-60 line-through ";
     } else if (avail?.seasonal_price) {
       className += "bg-accent text-accent-foreground hover:bg-accent/80 font-medium ";
@@ -164,6 +183,10 @@ const PropertyCalendarOptimized = memo(({
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-primary/20"></div>
             <span>Available</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded text-muted-foreground/50 flex items-center justify-center">5</div>
+            <span>Checkout only</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-muted-foreground/20 line-through"></div>
