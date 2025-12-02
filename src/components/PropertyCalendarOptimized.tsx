@@ -1,8 +1,9 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
-import { format, isSameDay, addDays } from 'date-fns';
+import { format, isSameDay, addDays, eachDayOfInterval } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AvailabilityDate {
   date: string;
@@ -101,7 +102,16 @@ const PropertyCalendarOptimized = memo(({
         setSelectedDates({ checkIn: date, checkOut: null });
         onDateSelect?.({ checkIn: date, checkOut: null });
       } else {
-        // Set as check-out date - don't check availability for check-out
+        // Validate that all nights in the range are available
+        if (!validateDateRange(checkIn, date)) {
+          toast({
+            title: "Range unavailable",
+            description: "Some nights in this date range are not available for booking",
+            variant: "destructive"
+          });
+          return;
+        }
+        // Set as check-out date
         setSelectedDates({ checkIn, checkOut: date });
         onDateSelect?.({ checkIn, checkOut: date });
       }
@@ -111,15 +121,22 @@ const PropertyCalendarOptimized = memo(({
   const isCheckoutEligible = (date: Date) => {
     if (isDateAvailable(date)) return false; // Available dates aren't checkout-only
     
-    // Check if there are any available dates in the past 30 days
-    // This makes the date eligible as a checkout date
-    for (let i = 1; i <= 30; i++) {
-      const prevDate = addDays(date, -i);
-      if (isDateAvailable(prevDate)) {
-        return true;
+    // Check if the immediately previous day is available
+    // If so, this date can be used as checkout date
+    const prevDate = addDays(date, -1);
+    return isDateAvailable(prevDate);
+  };
+
+  const validateDateRange = (checkIn: Date, checkOut: Date): boolean => {
+    // Check all nights between check-in and check-out (exclusive of checkout)
+    const nights = eachDayOfInterval({ start: checkIn, end: addDays(checkOut, -1) });
+    
+    for (const night of nights) {
+      if (!isDateAvailable(night)) {
+        return false;
       }
     }
-    return false;
+    return true;
   };
 
   const getDayClassName = (date: Date) => {
@@ -128,23 +145,16 @@ const PropertyCalendarOptimized = memo(({
     const isSelected = (checkIn && isSameDay(date, checkIn)) || (checkOut && isSameDay(date, checkOut));
     const isInRange = checkIn && checkOut && date > checkIn && date < checkOut;
     const isUnavailable = !isDateAvailable(date);
-    const canBeCheckout = isCheckoutEligible(date);
     
     let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-all hover:scale-105 ";
     
     if (isSelected) {
       className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
-    } else if (isInRange && isUnavailable) {
-      // Checkout-only date within range - just lighter text
-      className += "text-muted-foreground/50 ";
     } else if (isInRange) {
       className += "bg-primary/20 text-primary font-medium ";
-    } else if (isUnavailable && canBeCheckout) {
-      // Unavailable but can be used as checkout - just lighter text, no strikethrough
-      className += "text-muted-foreground/50 ";
     } else if (isUnavailable) {
-      // Completely unavailable - strikethrough + background
-      className += "bg-muted-foreground/20 text-muted-foreground opacity-60 line-through ";
+      // All unavailable dates - just lighter text, no strikethrough or background
+      className += "text-muted-foreground/50 ";
     } else if (avail?.seasonal_price) {
       className += "bg-accent text-accent-foreground hover:bg-accent/80 font-medium ";
     } else {
@@ -157,8 +167,11 @@ const PropertyCalendarOptimized = memo(({
   const renderDay = (date: Date) => {
     const avail = getDateAvailability(date);
     const price = getDatePrice(date);
+    const isUnavailable = !isDateAvailable(date);
+    const canBeCheckout = isCheckoutEligible(date);
+    const showTooltip = isUnavailable && canBeCheckout;
 
-    return (
+    const dayContent = (
       <div className={getDayClassName(date)} onClick={() => handleDateSelect(date)}>
         <div className="text-center w-full py-1">
           <div className="font-semibold text-base">{date.getDate()}</div>
@@ -170,6 +183,23 @@ const PropertyCalendarOptimized = memo(({
         </div>
       </div>
     );
+
+    if (showTooltip) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {dayContent}
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Checkout only</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return dayContent;
   };
 
   return (
@@ -185,12 +215,8 @@ const PropertyCalendarOptimized = memo(({
             <span>Available</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded text-muted-foreground/50 flex items-center justify-center">5</div>
-            <span>Checkout only</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-muted-foreground/20 line-through"></div>
-            <span>Unavailable</span>
+            <div className="w-4 h-4 rounded text-muted-foreground/50 flex items-center justify-center text-xs">5</div>
+            <span>Unavailable / Checkout only</span>
           </div>
         </div>
       </div>
