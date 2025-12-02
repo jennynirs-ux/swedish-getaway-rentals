@@ -51,7 +51,7 @@ const CouponInput = ({
       }
 
       onCouponApplied(result.coupon_id, result.discount_amount, couponCode.toUpperCase());
-      toast.success(`Coupon applied! You saved ${result.discount_amount} SEK`);
+      toast.success(`Coupon applied! You saved ${(result.discount_amount / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SEK`);
       setCouponCode("");
     } catch (error: any) {
       toast.error(error.message);
@@ -74,7 +74,7 @@ const CouponInput = ({
             Coupon Applied: {appliedCoupon.code}
           </span>
           <Badge variant="secondary" className="bg-green-100 text-green-800">
-            -{appliedCoupon.discountAmount} SEK
+            -{(appliedCoupon.discountAmount / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SEK
           </Badge>
         </div>
         <Button
