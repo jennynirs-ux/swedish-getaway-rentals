@@ -117,6 +117,9 @@ serve(async (req) => {
     // CRITICAL: Recalculate total amount server-side - never trust client-supplied amounts
     const nightCount = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     
+    // price_per_night is stored in SEK in the database, convert to cents
+    const pricePerNightCents = property.price_per_night * 100;
+    
     // Fetch pricing rules for this property
     const { data: pricingRules, error: rulesError } = await supabaseClient
       .from("properties_pricing_rules")
@@ -129,7 +132,7 @@ serve(async (req) => {
     }
     
     // Calculate base accommodation cost
-    let accommodationTotal = property.price_per_night * nightCount;
+    let accommodationTotal = pricePerNightCents * nightCount;
     
     // Calculate cleaning fees (one-time fees)
     let cleaningTotal = 0;
