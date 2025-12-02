@@ -116,9 +116,7 @@ const PropertyCalendarOptimized = memo(({
     
     let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-all hover:scale-105 ";
     
-    if (!isDateAvailable(date)) {
-      className += "bg-muted-foreground/20 text-muted-foreground cursor-not-allowed opacity-60 line-through ";
-    } else if (isSelected) {
+    if (isSelected) {
       className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
     } else if (isInRange) {
       className += "bg-primary/20 text-primary font-medium ";
@@ -134,13 +132,12 @@ const PropertyCalendarOptimized = memo(({
   const renderDay = (date: Date) => {
     const avail = getDateAvailability(date);
     const price = getDatePrice(date);
-    const isUnavailable = !isDateAvailable(date);
 
     return (
       <div className={getDayClassName(date)} onClick={() => handleDateSelect(date)}>
         <div className="text-center w-full py-1">
           <div className="font-semibold text-base">{date.getDate()}</div>
-          {mode === 'guest' && !isUnavailable && price !== basePrice && (
+          {mode === 'guest' && price !== basePrice && (
             <div className="text-xs mt-0.5 font-medium">
               {Math.round(price / 100)} {currency}
             </div>
@@ -160,10 +157,6 @@ const PropertyCalendarOptimized = memo(({
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-primary/20"></div>
           <span>In Range</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-muted-foreground/20"></div>
-          <span>Unavailable</span>
         </div>
       </div>
       <Calendar
