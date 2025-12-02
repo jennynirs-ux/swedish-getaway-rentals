@@ -9,6 +9,7 @@ import { Trash2, Truck, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import MainNavigation from '@/components/MainNavigation';
+import CouponInput from '@/components/CouponInput';
 
 const CartPage = () => {
   const { items, total, updateQuantity, removeItem, clear, addItem } = useCart();
@@ -16,6 +17,7 @@ const CartPage = () => {
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingSettings, setShippingSettings] = useState<any>(null);
   const [productVariants, setProductVariants] = useState<Map<string, any[]>>(new Map());
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; code: string; discountAmount: number } | undefined>();
 
   const formatPrice = (price: number, currency: string) => new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format(price / 100);
 
@@ -113,7 +115,8 @@ const CartPage = () => {
     }
   };
 
-  const totalWithShipping = total + shippingCost;
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const totalWithShipping = Math.max(0, total + shippingCost - discountAmount);
 
   const hasIncompleteVariants = useMemo(() => {
     return items.some(item => {
@@ -143,6 +146,14 @@ const CartPage = () => {
     });
   };
 
+  const handleCouponApplied = (couponId: string, discountAmt: number, code: string) => {
+    setAppliedCoupon({ id: couponId, code, discountAmount: discountAmt });
+  };
+
+  const handleCouponRemoved = () => {
+    setAppliedCoupon(undefined);
+  };
+
   const checkout = async () => {
     if (items.length === 0 || hasIncompleteVariants) return;
     setCheckingOut(true);
@@ -150,7 +161,10 @@ const CartPage = () => {
       const payload = {
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
         customerEmail: '',
-        shippingCost: shippingCost
+        shippingCost: shippingCost,
+        couponId: appliedCoupon?.id,
+        couponCode: appliedCoupon?.code,
+        discountAmount: appliedCoupon?.discountAmount
       };
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
@@ -283,12 +297,26 @@ const CartPage = () => {
                   </div>
                 )}
 
+                {appliedCoupon && (
+                  <div className="flex items-center justify-between text-green-600">
+                    <span>Discount ({appliedCoupon.code})</span>
+                    <span className="font-semibold">-{formatPrice(appliedCoupon.discountAmount, currency)}</span>
+                  </div>
+                )}
+
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between text-lg font-bold">
                     <span>Total</span>
                     <span>{formatPrice(totalWithShipping, currency)}</span>
                   </div>
                 </div>
+
+                <CouponInput
+                  totalAmount={total}
+                  onCouponApplied={handleCouponApplied}
+                  onCouponRemoved={handleCouponRemoved}
+                  appliedCoupon={appliedCoupon}
+                />
                 
                 {hasIncompleteVariants && (
                   <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">

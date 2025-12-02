@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { items, customerEmail, shippingCost } = await req.json();
+    const { items, customerEmail, shippingCost, couponId, couponCode, discountAmount } = await req.json();
     if (!Array.isArray(items) || items.length === 0) throw new Error('No items provided');
 
     const supabase = createClient(
@@ -26,6 +26,8 @@ serve(async (req) => {
     // Load products and build line items
     const lineItems: any[] = [];
     let currency = 'sek';
+    let subtotal = 0;
+
     for (const it of items as CartItem[]) {
       const { data: product, error } = await supabase
         .from('shop_products')
@@ -62,6 +64,8 @@ serve(async (req) => {
       const finalPrice = selectedVariant
         ? Math.round(parseFloat(selectedVariant.retail_price || '0') * 100)
         : (product.price_override || product.custom_price || product.price || 0);
+
+      subtotal += finalPrice * it.quantity;
 
       const finalTitle = product.title_override || product.title || 'Product';
       const finalDescription = product.description_override || product.custom_description || product.description || '';
@@ -101,6 +105,85 @@ serve(async (req) => {
       });
     }
 
+    // Validate and apply coupon if provided
+    let validatedDiscount = 0;
+    let validatedCouponId = null;
+    let validatedCouponCode = null;
+
+    if (couponId && couponCode) {
+      const { data: coupon, error: couponError } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('id', couponId)
+        .single();
+
+      if (couponError || !coupon) {
+        console.error('Coupon not found:', couponId);
+        throw new Error('Invalid coupon');
+      }
+
+      // Validate coupon
+      if (!coupon.is_active) {
+        throw new Error('Coupon is not active');
+      }
+
+      const now = new Date();
+      if (coupon.valid_from && new Date(coupon.valid_from) > now) {
+        throw new Error('Coupon is not yet valid');
+      }
+      if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+        throw new Error('Coupon has expired');
+      }
+
+      // Check applicable_to - must be 'all', 'products', or 'both'
+      const validApplicableTo = ['all', 'products', 'both'];
+      if (!validApplicableTo.includes(coupon.applicable_to)) {
+        throw new Error('Coupon is not valid for products');
+      }
+
+      if (coupon.usage_limit !== null && coupon.used_count >= coupon.usage_limit) {
+        throw new Error('Coupon usage limit reached');
+      }
+
+      if (coupon.minimum_amount !== null && subtotal < coupon.minimum_amount) {
+        throw new Error(`Minimum purchase amount of ${coupon.minimum_amount / 100} ${currency.toUpperCase()} required`);
+      }
+
+      // Calculate discount
+      if (coupon.discount_type === 'percentage') {
+        validatedDiscount = Math.floor(subtotal * coupon.discount_value / 100);
+      } else {
+        validatedDiscount = coupon.discount_value;
+      }
+
+      // Apply maximum discount cap
+      if (coupon.maximum_discount_amount !== null && validatedDiscount > coupon.maximum_discount_amount) {
+        validatedDiscount = coupon.maximum_discount_amount;
+      }
+
+      validatedCouponId = coupon.id;
+      validatedCouponCode = coupon.code;
+
+      console.log('Coupon validated:', {
+        couponId: validatedCouponId,
+        code: validatedCouponCode,
+        discount: validatedDiscount,
+        clientDiscount: discountAmount
+      });
+
+      // Add discount as negative line item
+      if (validatedDiscount > 0) {
+        lineItems.push({
+          price_data: {
+            currency,
+            product_data: { name: `Discount (${validatedCouponCode})` },
+            unit_amount: -validatedDiscount,
+          },
+          quantity: 1,
+        });
+      }
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY_SHOP") || "", { apiVersion: "2025-08-27.basil" });
 
     const session = await stripe.checkout.sessions.create({
@@ -111,7 +194,15 @@ serve(async (req) => {
       phone_number_collection: { enabled: true },
       success_url: `${req.headers.get('origin')}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/cart`,
-      metadata: { type: 'cart', items: JSON.stringify(items), shipping_cost: String(shippingCost || 0), currency }
+      metadata: { 
+        type: 'cart', 
+        items: JSON.stringify(items), 
+        shipping_cost: String(shippingCost || 0), 
+        currency,
+        coupon_id: validatedCouponId || '',
+        coupon_code: validatedCouponCode || '',
+        discount_amount: String(validatedDiscount)
+      }
     });
 
     return new Response(JSON.stringify({ url: session.url }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
