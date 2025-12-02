@@ -23,20 +23,20 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl w-full p-0 bg-card">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-2xl font-bold text-foreground">{amenity.title}</DialogTitle>
-          <p className="text-primary font-medium mt-1">{amenity.tagline}</p>
+      <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-0 bg-card">
+        <DialogHeader className="p-4 sm:p-6 pb-0 sticky top-0 bg-card z-10">
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground pr-8">{amenity.title}</DialogTitle>
+          <p className="text-primary font-medium mt-1 text-sm sm:text-base">{amenity.tagline}</p>
         </DialogHeader>
         
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Icon and main description */}
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <IconComponent className="w-8 h-8 text-primary" />
+          <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <p className="text-muted-foreground text-sm sm:text-lg leading-relaxed">
                 {amenity.description}
               </p>
             </div>
@@ -44,13 +44,13 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
 
           {/* Features list */}
           {amenity.features && amenity.features.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-lg font-semibold text-foreground mb-3">Included Features</h4>
+            <div className="mb-4 sm:mb-6">
+              <h4 className="text-base sm:text-lg font-semibold text-foreground mb-2 sm:mb-3">Included Features</h4>
               <ul className="space-y-2">
                 {amenity.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3 text-muted-foreground">
-                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                    {feature}
+                  <li key={index} className="flex items-start gap-2 sm:gap-3 text-muted-foreground text-sm sm:text-base">
+                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5" />
+                    <span className="flex-1">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -63,7 +63,7 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
               <img
                 src={amenity.image_url}
                 alt={amenity.title}
-                className="w-full h-48 object-cover"
+                className="w-full h-40 sm:h-48 object-cover"
               />
             </div>
           )}
