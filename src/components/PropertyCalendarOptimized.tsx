@@ -31,20 +31,36 @@ const PropertyCalendarOptimized = memo(({
   const today = new Date();
   const maxDate = new Date(today.getFullYear() + 2, 11, 31); // 2 years ahead
 
-  // Fetch availability only (same as Host Dashboard)
+  // Fetch availability and bookings
   const availabilityQueryFn = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('availability')
-      .select('date, available, reason, seasonal_price, minimum_nights')
-      .eq('property_id', propertyId)
-      .gte('date', today.toISOString().split('T')[0])
-      .order('date');
+    const [availabilityRes, bookingsRes] = await Promise.all([
+      supabase
+        .from('availability')
+        .select('date, available, reason, seasonal_price, minimum_nights')
+        .eq('property_id', propertyId)
+        .gte('date', today.toISOString().split('T')[0])
+        .order('date'),
+      supabase
+        .from('bookings')
+        .select('check_in_date, check_out_date')
+        .eq('property_id', propertyId)
+        .in('status', ['confirmed', 'pending'])
+        .gte('check_out_date', today.toISOString().split('T')[0])
+    ]);
 
-    if (error) throw error;
-    return { data, error: null };
+    if (availabilityRes.error) throw availabilityRes.error;
+    if (bookingsRes.error) throw bookingsRes.error;
+    
+    return { 
+      data: { 
+        availability: availabilityRes.data, 
+        bookings: bookingsRes.data 
+      }, 
+      error: null 
+    };
   }, [propertyId, today]);
 
-  const { data: availability, loading } = useOptimizedQuery(
+  const { data, loading } = useOptimizedQuery(
     `availability-${propertyId}`,
     availabilityQueryFn,
     {
@@ -59,6 +75,9 @@ const PropertyCalendarOptimized = memo(({
       }
     }
   );
+
+  const availability = data?.availability;
+  const bookings = data?.bookings;
 
   // Create lookup map for availability
   const availabilityMap = useMemo(() => {
@@ -75,12 +94,40 @@ const PropertyCalendarOptimized = memo(({
     );
   }, [availability, basePrice]);
 
+  // Create set of booked dates (check-in through day before check-out)
+  const bookedDatesSet = useMemo(() => {
+    if (!bookings) return new Set<string>();
+    const bookedDates = new Set<string>();
+    
+    bookings.forEach((booking: { check_in_date: string; check_out_date: string }) => {
+      const checkIn = new Date(booking.check_in_date);
+      const checkOut = new Date(booking.check_out_date);
+      
+      // Mark dates from check-in (inclusive) to check-out (EXCLUSIVE)
+      // This means checkout day remains available for new bookings
+      const current = new Date(checkIn);
+      while (current < checkOut) {
+        bookedDates.add(current.toISOString().split('T')[0]);
+        current.setDate(current.getDate() + 1);
+      }
+    });
+    
+    return bookedDates;
+  }, [bookings]);
+
   const isDateAvailable = useCallback((date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
+    
+    // First check if date is booked
+    if (bookedDatesSet.has(dateStr)) {
+      return false;
+    }
+    
+    // Then check availability table
     const info = availabilityMap.get(dateStr);
-    // Default to available if no specific entry (same as Host Dashboard)
+    // Default to available if no specific entry
     return info ? info.available : true;
-  }, [availabilityMap]);
+  }, [availabilityMap, bookedDatesSet]);
 
   const getDatePrice = useCallback((date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
