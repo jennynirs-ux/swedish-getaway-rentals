@@ -10,6 +10,7 @@ import { useBooking } from "@/hooks/useBooking";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { usePricingRules } from "@/hooks/usePricingRules";
+import CouponInput from "@/components/CouponInput";
 import { z } from "zod";
 import DOMPurify from "dompurify";
 
@@ -76,6 +77,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
   const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
+  
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string;
+    code: string;
+    discountAmount: number;
+  } | undefined>();
 
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return null;
@@ -94,7 +101,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
     : 0;
 
   const priceCalculation = calculateTotalAmount();
-  const totalAmount = priceCalculation?.total || 0;
+  const subtotal = priceCalculation?.total || 0;
+  const couponDiscount = appliedCoupon?.discountAmount || 0;
+  const totalAmount = Math.max(0, subtotal - couponDiscount);
 
   const validateForm = () => {
     try {
@@ -158,7 +167,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
         guest_email: validatedData.guest_email,
         guest_phone: validatedData.guest_phone,
         number_of_guests: validatedData.number_of_guests,
-        special_requests: validatedData.special_requests
+        special_requests: validatedData.special_requests,
+        coupon_id: appliedCoupon?.id
       });
   
       // Reset form
@@ -171,6 +181,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       });
       setCheckIn(null);
       setCheckOut(null);
+      setAppliedCoupon(undefined);
       setValidationErrors({});
     } catch (err) {
       console.error("Booking failed:", err);
@@ -276,6 +287,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     <span>{(priceCalculation.extraServices / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
+                
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Coupon discount ({appliedCoupon.code})</span>
+                    <span>-{(couponDiscount / 100).toLocaleString()} {currency}</span>
+                  </div>
+                )}
               </div>
               
               <div className="flex justify-between text-lg font-bold border-t pt-3">
@@ -349,6 +367,23 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <p className="text-destructive text-sm">{validationErrors.special_requests}</p>
             )}
           </div>
+
+          {/* Coupon Input */}
+          {checkIn && checkOut && subtotal > 0 && (
+            <CouponInput
+              propertyId={propertyId}
+              totalAmount={subtotal}
+              onCouponApplied={(couponId, discountAmount, code) => {
+                setAppliedCoupon({
+                  id: couponId,
+                  code: code,
+                  discountAmount
+                });
+              }}
+              onCouponRemoved={() => setAppliedCoupon(undefined)}
+              appliedCoupon={appliedCoupon}
+            />
+          )}
 
           {/* House Rules Acceptance */}
           <div className="border rounded-lg p-4 bg-muted/30">
