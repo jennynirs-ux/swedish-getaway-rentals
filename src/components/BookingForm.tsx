@@ -276,7 +276,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 
                 {priceCalculation.extraGuestFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Extra guest fee</span>
+                    <span>Extra guest fee ({Math.max(0, formData.number_of_guests - 1)} guest{Math.max(0, formData.number_of_guests - 1) !== 1 ? 's' : ''} × {nights} night{nights !== 1 ? 's' : ''})</span>
                     <span>{(priceCalculation.extraGuestFee / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
