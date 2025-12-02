@@ -145,6 +145,7 @@ const PropertyCalendarOptimized = memo(({
     const isSelected = (checkIn && isSameDay(date, checkIn)) || (checkOut && isSameDay(date, checkOut));
     const isInRange = checkIn && checkOut && date > checkIn && date < checkOut;
     const isUnavailable = !isDateAvailable(date);
+    const canBeCheckout = isCheckoutEligible(date);
     
     let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-all hover:scale-105 ";
     
@@ -152,9 +153,12 @@ const PropertyCalendarOptimized = memo(({
       className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
     } else if (isInRange) {
       className += "bg-primary/20 text-primary font-medium ";
+    } else if (isUnavailable && canBeCheckout) {
+      // Checkout-eligible dates - medium grey with underline to show they're special
+      className += "text-muted-foreground/70 underline decoration-dotted underline-offset-2 ";
     } else if (isUnavailable) {
-      // All unavailable dates - just lighter text, no strikethrough or background
-      className += "text-muted-foreground/50 ";
+      // Completely unavailable dates - very light grey
+      className += "text-muted-foreground/40 cursor-not-allowed ";
     } else if (avail?.seasonal_price) {
       className += "bg-accent text-accent-foreground hover:bg-accent/80 font-medium ";
     } else {
@@ -215,8 +219,12 @@ const PropertyCalendarOptimized = memo(({
             <span>Available</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded text-muted-foreground/50 flex items-center justify-center text-xs">5</div>
-            <span>Unavailable / Checkout only</span>
+            <div className="w-4 h-4 rounded text-muted-foreground/70 flex items-center justify-center text-xs underline decoration-dotted">5</div>
+            <span>Checkout only</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded text-muted-foreground/40 flex items-center justify-center text-xs">6</div>
+            <span>Unavailable</span>
           </div>
         </div>
       </div>
