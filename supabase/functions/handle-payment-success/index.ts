@@ -7,47 +7,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-// Verify Stripe webhook signature
-const verifyStripeSignature = (req: Request, body: string): boolean => {
-  const signature = req.headers.get('stripe-signature');
-  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-  
-  if (!signature || !webhookSecret) {
-    console.error('Missing signature or webhook secret');
-    return false;
-  }
-  
-  try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-    stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    return true;
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err);
-    return false;
-  }
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get raw body for signature verification
     const rawBody = await req.text();
-    
-    // Verify webhook signature for security
-    if (!verifyStripeSignature(req, rawBody)) {
-      console.error('Invalid webhook signature');
-      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
-    
-    // Parse request body
     const requestBody = JSON.parse(rawBody);
     const { session_id } = requestBody;
     
@@ -62,20 +28,27 @@ serve(async (req) => {
       throw new Error("Invalid session ID format");
     }
 
-    // Rate limiting and security logging
     const userAgent = req.headers.get('user-agent') || 'unknown';
     const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
     
-    console.log(`Payment success handler called from IP: ${clientIP}, User-Agent: ${userAgent}, Session: ${session_id}`);
+    console.log(`Payment success handler called from IP: ${clientIP}, Session: ${session_id}`);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
+    // Retrieve and validate the session directly from Stripe
+    // This is secure because we're fetching from Stripe's API with our secret key
     const session = await stripe.checkout.sessions.retrieve(session_id, { expand: ['line_items'] });
     
     if (!session) {
       throw new Error("Session not found");
+    }
+
+    // Verify the payment was actually successful
+    if (session.payment_status !== 'paid') {
+      console.error('Payment not completed:', session.payment_status);
+      throw new Error("Payment not completed");
     }
 
     const supabase = createClient(
@@ -191,7 +164,6 @@ serve(async (req) => {
 
       if (productError) throw productError;
 
-      // Determine final product details
       const finalTitle = product.title_override || product.title;
       const finalDescription = product.description_override || product.custom_description || product.description;
       const productDisplayName = variantName ? `${finalTitle} - ${variantName}` : finalTitle;
@@ -208,7 +180,7 @@ serve(async (req) => {
           product_data: {
             name: productDisplayName,
             description: finalDescription,
-            price: session.amount_total, // Use actual paid amount
+            price: session.amount_total,
             quantity: quantity,
             printful_product_id: printfulProductId,
             printful_variant_id: printfulVariantId,
@@ -222,7 +194,6 @@ serve(async (req) => {
 
       if (orderError) throw orderError;
       
-      // Record processed session
       await supabase.from('processed_sessions').insert({
         session_id,
         session_type: 'product',
@@ -251,9 +222,9 @@ serve(async (req) => {
             items: [{
               sync_variant_id: parseInt(printfulVariantId),
               quantity: quantity,
-              retail_price: (session.amount_total / 100).toFixed(2), // Convert from cents
+              retail_price: (session.amount_total / 100).toFixed(2),
             }],
-            external_id: order.id, // Link back to our order
+            external_id: order.id,
           };
 
           console.log('Creating Printful order:', JSON.stringify(printfulOrder, null, 2));
@@ -315,7 +286,6 @@ serve(async (req) => {
         .single();
       if (orderError) throw orderError;
       
-      // Record processed session
       await supabase.from('processed_sessions').insert({
         session_id,
         session_type: 'cart',
@@ -333,13 +303,11 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    // Log detailed error server-side for debugging
     console.error("Error handling payment success:", {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     });
     
-    // Return generic error message to client
     return new Response(JSON.stringify({ 
       error: "Unable to process payment confirmation. Please contact support if the issue persists." 
     }), {
