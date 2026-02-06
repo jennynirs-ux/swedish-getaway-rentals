@@ -262,8 +262,10 @@ export const HostPropertyEditor = ({
                   {savingPrice ? 'Saving...' : 'Save'}
                 </Button>
               </div>
-            </CardContent>
+          </CardContent>
           </Card>
+
+          <HostDiscountSettings propertyId={propertyId} onUpdate={onUpdate} />
 
           <PropertyPricingRules propertyId={propertyId} />
 
