@@ -5,7 +5,6 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { MessageCircle } from "lucide-react";
 import { useState, lazy, Suspense } from "react";
-import { CancellationPolicyDisplay } from "./CancellationPolicyDisplay";
 
 // Lazy load chat component to improve initial page load
 const BookingChat = lazy(() => import("./BookingChat").then(module => ({ default: module.BookingChat })));
@@ -31,12 +30,7 @@ const PropertyBooking = ({ property, onOpenGuidebook }: PropertyBookingProps) =>
             </p>
           </div>
 
-          {/* Cancellation Policy */}
-          <div className="mb-6">
-            <CancellationPolicyDisplay />
-          </div>
-
-          {/* Booking Form (includes calendar inside) */}
+          {/* Booking Form (includes calendar and cancellation policy inside) */}
             <BookingForm
               propertyId={property.id}
               propertyTitle={property.title}
