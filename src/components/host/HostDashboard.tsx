@@ -126,8 +126,9 @@ const HostDashboard = () => {
         .select("*", { count: "exact", head: true })
         .eq("host_id", profile.id);
 
+      // Use secure view for masked contact data
       const { data: bookingsData, error: bookingsError } = await supabase
-        .from("bookings")
+        .from("bookings_secure")
         .select(
           `
           *,

@@ -97,6 +97,13 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "booking_email_tracking_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
         ]
       }
       booking_messages: {
@@ -145,6 +152,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -266,6 +280,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_commission_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -488,6 +509,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "guestbook_entries_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "guestbook_entries_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
@@ -527,6 +555,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guestbook_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -740,6 +775,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lock_access_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
             referencedColumns: ["id"]
           },
           {
@@ -1476,7 +1518,80 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      bookings_secure: {
+        Row: {
+          access_code: string | null
+          access_code_expires_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          created_at: string | null
+          currency: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          id: string | null
+          number_of_guests: number | null
+          pre_checkin_reminder_sent_at: string | null
+          property_id: string | null
+          special_requests: string | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_code?: never
+          access_code_expires_at?: string | null
+          check_in_date?: string | null
+          check_out_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          guest_email?: never
+          guest_name?: string | null
+          guest_phone?: never
+          id?: string | null
+          number_of_guests?: number | null
+          pre_checkin_reminder_sent_at?: string | null
+          property_id?: string | null
+          special_requests?: string | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_code?: never
+          access_code_expires_at?: string | null
+          check_in_date?: string | null
+          check_out_date?: string | null
+          created_at?: string | null
+          currency?: string | null
+          guest_email?: never
+          guest_name?: string | null
+          guest_phone?: never
+          id?: string | null
+          number_of_guests?: number | null
+          pre_checkin_reminder_sent_at?: string | null
+          property_id?: string | null
+          special_requests?: string | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_host_application: {
