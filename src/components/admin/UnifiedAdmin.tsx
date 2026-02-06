@@ -119,6 +119,10 @@ const UnifiedAdmin = () => {
               <PreArrivalSettings />
             </TabsContent>
             
+            <TabsContent value="cancellation">
+              <CancellationPolicySettings />
+            </TabsContent>
+            
             <TabsContent value="messages">
               <MessagesInbox />
             </TabsContent>
