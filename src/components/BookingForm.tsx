@@ -333,6 +333,17 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   </div>
                 )}
                 
+                {/* Weekly/Monthly Discount */}
+                {applicableDiscount && stayDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      {applicableDiscount.type === 'monthly' ? 'Monthly' : 'Weekly'} discount ({applicableDiscount.percentage}%)
+                    </span>
+                    <span>-{(stayDiscount / 100).toLocaleString()} {currency}</span>
+                  </div>
+                )}
+                
                 {appliedCoupon && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Coupon discount ({appliedCoupon.code})</span>
