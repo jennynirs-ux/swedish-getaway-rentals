@@ -80,6 +80,10 @@ const UnifiedAdmin = () => {
                 <Clock className="w-4 h-4 mr-2" />
                 Pre-Arrival
               </TabsTrigger>
+              <TabsTrigger value="cancellation">
+                <Ban className="w-4 h-4 mr-2" />
+                Cancellation
+              </TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
             
