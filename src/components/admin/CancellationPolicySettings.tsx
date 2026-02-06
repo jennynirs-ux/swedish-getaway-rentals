@@ -69,13 +69,16 @@ export const CancellationPolicySettings = () => {
         .eq("setting_key", "cancellation_policy")
         .single();
 
+      // Cast policy to Json type
+      const policyJson = JSON.parse(JSON.stringify(policy));
+
       let error;
       if (existing) {
         // Update existing
         const result = await supabase
           .from("platform_settings")
           .update({
-            setting_value: policy as unknown as Record<string, unknown>,
+            setting_value: policyJson,
             updated_at: new Date().toISOString(),
           })
           .eq("setting_key", "cancellation_policy");
@@ -84,10 +87,10 @@ export const CancellationPolicySettings = () => {
         // Insert new
         const result = await supabase
           .from("platform_settings")
-          .insert({
+          .insert([{
             setting_key: "cancellation_policy",
-            setting_value: policy as unknown as Record<string, unknown>,
-          });
+            setting_value: policyJson,
+          }]);
         error = result.error;
       }
 
