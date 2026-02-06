@@ -416,7 +416,7 @@ const PropertyDetailEditor = ({
                     <SelectItem value="strict">Strict — 50% refund up to 7 days before</SelectItem>
                   </SelectContent>
                 </Select>
-                <CancellationPolicyDisplay policy={form.cancellation_policy || "moderate"} />
+                <CancellationPolicyDisplay />
               </CardContent>
             </Card>
 
