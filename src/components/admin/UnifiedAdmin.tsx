@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail, Clock } from "lucide-react";
+import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail, Clock, Ban } from "lucide-react";
 import DashboardOverview from "./DashboardOverview";
 import BookingsManagement from "./BookingsManagement";
 import ShopProductsManagement from "./ShopProductsManagement";
@@ -17,6 +17,7 @@ import CouponsManagement from "./CouponsManagement";
 import MessagesInbox from "./MessagesInbox";
 import { BookingEmailSettings } from "./BookingEmailSettings";
 import PreArrivalSettings from "./PreArrivalSettings";
+import { CancellationPolicySettings } from "./CancellationPolicySettings";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
