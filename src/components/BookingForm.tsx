@@ -489,6 +489,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
             </div>
           </div>
 
+          {/* Cancellation Policy */}
+          <CancellationPolicyDisplay />
+
           <Button 
             type="submit" 
             className="w-full" 
