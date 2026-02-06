@@ -129,8 +129,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
     ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
+  // Determine applicable discount based on stay length
+  const getApplicableDiscount = () => {
+    if (nights >= 28 && propertyDiscounts.monthly_discount_percentage > 0) {
+      return { type: 'monthly', percentage: propertyDiscounts.monthly_discount_percentage };
+    }
+    if (nights >= 7 && propertyDiscounts.weekly_discount_percentage > 0) {
+      return { type: 'weekly', percentage: propertyDiscounts.weekly_discount_percentage };
+    }
+    return null;
+  };
+
   const priceCalculation = calculateTotalAmount();
-  const subtotal = priceCalculation?.total || 0;
+  const subtotalBeforeDiscount = priceCalculation?.total || 0;
+  const applicableDiscount = getApplicableDiscount();
+  const stayDiscount = applicableDiscount 
+    ? Math.round(subtotalBeforeDiscount * (applicableDiscount.percentage / 100))
+    : 0;
+  const subtotal = subtotalBeforeDiscount - stayDiscount;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const totalAmount = Math.max(0, subtotal - couponDiscount);
 
