@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarDays, Shield } from "lucide-react";
+import { CalendarDays, Shield, Tag } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
@@ -13,6 +13,7 @@ import { usePricingRules } from "@/hooks/usePricingRules";
 import CouponInput from "@/components/CouponInput";
 import { z } from "zod";
 import DOMPurify from "dompurify";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BookingFormProps {
   propertyId: string;
@@ -21,6 +22,11 @@ interface BookingFormProps {
   currency: string;
   maxGuests: number;
   onOpenGuidebook?: () => void;
+}
+
+interface PropertyDiscounts {
+  weekly_discount_percentage: number;
+  monthly_discount_percentage: number;
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({
@@ -33,6 +39,29 @@ const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { createBooking, loading } = useBooking();
   const { calculatePrice } = usePricingRules(propertyId);
+  const [propertyDiscounts, setPropertyDiscounts] = useState<PropertyDiscounts>({
+    weekly_discount_percentage: 0,
+    monthly_discount_percentage: 0
+  });
+  
+  // Fetch property discounts
+  useEffect(() => {
+    const fetchDiscounts = async () => {
+      const { data } = await supabase
+        .from('properties')
+        .select('weekly_discount_percentage, monthly_discount_percentage')
+        .eq('id', propertyId)
+        .single();
+      
+      if (data) {
+        setPropertyDiscounts({
+          weekly_discount_percentage: data.weekly_discount_percentage || 0,
+          monthly_discount_percentage: data.monthly_discount_percentage || 0
+        });
+      }
+    };
+    fetchDiscounts();
+  }, [propertyId]);
   
   // Enable real-time calendar updates when bookings are made
   useBookingRealtime({
@@ -100,8 +129,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
     ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
+  // Determine applicable discount based on stay length
+  const getApplicableDiscount = () => {
+    if (nights >= 28 && propertyDiscounts.monthly_discount_percentage > 0) {
+      return { type: 'monthly', percentage: propertyDiscounts.monthly_discount_percentage };
+    }
+    if (nights >= 7 && propertyDiscounts.weekly_discount_percentage > 0) {
+      return { type: 'weekly', percentage: propertyDiscounts.weekly_discount_percentage };
+    }
+    return null;
+  };
+
   const priceCalculation = calculateTotalAmount();
-  const subtotal = priceCalculation?.total || 0;
+  const subtotalBeforeDiscount = priceCalculation?.total || 0;
+  const applicableDiscount = getApplicableDiscount();
+  const stayDiscount = applicableDiscount 
+    ? Math.round(subtotalBeforeDiscount * (applicableDiscount.percentage / 100))
+    : 0;
+  const subtotal = subtotalBeforeDiscount - stayDiscount;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const totalAmount = Math.max(0, subtotal - couponDiscount);
 
@@ -285,6 +330,17 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   <div className="flex justify-between text-sm">
                     <span>Additional services</span>
                     <span>{(priceCalculation.extraServices / 100).toLocaleString()} {currency}</span>
+                  </div>
+                )}
+                
+                {/* Weekly/Monthly Discount */}
+                {applicableDiscount && stayDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      {applicableDiscount.type === 'monthly' ? 'Monthly' : 'Weekly'} discount ({applicableDiscount.percentage}%)
+                    </span>
+                    <span>-{(stayDiscount / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
                 
