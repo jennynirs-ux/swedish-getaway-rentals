@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarDays, Shield } from "lucide-react";
+import { CalendarDays, Shield, Tag } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
 import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
@@ -13,6 +13,7 @@ import { usePricingRules } from "@/hooks/usePricingRules";
 import CouponInput from "@/components/CouponInput";
 import { z } from "zod";
 import DOMPurify from "dompurify";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BookingFormProps {
   propertyId: string;
@@ -21,6 +22,11 @@ interface BookingFormProps {
   currency: string;
   maxGuests: number;
   onOpenGuidebook?: () => void;
+}
+
+interface PropertyDiscounts {
+  weekly_discount_percentage: number;
+  monthly_discount_percentage: number;
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({
@@ -33,6 +39,29 @@ const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { createBooking, loading } = useBooking();
   const { calculatePrice } = usePricingRules(propertyId);
+  const [propertyDiscounts, setPropertyDiscounts] = useState<PropertyDiscounts>({
+    weekly_discount_percentage: 0,
+    monthly_discount_percentage: 0
+  });
+  
+  // Fetch property discounts
+  useEffect(() => {
+    const fetchDiscounts = async () => {
+      const { data } = await supabase
+        .from('properties')
+        .select('weekly_discount_percentage, monthly_discount_percentage')
+        .eq('id', propertyId)
+        .single();
+      
+      if (data) {
+        setPropertyDiscounts({
+          weekly_discount_percentage: data.weekly_discount_percentage || 0,
+          monthly_discount_percentage: data.monthly_discount_percentage || 0
+        });
+      }
+    };
+    fetchDiscounts();
+  }, [propertyId]);
   
   // Enable real-time calendar updates when bookings are made
   useBookingRealtime({
