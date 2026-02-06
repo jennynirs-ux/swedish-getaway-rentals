@@ -11,6 +11,7 @@ import PropertyCalendarOptimized from "@/components/PropertyCalendarOptimized";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { usePricingRules } from "@/hooks/usePricingRules";
 import CouponInput from "@/components/CouponInput";
+import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDisplay";
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
