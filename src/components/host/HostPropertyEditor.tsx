@@ -17,6 +17,7 @@ import { HostGalleryTab } from "./HostGalleryTabEnhanced";
 import { HostLocationTab } from "./HostLocationTab";
 import { EmailTemplatesEditor } from "@/components/admin/EmailTemplatesEditor";
 import { HostPricingCalculator } from "./HostPricingCalculator";
+import { HostDiscountSettings } from "./HostDiscountSettings";
 import PropertyPricingRules from "@/components/PropertyPricingRules";
 import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
 import CouponForm from "@/components/CouponForm";
@@ -261,8 +262,10 @@ export const HostPropertyEditor = ({
                   {savingPrice ? 'Saving...' : 'Save'}
                 </Button>
               </div>
-            </CardContent>
+          </CardContent>
           </Card>
+
+          <HostDiscountSettings propertyId={propertyId} onUpdate={onUpdate} />
 
           <PropertyPricingRules propertyId={propertyId} />
 
