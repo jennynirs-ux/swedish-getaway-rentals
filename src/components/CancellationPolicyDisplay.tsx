@@ -26,7 +26,7 @@ export const CancellationPolicyDisplay = () => {
         .single();
       
       if (error) throw error;
-      return data?.setting_value as CancellationPolicyData;
+      return data?.setting_value as unknown as CancellationPolicyData;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });

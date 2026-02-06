@@ -32,11 +32,9 @@ const PropertyBooking = ({ property, onOpenGuidebook }: PropertyBookingProps) =>
           </div>
 
           {/* Cancellation Policy */}
-          {property.cancellation_policy && (
-            <div className="mb-6">
-              <CancellationPolicyDisplay policy={property.cancellation_policy as "flexible" | "moderate" | "strict"} />
-            </div>
-          )}
+          <div className="mb-6">
+            <CancellationPolicyDisplay />
+          </div>
 
           {/* Booking Form (includes calendar inside) */}
             <BookingForm

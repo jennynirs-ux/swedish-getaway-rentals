@@ -45,7 +45,7 @@ export const CancellationPolicySettings = () => {
       if (error && error.code !== "PGRST116") throw error;
       
       if (data?.setting_value) {
-        setPolicy(data.setting_value as CancellationPolicyData);
+        setPolicy(data.setting_value as unknown as CancellationPolicyData);
       }
     } catch (error) {
       console.error("Error loading cancellation policy:", error);
@@ -62,15 +62,34 @@ export const CancellationPolicySettings = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      // First check if setting exists
+      const { data: existing } = await supabase
         .from("platform_settings")
-        .upsert({
-          setting_key: "cancellation_policy",
-          setting_value: policy,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: "setting_key",
-        });
+        .select("id")
+        .eq("setting_key", "cancellation_policy")
+        .single();
+
+      let error;
+      if (existing) {
+        // Update existing
+        const result = await supabase
+          .from("platform_settings")
+          .update({
+            setting_value: policy as unknown as Record<string, unknown>,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("setting_key", "cancellation_policy");
+        error = result.error;
+      } else {
+        // Insert new
+        const result = await supabase
+          .from("platform_settings")
+          .insert({
+            setting_key: "cancellation_policy",
+            setting_value: policy as unknown as Record<string, unknown>,
+          });
+        error = result.error;
+      }
 
       if (error) throw error;
 
