@@ -365,13 +365,14 @@ serve(async (req) => {
     ];
 
     // Stripe checkout session config
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "https://swedish-getaway-rentals.lovable.app";
     const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : guestEmail,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/property/${propertyId}`,
+      success_url: `${origin}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/property/${propertyId}`,
       metadata: {
         type: "booking",
         propertyId,
