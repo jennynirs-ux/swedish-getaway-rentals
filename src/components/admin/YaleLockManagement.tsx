@@ -55,7 +55,7 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
   const fetchLocks = async () => {
     try {
       setLoading(true);
-      let query = supabase.from('yale_locks').select('*');
+      let query = supabase.from('yale_locks').select('id, property_id, lock_id, lock_name, access_duration_hours, is_active, last_sync, sync_status, error_message, created_at, updated_at');
       
       if (propertyId) {
         query = query.eq('property_id', propertyId);
