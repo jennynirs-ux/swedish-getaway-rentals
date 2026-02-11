@@ -132,7 +132,7 @@ serve(async (req) => {
       })
       .eq('id', lock.id);
 
-    console.log('Access code generated successfully:', accessCode);
+    console.log('Access code generated successfully for booking:', bookingId);
 
     return new Response(
       JSON.stringify({

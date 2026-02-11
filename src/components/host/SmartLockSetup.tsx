@@ -61,7 +61,7 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
         lock_id: lockId,
         lock_name: lockName || null,
         access_duration_hours: parseInt(accessDuration),
-        api_credentials: apiKey, // Stored as-is, should be encrypted server-side
+        api_credentials: btoa(apiKey), // Base64 encoded; column restricted from client SELECT via column-level REVOKE
         is_active: true,
       });
 
