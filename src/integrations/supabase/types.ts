@@ -53,6 +53,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "availability_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       booking_email_tracking: {
@@ -233,6 +240,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -449,6 +463,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "guest_messages_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       guestbook_entries: {
@@ -520,6 +541,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guestbook_entries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1224,6 +1252,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "properties_pricing_rules_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       property_travel_cache: {
@@ -1514,6 +1549,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "yale_locks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -1590,6 +1632,281 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guestbook_entries_public: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          guest_name: string | null
+          id: string | null
+          image_url: string | null
+          message: string | null
+          moderated_at: string | null
+          moderated_by: string | null
+          property_id: string | null
+          rating: number | null
+          status: string | null
+          stay_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          guest_name?: string | null
+          id?: string | null
+          image_url?: string | null
+          message?: string | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          property_id?: string | null
+          rating?: number | null
+          status?: string | null
+          stay_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          guest_name?: string | null
+          id?: string | null
+          image_url?: string | null
+          message?: string | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          property_id?: string | null
+          rating?: number | null
+          status?: string | null
+          stay_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guestbook_entries_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guestbook_entries_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guestbook_entries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guestbook_entries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties_public: {
+        Row: {
+          active: boolean | null
+          amenities: string[] | null
+          amenities_data: Json | null
+          amenities_descriptions: Json | null
+          availability_text: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          cancellation_policy: string | null
+          check_in_instructions: string | null
+          check_in_time: string | null
+          check_out_time: string | null
+          city: string | null
+          commission_rate: number | null
+          contact_response_time: string | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          email_templates: Json | null
+          featured_amenities: Json | null
+          footer_quick_links: Json | null
+          gallery_images: string[] | null
+          gallery_metadata: Json | null
+          get_in_touch_info: Json | null
+          guidebook_sections: Json | null
+          hero_image_url: string | null
+          host_id: string | null
+          id: string | null
+          introduction_text: string | null
+          latitude: number | null
+          local_tips: string | null
+          location: string | null
+          longitude: number | null
+          max_guests: number | null
+          monthly_discount_percentage: number | null
+          parking_info: string | null
+          pending_approval: boolean | null
+          postal_code: string | null
+          pre_checkin_reminder_enabled: boolean | null
+          pre_checkin_send_time: string | null
+          preparation_days: number | null
+          price_per_night: number | null
+          pricing_table: Json | null
+          property_timezone: string | null
+          property_type: string | null
+          review_count: number | null
+          review_rating: number | null
+          special_amenities: string[] | null
+          special_highlights: Json | null
+          street: string | null
+          tagline_line1: string | null
+          tagline_line2: string | null
+          title: string | null
+          updated_at: string | null
+          video_metadata: Json | null
+          video_urls: string[] | null
+          weekly_discount_percentage: number | null
+          what_makes_special: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          amenities?: string[] | null
+          amenities_data?: Json | null
+          amenities_descriptions?: Json | null
+          availability_text?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cancellation_policy?: string | null
+          check_in_instructions?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          contact_response_time?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          email_templates?: Json | null
+          featured_amenities?: Json | null
+          footer_quick_links?: Json | null
+          gallery_images?: string[] | null
+          gallery_metadata?: Json | null
+          get_in_touch_info?: never
+          guidebook_sections?: Json | null
+          hero_image_url?: string | null
+          host_id?: string | null
+          id?: string | null
+          introduction_text?: string | null
+          latitude?: number | null
+          local_tips?: string | null
+          location?: string | null
+          longitude?: number | null
+          max_guests?: number | null
+          monthly_discount_percentage?: number | null
+          parking_info?: string | null
+          pending_approval?: boolean | null
+          postal_code?: string | null
+          pre_checkin_reminder_enabled?: boolean | null
+          pre_checkin_send_time?: string | null
+          preparation_days?: number | null
+          price_per_night?: number | null
+          pricing_table?: Json | null
+          property_timezone?: string | null
+          property_type?: string | null
+          review_count?: number | null
+          review_rating?: number | null
+          special_amenities?: string[] | null
+          special_highlights?: Json | null
+          street?: string | null
+          tagline_line1?: string | null
+          tagline_line2?: string | null
+          title?: string | null
+          updated_at?: string | null
+          video_metadata?: Json | null
+          video_urls?: string[] | null
+          weekly_discount_percentage?: number | null
+          what_makes_special?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          amenities?: string[] | null
+          amenities_data?: Json | null
+          amenities_descriptions?: Json | null
+          availability_text?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cancellation_policy?: string | null
+          check_in_instructions?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          contact_response_time?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          email_templates?: Json | null
+          featured_amenities?: Json | null
+          footer_quick_links?: Json | null
+          gallery_images?: string[] | null
+          gallery_metadata?: Json | null
+          get_in_touch_info?: never
+          guidebook_sections?: Json | null
+          hero_image_url?: string | null
+          host_id?: string | null
+          id?: string | null
+          introduction_text?: string | null
+          latitude?: number | null
+          local_tips?: string | null
+          location?: string | null
+          longitude?: number | null
+          max_guests?: number | null
+          monthly_discount_percentage?: number | null
+          parking_info?: string | null
+          pending_approval?: boolean | null
+          postal_code?: string | null
+          pre_checkin_reminder_enabled?: boolean | null
+          pre_checkin_send_time?: string | null
+          preparation_days?: number | null
+          price_per_night?: number | null
+          pricing_table?: Json | null
+          property_timezone?: string | null
+          property_type?: string | null
+          review_count?: number | null
+          review_rating?: number | null
+          special_amenities?: string[] | null
+          special_highlights?: Json | null
+          street?: string | null
+          tagline_line1?: string | null
+          tagline_line2?: string | null
+          title?: string | null
+          updated_at?: string | null
+          video_metadata?: Json | null
+          video_urls?: string[] | null
+          weekly_discount_percentage?: number | null
+          what_makes_special?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -1649,6 +1966,36 @@ export type Database = {
           property_id: string
           status: string
         }[]
+      }
+      get_bookings_secure_for_user: {
+        Args: never
+        Returns: {
+          access_code: string | null
+          access_code_expires_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          created_at: string | null
+          currency: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          id: string | null
+          number_of_guests: number | null
+          pre_checkin_reminder_sent_at: string | null
+          property_id: string | null
+          special_requests: string | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "bookings_secure"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_dashboard_stats: { Args: never; Returns: Json }
       get_host_bookings_masked: {
