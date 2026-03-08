@@ -363,7 +363,7 @@ const HomePage = memo(() => {
 
           <div className="text-center pt-8 border-t border-border">
             <p className="text-muted-foreground">
-              © 2025 Nordic Getaways. Created with love for Nordic experiences.
+              © {new Date().getFullYear()} Nordic Getaways. Created with love for Nordic experiences.
             </p>
           </div>
         </div>
