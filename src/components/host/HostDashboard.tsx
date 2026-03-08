@@ -106,7 +106,7 @@ const HostDashboard = () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
-        console.log("No user found, redirecting to auth");
+        
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
