@@ -243,6 +243,25 @@ const HomePage = memo(() => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LodgingBusiness",
+            "name": "Nordic Getaways",
+            "description": "Discover your perfect retreat in the Nordic",
+            "url": "https://swedish-getaway-rentals.lovable.app",
+            "image": "https://swedish-getaway-rentals.lovable.app/favicon.png",
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "SE"
+            }
+          })
+        }}
+      />
+
       {/* Navigation */}
       <MainNavigation />
 
