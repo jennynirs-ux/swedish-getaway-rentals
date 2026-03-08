@@ -1,0 +1,14 @@
+{
+  "url": "https://swedish-getaway-rentals.lovable.app",
+  "host": "https://swedish-getaway-rentals.lovable.app",
+  "changefreq": "weekly",
+  "routes": [
+    { "path": "/", "priority": 1.0 },
+    { "path": "/shop", "priority": 0.8 },
+    { "path": "/contact", "priority": 0.6 },
+    { "path": "/first-time-in-sweden", "priority": 0.7 },
+    { "path": "/pricing-guide", "priority": 0.6 },
+    { "path": "/become-host", "priority": 0.5 },
+    { "path": "/auth", "priority": 0.3 }
+  ]
+}
