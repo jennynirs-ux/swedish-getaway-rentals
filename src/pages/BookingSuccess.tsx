@@ -67,15 +67,15 @@ const BookingSuccess = () => {
               {success ? (
                 <div className="space-y-4">
                   <p className="text-lg text-muted-foreground">
-                    Tack för din bokning! Din betalning har genomförts och din bokning är nu bekräftad.
+                    Thank you for your booking! Your payment has been processed and your reservation is now confirmed.
                   </p>
                   
                   <div className="bg-primary/5 p-4 rounded-lg">
-                    <h4 className="font-semibold text-primary mb-2">Nästa steg:</h4>
+                    <h4 className="font-semibold text-primary mb-2">What happens next:</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Du kommer att få en bekräftelse via e-post inom kort</li>
-                      <li>• Vi kommer att kontakta dig med incheckning detaljer</li>
-                      <li>• Vid frågor, kontakta oss på jolofsson87@gmail.com</li>
+                      <li>• You will receive a confirmation email shortly</li>
+                      <li>• We will contact you with check-in details before your arrival</li>
+                      <li>• If you have any questions, please use the contact form on the property page</li>
                     </ul>
                   </div>
                 </div>
@@ -89,14 +89,14 @@ const BookingSuccess = () => {
                 <Link to="/" className="flex-1">
                   <Button variant="outline" className="w-full">
                     <Home className="w-4 h-4 mr-2" />
-                    Hem
+                    Home
                   </Button>
                 </Link>
                 
-                <Link to="/admin" className="flex-1">
+                <Link to="/profile" className="flex-1">
                   <Button className="w-full">
                     <Calendar className="w-4 h-4 mr-2" />
-                    Mina Bokningar
+                    My Bookings
                   </Button>
                 </Link>
               </div>
