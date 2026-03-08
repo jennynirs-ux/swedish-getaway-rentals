@@ -243,6 +243,25 @@ const HomePage = memo(() => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LodgingBusiness",
+            "name": "Nordic Getaways",
+            "description": "Discover your perfect retreat in the Nordic",
+            "url": "https://swedish-getaway-rentals.lovable.app",
+            "image": "https://swedish-getaway-rentals.lovable.app/favicon.png",
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "SE"
+            }
+          })
+        }}
+      />
+
       {/* Navigation */}
       <MainNavigation />
 
@@ -359,11 +378,20 @@ const HomePage = memo(() => {
                 <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
               </ul>
             </div>
+
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">For Guests</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/pricing-guide" className="hover:text-foreground">Pricing Guide</Link></li>
+                <li><Link to="/auth" className="hover:text-foreground">Sign In / Register</Link></li>
+                <li><Link to="/profile" className="hover:text-foreground">My Bookings</Link></li>
+              </ul>
+            </div>
           </div>
 
           <div className="text-center pt-8 border-t border-border">
             <p className="text-muted-foreground">
-              © 2025 Nordic Getaways. Created with love for Nordic experiences.
+              © {new Date().getFullYear()} Nordic Getaways. Created with love for Nordic experiences.
             </p>
           </div>
         </div>

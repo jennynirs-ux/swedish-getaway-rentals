@@ -11,7 +11,7 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
   const { onBookingUpdate, enableAdminNotifications = false } = options;
 
   const handleBookingInsert = useCallback((payload: any) => {
-    console.log('New booking created:', payload.new);
+    
     
     if (enableAdminNotifications) {
       toast({
@@ -25,7 +25,7 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
   }, [onBookingUpdate, enableAdminNotifications]);
 
   const handleBookingUpdate = useCallback((payload: any) => {
-    console.log('Booking updated:', payload.new);
+    
     
     if (enableAdminNotifications && payload.new.status === 'confirmed') {
       toast({

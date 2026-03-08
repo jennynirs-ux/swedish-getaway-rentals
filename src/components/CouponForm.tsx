@@ -67,10 +67,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
       );
       const validUntilUTC = localDate.toISOString();
       
-      console.log('Form date input:', formData.valid_until);
-      console.log('Parsed values:', { year, month, day, hour, minute });
-      console.log('Local date:', localDate);
-      console.log('UTC ISO string:', validUntilUTC);
+
 
       const { error } = await supabase
         .from('coupons')

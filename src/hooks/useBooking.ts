@@ -98,13 +98,8 @@ export const useBooking = () => {
       }
 
       if (data?.url) {
-        // Redirect to Stripe Checkout
-        window.open(data.url, '_blank');
-        
-        toast({
-          title: "Redirecting to payment",
-          description: "You will be redirected to complete the payment.",
-        });
+        // Redirect to Stripe Checkout in the same window to avoid popup blockers
+        window.location.href = data.url;
       }
 
       return { success: true, data };

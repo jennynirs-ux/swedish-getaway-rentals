@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://swedish-getaway-rentals.lovable.app/sitemap.xml
