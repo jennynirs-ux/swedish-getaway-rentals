@@ -106,7 +106,7 @@ const ShopProductsManagement = ({
 
       if (error) throw error;
 
-      console.log("👉 Printful sync response:", data);
+      
 
       toast({
         title: "Sync Successful",
