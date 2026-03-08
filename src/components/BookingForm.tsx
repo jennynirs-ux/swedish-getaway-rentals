@@ -68,8 +68,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   useBookingRealtime({
     onBookingUpdate: (booking) => {
       if (booking.property_id === propertyId && booking.status === 'confirmed') {
-        // Calendar will automatically refresh due to real-time subscription in PropertyCalendarOptimized
-        console.log('Booking confirmed for this property:', booking);
+        // Calendar will automatically refresh due to real-time subscription
       }
     }
   });

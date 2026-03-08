@@ -71,7 +71,7 @@ const CouponsManagement = () => {
         throw error;
       }
       
-      console.log('Fetched coupons:', data);
+      
       setCoupons((data as any) || []);
     } catch (error: any) {
       console.error('Failed to load coupons:', error);

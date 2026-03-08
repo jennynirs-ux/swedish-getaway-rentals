@@ -25,7 +25,7 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
   }, [onBookingUpdate, enableAdminNotifications]);
 
   const handleBookingUpdate = useCallback((payload: any) => {
-    console.log('Booking updated:', payload.new);
+    
     
     if (enableAdminNotifications && payload.new.status === 'confirmed') {
       toast({
