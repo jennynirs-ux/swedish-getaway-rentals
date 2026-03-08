@@ -257,6 +257,13 @@ const Auth = () => {
                         placeholder="••••••••"
                       />
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
                     {error && (
                       <div className="text-destructive text-sm">{error}</div>
                     )}
