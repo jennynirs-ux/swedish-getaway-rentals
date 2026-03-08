@@ -378,6 +378,15 @@ const HomePage = memo(() => {
                 <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
               </ul>
             </div>
+
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">For Guests</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/pricing-guide" className="hover:text-foreground">Pricing Guide</Link></li>
+                <li><Link to="/auth" className="hover:text-foreground">Sign In / Register</Link></li>
+                <li><Link to="/profile" className="hover:text-foreground">My Bookings</Link></li>
+              </ul>
+            </div>
           </div>
 
           <div className="text-center pt-8 border-t border-border">
