@@ -199,3 +199,21 @@
     color: rgba(255,255,255,0.9) !important;
   }
 }
+
+/* Map price markers */
+.price-marker {
+  background: none !important;
+  border: none !important;
+}
+
+/* Safe area for mobile bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Add bottom padding to main content when mobile nav is present */
+@media (max-width: 767px) {
+  main, #root > div {
+    padding-bottom: 4rem;
+  }
+}
