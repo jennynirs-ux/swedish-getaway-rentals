@@ -142,7 +142,11 @@ export const getDrivingRoute = async (from: Coordinates, to: Coordinates): Promi
   const API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY;
 
   if (!API_KEY) {
-    console.warn('OpenRouteService API key not configured. Please set VITE_OPENROUTESERVICE_API_KEY environment variable.');
+    // BUG-042: API key exposed in client-side code. Should move to backend proxy.
+    // TODO: Implement a backend proxy endpoint to handle OpenRouteService API calls
+    // This will prevent exposing the API key in client-side code and improve security.
+    console.warn('OpenRouteService API key not configured. Falling back to simple route calculation.');
+    return getFallbackRoute(from, to);
   }
 
   try {

@@ -27,6 +27,7 @@ const CartPage = () => {
   const hasMixedCurrencies = items.length > 0 && items.some(item => item.currency !== currency);
 
   useEffect(() => {
+    document.title = 'Cart | Nordic Getaways';
     fetchShippingSettings();
     fetchProductVariants();
   }, []);
@@ -180,7 +181,7 @@ const CartPage = () => {
       const customerEmail = userData.user.email;
 
       // Generate a nonce for additional CSRF protection
-      const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
       const timestamp = new Date().getTime().toString();
 
       const payload = {

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Lock, Unlock, Trash2, RefreshCw } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface YaleLock {
   id: string;
@@ -43,6 +44,8 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
   const [locks, setLocks] = useState<YaleLock[]>([]);
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [lockToDelete, setLockToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -131,22 +134,22 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
     }
   };
 
-  const handleDeleteLock = async (lockId: string) => {
-    if (!confirm('Are you sure you want to delete this lock?')) return;
-    
+  const handleDeleteLock = async () => {
+    if (!lockToDelete) return;
+
     try {
       const { error } = await supabase
         .from('yale_locks')
         .delete()
-        .eq('id', lockId);
-      
+        .eq('id', lockToDelete);
+
       if (error) throw error;
-      
+
       toast({
         title: 'Lock Deleted',
         description: 'Smart lock has been removed',
       });
-      
+
       fetchLocks();
     } catch (error) {
       console.error('Error deleting lock:', error);
@@ -155,6 +158,9 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
         description: 'Failed to delete lock',
         variant: 'destructive',
       });
+    } finally {
+      setDeleteConfirmOpen(false);
+      setLockToDelete(null);
     }
   };
 
@@ -234,7 +240,10 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDeleteLock(lock.id)}
+                          onClick={() => {
+                            setLockToDelete(lock.id);
+                            setDeleteConfirmOpen(true);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -293,6 +302,23 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Smart Lock</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this smart lock? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-2 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLock} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

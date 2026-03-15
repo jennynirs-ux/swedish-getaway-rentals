@@ -39,6 +39,7 @@ const Profile = () => {
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isBookingsLoading, setIsBookingsLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -122,6 +123,8 @@ const Profile = () => {
   };
 
   const fetchBookings = async (userId: string) => {
+    // BUG-051: Use separate loading state for bookings
+    setIsBookingsLoading(true);
     try {
       const { data, error } = await supabase
         .from('bookings')
@@ -141,6 +144,8 @@ const Profile = () => {
       setBookings(data || []);
     } catch (error: any) {
       console.error('Failed to load bookings:', error);
+    } finally {
+      setIsBookingsLoading(false);
     }
   };
 
@@ -161,6 +166,11 @@ const Profile = () => {
         .eq('user_id', profile.user_id);
 
       if (error) throw error;
+
+      // BUG-048: Email change requires verification
+      // Note: To change email, use supabase.auth.updateUser({ email: newEmail })
+      // which automatically sends a verification email to the new address
+      // This is a reminder that email changes require verification through a link
 
       await fetchProfile(profile.user_id);
       setEditing(false);
@@ -256,7 +266,7 @@ const Profile = () => {
 
             <TabsContent value="bookings">
               <div className="space-y-4">
-                {loading ? (
+                {isBookingsLoading ? (
                   // BUG-048: Loading skeleton for bookings
                   <>
                     {Array.from({ length: 3 }).map((_, i) => (

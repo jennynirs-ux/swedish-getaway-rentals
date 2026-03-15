@@ -83,6 +83,10 @@ export const useBooking = () => {
       }
 
       if (data?.url) {
+        // BUG-047: Validate redirect URL before navigating
+        if (!data.url || !data.url.startsWith('https://')) {
+          throw new Error('Invalid checkout URL');
+        }
         // Redirect to Stripe Checkout in the same window to avoid popup blockers
         window.location.href = data.url;
       }

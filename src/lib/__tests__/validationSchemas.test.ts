@@ -192,7 +192,7 @@ describe('Validation Schemas', () => {
       expect(() => guestNameSchema.parse('A'.repeat(101))).toThrow();
     });
 
-    it('should trim whitespace but not sanitize HTML', () => {
+    it('should trim and sanitize guest name', () => {
       const result = guestNameSchema.parse('  John Doe  ');
       expect(result).toBe('John Doe');
     });

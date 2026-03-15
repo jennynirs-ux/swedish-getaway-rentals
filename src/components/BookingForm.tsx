@@ -76,6 +76,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   });
 
+  // BUG-036: Clear/revalidate applied coupon when dates change
+  useEffect(() => {
+    if (appliedCoupon) {
+      setAppliedCoupon(undefined);
+    }
+  }, [checkIn, checkOut]);
+
   // Input validation schema with sanitization via transforms
   const bookingSchema = z.object({
     guest_name: z.string()
@@ -136,8 +143,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
     return calculation;
   };
 
+  // BUG-035: Use UTC-based calculation to avoid DST issues
   const nights = checkIn && checkOut
-    ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.round((Date.UTC(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate()) - Date.UTC(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())) / 86400000)
     : 0;
 
   // Determine applicable discount based on stay length
@@ -509,13 +517,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {/* Cancellation Policy */}
           <CancellationPolicyDisplay />
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={loading || totalAmount <= 0 || !houseRulesAccepted}
-          >
-            {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
-          </Button>
+          {/* BUG-054: Sticky submit button on mobile to keep it in view */}
+          <div className="sticky bottom-0 bg-white p-4 border-t md:static md:bg-transparent md:p-0 md:border-0">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || totalAmount <= 0 || !houseRulesAccepted}
+            >
+              {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

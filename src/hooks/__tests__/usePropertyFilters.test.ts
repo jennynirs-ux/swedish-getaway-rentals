@@ -239,7 +239,7 @@ describe('usePropertyFilters', () => {
         expect(result.current.filteredProperties.length).toBeGreaterThan(0);
       });
 
-      it('should prioritize properties with more amenities', () => {
+      it('should prioritize properties with better value (rating vs price)', () => {
         const properties: Property[] = [
           { ...mockProperties[2], amenities: ['fireplace', 'sauna'] }, // 2 amenities, 800 price
           { ...mockProperties[0], amenities: ['wifi', 'parking', 'fireplace'] }, // 3 amenities, 1500 price
@@ -248,7 +248,8 @@ describe('usePropertyFilters', () => {
         act(() => {
           result.current.setSortBy('recommended');
         });
-        expect(result.current.filteredProperties[0].id).toBe('1'); // More amenities
+        // BUG-039: Normalized scoring now balances rating and price, cheaper property ranks higher
+        expect(result.current.filteredProperties[0].id).toBe('3');
       });
     });
   });
@@ -505,7 +506,7 @@ describe('usePropertyFilters', () => {
       expect(result.current.filters.checkIn).toBeUndefined();
       expect(result.current.filters.checkOut).toBeUndefined();
       expect(result.current.filters.guests).toBe(2);
-      expect(result.current.filters.priceRange).toEqual([0, 5000]);
+      expect(result.current.filters.priceRange).toEqual([0, 10000]);
       expect(result.current.filters.amenities).toEqual([]);
       expect(result.current.filters.propertyType).toBe('');
     });

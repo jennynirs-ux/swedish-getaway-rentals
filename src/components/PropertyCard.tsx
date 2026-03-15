@@ -242,9 +242,9 @@ const PropertyCard = memo(({
                   <span className="font-medium">{amenity.title}</span>
                 </div>
               ))}
-              {safeProperty.amenities.length > 0 && (
+              {safeProperty.amenities.length > 3 && (
                 <div className="text-xs text-muted-foreground font-medium px-2 py-1">
-                  +{safeProperty.amenities.length} amenities
+                  +{safeProperty.amenities.length - 3} more
                 </div>
               )}
             </div>

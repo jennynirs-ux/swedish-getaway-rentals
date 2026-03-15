@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import MainNavigation from "@/components/MainNavigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface GalleryContent {
   title: string;
@@ -16,9 +15,9 @@ const Gallery = () => {
     description: "Discover the beauty of our properties and the stunning Nordic landscapes.",
     images: []
   });
-  const { toast } = useToast();
 
   useEffect(() => {
+    document.title = 'Gallery | Nordic Getaways';
     fetchContent();
   }, []);
 

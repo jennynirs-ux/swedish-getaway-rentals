@@ -90,56 +90,64 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
 
   const loadDashboardStats = async () => {
     try {
-      // Basstatistik från din RPC
-      const { data: basicStats, error: statsError } = await supabase.rpc("get_dashboard_stats");
-      if (statsError) throw statsError;
-  
-      // ✅ Count ALL products
-      const { count: totalProductsCount, error: productsCountError } = await supabase
-        .from("shop_products")
-        .select("*", { count: "exact", head: true })
-        .eq("visible", true);
-      if (productsCountError) throw productsCountError;
-  
-      // ✅ Count ALL orders
-      const { count: totalOrdersCount, error: ordersCountError } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true });
-      if (ordersCountError) throw ordersCountError;
-  
-      // ✅ Recent properties
-      const { data: properties, error: propertiesError } = await supabase
-        .from("properties")
-        .select("id, title, hero_image_url, price_per_night, currency")
-        .eq("active", true)
-        .order("created_at", { ascending: false })
-        .limit(4);
-      if (propertiesError) throw propertiesError;
-  
-      // ✅ Recent products
-      const { data: products, error: productsError } = await supabase
-        .from("shop_products")
-        .select("id, title, title_override, image_url, main_image_override, price, price_override, currency")
-        .eq("visible", true)
-        .order("created_at", { ascending: false })
-        .limit(4);
-      if (productsError) throw productsError;
-  
-      // ✅ Recent bookings
-      const { data: bookings, error: bookingsError } = await supabase
-        .from("bookings")
-        .select("id, guest_name, property_id, check_in_date, total_amount, currency, status")
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (bookingsError) throw bookingsError;
-  
-      // ✅ Recent orders
-      const { data: orders, error: ordersError } = await supabase
-        .from("orders")
-        .select("id, customer_name, total_amount, currency, status, created_at")
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (ordersError) throw ordersError;
+      // Execute all independent queries in parallel
+      const [
+        statsResult,
+        productsCountResult,
+        ordersCountResult,
+        propertiesResult,
+        productsResult,
+        bookingsResult,
+        ordersResult
+      ] = await Promise.all([
+        supabase.rpc("get_dashboard_stats"),
+        supabase
+          .from("shop_products")
+          .select("*", { count: "exact", head: true })
+          .eq("visible", true),
+        supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("properties")
+          .select("id, title, hero_image_url, price_per_night, currency")
+          .eq("active", true)
+          .order("created_at", { ascending: false })
+          .limit(4),
+        supabase
+          .from("shop_products")
+          .select("id, title, title_override, image_url, main_image_override, price, price_override, currency")
+          .eq("visible", true)
+          .order("created_at", { ascending: false })
+          .limit(4),
+        supabase
+          .from("bookings")
+          .select("id, guest_name, property_id, check_in_date, total_amount, currency, status")
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("orders")
+          .select("id, customer_name, total_amount, currency, status, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5)
+      ]);
+
+      // Check for errors
+      if (statsResult.error) throw statsResult.error;
+      if (productsCountResult.error) throw productsCountResult.error;
+      if (ordersCountResult.error) throw ordersCountResult.error;
+      if (propertiesResult.error) throw propertiesResult.error;
+      if (productsResult.error) throw productsResult.error;
+      if (bookingsResult.error) throw bookingsResult.error;
+      if (ordersResult.error) throw ordersResult.error;
+
+      const basicStats = statsResult.data;
+      const totalProductsCount = productsCountResult.count;
+      const totalOrdersCount = ordersCountResult.count;
+      const properties = propertiesResult.data;
+      const products = productsResult.data;
+      const bookings = bookingsResult.data;
+      const orders = ordersResult.data;
   
       // ✅ Monthly stats
       const currentMonth = new Date();

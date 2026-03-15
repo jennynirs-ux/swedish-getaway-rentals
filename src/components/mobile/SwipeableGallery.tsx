@@ -50,19 +50,22 @@ export function SwipeableGallery({ images, alt = 'Property image', onImageClick,
 
       {/* Dot indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5" role="tablist" aria-label="Image carousel indicators">
           {images.slice(0, Math.min(images.length, 5)).map((_, index) => (
             <div
               key={index}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 index === selectedIndex % Math.min(images.length, 5)
                   ? 'w-4 bg-white'
-                  : 'w-1.5 bg-white/60'
+                  : 'w-1.5 bg-white/70'
               }`}
+              role="tab"
+              aria-label={`Image ${index + 1}`}
+              aria-current={index === selectedIndex % Math.min(images.length, 5) ? 'true' : 'false'}
             />
           ))}
           {images.length > 5 && (
-            <div className="h-1.5 w-1.5 rounded-full bg-white/40" />
+            <div className="h-1.5 w-1.5 rounded-full bg-white/70" />
           )}
         </div>
       )}

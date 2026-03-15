@@ -61,6 +61,7 @@ const Shop = () => {
   };
 
   useEffect(() => {
+    document.title = 'Shop | Nordic Getaways';
     fetchProducts();
   }, []);
 

@@ -107,7 +107,7 @@ const FirstTimeInSweden = () => {
   // Using a dummy property for the footer
   const dummyProperty = {
     id: "sweden-guide",
-    title: "Nordin Getaways",
+    title: "Nordic Getaways",
     location: "Sweden",
     tagline_line1: "Your guide to Swedish culture and customs",
     footer_quick_links: ["The Nordic Collection", "Contact", "First time in Sweden"],

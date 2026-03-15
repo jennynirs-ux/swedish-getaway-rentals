@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { MAX_PRICE_RANGE } from '@/lib/constants';
 
 interface Property {
   id: string;
@@ -38,7 +39,7 @@ export const usePropertyFilters = (properties: Property[]) => {
     checkIn: undefined,
     checkOut: undefined,
     guests: 2,
-    priceRange: [0, 5000],
+    priceRange: [0, MAX_PRICE_RANGE],
     amenities: [],
     propertyType: ""
   });
@@ -128,10 +129,25 @@ export const usePropertyFilters = (properties: Property[]) => {
         return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       case 'recommended':
       default:
-        // Prioritize properties with more amenities and higher price (quality indicator)
+        // BUG-039: Normalize both price and rating to 0-1 range for balanced scoring
+        // Find max values for normalization
+        const maxPrice = Math.max(...sorted.map(p => p.price_per_night), 1);
+        const maxRating = 5;
+
         return sorted.sort((a, b) => {
-          const scoreA = (a.amenities?.length || 0) + (a.price_per_night / 1000);
-          const scoreB = (b.amenities?.length || 0) + (b.price_per_night / 1000);
+          const ratingA = a.review_rating ?? 0;
+          const ratingB = b.review_rating ?? 0;
+
+          // Normalize to 0-1 range
+          const normalizedRatingA = ratingA / maxRating;
+          const normalizedRatingB = ratingB / maxRating;
+          const normalizedPriceA = a.price_per_night / maxPrice;
+          const normalizedPriceB = b.price_per_night / maxPrice;
+
+          // Score: 70% rating, 30% inverse price (cheaper is better)
+          const scoreA = (normalizedRatingA * 0.7) + ((1 - normalizedPriceA) * 0.3);
+          const scoreB = (normalizedRatingB * 0.7) + ((1 - normalizedPriceB) * 0.3);
+
           return scoreB - scoreA;
         });
     }
@@ -151,7 +167,7 @@ export const usePropertyFilters = (properties: Property[]) => {
       checkIn: undefined,
       checkOut: undefined,
       guests: 2,
-      priceRange: [0, 5000],
+      priceRange: [0, MAX_PRICE_RANGE],
       amenities: [],
       propertyType: ""
     });

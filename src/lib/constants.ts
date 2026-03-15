@@ -7,3 +7,4 @@ export const MAX_BOOKING_ADVANCE_DAYS = 365;
 export const MAX_CART_QUANTITY = 99;
 export const ITEMS_PER_PAGE = 50;
 export const TOAST_DURATION = 5000;
+export const MAX_PRICE_RANGE = 10000; // BUG-040: Shared price range constant

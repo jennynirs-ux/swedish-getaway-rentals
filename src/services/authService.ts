@@ -31,7 +31,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       error
     } = await supabase.auth.getUser();
 
-    if (error && error.message !== 'not authenticated') {
+    // BUG-045: Check error.code instead of error.message for more reliable error handling
+    if (error && error.message !== 'not authenticated' && error.code !== 'PGRST301') {
       throw error;
     }
 

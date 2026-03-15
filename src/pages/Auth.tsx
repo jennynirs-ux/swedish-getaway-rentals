@@ -29,6 +29,8 @@ const Auth = () => {
   const [passwordStrength, setPasswordStrength] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  // BUG-049: Client-side rate limiting for password reset
+  const [lastPasswordResetTime, setLastPasswordResetTime] = useState<number | null>(null);
 
   // Validate redirect URL to prevent open redirect attacks
   const getValidatedRedirect = (redirectUrl: string | null): string => {
@@ -179,6 +181,15 @@ const Auth = () => {
       toast.error('Please enter your email address first');
       return;
     }
+
+    // BUG-049: Client-side rate limiting (60 seconds cooldown)
+    const now = Date.now();
+    if (lastPasswordResetTime && now - lastPasswordResetTime < 60000) {
+      const secondsRemaining = Math.ceil((60000 - (now - lastPasswordResetTime)) / 1000);
+      toast.error(`Please wait ${secondsRemaining} seconds before requesting another reset`);
+      return;
+    }
+
     setLoading(true);
     try {
       const normalizedEmail = email.toLowerCase().trim();
@@ -192,6 +203,9 @@ const Auth = () => {
 
       // Always show the generic success message
       toast.success('If an account exists with this email, you will receive a password reset link shortly.');
+
+      // Update last reset time
+      setLastPasswordResetTime(now);
 
       // Optionally log error but don't expose it to the user
       if (error && error.message) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
 import { Property } from "@/hooks/useProperties";
@@ -7,6 +7,7 @@ import MainNavigation from "@/components/MainNavigation";
 
 const PropertyGuide = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +63,7 @@ const PropertyGuide = () => {
       <div className="pt-16">
         <GuestGuideDialog
           isOpen={true}
-          onClose={() => window.history.back()}
+          onClose={() => navigate(-1)}
           property={property}
         />
       </div>

@@ -7,6 +7,13 @@ import { SearchFiltersBar } from './SearchFiltersBar';
 import { PropertyListSkeleton } from '@/components/skeletons';
 import { Map, List } from 'lucide-react';
 
+interface MapBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
+
 interface MapSearchViewProps {
   properties: any[];
   isLoading: boolean;
@@ -25,10 +32,21 @@ export interface SearchFilters {
   propertyType?: string;
 }
 
+// Validate map bounds with Number.isFinite() checks
+const validateMapBounds = (bounds: any): bounds is MapBounds => {
+  return (
+    bounds &&
+    Number.isFinite(bounds.north) &&
+    Number.isFinite(bounds.south) &&
+    Number.isFinite(bounds.east) &&
+    Number.isFinite(bounds.west)
+  );
+};
+
 export function MapSearchView({ properties, isLoading, filters, onFiltersChange }: MapSearchViewProps) {
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
-  const [mapBounds, setMapBounds] = useState<any>(null);
+  const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
 
   // Filter properties visible in current map bounds
   const visibleProperties = useMemo(() => {
@@ -45,7 +63,9 @@ export function MapSearchView({ properties, isLoading, filters, onFiltersChange 
   }, [properties, mapBounds]);
 
   const handleMapMove = useCallback((bounds: any) => {
-    setMapBounds(bounds);
+    if (validateMapBounds(bounds)) {
+      setMapBounds(bounds);
+    }
   }, []);
 
   return (

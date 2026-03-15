@@ -9,13 +9,13 @@ import DOMPurify from 'dompurify';
 const sanitize = (val: string) => DOMPurify.sanitize(val.trim());
 
 /**
- * Email validation schema with sanitization
+ * Email validation schema
  */
 export const emailSchema = z
   .string()
   .email('Please enter a valid email address')
   .max(255, 'Email must be less than 255 characters')
-  .transform(sanitize);
+  .transform(val => val.trim());
 
 /**
  * Phone number validation schema (optional)
@@ -60,13 +60,14 @@ export const subjectSchema = z
 
 /**
  * Guest name validation schema (for guestbook entries)
- * Similar to nameSchema but with trim() only
+ * Similar to nameSchema with full sanitization
  */
 export const guestNameSchema = z
   .string()
   .min(2, 'Name must be at least 2 characters')
   .max(100, 'Name must be less than 100 characters')
-  .trim();
+  .trim()
+  .transform((val) => DOMPurify.sanitize(val));
 
 /**
  * Special requests validation schema

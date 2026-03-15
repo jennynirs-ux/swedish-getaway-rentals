@@ -36,6 +36,7 @@ const Amenities = () => {
   });
 
   useEffect(() => {
+    document.title = 'Amenities | Nordic Getaways';
     fetchContent();
   }, []);
 

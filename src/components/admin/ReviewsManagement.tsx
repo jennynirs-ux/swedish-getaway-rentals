@@ -71,7 +71,7 @@ const ReviewsManagement = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      setReviews((data as any) || []);
+      setReviews((data as Review[]) || []);
       setCurrentPage(page);
       // Disable load more if we got fewer items than requested (meaning no more data)
       setHasMore((data?.length ?? 0) >= ITEMS_PER_PAGE);
@@ -84,6 +84,13 @@ const ReviewsManagement = () => {
 
   const handleModerationAction = async (reviewId: string, status: string) => {
     try {
+      // Validate status is one of the allowed values
+      const allowedStatuses = ['approved', 'rejected', 'pending'];
+      if (!allowedStatuses.includes(status)) {
+        toast.error('Invalid moderation status');
+        return;
+      }
+
       const { data } = await supabase.auth.getUser();
       const userId = data.user?.id;
 

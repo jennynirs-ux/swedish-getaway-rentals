@@ -22,15 +22,15 @@ export function MobileBottomNav() {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around h-16">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border pb-safe">
+      <div className="flex items-center justify-around min-h-[60px]">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path.split('?')[0]);
           return (
             <button
               key={label}
               onClick={() => navigate(path)}
-              className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors ${
+              className={`flex flex-col items-center justify-center gap-1 flex-1 min-h-[44px] min-w-[44px] transition-colors ${
                 isActive ? 'text-primary' : 'text-muted-foreground'
               }`}
             >

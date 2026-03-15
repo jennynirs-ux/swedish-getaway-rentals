@@ -40,6 +40,7 @@ const Contact = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    document.title = 'Contact | Nordic Getaways';
     fetchContent();
   }, []);
 

@@ -12,6 +12,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, addDays, subDays } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
+import { MAX_PRICE_RANGE } from "@/lib/constants";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SearchFilters {
   location: string;
@@ -31,6 +33,7 @@ interface PropertySearchProps {
 }
 
 const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySearchProps) => {
+  const isMobile = useIsMobile();
   const [showFilters, setShowFilters] = useState(false);
   const [isGeocodingLocation, setIsGeocodingLocation] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -39,7 +42,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
     checkIn: undefined,
     checkOut: undefined,
     guests: 2,
-    priceRange: [0, 10000],
+    priceRange: [0, MAX_PRICE_RANGE],
     amenities: [],
     propertyType: "all",
     dateFlexibility: 0,
@@ -81,7 +84,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       checkIn: undefined,
       checkOut: undefined,
       guests: 2,
-      priceRange: [0, 10000],
+      priceRange: [0, MAX_PRICE_RANGE],
       amenities: [],
       propertyType: "all",
       dateFlexibility: 0,
@@ -165,7 +168,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
                 selected={dateRange}
                 onSelect={handleDateRangeChange}
                 disabled={(date) => date < new Date()}
-                numberOfMonths={2}
+                numberOfMonths={isMobile ? 1 : 2}
                 className={cn("p-3 pointer-events-auto")}
               />
               <div className="border-t p-3 space-y-2">

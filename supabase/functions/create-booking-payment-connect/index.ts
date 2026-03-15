@@ -53,9 +53,12 @@ serve(async (req) => {
       throw new Error('Check-out date must be after check-in date');
     }
     
-    // Validate guest count
-    if (!numberOfGuests || numberOfGuests < 1 || numberOfGuests > 50) {
-      throw new Error('Invalid number of guests');
+    // BUG-038: Validate minimum guest count is at least 1
+    if (numberOfGuests < 1 || numberOfGuests > 50) {
+      return new Response(JSON.stringify({ error: 'Number of guests must be at least 1 and at most 50' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
     
     // Validate email format
@@ -375,10 +378,12 @@ serve(async (req) => {
     }
 
     // Stripe line item using validated amount (already in cents)
+    // BUG-037: Use SEK as default currency, prefer property.currency over client-provided currency
+    const finalCurrency = (property.currency || currency || "sek").toLowerCase();
     const lineItems = [
       {
         price_data: {
-          currency: (currency || property.currency || "sek").toLowerCase(),
+          currency: finalCurrency,
           product_data: {
             name: `${property.title}`,
             description: productDescription,
@@ -410,7 +415,7 @@ serve(async (req) => {
         guestPhone: guestPhone || "",
         specialRequests: specialRequests || "",
         userId: user?.id || "",
-        currency: (currency || property.currency || "sek").toLowerCase(),
+        currency: finalCurrency,
         totalAmount: validatedAmount.toString(),
         subtotal: subtotal.toString(),
         discountAmount: discountAmount.toString(),

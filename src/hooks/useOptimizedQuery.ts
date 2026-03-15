@@ -26,6 +26,7 @@ interface QueryResult<T> {
 }
 
 // Simple cache implementation
+const MAX_CACHE_SIZE = 100;
 const queryCache = new Map<string, { data: any; timestamp: number; staleTime: number }>();
 
 export function useOptimizedQuery<T>(
@@ -79,6 +80,13 @@ export function useOptimizedQuery<T>(
       }
 
       // Cache the result
+      // Check cache size limit before adding
+      if (queryCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = queryCache.keys().next().value;
+        if (firstKey) {
+          queryCache.delete(firstKey);
+        }
+      }
       queryCache.set(key, {
         data: result.data,
         timestamp: Date.now(),

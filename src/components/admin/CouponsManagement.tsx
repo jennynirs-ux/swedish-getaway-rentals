@@ -77,8 +77,8 @@ const CouponsManagement = () => {
         throw error;
       }
       
-      
-      setCoupons((data as any) || []);
+
+      setCoupons((data as Coupon[]) || []);
     } catch (error: any) {
       console.error('Failed to load coupons:', error);
       toast.error(`Failed to load coupons: ${error.message}`);

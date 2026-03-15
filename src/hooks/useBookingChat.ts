@@ -62,11 +62,49 @@ export const useBookingChat = (bookingId?: string) => {
   const isMountedRef = useRef(true);
   const { toast } = useToast();
 
+  // BUG-050: Booking messages should be RLS-protected by booking ownership
+  // TODO: Add RLS policy to database:
+  // CREATE POLICY booking_messages_owner ON booking_messages FOR ALL USING (
+  //   booking_id IN (
+  //     SELECT id FROM bookings
+  //     WHERE user_id = auth.uid()
+  //     OR property_id IN (SELECT id FROM properties WHERE host_id = auth.uid())
+  //   )
+  // );
+  // Client-side ownership check for defense-in-depth
+  const checkBookingOwnership = useCallback(async (bId: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('user_id, property_id, properties(host_id)')
+        .eq('id', bId)
+        .single();
+
+      if (error || !data) return false;
+
+      // User must be either the guest (user_id) or the host (via property)
+      return data.user_id === user.id || data.properties?.host_id === user.id;
+    } catch (error) {
+      console.error('Error checking booking ownership:', error);
+      return false;
+    }
+  }, []);
+
   const fetchMessages = useCallback(async () => {
     if (!bookingId) return;
 
     try {
       setLoading(true);
+
+      // Defense-in-depth: Check ownership before fetching
+      const isOwner = await checkBookingOwnership(bookingId);
+      if (!isOwner) {
+        throw new Error('Unauthorized: You do not have access to this booking');
+      }
+
       const { data, error } = await supabase
         .from('booking_messages')
         .select('*')
@@ -84,7 +122,7 @@ export const useBookingChat = (bookingId?: string) => {
       if (isMountedRef.current) {
         toast({
           title: "Error",
-          description: "Failed to load messages",
+          description: error instanceof Error ? error.message : "Failed to load messages",
           variant: "destructive",
         });
       }
@@ -93,7 +131,7 @@ export const useBookingChat = (bookingId?: string) => {
         setLoading(false);
       }
     }
-  }, [bookingId, toast]);
+  }, [bookingId, toast, checkBookingOwnership]);
 
   const sendMessage = useCallback(async (
     message: string

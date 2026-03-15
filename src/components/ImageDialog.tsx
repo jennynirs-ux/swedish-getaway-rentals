@@ -26,7 +26,7 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl w-full h-fit max-h-[90vh] p-0 bg-white overflow-y-auto">
+      <DialogContent className="max-w-7xl w-full h-fit max-h-[90dvh] p-0 bg-white overflow-y-auto">
         <DialogHeader className="p-6 pb-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-2xl font-bold">{currentImage?.title}</DialogTitle>
           <Button

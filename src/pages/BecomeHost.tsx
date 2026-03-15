@@ -124,7 +124,7 @@ const BecomeHost = () => {
       icon: DollarSign,
       title: "You keep what you set",
       description:
-        "Set your own price. We will add a 10% fee on top of your price to cover transactions, marketing, plattform development and support.",
+        "Set your own price. We will add a 10% fee on top of your price to cover transactions, marketing, platform development and support.",
     },
     {
       icon: Shield,
@@ -136,7 +136,7 @@ const BecomeHost = () => {
       icon: Calendar,
       title: "Full flexibility",
       description:
-        "Rent out on your schedule — a weekend, a month, or the whole summer. Sync with other plattforms to avoid dubble booking",
+        "Rent out on your schedule — a weekend, a month, or the whole summer. Sync with other platforms to avoid dubble booking",
     },
     {
       icon: TrendingUp,
