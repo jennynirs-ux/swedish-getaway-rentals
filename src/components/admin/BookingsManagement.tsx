@@ -47,6 +47,7 @@ const BookingsManagement = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ bookingId: string; newStatus: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const ITEMS_PER_PAGE = 50;
   const { toast } = useToast();
 
@@ -81,6 +82,8 @@ const BookingsManagement = () => {
       if (error) throw error;
       setBookings(data || []);
       setCurrentPage(page);
+      // Disable load more if we got fewer items than requested (meaning no more data)
+      setHasMore((data?.length ?? 0) >= ITEMS_PER_PAGE);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({
@@ -386,7 +389,7 @@ const BookingsManagement = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* BUG-036: Pagination controls */}
+      {/* BUG-019: Pagination controls */}
       {filteredBookings.length > 0 && (
         <div className="flex justify-between items-center pt-4 gap-4">
           <Button
@@ -402,7 +405,7 @@ const BookingsManagement = () => {
           <Button
             variant="outline"
             onClick={() => fetchBookings(currentPage + 1)}
-            disabled={bookings.length < ITEMS_PER_PAGE}
+            disabled={!hasMore}
           >
             Ladda Mer
           </Button>

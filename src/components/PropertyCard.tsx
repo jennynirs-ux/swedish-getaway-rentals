@@ -10,7 +10,8 @@ import {
   Bath,
   Heart,
   Share2,
-  Home
+  Home,
+  HelpCircle
 } from "lucide-react";
 import { useState, memo } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,7 @@ import { AlertCircle } from "lucide-react";
 import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
 import { getAmenityIcon } from "@/lib/amenityIcons";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface PropertyCardData {
   id: string;
@@ -251,10 +253,30 @@ const PropertyCard = memo(({
           {/* Price and CTA */}
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-2xl font-bold text-foreground">
-                {Math.round((safeProperty.price_per_night || 0) * 1.1).toLocaleString()} {safeProperty.currency}
-              </span>
-              <span className="text-muted-foreground text-sm ml-1">/night</span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-foreground">
+                  {Math.round((safeProperty.price_per_night || 0) * 1.1).toLocaleString()} {safeProperty.currency}
+                </span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="space-y-1">
+                        <p className="font-semibold">Total price includes service fee</p>
+                        <p className="text-xs">
+                          Base: {Math.round((safeProperty.price_per_night || 0)).toLocaleString()} {safeProperty.currency}
+                        </p>
+                        <p className="text-xs">
+                          Service fee (10%): {Math.round(((safeProperty.price_per_night || 0) * 0.1)).toLocaleString()} {safeProperty.currency}
+                        </p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <span className="text-muted-foreground text-sm">/night incl. fees</span>
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               View Details

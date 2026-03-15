@@ -108,13 +108,18 @@ const MessagesInbox = () => {
 
       if (emailError) {
         console.error('Email send error:', emailError);
-        // Don't throw - reply is saved in DB
+        // Reply is saved in DB but email failed to send
+        toast({
+          title: "Svar sparad med varning",
+          description: "Reply saved but email delivery failed. Guest may not receive the notification.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Svar skickat",
+          description: "Ditt svar har sparats och skickats till gästen"
+        });
       }
-
-      toast({
-        title: "Svar skickat",
-        description: "Ditt svar har sparats och skickats till gästen"
-      });
 
       setReplyText('');
       fetchMessages();

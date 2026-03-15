@@ -44,10 +44,18 @@ export const useCurrencyConversion = () => {
         const response = await fetch(
           "https://api.exchangerate-api.com/v4/latest/SEK"
         );
+
+        // Check if response is successful before parsing JSON
+        if (!response.ok) {
+          throw new Error(`Exchange rate API returned status ${response.status}: ${response.statusText}`);
+        }
+
         const data = await response.json();
         setRates(data.rates || FALLBACK_RATES);
       } catch (error) {
         console.error("Error fetching exchange rates:", error);
+        // Log warning to inform user that fallback rates are being used
+        console.warn("Using fallback exchange rates. Live rates may be unavailable. Please refresh the page later for updated rates.");
         // Use fallback rates when API fails
         setRates(FALLBACK_RATES);
       }

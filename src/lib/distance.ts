@@ -28,20 +28,26 @@ export const CITY_GROUPS: Record<string, string[]> = {
 
 // Haversine formula to calculate distance between two coordinates
 export const calculateDistance = (coord1: Coordinates, coord2: Coordinates): number => {
+  // Validate inputs
+  if (!Number.isFinite(coord1.latitude) || !Number.isFinite(coord1.longitude) ||
+      !Number.isFinite(coord2.latitude) || !Number.isFinite(coord2.longitude)) {
+    return Infinity; // Return Infinity for invalid coordinates
+  }
+
   const R = 6371; // Earth's radius in kilometers
   const dLat = toRad(coord2.latitude - coord1.latitude);
   const dLon = toRad(coord2.longitude - coord1.longitude);
-  
+
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(toRad(coord1.latitude)) *
     Math.cos(toRad(coord2.latitude)) *
     Math.sin(dLon / 2) *
     Math.sin(dLon / 2);
-  
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
-  
+
   return distance;
 };
 

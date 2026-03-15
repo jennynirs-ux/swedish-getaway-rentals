@@ -62,7 +62,12 @@ const PropertyCalendarOptimized = memo(({
 
   const isDateAvailable = (date: Date) => {
     const avail = getDateAvailability(date);
-    return avail ? avail.available : true; // Default to available if no specific entry
+    // Default to unavailable if no record exists (safer default for new properties)
+    return avail ? avail.available : false;
+  };
+
+  const isDateConfigured = (date: Date) => {
+    return !!getDateAvailability(date);
   };
 
   const getDatePrice = (date: Date) => {
@@ -145,10 +150,11 @@ const PropertyCalendarOptimized = memo(({
     const isSelected = (checkIn && isSameDay(date, checkIn)) || (checkOut && isSameDay(date, checkOut));
     const isInRange = checkIn && checkOut && date > checkIn && date < checkOut;
     const isUnavailable = !isDateAvailable(date);
+    const isConfigured = isDateConfigured(date);
     const canBeCheckout = isCheckoutEligible(date);
-    
+
     let className = "relative w-full h-full flex items-center justify-center text-sm cursor-pointer transition-all hover:scale-105 ";
-    
+
     if (isSelected) {
       className += "bg-primary text-primary-foreground font-semibold shadow-sm ";
     } else if (isInRange) {
@@ -156,6 +162,9 @@ const PropertyCalendarOptimized = memo(({
     } else if (isUnavailable && canBeCheckout) {
       // Checkout-eligible dates - medium grey with underline to show they're special
       className += "text-muted-foreground/70 underline decoration-dotted underline-offset-2 ";
+    } else if (isUnavailable && !isConfigured) {
+      // Not-yet-configured dates - striped pattern with diagonal lines
+      className += "bg-gradient-to-br from-muted/20 to-muted/40 text-muted-foreground/50 cursor-not-allowed opacity-60 ";
     } else if (isUnavailable) {
       // Completely unavailable dates - very light grey
       className += "text-muted-foreground/40 cursor-not-allowed ";
@@ -221,6 +230,10 @@ const PropertyCalendarOptimized = memo(({
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded text-muted-foreground/70 flex items-center justify-center text-xs underline decoration-dotted">5</div>
             <span>Checkout only</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-gradient-to-br from-muted/20 to-muted/40 opacity-60"></div>
+            <span>Not configured</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded text-muted-foreground/40 flex items-center justify-center text-xs">6</div>

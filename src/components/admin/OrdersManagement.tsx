@@ -31,6 +31,7 @@ const OrdersManagement = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
@@ -51,6 +52,8 @@ const OrdersManagement = () => {
       if (error) throw error;
       setOrders(data || []);
       setCurrentPage(page);
+      // Disable load more if we got fewer items than requested (meaning no more data)
+      setHasMore((data?.length ?? 0) >= ITEMS_PER_PAGE);
     } catch (error) {
       console.error('Error loading orders:', error);
       toast({
@@ -249,7 +252,7 @@ const OrdersManagement = () => {
         </div>
       )}
 
-      {/* BUG-036: Pagination controls */}
+      {/* BUG-020: Pagination controls */}
       {orders.length > 0 && (
         <div className="flex justify-between items-center pt-4 gap-4">
           <Button
@@ -265,7 +268,7 @@ const OrdersManagement = () => {
           <Button
             variant="outline"
             onClick={() => loadOrders(currentPage + 1)}
-            disabled={orders.length < ITEMS_PER_PAGE}
+            disabled={!hasMore}
           >
             Load More
           </Button>

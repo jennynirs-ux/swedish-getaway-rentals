@@ -169,13 +169,23 @@ const CartPage = () => {
         return;
       }
 
+      // Fetch the authenticated user's email
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user?.email) {
+        toast({ title: 'Error', description: 'Unable to retrieve your email. Please try again.', variant: 'destructive' });
+        setCheckingOut(false);
+        return;
+      }
+
+      const customerEmail = userData.user.email;
+
       // Generate a nonce for additional CSRF protection
       const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       const timestamp = new Date().getTime().toString();
 
       const payload = {
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
-        customerEmail: '',
+        customerEmail: customerEmail,
         shippingCost: shippingCost,
         couponId: appliedCoupon?.id,
         couponCode: appliedCoupon?.code,

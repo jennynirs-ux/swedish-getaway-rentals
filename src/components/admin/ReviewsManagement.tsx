@@ -41,6 +41,7 @@ const ReviewsManagement = () => {
   const [filter, setFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
   const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
@@ -72,6 +73,8 @@ const ReviewsManagement = () => {
 
       setReviews((data as any) || []);
       setCurrentPage(page);
+      // Disable load more if we got fewer items than requested (meaning no more data)
+      setHasMore((data?.length ?? 0) >= ITEMS_PER_PAGE);
     } catch (error: any) {
       toast.error('Failed to load reviews');
     } finally {
@@ -81,12 +84,21 @@ const ReviewsManagement = () => {
 
   const handleModerationAction = async (reviewId: string, status: string) => {
     try {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+
+      // Check if user ID is defined - session may have expired
+      if (!userId) {
+        toast.error('Session expired, please log in again');
+        return;
+      }
+
       const { error } = await supabase
         .from('reviews')
-        .update({ 
+        .update({
           moderation_status: status,
           moderated_at: new Date().toISOString(),
-          moderated_by: (await supabase.auth.getUser()).data.user?.id
+          moderated_by: userId
         })
         .eq('id', reviewId);
 
@@ -248,7 +260,7 @@ const ReviewsManagement = () => {
             </div>
           )}
 
-          {/* BUG-036: Pagination controls */}
+          {/* BUG-021: Pagination controls */}
           {reviews.length > 0 && (
             <div className="flex justify-between items-center pt-4 border-t">
               <Button
@@ -264,7 +276,7 @@ const ReviewsManagement = () => {
               <Button
                 variant="outline"
                 onClick={() => fetchReviews(currentPage + 1)}
-                disabled={reviews.length < ITEMS_PER_PAGE}
+                disabled={!hasMore}
               >
                 Load More
               </Button>

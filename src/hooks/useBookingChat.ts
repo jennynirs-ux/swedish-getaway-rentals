@@ -28,6 +28,33 @@ export interface BookingChatInfo {
   last_message_at?: string;
 }
 
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  is_host: boolean;
+}
+
+export interface UserRole {
+  user_id: string;
+  role: string;
+}
+
+export interface BookingWithMessages {
+  id: string;
+  property_id: string;
+  guest_name: string;
+  guest_email: string;
+  check_in_date: string;
+  check_out_date: string;
+  status: string;
+  created_at: string;
+  properties: {
+    title: string;
+    host_id: string;
+  };
+  booking_messages: BookingMessage[];
+}
+
 export const useBookingChat = (bookingId?: string) => {
   const [messages, setMessages] = useState<BookingMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,19 +96,50 @@ export const useBookingChat = (bookingId?: string) => {
   }, [bookingId, toast]);
 
   const sendMessage = useCallback(async (
-    message: string, 
-    senderType: 'guest' | 'host' | 'admin'
+    message: string
   ) => {
     if (!bookingId || !message.trim()) return;
 
     try {
       setSending(true);
+
+      // Fetch current user's profile to determine their sender type
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_host')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Determine sender type based on user's role
+      let senderType: 'guest' | 'host' | 'admin' = 'guest';
+
+      // Check if user is admin
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (adminRole) {
+        senderType = 'admin';
+      } else if (profile?.is_host) {
+        senderType = 'host';
+      }
+
       const { data, error } = await supabase
         .from('booking_messages')
         .insert({
           booking_id: bookingId,
           sender_type: senderType,
-          sender_id: (await supabase.auth.getUser()).data.user?.id,
+          sender_id: user.id,
           message: message.trim(),
           message_type: 'text'
         })
@@ -89,7 +147,7 @@ export const useBookingChat = (bookingId?: string) => {
         .single();
 
       if (error) throw error;
-      
+
       // Message will be added via real-time subscription
     } catch (error) {
       console.error('Error sending message:', error);
@@ -197,14 +255,17 @@ export const useBookingChatList = () => {
   const fetchChats = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Get user profile to check if host
-      const { data: profile } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id, is_host')
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
+      if (profileError) throw profileError;
+
+      const profile = profileData as UserProfile | null;
       if (!profile) return;
 
       // Optimized single query with aggregated data
@@ -217,6 +278,8 @@ export const useBookingChatList = () => {
           guest_email,
           check_in_date,
           check_out_date,
+          status,
+          created_at,
           properties!inner(title, host_id),
           booking_messages(
             message,
@@ -230,35 +293,39 @@ export const useBookingChatList = () => {
 
       // Filter by host if not admin (check via user_roles)
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: adminRole } = await supabase
+      const { data: adminRoleData, error: adminRoleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user?.id)
         .eq('role', 'admin')
         .maybeSingle();
-      
-      if (!adminRole && (profile as any).is_host) {
-        query = query.eq('properties.host_id', (profile as any).id);
+
+      if (adminRoleError) throw adminRoleError;
+
+      // Only filter by host_id if user is not admin and is a host
+      if (!adminRoleData && profile.is_host) {
+        query = query.eq('properties.host_id', profile.id);
       }
 
-      const { data: bookings, error } = await query.order('created_at', { ascending: false });
+      const { data: bookingsData, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Process data efficiently
+      // Process data efficiently with proper typing
+      const bookings = bookingsData as BookingWithMessages[] | null;
       const chatInfos: BookingChatInfo[] = (bookings || []).map(booking => {
-        const messages = (booking as any).booking_messages || [];
-        const sortedMessages = messages.sort((a: any, b: any) => 
+        const messages = booking.booking_messages || [];
+        const sortedMessages = messages.sort((a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-        
-        const unreadCount = messages.filter((msg: any) => 
+
+        const unreadCount = messages.filter(msg =>
           !msg.read_by_host && msg.sender_type !== 'host'
         ).length;
 
         return {
           booking_id: booking.id,
-          property_title: (booking as any).properties.title,
+          property_title: booking.properties.title,
           guest_name: booking.guest_name,
           guest_email: booking.guest_email,
           check_in_date: booking.check_in_date,

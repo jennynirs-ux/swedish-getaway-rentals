@@ -90,9 +90,9 @@ export const usePropertyFilters = (properties: Property[]) => {
       // Amenities filter
       if (filters.amenities.length > 0) {
         const propertyAmenities = property.amenities?.map(a => a.toLowerCase()) || [];
-        const hasAllAmenities = filters.amenities.every(amenity => 
-          propertyAmenities.some(propAmenity => 
-            propAmenity.includes(amenity.toLowerCase())
+        const hasAllAmenities = filters.amenities.every(amenity =>
+          propertyAmenities.some(propAmenity =>
+            propAmenity === amenity.toLowerCase()
           )
         );
         if (!hasAllAmenities) return false;

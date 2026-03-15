@@ -90,9 +90,17 @@ export const geocodeAddress = async (address: string): Promise<GeocodingResult |
         const result = data[0];
         const city = result.address?.city || result.address?.town || result.address?.village;
 
+        const latitude = parseFloat(result.lat);
+        const longitude = parseFloat(result.lon);
+
+        // Validate parsed coordinates
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          throw new Error('Invalid coordinates from geocoding API');
+        }
+
         return {
-          latitude: parseFloat(result.lat),
-          longitude: parseFloat(result.lon),
+          latitude,
+          longitude,
           city,
           country: result.address?.country,
           displayName: result.display_name

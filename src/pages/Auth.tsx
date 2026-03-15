@@ -29,7 +29,24 @@ const Auth = () => {
   const [passwordStrength, setPasswordStrength] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+
+  // Validate redirect URL to prevent open redirect attacks
+  const getValidatedRedirect = (redirectUrl: string | null): string => {
+    if (!redirectUrl) return '/';
+
+    // Only allow relative paths starting with '/'
+    if (!redirectUrl.startsWith('/')) return '/';
+
+    // Block protocol-relative URLs (// or http:// or https://)
+    if (redirectUrl.startsWith('//') || redirectUrl.includes('://')) {
+      return '/';
+    }
+
+    // Allow the relative path
+    return redirectUrl;
+  };
+
+  const redirectTo = getValidatedRedirect(searchParams.get('redirect'));
 
   useEffect(() => {
     // Set up auth state listener FIRST

@@ -115,8 +115,9 @@ const HomePage = memo(() => {
         const startMax = addDays(filters.checkIn as Date, flex);
         const endMax = addDays(filters.checkOut as Date, flex);
 
-        const startStr = startMin.toISOString().slice(0, 10);
-        const endStr = endMax.toISOString().slice(0, 10);
+        // Normalize to UTC for consistent date comparisons
+        const startStr = new Date(startMin.getTime() - startMin.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        const endStr = new Date(endMax.getTime() - endMax.getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
         const { data, error } = await supabase
           .from('availability')
@@ -131,7 +132,8 @@ const HomePage = memo(() => {
         const blockMap = new Map<string, Set<string>>();
         (data || []).forEach((row: any) => {
           const pid = row.property_id as string;
-          const d = new Date(row.date).toISOString().slice(0, 10);
+          // Database date is already in UTC format (YYYY-MM-DD)
+          const d = row.date;
           if (!blockMap.has(pid)) blockMap.set(pid, new Set());
           blockMap.get(pid)!.add(d);
         });
@@ -143,7 +145,8 @@ const HomePage = memo(() => {
           while (s.getTime() <= startMax.getTime()) {
             let ok = true;
             for (let i = 0; i < nights; i++) {
-              const d = addDays(s, i).toISOString().slice(0, 10);
+              const checkDate = addDays(s, i);
+              const d = new Date(checkDate.getTime() - checkDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
               if (blocked.has(d)) { ok = false; break; }
             }
             if (ok) { okIds.add(pid); break; }
@@ -222,7 +225,7 @@ const HomePage = memo(() => {
         if (p.city && isInCityGroup(p.city, filters.location)) {
           return true;
         }
-        
+
         // Check distance-based filtering if coordinates are available
         if (filters.destinationCoords && p.latitude && p.longitude) {
           const propertyCoords: Coordinates = {
@@ -235,7 +238,15 @@ const HomePage = memo(() => {
             return true;
           }
         }
-        
+
+        // Fallback: text matching on title, location, and city when geocoding returns null
+        const searchTerm = filters.location.toLowerCase();
+        if (p.title?.toLowerCase().includes(searchTerm) ||
+            p.location?.toLowerCase().includes(searchTerm) ||
+            p.city?.toLowerCase().includes(searchTerm)) {
+          return true;
+        }
+
         // If location specified but no match, filter out
         return false;
       }
