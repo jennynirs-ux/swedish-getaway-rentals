@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Villa Hacken Design System - Scandinavian Luxury Rental */
+
+@layer base {
+  :root {
+    /* Core Brand Colors */
+    --background: 28 20% 97%;
+    --foreground: 25 25% 15%;
+
+    /* Card & Surface Colors */
+    --card: 28 25% 95%;
+    --card-foreground: 25 25% 15%;
+
+    --popover: 28 25% 95%;
+    --popover-foreground: 25 25% 15%;
+
+    /* Earth Tones - Forest & Natural Colors */
+    --primary: 25 40% 35%;
+    --primary-foreground: 45 20% 95%;
+    --primary-hover: 25 50% 30%;
+
+    /* Natural Secondary - Stone & Sand */
+    --secondary: 35 25% 85%;
+    --secondary-foreground: 25 25% 20%;
+
+    --muted: 30 20% 90%;
+    --muted-foreground: 25 20% 50%;
+
+    --accent: 120 20% 75%;
+    --accent-foreground: 25 25% 20%;
+
+    /* Status Colors */
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 28 20% 97%;
+
+    --success: 120 45% 45%;
+    --success-foreground: 28 20% 97%;
+
+  /* Interactive Elements */
+  --border: 28 20% 85%;
+  --input: 28 20% 90%;
+  --ring: 25 45% 25%;
+
+  /* Button variants */
+  --button-primary: 25 40% 35%;
+  --button-primary-hover: 25 50% 30%;
+  --button-primary-foreground: 45 20% 95%;
+  --button-secondary: 35 25% 85%;
+  --button-secondary-hover: 30 25% 80%;
+  --button-secondary-foreground: 25 25% 20%;
+  --button-outline: transparent;
+  --button-outline-hover: 28 20% 90%;
+  --button-outline-foreground: 25 40% 35%;
+  --button-ghost: transparent;
+  --button-ghost-hover: 28 20% 90%;
+  --button-ghost-foreground: 25 40% 35%;
+
+    /* Border Radius */
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+
+    /* Earth & Forest Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(25 40% 35%), hsl(35 50% 40%));
+    --gradient-subtle: linear-gradient(180deg, hsl(45 30% 96%), hsl(35 25% 92%));
+    --gradient-dark: linear-gradient(135deg, hsl(25 35% 20%), hsl(35 40% 25%));
+    --shadow-elegant: 0 20px 40px -10px hsl(25 40% 35% / 0.2);
+    --soft-shadow: 0 8px 25px -8px hsl(25 40% 35% / 0.15);
+    --glow-shadow: 0 0 30px hsl(120 20% 50% / 0.3);
+
+    /* Typography Scale */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Animations */
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    /* Dark theme for evening/cozy ambiance */
+    --background: 25 25% 8%;
+    --foreground: 28 20% 95%;
+
+    --card: 25 25% 10%;
+    --card-foreground: 28 20% 95%;
+
+    --popover: 25 25% 10%;
+    --popover-foreground: 28 20% 95%;
+
+    --primary: 35 50% 55%;
+    --primary-foreground: 25 25% 8%;
+
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 28 20% 95%;
+
+    --muted: 25 15% 15%;
+    --muted-foreground: 28 15% 65%;
+
+    --accent: 200 25% 25%;
+    --accent-foreground: 28 20% 95%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 28 20% 95%;
+
+    --border: 25 15% 20%;
+    --input: 25 15% 18%;
+    --ring: 35 50% 55%;
+
+    /* Button variants - dark theme */
+    --button-primary: 35 50% 55%;
+    --button-primary-hover: 35 55% 60%;
+    --button-primary-foreground: 25 25% 8%;
+    --button-secondary: 25 15% 18%;
+    --button-secondary-hover: 25 15% 25%;
+    --button-secondary-foreground: 28 20% 95%;
+    --button-outline: transparent;
+    --button-outline-hover: 25 15% 15%;
+    --button-outline-foreground: 28 20% 95%;
+    --button-ghost: transparent;
+    --button-ghost-hover: 25 15% 15%;
+    --button-ghost-foreground: 28 20% 95%;
+
+    /* Dark theme gradients */
+    --warm-gradient: linear-gradient(135deg, hsl(25 45% 15%), hsl(35 50% 25%));
+    --hero-gradient: linear-gradient(135deg, hsl(25 45% 10%) 0%, hsl(35 50% 20%) 50%, hsl(200 25% 25%) 100%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+    font-feature-settings: "ss01" 1;
+  }
+}
+
+@layer components {
+  .villa-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .lakehouse-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .villa-section {
+    @apply py-16 lg:py-24;
+  }
+
+  .lakehouse-section {
+    @apply py-16 lg:py-24;
+  }
+
+  .villa-card {
+    @apply bg-card rounded-lg shadow-soft-shadow p-6 transition-all duration-300 hover:shadow-luxury-shadow hover:-translate-y-1;
+  }
+
+  .lakehouse-card {
+    @apply bg-card rounded-lg shadow-soft-shadow p-6 transition-all duration-300 hover:shadow-luxury-shadow hover:-translate-y-1;
+  }
+
+  .villa-gradient-text {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .villa-hero-bg {
+    background: var(--hero-gradient);
+  }
+
+  .bg-gradient-dark {
+    background: var(--gradient-dark);
+  }
+
+  .guide-section-card {
+    @apply bg-card border border-border rounded-lg p-6 transition-all duration-300 hover:shadow-soft-shadow cursor-pointer;
+  }
+
+  .guide-section-card:hover {
+    @apply border-primary/20 shadow-lg;
+  }
+
+  .header-title {
+    color: #fff !important;
+  }
+
+  .header-subtitle {
+    color: rgba(255,255,255,0.9) !important;
+  }
+}
