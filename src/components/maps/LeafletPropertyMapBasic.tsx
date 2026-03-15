@@ -13,6 +13,18 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Utility function to escape HTML special characters
+const escapeHtml = (text: string): string => {
+  const map: { [key: string]: string } = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return text.replace(/[&<>"']/g, (char) => map[char]);
+};
+
 interface Props {
   position: [number, number];
   propertyTitle: string;
@@ -41,8 +53,8 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
     marker.addTo(map);
     marker.bindPopup(
       `<div style="font-size: 0.875rem;">
-        <div style="font-weight:600; margin-bottom: 0.25rem;">${propertyTitle}</div>
-        <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer">Get directions →</a>
+        <div style="font-weight:600; margin-bottom: 0.25rem;">${escapeHtml(propertyTitle)}</div>
+        <a href="${escapeHtml(googleMapsUrl)}" target="_blank" rel="noopener noreferrer">Get directions →</a>
       </div>`
     );
     markerRef.current = marker;
@@ -76,8 +88,8 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
     if (markerRef.current) {
       markerRef.current.setPopupContent(
         `<div style="font-size: 0.875rem;">
-          <div style="font-weight:600; margin-bottom: 0.25rem;">${propertyTitle}</div>
-          <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer">Get directions →</a>
+          <div style="font-weight:600; margin-bottom: 0.25rem;">${escapeHtml(propertyTitle)}</div>
+          <a href="${escapeHtml(googleMapsUrl)}" target="_blank" rel="noopener noreferrer">Get directions →</a>
         </div>`
       );
     }

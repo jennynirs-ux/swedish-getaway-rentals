@@ -180,8 +180,7 @@ const CartPage = () => {
         couponId: appliedCoupon?.id,
         couponCode: appliedCoupon?.code,
         discountAmount: appliedCoupon?.discountAmount,
-        // CSRF protection
-        sessionToken: session.access_token,
+        // CSRF protection - removed sessionToken from payload; Authorization header is sent automatically via supabase.functions.invoke
         nonce: nonce,
         timestamp: timestamp
       };

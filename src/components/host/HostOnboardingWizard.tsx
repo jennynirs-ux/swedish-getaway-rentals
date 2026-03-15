@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,10 +10,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronLeft, ChevronRight, Home, MapPin, Bed, Camera, DollarSign, Send, Sparkles } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Home, MapPin, Bed, Camera, DollarSign, Send, Sparkles, Upload, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUser } from '@/services/authService';
+import { geocodeAddress } from '@/lib/geocoding';
+import { emailSchema } from '@/lib/validationSchemas';
 
 // Types for the wizard form data
 export interface WizardFormData {
@@ -170,72 +172,156 @@ const Step2PropertyType: React.FC<{ formData: WizardFormData; onChange: (field: 
   </div>
 );
 
-const Step3Location: React.FC<{ formData: WizardFormData; onChange: (field: string, value: any) => void }> = ({ formData, onChange }) => (
-  <div className="space-y-6">
-    <div>
-      <h3 className="text-lg font-semibold mb-2">Where is your property located?</h3>
-      <p className="text-gray-600">This helps guests find you and determines which market you serve.</p>
-    </div>
+const Step3Location: React.FC<{ formData: WizardFormData; onChange: (field: string, value: any) => void }> = ({ formData, onChange }) => {
+  const [geocodingStatus, setGeocodingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const geocodingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    <div className="space-y-4">
+  // BUG-005 FIX: Auto-geocode when address fields change
+  useEffect(() => {
+    // Clear previous timeout
+    if (geocodingTimeoutRef.current) {
+      clearTimeout(geocodingTimeoutRef.current);
+    }
+
+    // Don't geocode if we don't have required fields
+    if (!formData.address && !formData.city && !formData.country) {
+      setGeocodingStatus('idle');
+      return;
+    }
+
+    setGeocodingStatus('loading');
+
+    // Debounce geocoding by 500ms
+    geocodingTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Build address string from components
+        const addressParts = [
+          formData.address,
+          formData.city,
+          formData.postalCode,
+          formData.country
+        ].filter(Boolean);
+
+        const fullAddress = addressParts.join(', ');
+
+        if (!fullAddress.trim()) {
+          setGeocodingStatus('idle');
+          return;
+        }
+
+        const result = await geocodeAddress(fullAddress);
+
+        if (result) {
+          onChange('latitude', result.latitude);
+          onChange('longitude', result.longitude);
+          setGeocodingStatus('success');
+
+          toast({
+            title: 'Location found',
+            description: `Coordinates: ${result.latitude.toFixed(4)}, ${result.longitude.toFixed(4)}`,
+          });
+        } else {
+          setGeocodingStatus('error');
+          toast({
+            title: 'Address not found',
+            description: 'Could not determine coordinates for this address. You can adjust them manually later.',
+            variant: 'destructive'
+          });
+        }
+      } catch (error) {
+        setGeocodingStatus('error');
+        console.error('Geocoding error:', error);
+      }
+    }, 500);
+
+    return () => {
+      if (geocodingTimeoutRef.current) {
+        clearTimeout(geocodingTimeoutRef.current);
+      }
+    };
+  }, [formData.address, formData.city, formData.postalCode, formData.country, onChange]);
+
+  return (
+    <div className="space-y-6">
       <div>
-        <Label htmlFor="address" className="text-sm font-medium">Street Address</Label>
-        <Input
-          id="address"
-          placeholder="123 Main Street"
-          value={formData.address}
-          onChange={(e) => onChange('address', e.target.value)}
-          className="mt-1"
-        />
+        <h3 className="text-lg font-semibold mb-2">Where is your property located?</h3>
+        <p className="text-gray-600">This helps guests find you and determines which market you serve.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-4">
         <div>
-          <Label htmlFor="city" className="text-sm font-medium">City</Label>
+          <Label htmlFor="address" className="text-sm font-medium">Street Address</Label>
           <Input
-            id="city"
-            placeholder="Stockholm"
-            value={formData.city}
-            onChange={(e) => onChange('city', e.target.value)}
+            id="address"
+            placeholder="123 Main Street"
+            value={formData.address}
+            onChange={(e) => onChange('address', e.target.value)}
             className="mt-1"
           />
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="city" className="text-sm font-medium">City</Label>
+            <Input
+              id="city"
+              placeholder="Stockholm"
+              value={formData.city}
+              onChange={(e) => onChange('city', e.target.value)}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="postalCode" className="text-sm font-medium">Postal Code</Label>
+            <Input
+              id="postalCode"
+              placeholder="10001"
+              value={formData.postalCode}
+              onChange={(e) => onChange('postalCode', e.target.value)}
+              className="mt-1"
+            />
+          </div>
+        </div>
+
         <div>
-          <Label htmlFor="postalCode" className="text-sm font-medium">Postal Code</Label>
-          <Input
-            id="postalCode"
-            placeholder="10001"
-            value={formData.postalCode}
-            onChange={(e) => onChange('postalCode', e.target.value)}
-            className="mt-1"
-          />
+          <Label htmlFor="country" className="text-sm font-medium">Country</Label>
+          <Select value={formData.country} onValueChange={(value) => onChange('country', value)}>
+            <SelectTrigger id="country" className="mt-1">
+              <SelectValue placeholder="Select country" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SE">Sweden</SelectItem>
+              <SelectItem value="NO">Norway</SelectItem>
+              <SelectItem value="DK">Denmark</SelectItem>
+              <SelectItem value="DE">Germany</SelectItem>
+              <SelectItem value="FI">Finland</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {geocodingStatus === 'loading' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-900">Finding coordinates for your location...</p>
+          </div>
+        )}
+
+        {geocodingStatus === 'success' && formData.latitude && formData.longitude && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm text-green-900">
+              Location verified: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+            </p>
+          </div>
+        )}
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900">
+            💡 Tip: You can refine the exact location on the map in the next steps.
+          </p>
         </div>
       </div>
-
-      <div>
-        <Label htmlFor="country" className="text-sm font-medium">Country</Label>
-        <Select value={formData.country} onValueChange={(value) => onChange('country', value)}>
-          <SelectTrigger id="country" className="mt-1">
-            <SelectValue placeholder="Select country" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="SE">Sweden</SelectItem>
-            <SelectItem value="NO">Norway</SelectItem>
-            <SelectItem value="DK">Denmark</SelectItem>
-            <SelectItem value="DE">Germany</SelectItem>
-            <SelectItem value="FI">Finland</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-900">
-          💡 Tip: You can refine the exact location on the map in the next steps.
-        </p>
-      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Step4PropertyDetails: React.FC<{ formData: WizardFormData; onChange: (field: string, value: any) => void }> = ({ formData, onChange }) => (
   <div className="space-y-6">
@@ -335,49 +421,191 @@ const Step5Amenities: React.FC<{ formData: WizardFormData; onChange: (field: str
   </div>
 );
 
-const Step6Photos: React.FC<{ formData: WizardFormData; onChange: (field: string, value: any) => void }> = ({ formData, onChange }) => (
-  <div className="space-y-6">
-    <div>
-      <h3 className="text-lg font-semibold mb-2">Upload photos of your property</h3>
-      <p className="text-gray-600">
-        High-quality photos are essential! Start with at least 3-5 photos showing different angles and rooms.
-      </p>
-    </div>
+const Step6Photos: React.FC<{ formData: WizardFormData; onChange: (field: string, value: any) => void }> = ({ formData, onChange }) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    <div className="space-y-4">
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-        <Camera className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-        <p className="text-gray-600 mb-2">Drag and drop your photos here, or click to browse</p>
-        <Button variant="outline">Choose Photos</Button>
-      </div>
+  // BUG-006 FIX: File upload handler
+  const handleFileSelect = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
 
-      {formData.photoUrls.length > 0 && (
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-3">Uploaded Photos ({formData.photoUrls.length})</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {formData.photoUrls.map((url, idx) => (
-              <div key={idx} className="relative group">
-                <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
-                <button
-                  onClick={() => onChange('photoUrls', formData.photoUrls.filter((_, i) => i !== idx))}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    setIsUploading(true);
+    const uploadedUrls: string[] = [];
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <p className="text-sm text-amber-900">
-          💡 Tip: Use natural lighting, show multiple rooms, include outdoor spaces, and make sure photos are well-composed.
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Validation: file size (max 5MB) and type
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: 'File too large',
+            description: `${file.name} exceeds 5MB limit`,
+            variant: 'destructive'
+          });
+          continue;
+        }
+
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: 'Invalid file type',
+            description: `${file.name} is not an image file`,
+            variant: 'destructive'
+          });
+          continue;
+        }
+
+        try {
+          const fileKey = `${Date.now()}_${i}_${file.name}`;
+          setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
+
+          // Upload to Supabase Storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('property-images')
+            .upload(`properties/${fileKey}`, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            throw uploadError;
+          }
+
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('property-images')
+            .getPublicUrl(`properties/${fileKey}`);
+
+          if (urlData?.publicUrl) {
+            uploadedUrls.push(urlData.publicUrl);
+            setUploadProgress(prev => {
+              const updated = { ...prev };
+              delete updated[fileKey];
+              return updated;
+            });
+          }
+        } catch (error) {
+          console.error(`Upload error for ${file.name}:`, error);
+          toast({
+            title: 'Upload failed',
+            description: `Failed to upload ${file.name}`,
+            variant: 'destructive'
+          });
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        onChange('photoUrls', [...formData.photoUrls, ...uploadedUrls]);
+        toast({
+          title: 'Success',
+          description: `${uploadedUrls.length} photo(s) uploaded successfully`,
+        });
+      }
+    } finally {
+      setIsUploading(false);
+      setUploadProgress({});
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleFileSelect(e.dataTransfer.files);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Upload photos of your property</h3>
+        <p className="text-gray-600">
+          High-quality photos are essential! Start with at least 3-5 photos showing different angles and rooms.
         </p>
       </div>
+
+      <div className="space-y-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={(e) => handleFileSelect(e.target.files)}
+          className="hidden"
+        />
+
+        <div
+          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Camera className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-600 mb-2">Drag and drop your photos here, or click to browse</p>
+          <Button variant="outline" disabled={isUploading}>
+            <Upload className="w-4 h-4 mr-2" />
+            {isUploading ? 'Uploading...' : 'Choose Photos'}
+          </Button>
+        </div>
+
+        {Object.keys(uploadProgress).length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-900 mb-2">Uploading photos...</p>
+            <div className="space-y-2">
+              {Object.entries(uploadProgress).map(([key, progress]) => (
+                <div key={key} className="text-xs text-blue-800">
+                  <div className="flex justify-between mb-1">
+                    <span>Photo {key.split('_')[1]}</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded h-1">
+                    <div
+                      className="bg-blue-500 h-1 rounded transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {formData.photoUrls.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-3">Uploaded Photos ({formData.photoUrls.length})</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {formData.photoUrls.map((url, idx) => (
+                <div key={idx} className="relative group">
+                  <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                  <button
+                    onClick={() => onChange('photoUrls', formData.photoUrls.filter((_, i) => i !== idx))}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-sm text-amber-900">
+            💡 Tip: Use natural lighting, show multiple rooms, include outdoor spaces, and make sure photos are well-composed. Max 5MB per image.
+          </p>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Step7Pricing: React.FC<{ formData: WizardFormData; onChange: (field: string, value: any) => void }> = ({ formData, onChange }) => (
   <div className="space-y-6">
@@ -570,7 +798,20 @@ export const HostOnboardingWizard: React.FC = () => {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.fullName && formData.email && formData.phone);
+        // BUG-007 FIX: Add proper email validation
+        if (!formData.fullName || !formData.email || !formData.phone) {
+          return false;
+        }
+
+        // Validate email format using emailSchema
+        try {
+          emailSchema.parse(formData.email);
+        } catch (error) {
+          setErrorMessage('Please enter a valid email address');
+          return false;
+        }
+
+        return true;
       case 2:
         return !!formData.propertyType;
       case 3:

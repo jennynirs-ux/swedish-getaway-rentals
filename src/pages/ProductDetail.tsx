@@ -123,19 +123,20 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     if (!product) return;
-    
+
     setPurchasing(true);
     try {
       const { title } = getDisplayData(product);
-      addItem({ 
-        productId: product.id, 
-        title, 
-        price: currentPrice, 
-        currency: product.currency, 
-        quantity, 
-        image: product.main_image_override || product.image_url, 
-        variantId: selectedVariant, 
-        variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null 
+      const priceToAdd = getCurrentPrice();
+      addItem({
+        productId: product.id,
+        title,
+        price: priceToAdd,
+        currency: product.currency,
+        quantity,
+        image: product.main_image_override || product.image_url,
+        variantId: selectedVariant,
+        variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null
       });
       toast({ title: 'Added to cart', description: title });
     } catch (error) {

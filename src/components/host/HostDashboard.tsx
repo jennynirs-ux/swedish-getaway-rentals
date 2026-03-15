@@ -219,12 +219,42 @@ const HostDashboard = () => {
   };
 
   const deleteProperty = async () => {
-    if (!deletingPropertyId) return;
+    if (!deletingPropertyId || !user) return;
     try {
+      // Get the current host's profile ID for ownership verification
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) {
+        toast.error("Unable to verify ownership. Please try again.");
+        return;
+      }
+
+      // BUG-011: Check for active or upcoming bookings before deletion
+      const { data: activeBookings } = await supabase
+        .from("bookings")
+        .select("id, status, check_out_date", { count: "exact", head: true })
+        .eq("property_id", deletingPropertyId)
+        .in("status", ["pending", "confirmed"])
+        .gte("check_out_date", new Date().toISOString());
+
+      if (activeBookings && activeBookings.length > 0) {
+        toast.error(
+          "Cannot delete property with active or upcoming bookings. Please cancel or complete all bookings first."
+        );
+        return;
+      }
+
+      // BUG-003: Add host_id ownership filter to prevent cross-host deletion
       const { error } = await supabase
-        .from('properties')
+        .from("properties")
         .delete()
-        .eq('id', deletingPropertyId);
+        .eq("id", deletingPropertyId)
+        .eq("host_id", profile.id);
+
       if (error) throw error;
       toast.success("Property deleted successfully");
       setDeletingPropertyId(null);
@@ -466,7 +496,10 @@ const HostDashboard = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Property</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete this property? This action cannot be undone and will remove all associated data.
+                  Are you sure you want to delete this property? This action cannot be undone.
+                  <br />
+                  <br />
+                  Important: Any active or upcoming bookings must be cancelled first. Availability records and reviews associated with this property will also be removed.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

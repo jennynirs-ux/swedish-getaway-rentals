@@ -193,10 +193,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
     const validatedData = validateForm();
     if (!validatedData || !checkIn || !checkOut) return;
 
-    // Additional date validation
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (checkIn < today) {
+    // Additional date validation - BUG-009: Normalize dates to UTC midnight for consistent comparison
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const checkInUTC = new Date(Date.UTC(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate()));
+
+    if (checkInUTC < todayUTC) {
       setValidationErrors({ checkIn: "Check-in date cannot be in the past" });
       return;
     }

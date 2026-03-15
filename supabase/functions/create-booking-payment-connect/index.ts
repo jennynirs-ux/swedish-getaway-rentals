@@ -114,7 +114,32 @@ serve(async (req) => {
         status: 400,
       });
     }
-    
+
+    // CRITICAL BUG-001: Check for conflicting bookings before creating payment session
+    const { data: existingBookings, error: bookingCheckError } = await supabaseClient
+      .from("bookings")
+      .select("id, status, check_in_date, check_out_date")
+      .eq("property_id", propertyId)
+      .in("status", ["confirmed", "pending"])
+      .gte("check_out_date", checkInDate)
+      .lt("check_in_date", checkOutDate);
+
+    if (bookingCheckError) {
+      logStep("Error checking booking conflicts", { error: bookingCheckError });
+      return new Response(JSON.stringify({ error: "Unable to verify availability. Please try again." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    if (existingBookings && existingBookings.length > 0) {
+      logStep("Booking conflict detected", { propertyId, checkInDate, checkOutDate, conflictCount: existingBookings.length });
+      return new Response(JSON.stringify({ error: "These dates are no longer available. Please select different dates." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 409,
+      });
+    }
+
     // CRITICAL: Recalculate total amount server-side - never trust client-supplied amounts
     const nightCount = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     
