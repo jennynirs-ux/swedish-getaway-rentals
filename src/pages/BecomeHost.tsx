@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import forestHero from "@/assets/forest-hero-light.jpg";
 import {
   Home,
   TrendingUp,
@@ -305,8 +306,7 @@ const BecomeHost = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage:
-              "url('src/assets/forest-hero-light.jpg')",
+            backgroundImage: `url(${forestHero})`,
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-background" />

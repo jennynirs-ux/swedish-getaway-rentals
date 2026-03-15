@@ -23,6 +23,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -66,6 +76,9 @@ const PropertyDetailEditor = ({
 }: PropertyDetailEditorProps) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [originalForm, setOriginalForm] = useState<any>(null);
 
   const [form, setForm] = useState<any>({
     title: "",
@@ -101,8 +114,7 @@ const PropertyDetailEditor = ({
 
       if (error) throw error;
 
-      setForm((prev: any) => ({
-        ...prev,
+      const loadedForm = {
         title: data.title || "",
         price_per_night: data.price_per_night?.toString() || "",
         currency: data.currency || "SEK",
@@ -116,7 +128,15 @@ const PropertyDetailEditor = ({
         country: data.country || "Sweden",
         latitude: (data.latitude ?? null) as number | null,
         longitude: (data.longitude ?? null) as number | null,
+      };
+
+      setForm((prev: any) => ({
+        ...prev,
+        ...loadedForm,
       }));
+
+      setOriginalForm(loadedForm);
+      setHasUnsavedChanges(false);
     } catch (err) {
       console.error("Error loading property:", err);
       toast({
@@ -169,6 +189,7 @@ const PropertyDetailEditor = ({
         description: "Property updated successfully",
       });
 
+      setHasUnsavedChanges(false);
       onSave?.();
       onClose();
     } catch (err) {
@@ -181,6 +202,20 @@ const PropertyDetailEditor = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCloseWithCheck = () => {
+    if (hasUnsavedChanges) {
+      setShowConfirmClose(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const confirmClose = () => {
+    setShowConfirmClose(false);
+    setHasUnsavedChanges(false);
+    onClose();
   };
 
   if (loading) {
@@ -196,7 +231,8 @@ const PropertyDetailEditor = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <>
+    <Dialog open={open} onOpenChange={handleCloseWithCheck}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Property: {form.title || "Untitled"}</DialogTitle>
@@ -278,7 +314,7 @@ const PropertyDetailEditor = ({
                 latitude: form.latitude,
                 longitude: form.longitude
               }}
-              onChange={(loc) =>
+              onChange={(loc) => {
                 setForm((p: any) => ({
                   ...p,
                   street: loc.street || "",
@@ -287,12 +323,13 @@ const PropertyDetailEditor = ({
                   country: loc.country || "Sweden",
                   latitude: loc.latitude ?? null,
                   longitude: loc.longitude ?? null
-                }))
-              }
+                }));
+                setHasUnsavedChanges(true);
+              }}
             />
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button variant="outline" onClick={handleCloseWithCheck}>Cancel</Button>
               <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
             </div>
           </TabsContent>
@@ -364,7 +401,10 @@ const PropertyDetailEditor = ({
                       type="number"
                       min="0"
                       value={form.price_per_night || ""}
-                      onChange={(e) => setForm((p: any) => ({ ...p, price_per_night: e.target.value }))}
+                      onChange={(e) => {
+                        setForm((p: any) => ({ ...p, price_per_night: e.target.value }));
+                        setHasUnsavedChanges(true);
+                      }}
                     />
                   </div>
                   <div className="space-y-2">
@@ -376,7 +416,10 @@ const PropertyDetailEditor = ({
                       max="100"
                       step="0.1"
                       value={form.weekly_discount_percentage || ""}
-                      onChange={(e) => setForm((p: any) => ({ ...p, weekly_discount_percentage: e.target.value }))}
+                      onChange={(e) => {
+                        setForm((p: any) => ({ ...p, weekly_discount_percentage: e.target.value }));
+                        setHasUnsavedChanges(true);
+                      }}
                     />
                     <p className="text-xs text-muted-foreground">Applied to 7+ nights</p>
                   </div>
@@ -389,7 +432,10 @@ const PropertyDetailEditor = ({
                       max="100"
                       step="0.1"
                       value={form.monthly_discount_percentage || ""}
-                      onChange={(e) => setForm((p: any) => ({ ...p, monthly_discount_percentage: e.target.value }))}
+                      onChange={(e) => {
+                        setForm((p: any) => ({ ...p, monthly_discount_percentage: e.target.value }));
+                        setHasUnsavedChanges(true);
+                      }}
                     />
                     <p className="text-xs text-muted-foreground">Applied to 30+ nights</p>
                   </div>
@@ -405,9 +451,10 @@ const PropertyDetailEditor = ({
                 <Label htmlFor="cancellation_policy">Policy Type</Label>
                 <Select
                   value={form.cancellation_policy || "moderate"}
-                  onValueChange={(value: "flexible" | "moderate" | "strict") =>
-                    setForm((p: any) => ({ ...p, cancellation_policy: value }))
-                  }
+                  onValueChange={(value: "flexible" | "moderate" | "strict") => {
+                    setForm((p: any) => ({ ...p, cancellation_policy: value }));
+                    setHasUnsavedChanges(true);
+                  }}
                 >
                   <SelectTrigger id="cancellation_policy"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -433,7 +480,7 @@ const PropertyDetailEditor = ({
             />
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button variant="outline" onClick={handleCloseWithCheck}>Cancel</Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
@@ -442,6 +489,24 @@ const PropertyDetailEditor = ({
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved changes. Are you sure you want to discard them?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Continue editing</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmClose}>
+            Discard changes
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
 

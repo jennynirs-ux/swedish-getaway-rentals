@@ -86,7 +86,8 @@ const HostManagement = () => {
   const handleApplicationReview = async (applicationId: string, action: 'approve' | 'reject') => {
     try {
       const { error } = await supabase.rpc('approve_host_application', {
-        application_id: applicationId
+        application_id: applicationId,
+        admin_notes: adminNotes
       });
 
       if (error) throw error;

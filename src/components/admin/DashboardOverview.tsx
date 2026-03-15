@@ -145,7 +145,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
       const currentMonth = new Date();
       currentMonth.setDate(1);
       const monthlyOrders = orders?.filter(order => new Date(order.created_at) >= currentMonth) || [];
-      const shopRevenue = orders?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+      const shopRevenue = monthlyOrders.reduce((sum, order) => sum + order.total_amount, 0);
   
       const statsData = basicStats as any;
       setStats({
@@ -277,7 +277,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatCurrency(stats.shop_revenue)}</div>
-          <p className="text-xs text-muted-foreground">Total from shop orders</p>
+          <p className="text-xs text-muted-foreground">This month from shop orders</p>
         </CardContent>
       </Card>
     </div>

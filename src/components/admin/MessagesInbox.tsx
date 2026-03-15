@@ -88,7 +88,7 @@ const MessagesInbox = () => {
     try {
       const { error } = await supabase
         .from('guest_messages')
-        .update({ 
+        .update({
           reply: replyText,
           replied_at: new Date().toISOString(),
           read: true
@@ -97,9 +97,23 @@ const MessagesInbox = () => {
 
       if (error) throw error;
 
+      // Send the reply email to the guest
+      const { error: emailError } = await supabase.functions.invoke('send-guest-reply', {
+        body: {
+          guestEmail: selectedMessage.email,
+          guestName: selectedMessage.name,
+          reply: replyText
+        }
+      });
+
+      if (emailError) {
+        console.error('Email send error:', emailError);
+        // Don't throw - reply is saved in DB
+      }
+
       toast({
         title: "Svar skickat",
-        description: "Ditt svar har sparats"
+        description: "Ditt svar har sparats och skickats till gästen"
       });
 
       setReplyText('');

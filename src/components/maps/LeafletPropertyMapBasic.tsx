@@ -71,6 +71,18 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
     }
   }, [position]);
 
+  // Update marker popup content when title changes
+  useEffect(() => {
+    if (markerRef.current) {
+      markerRef.current.setPopupContent(
+        `<div style="font-size: 0.875rem;">
+          <div style="font-weight:600; margin-bottom: 0.25rem;">${propertyTitle}</div>
+          <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer">Get directions →</a>
+        </div>`
+      );
+    }
+  }, [propertyTitle, googleMapsUrl]);
+
   useEffect(() => {
     if (!mapRef.current) return;
 

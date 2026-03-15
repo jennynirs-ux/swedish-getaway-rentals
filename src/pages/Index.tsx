@@ -11,6 +11,7 @@ import PropertySearch from "@/components/PropertySearch";
 import MainNavigation from "@/components/MainNavigation";
 import BookPromotion from "@/components/BookPromotion";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
+import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
 
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
 import { addDays, subDays, differenceInCalendarDays } from "date-fns";
@@ -69,8 +70,8 @@ const HomePage = memo(() => {
     "homepage-properties",
     propertiesQueryFn,
     {
-      cacheTime: 15 * 60 * 1000,
-      staleTime: 5 * 60 * 1000,
+      cacheTime: CACHE_GC_TIME,
+      staleTime: CACHE_STALE_TIME,
       enableRealtime: false,
     }
   );
@@ -138,13 +139,15 @@ const HomePage = memo(() => {
         const okIds = new Set<string>();
         propertyIds.forEach((pid) => {
           const blocked = blockMap.get(pid) || new Set<string>();
-          for (let s = new Date(startMin); s <= startMax; s = addDays(s, 1)) {
+          let s = new Date(startMin);
+          while (s.getTime() <= startMax.getTime()) {
             let ok = true;
             for (let i = 0; i < nights; i++) {
               const d = addDays(s, i).toISOString().slice(0, 10);
               if (blocked.has(d)) { ok = false; break; }
             }
             if (ok) { okIds.add(pid); break; }
+            s = addDays(s, 1);
           }
         });
 
@@ -203,7 +206,7 @@ const HomePage = memo(() => {
           : [];
         const wanted = new Set(filters.amenities.map((a) => a.toLowerCase()));
         for (const w of wanted) {
-          if (!names.some((n) => n.includes(w))) return false;
+          if (!names.some((n) => n === w)) return false;
         }
       }
       
@@ -252,8 +255,8 @@ const HomePage = memo(() => {
             "@type": "LodgingBusiness",
             "name": "Nordic Getaways",
             "description": "Discover your perfect retreat in the Nordic",
-            "url": "https://swedish-getaway-rentals.lovable.app",
-            "image": "https://swedish-getaway-rentals.lovable.app/favicon.png",
+            "url": `${typeof window !== 'undefined' ? window.location.origin : ''}`,
+            "image": `${typeof window !== 'undefined' ? window.location.origin : ''}/favicon.png`,
             "address": {
               "@type": "PostalAddress",
               "addressCountry": "SE"

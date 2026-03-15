@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface UseBookingRealtimeOptions {
   onBookingUpdate?: (booking: any) => void;
@@ -14,11 +14,7 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
   // TODO: Consider implementing exponential backoff for connection failures
   const handleBookingInsert = useCallback((payload: any) => {
     if (enableAdminNotifications) {
-      toast({
-        title: "New Booking Received!",
-        description: `${payload.new.guest_name} has made a booking for ${payload.new.property_id}`,
-        duration: 10000,
-      });
+      toast.info(`${payload.new.guest_name} has made a booking for ${payload.new.property_id}`);
     }
 
     onBookingUpdate?.(payload.new);
@@ -26,11 +22,7 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
 
   const handleBookingUpdate = useCallback((payload: any) => {
     if (enableAdminNotifications && payload.new.status === 'confirmed') {
-      toast({
-        title: "Booking Confirmed!",
-        description: `Booking by ${payload.new.guest_name} has been confirmed`,
-        duration: 5000,
-      });
+      toast.success(`Booking by ${payload.new.guest_name} has been confirmed`);
     }
 
     onBookingUpdate?.(payload.new);

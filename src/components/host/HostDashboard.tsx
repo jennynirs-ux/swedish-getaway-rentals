@@ -106,7 +106,7 @@ const HostDashboard = () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
-        
+
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
@@ -125,6 +125,16 @@ const HostDashboard = () => {
         .from("properties")
         .select("*", { count: "exact", head: true })
         .eq("host_id", profile.id);
+
+      // Fetch commission rate from platform_settings
+      const { data: settingsData } = await supabase
+        .from("platform_settings")
+        .select("setting_value")
+        .eq("setting_key", "commission_rate")
+        .single();
+
+      // Default to 0.9 (10% commission) if not found
+      const commissionMultiplier = settingsData?.setting_value?.rate ?? 0.9;
 
       // Use secure view for masked contact data
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -147,7 +157,7 @@ const HostDashboard = () => {
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
       const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + booking.total_amount * 0.9;
+        return sum + booking.total_amount * commissionMultiplier;
       }, 0);
 
       setStats({

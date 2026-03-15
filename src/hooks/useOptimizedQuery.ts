@@ -34,6 +34,12 @@ export function useOptimizedQuery<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const queryFnRef = useRef(queryFn);
+
+  // Keep queryFnRef in sync
+  useEffect(() => {
+    queryFnRef.current = queryFn;
+  }, [queryFn]);
 
   const executeQuery = useCallback(async (useCache = true) => {
     // Check cache first
@@ -56,8 +62,8 @@ export function useOptimizedQuery<T>(
       }
       abortControllerRef.current = new AbortController();
 
-      const result = await queryFn();
-      
+      const result = await queryFnRef.current();
+
       if (result.error) {
         throw result.error;
       }
@@ -77,7 +83,7 @@ export function useOptimizedQuery<T>(
     } finally {
       setLoading(false);
     }
-  }, [key, queryFn, staleTime]);
+  }, [key, staleTime]);
 
   const refetch = useCallback(() => executeQuery(false), [executeQuery]);
 

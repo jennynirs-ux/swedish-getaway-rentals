@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { geocodeAddress } from '@/lib/geocoding';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 const EditorMap = lazy(() => import('./maps/LeafletEditorBasic'));
@@ -52,11 +52,7 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
 
   const handleGeocode = async () => {
     if (!value.street && !value.city) {
-      toast({
-        title: 'Missing information',
-        description: 'Please enter at least a city or street address',
-        variant: 'destructive'
-      });
+      toast.error('Please enter at least a city or street address');
       return;
     }
 
@@ -68,7 +64,7 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
         value.city,
         value.country || 'Sweden'
       ].filter(Boolean);
-      
+
       const addressString = addressParts.join(', ');
       const result = await geocodeAddress(addressString);
 
@@ -81,24 +77,13 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
           country: result.country || value.country
         });
         setMapPosition([result.latitude, result.longitude]);
-        toast({
-          title: 'Location found',
-          description: 'Coordinates have been updated. You can drag the pin to adjust.'
-        });
+        toast.success('Location found. Coordinates have been updated. You can drag the pin to adjust.');
       } else {
-        toast({
-          title: 'Location not found',
-          description: 'Could not find coordinates for this address',
-          variant: 'destructive'
-        });
+        toast.error('Could not find coordinates for this address');
       }
     } catch (error) {
       console.error('Geocoding error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to geocode address',
-        variant: 'destructive'
-      });
+      toast.error('Failed to geocode address');
     } finally {
       setLoading(false);
     }

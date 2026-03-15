@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useState, memo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { AlertCircle } from "lucide-react";
 import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
 import { getAmenityIcon } from "@/lib/amenityIcons";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
@@ -51,16 +52,17 @@ interface PropertyCardProps {
   size?: "default" | "large";
 }
 
-const PropertyCard = memo(({ 
-  property, 
-  onFavoriteToggle, 
-  isFavorite = false, 
+const PropertyCard = memo(({
+  property,
+  onFavoriteToggle,
+  isFavorite = false,
   showFullDescription = false,
-  size = "default" 
+  size = "default"
 }: PropertyCardProps) => {
   const { toast } = useToast();
   const [selectedAmenity, setSelectedAmenity] = useState<any>(null);
   const [isAmenityDialogOpen, setIsAmenityDialogOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Defensive data normalization
   const safeProperty = {
@@ -128,16 +130,29 @@ const PropertyCard = memo(({
       <Card className={cardClass}>
         <div className={`relative ${cardHeight}`}>
           {/* Image with LazyImage for performance */}
-          <LazyImage
-            src={safeProperty.hero_image_url}
-            alt={safeProperty.title}
-            fallbackSrc="/placeholder.jpg"
-            priority={false}
-            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
-            decoding="async"
-            width={800}
-            height={600}
-          />
+          {!imageError ? (
+            <LazyImage
+              src={safeProperty.hero_image_url}
+              alt={safeProperty.title}
+              fallbackSrc="/placeholder.jpg"
+              priority={false}
+              className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+              decoding="async"
+              width={800}
+              height={600}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            /* BUG-047: Final fallback with colored placeholder */
+            <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground flex items-center justify-center">
+              <div className="text-center p-4">
+                <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm break-words max-w-[90%]">
+                  {safeProperty.title}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Image Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

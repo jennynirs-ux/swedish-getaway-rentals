@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,11 +32,12 @@ export const useBookingChat = (bookingId?: string) => {
   const [messages, setMessages] = useState<BookingMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const isMountedRef = useRef(true);
   const { toast } = useToast();
 
   const fetchMessages = useCallback(async () => {
     if (!bookingId) return;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -46,16 +47,24 @@ export const useBookingChat = (bookingId?: string) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages((data || []) as BookingMessage[]);
+      // BUG-042: Check if component is still mounted before updating state
+      if (isMountedRef.current) {
+        setMessages((data || []) as BookingMessage[]);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load messages",
-        variant: "destructive",
-      });
+      // Only show toast if mounted
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to load messages",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [bookingId, toast]);
 
@@ -126,7 +135,10 @@ export const useBookingChat = (bookingId?: string) => {
           filter: `booking_id=eq.${bookingId}`
         },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as BookingMessage]);
+          // BUG-042: Check if mounted before state update
+          if (isMountedRef.current) {
+            setMessages(prev => [...prev, payload.new as BookingMessage]);
+          }
         }
       )
       .on(
@@ -138,9 +150,12 @@ export const useBookingChat = (bookingId?: string) => {
           filter: `booking_id=eq.${bookingId}`
         },
         (payload) => {
-          setMessages(prev => prev.map(msg => 
-            msg.id === payload.new.id ? payload.new as BookingMessage : msg
-          ));
+          // BUG-042: Check if mounted before state update
+          if (isMountedRef.current) {
+            setMessages(prev => prev.map(msg =>
+              msg.id === payload.new.id ? payload.new as BookingMessage : msg
+            ));
+          }
         }
       )
       .subscribe();
@@ -150,10 +165,19 @@ export const useBookingChat = (bookingId?: string) => {
     };
   }, [bookingId]);
 
-  // Fetch initial messages
+  // Fetch initial messages when bookingId changes
   useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
+    if (bookingId) {
+      fetchMessages();
+    }
+  }, [bookingId, fetchMessages]);
+
+  // BUG-042: Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   return {
     messages,

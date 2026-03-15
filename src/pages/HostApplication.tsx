@@ -30,11 +30,25 @@ const HostApplication = () => {
     }
   }, [searchParams]);
 
+  const phoneRegex = /^\+?[\d\s\-()]{7,20}$/;
+
+  const validatePhone = (phone: string): boolean => {
+    if (!phone) return true; // Phone is optional
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Validate phone number
+      if (formData.contactPhone && !validatePhone(formData.contactPhone)) {
+        toast.error('Please enter a valid phone number');
+        setLoading(false);
+        return;
+      }
+
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) {
         toast.error('Please log in to submit an application');
@@ -70,11 +84,17 @@ const HostApplication = () => {
       }
 
       // Check if user already has an application
-      const { data: existingApplication } = await supabase
+      const { data: existingApplication, error: existingAppError } = await supabase
         .from('host_applications')
         .select('id')
         .eq('user_id', user.user.id)
         .single();
+
+      // Only treat PGRST116 (not found) as "no existing application"
+      // Re-throw other errors
+      if (existingAppError && existingAppError.code !== 'PGRST116') {
+        throw existingAppError;
+      }
 
       if (existingApplication) {
         toast.error('You have already submitted a host application');

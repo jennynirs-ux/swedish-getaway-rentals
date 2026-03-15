@@ -92,20 +92,21 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
        const filteredDates = dates.filter((d) => !isSyncedDate(d));
        const skipped = dates.length - filteredDates.length;
 
-       for (const date of filteredDates) {
-         const dateStr = format(date, 'yyyy-MM-dd');
-         const { error } = await supabase
-           .from('availability')
-           .upsert({
-             property_id: selectedProperty,
-             date: dateStr,
-             available,
-             seasonal_price: seasonalPrice || null,
-             minimum_nights: minimumNights || 1,
-             reason: available ? null : 'host_blocked'
-           }, { onConflict: 'property_id,date' });
-         if (error) throw error;
-       }
+       // Batch upsert all dates in a single operation to avoid N+1 queries
+       const recordsToUpsert = filteredDates.map((date) => ({
+         property_id: selectedProperty,
+         date: format(date, 'yyyy-MM-dd'),
+         available,
+         seasonal_price: seasonalPrice || null,
+         minimum_nights: minimumNights || 1,
+         reason: available ? null : 'host_blocked'
+       }));
+
+       const { error } = await supabase
+         .from('availability')
+         .upsert(recordsToUpsert, { onConflict: 'property_id,date' });
+
+       if (error) throw error;
 
        toast({
          title: 'Success',

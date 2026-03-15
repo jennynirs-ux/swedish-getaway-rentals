@@ -33,21 +33,28 @@ const ReviewsManagement = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
-    fetchReviews();
+    setCurrentPage(0);
+    fetchReviews(0);
   }, [filter]);
 
-  const fetchReviews = async () => {
+  const fetchReviews = async (page: number) => {
     try {
+      const from = page * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
       let query = supabase
         .from('reviews')
         .select(`
           *,
           reviewer:profiles!reviews_reviewer_id_fkey(full_name, display_name, email),
           reviewee:profiles!reviews_reviewee_id_fkey(full_name, display_name, email)
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (filter !== "all") {
         query = query.eq('moderation_status', filter);
@@ -57,6 +64,7 @@ const ReviewsManagement = () => {
       if (error) throw error;
 
       setReviews((data as any) || []);
+      setCurrentPage(page);
     } catch (error: any) {
       toast.error('Failed to load reviews');
     } finally {
@@ -78,7 +86,7 @@ const ReviewsManagement = () => {
       if (error) throw error;
 
       toast.success(`Review ${status} successfully`);
-      fetchReviews();
+      fetchReviews(currentPage);
     } catch (error: any) {
       toast.error('Failed to update review');
     }
@@ -96,7 +104,7 @@ const ReviewsManagement = () => {
       if (error) throw error;
 
       toast.success('Review deleted successfully');
-      fetchReviews();
+      fetchReviews(currentPage);
     } catch (error: any) {
       toast.error('Failed to delete review');
     }
@@ -231,6 +239,29 @@ const ReviewsManagement = () => {
           {reviews.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No reviews found
+            </div>
+          )}
+
+          {/* BUG-036: Pagination controls */}
+          {reviews.length > 0 && (
+            <div className="flex justify-between items-center pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => fetchReviews(currentPage - 1)}
+                disabled={currentPage === 0}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage + 1}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => fetchReviews(currentPage + 1)}
+                disabled={reviews.length < ITEMS_PER_PAGE}
+              >
+                Load More
+              </Button>
             </div>
           )}
         </CardContent>

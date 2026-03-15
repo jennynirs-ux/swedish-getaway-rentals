@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,28 +39,36 @@ const BookingsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ bookingId: string; newStatus: string } | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 50;
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchBookings();
+    fetchBookings(0);
   }, []);
 
   useEffect(() => {
     filterBookings();
   }, [bookings, searchTerm, statusFilter]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (page: number) => {
     try {
+      const from = page * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
       const { data, error } = await supabase
         .from('bookings')
         .select(`
           *,
           properties!inner(title, location)
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
       setBookings(data || []);
+      setCurrentPage(page);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({
@@ -104,7 +113,8 @@ const BookingsManagement = () => {
         description: `Bokning ${newStatus === 'confirmed' ? 'bekräftad' : 'avbokad'}`
       });
 
-      fetchBookings();
+      setConfirmDialog(null);
+      fetchBookings(currentPage);
     } catch (error) {
       console.error('Error updating booking status:', error);
       toast({
@@ -113,6 +123,10 @@ const BookingsManagement = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleStatusChange = (bookingId: string, newStatus: string) => {
+    setConfirmDialog({ bookingId, newStatus });
   };
 
   const getStatusBadge = (status: string) => {
@@ -231,7 +245,7 @@ const BookingsManagement = () => {
                         <>
                           <Button
                             size="sm"
-                            onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                            onClick={() => handleStatusChange(booking.id, 'confirmed')}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             <CheckCircle className="h-4 w-4" />
@@ -239,7 +253,7 @@ const BookingsManagement = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                            onClick={() => handleStatusChange(booking.id, 'cancelled')}
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>
@@ -326,6 +340,53 @@ const BookingsManagement = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bekräfta statusändring</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ändra bokningens status till {confirmDialog?.newStatus === 'confirmed' ? 'bekräftad' : 'avbokad'}? Denna åtgärd kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDialog) {
+                  updateBookingStatus(confirmDialog.bookingId, confirmDialog.newStatus);
+                }
+              }}
+              className={confirmDialog?.newStatus === 'cancelled' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+            >
+              Bekräfta
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* BUG-036: Pagination controls */}
+      {filteredBookings.length > 0 && (
+        <div className="flex justify-between items-center pt-4 gap-4">
+          <Button
+            variant="outline"
+            onClick={() => fetchBookings(currentPage - 1)}
+            disabled={currentPage === 0}
+          >
+            Föregående
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Sida {currentPage + 1}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => fetchBookings(currentPage + 1)}
+            disabled={bookings.length < ITEMS_PER_PAGE}
+          >
+            Ladda Mer
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

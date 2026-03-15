@@ -19,6 +19,16 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   DKK: "kr",
 };
 
+// Fallback rates for Nordic currencies (approximate rates relative to SEK)
+const FALLBACK_RATES: Record<string, number> = {
+  SEK: 1,
+  NOK: 0.95,
+  DKK: 0.13,
+  EUR: 10.5,
+  USD: 10.2,
+  GBP: 12.8,
+};
+
 export const useCurrencyConversion = () => {
   const [rates, setRates] = useState<ExchangeRates>({ SEK: 1 });
   const [userCurrency, setUserCurrency] = useState<CurrencyInfo>({
@@ -35,9 +45,11 @@ export const useCurrencyConversion = () => {
           "https://api.exchangerate-api.com/v4/latest/SEK"
         );
         const data = await response.json();
-        setRates(data.rates || { SEK: 1 });
+        setRates(data.rates || FALLBACK_RATES);
       } catch (error) {
         console.error("Error fetching exchange rates:", error);
+        // Use fallback rates when API fails
+        setRates(FALLBACK_RATES);
       }
     };
 

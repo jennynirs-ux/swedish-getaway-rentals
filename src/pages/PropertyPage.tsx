@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo, Suspense, lazy } from "react";
+import { useState, useMemo, useCallback, memo, Suspense, lazy, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/hooks/useProperties";
@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
+import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
 
 // Lazy-loaded heavy components
 const PropertyGallery = lazy(() => import("@/components/PropertyGallery"));
@@ -26,13 +27,16 @@ const NearbyPropertiesWrapper = memo(({ currentPropertyId, currentCoordinates }:
   currentCoordinates: { latitude: number; longitude: number };
 }) => {
   const fetchNearbyPropertiesFn = useCallback(async () => {
+    // BUG-037: N+1 query for nearby properties. In production, should use PostGIS for efficient proximity search.
+    // For now, limiting to 10 properties to reduce query overhead.
     const { data, error } = await supabase
       .from("properties")
       .select("id, title, hero_image_url, latitude, longitude, location")
       .eq("active", true)
       .not("latitude", "is", null)
-      .not("longitude", "is", null);
-    
+      .not("longitude", "is", null)
+      .limit(10);
+
     if (error) throw error;
     return { data: data || [], error: null };
   }, []);
@@ -41,8 +45,8 @@ const NearbyPropertiesWrapper = memo(({ currentPropertyId, currentCoordinates }:
     "all-properties-nearby",
     fetchNearbyPropertiesFn,
     {
-      cacheTime: 15 * 60 * 1000,
-      staleTime: 5 * 60 * 1000,
+      cacheTime: CACHE_GC_TIME,
+      staleTime: CACHE_STALE_TIME,
       enableRealtime: false,
     }
   );
@@ -64,36 +68,44 @@ const PropertyPage = memo(() => {
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
   const [guideSectionId, setGuideSectionId] = useState<string | undefined>();
 
-  /** Resolve legacy routes → actual property id */
-  const resolvePropertyId = useCallback(async (incomingId: string) => {
-    let propertyId = incomingId;
+  /** Resolve legacy routes → actual property id (once per component) */
+  const [resolvedPropertyId, setResolvedPropertyId] = useState<string | null>(null);
+  const [resolutionError, setResolutionError] = useState<Error | null>(null);
 
-    if (incomingId === "villa-hacken") {
-      const { data } = await supabase
-        .from("properties")
-        .select("id")
-        .ilike("title", "%villa%")
-        .eq("active", true)
-        .limit(1)
-        .single();
-      if (data) propertyId = data.id;
-    } else if (incomingId === "lakehouse-getaway") {
-      const { data } = await supabase
-        .from("properties")
-        .select("id")
-        .or("title.ilike.%lakehouse%,title.ilike.%lake%")
-        .eq("active", true)
-        .limit(1)
-        .single();
-      if (data) propertyId = data.id;
-    }
+  // Resolve property ID once on mount
+  useEffect(() => {
+    const resolve = async () => {
+      let propertyId = id!;
 
-    return propertyId;
-  }, []);
+      if (id === "villa-hacken") {
+        const { data } = await supabase
+          .from("properties")
+          .select("id")
+          .ilike("title", "%villa%")
+          .eq("active", true)
+          .limit(1)
+          .single();
+        if (data) propertyId = data.id;
+      } else if (id === "lakehouse-getaway") {
+        const { data } = await supabase
+          .from("properties")
+          .select("id")
+          .or("title.ilike.%lakehouse%,title.ilike.%lake%")
+          .eq("active", true)
+          .limit(1)
+          .single();
+        if (data) propertyId = data.id;
+      }
+
+      setResolvedPropertyId(propertyId);
+    };
+
+    resolve().catch(err => setResolutionError(err));
+  }, [id]);
 
   /** Light query */
   const propertyLightQueryFn = useCallback(async () => {
-    let propertyId = await resolvePropertyId(id!);
+    if (!resolvedPropertyId) throw new Error("Property ID not resolved");
 
     const { data, error } = await supabase
       .from("properties")
@@ -119,13 +131,13 @@ const PropertyPage = memo(() => {
         longitude,
         city
       `)
-      .eq("id", propertyId)
+      .eq("id", resolvedPropertyId)
       .eq("active", true)
       .single();
 
     if (error) throw error;
     return { data, error: null };
-  }, [id, resolvePropertyId]);
+  }, [resolvedPropertyId]);
 
   const { data: lightProperty, loading, error } = useOptimizedQuery(
     `property-light-${id}`,
@@ -139,7 +151,7 @@ const PropertyPage = memo(() => {
 
   /** Heavy query */
   const propertyHeavyQueryFn = useCallback(async () => {
-    let propertyId = await resolvePropertyId(id!);
+    if (!resolvedPropertyId) throw new Error("Property ID not resolved");
 
     const { data, error } = await supabase
       .from("properties")
@@ -157,13 +169,13 @@ const PropertyPage = memo(() => {
         gallery_metadata,
         video_metadata
       `)
-      .eq("id", propertyId)
+      .eq("id", resolvedPropertyId)
       .eq("active", true)
       .single();
 
     if (error) throw error;
     return { data, error: null };
-  }, [id, resolvePropertyId]);
+  }, [resolvedPropertyId]);
 
   const { data: heavyProperty } = useOptimizedQuery(
     `property-heavy-${id}`,

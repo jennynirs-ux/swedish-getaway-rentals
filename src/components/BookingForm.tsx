@@ -30,6 +30,9 @@ interface PropertyDiscounts {
   monthly_discount_percentage: number;
 }
 
+const maxAdvanceBookingDays = 365;
+
+// BUG-052: TODO - Use i18n system from src/lib/i18n/ instead of hardcoded Swedish strings
 const BookingForm: React.FC<BookingFormProps> = ({
   propertyId,
   propertyTitle,
@@ -73,24 +76,32 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   });
 
-  // Input validation schema
+  // Input validation schema with sanitization via transforms
   const bookingSchema = z.object({
     guest_name: z.string()
-      .min(2, "Name must be at least 2 characters")
-      .max(100, "Name must be less than 100 characters")
-      .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Name contains invalid characters"),
+      .transform(val => DOMPurify.sanitize(val.trim()))
+      .pipe(z.string()
+        .min(2, "Name must be at least 2 characters")
+        .max(100, "Name must be less than 100 characters")
+        .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Name contains invalid characters")),
     guest_email: z.string()
-      .email("Invalid email address")
-      .max(255, "Email must be less than 255 characters"),
+      .transform(val => DOMPurify.sanitize(val.trim()))
+      .pipe(z.string()
+        .email("Invalid email address")
+        .max(255, "Email must be less than 255 characters")),
     guest_phone: z.string()
       .optional()
-      .refine((val) => !val || /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val), "Invalid phone number"),
+      .transform(val => val ? DOMPurify.sanitize(val.trim()) : '')
+      .pipe(z.string()
+        .refine((val) => !val || /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val), "Invalid phone number")),
     number_of_guests: z.number()
       .min(1, "At least 1 guest required")
       .max(maxGuests, `Maximum ${maxGuests} guests allowed`),
     special_requests: z.string()
-      .max(1000, "Special requests must be less than 1000 characters")
       .optional()
+      .transform(val => val ? DOMPurify.sanitize(val.trim()) : '')
+      .pipe(z.string()
+        .max(1000, "Special requests must be less than 1000 characters"))
   });
 
   const [formData, setFormData] = useState({
@@ -152,17 +163,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const validateForm = () => {
     try {
-      const sanitizedData = {
-        ...formData,
-        guest_name: DOMPurify.sanitize(formData.guest_name.trim()),
-        guest_email: DOMPurify.sanitize(formData.guest_email.trim()),
-        guest_phone: formData.guest_phone ? DOMPurify.sanitize(formData.guest_phone.trim()) : '',
-        special_requests: formData.special_requests ? DOMPurify.sanitize(formData.special_requests.trim()) : ''
-      };
-      
-      bookingSchema.parse(sanitizedData);
+      // Schema automatically sanitizes inputs via transforms
+      const validatedData = bookingSchema.parse(formData);
       setValidationErrors({});
-      return sanitizedData;
+      return validatedData;
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
@@ -198,6 +202,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
     if (checkOut <= checkIn) {
       setValidationErrors({ checkOut: "Check-out must be after check-in date" });
+      return;
+    }
+
+    // Check max advance booking window
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + maxAdvanceBookingDays);
+    if (checkIn > maxDate) {
+      setValidationErrors({ checkIn: `Check-in date cannot be more than ${maxAdvanceBookingDays} days in advance` });
       return;
     }
   
@@ -386,9 +398,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               maxLength={100}
               required
               className={validationErrors.guest_name ? "border-destructive" : ""}
+              aria-describedby={validationErrors.guest_name ? "guest_name-error" : undefined}
             />
             {validationErrors.guest_name && (
-              <p className="text-destructive text-sm">{validationErrors.guest_name}</p>
+              <p id="guest_name-error" className="text-destructive text-sm" role="alert">{validationErrors.guest_name}</p>
             )}
           </div>
 
@@ -403,9 +416,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               maxLength={255}
               required
               className={validationErrors.guest_email ? "border-destructive" : ""}
+              aria-describedby={validationErrors.guest_email ? "guest_email-error" : undefined}
             />
             {validationErrors.guest_email && (
-              <p className="text-destructive text-sm">{validationErrors.guest_email}</p>
+              <p id="guest_email-error" className="text-destructive text-sm" role="alert">{validationErrors.guest_email}</p>
             )}
           </div>
 
@@ -419,9 +433,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               onChange={handleChange}
               maxLength={15}
               className={validationErrors.guest_phone ? "border-destructive" : ""}
+              aria-describedby={validationErrors.guest_phone ? "guest_phone-error" : undefined}
             />
             {validationErrors.guest_phone && (
-              <p className="text-destructive text-sm">{validationErrors.guest_phone}</p>
+              <p id="guest_phone-error" className="text-destructive text-sm" role="alert">{validationErrors.guest_phone}</p>
             )}
           </div>
 
@@ -435,9 +450,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               maxLength={1000}
               rows={3}
               className={validationErrors.special_requests ? "border-destructive" : ""}
+              aria-describedby={validationErrors.special_requests ? "special_requests-error" : undefined}
             />
             {validationErrors.special_requests && (
-              <p className="text-destructive text-sm">{validationErrors.special_requests}</p>
+              <p id="special_requests-error" className="text-destructive text-sm" role="alert">{validationErrors.special_requests}</p>
             )}
           </div>
 

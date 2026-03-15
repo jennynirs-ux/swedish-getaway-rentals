@@ -23,6 +23,9 @@ const CartPage = () => {
 
   const currency = items[0]?.currency || 'SEK';
 
+  // Check for mixed currencies
+  const hasMixedCurrencies = items.length > 0 && items.some(item => item.currency !== currency);
+
   useEffect(() => {
     fetchShippingSettings();
     fetchProductVariants();
@@ -158,13 +161,29 @@ const CartPage = () => {
     if (items.length === 0 || hasIncompleteVariants) return;
     setCheckingOut(true);
     try {
+      // Get current session token for CSRF protection
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        toast({ title: 'Error', description: 'Please sign in to checkout', variant: 'destructive' });
+        setCheckingOut(false);
+        return;
+      }
+
+      // Generate a nonce for additional CSRF protection
+      const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const timestamp = new Date().getTime().toString();
+
       const payload = {
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
         customerEmail: '',
         shippingCost: shippingCost,
         couponId: appliedCoupon?.id,
         couponCode: appliedCoupon?.code,
-        discountAmount: appliedCoupon?.discountAmount
+        discountAmount: appliedCoupon?.discountAmount,
+        // CSRF protection
+        sessionToken: session.access_token,
+        nonce: nonce,
+        timestamp: timestamp
       };
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
@@ -252,9 +271,20 @@ const CartPage = () => {
                             <Input
                               type="number"
                               min={1}
+                              max={99}
                               className="w-20"
                               value={i.quantity}
-                              onChange={(e) => updateQuantity(i.productId, i.variantId || null, Math.max(1, parseInt(e.target.value || '1', 10)))}
+                              onChange={(e) => {
+                                const newQty = Math.max(1, Math.min(99, parseInt(e.target.value || '1', 10)));
+                                if (newQty > 99) {
+                                  toast({
+                                    title: "Quantity limited",
+                                    description: "Maximum quantity is 99 items",
+                                    variant: "destructive"
+                                  });
+                                }
+                                updateQuantity(i.productId, i.variantId || null, newQty);
+                              }}
                             />
                           </TableCell>
                           <TableCell>{formatPrice(i.price * i.quantity, i.currency)}</TableCell>
@@ -318,6 +348,13 @@ const CartPage = () => {
                   appliedCoupon={appliedCoupon}
                 />
                 
+                {hasMixedCurrencies && (
+                  <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>Cart contains items in different currencies. Please remove items to match currencies before checkout.</span>
+                  </div>
+                )}
+
                 {hasIncompleteVariants && (
                   <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -325,7 +362,7 @@ const CartPage = () => {
                   </div>
                 )}
 
-                <Button className="w-full" disabled={checkingOut || hasIncompleteVariants} onClick={checkout}>
+                <Button className="w-full" disabled={checkingOut || hasIncompleteVariants || hasMixedCurrencies} onClick={checkout}>
                   {checkingOut ? 'Processing...' : 'Checkout'}
                 </Button>
                 <Button variant="outline" className="w-full" onClick={clear}>Clear Cart</Button>

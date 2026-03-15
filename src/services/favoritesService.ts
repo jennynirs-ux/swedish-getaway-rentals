@@ -152,7 +152,7 @@ export async function isFavorited(userId: string, propertyId: string): Promise<b
 }
 
 /**
- * Toggle favorite status for a property
+ * Toggle favorite status for a property (using upsert with atomic operation)
  * @param userId - User ID
  * @param propertyId - Property ID
  * @returns Promise containing new favorite state (true if added, false if removed)
@@ -160,13 +160,24 @@ export async function isFavorited(userId: string, propertyId: string): Promise<b
  */
 export async function toggleFavorite(userId: string, propertyId: string): Promise<boolean> {
   try {
-    const favorited = await isFavorited(userId, propertyId);
+    // First, check current state
+    const isFav = await isFavorited(userId, propertyId);
 
-    if (favorited) {
+    if (isFav) {
+      // Remove the favorite
       await removeFavorite(userId, propertyId);
       return false;
     } else {
-      await addFavorite(userId, propertyId);
+      // Use upsert with onConflict to handle race conditions atomically
+      // If it exists, do nothing; if it doesn't, insert it
+      const { error } = await supabase
+        .from('user_favorites')
+        .upsert(
+          { user_id: userId, property_id: propertyId, created_at: new Date().toISOString() },
+          { onConflict: 'user_id,property_id' }
+        );
+
+      if (error) throw error;
       return true;
     }
   } catch (error) {

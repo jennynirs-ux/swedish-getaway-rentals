@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 // react-leaflet imports moved to lazy-loaded inner component
 import type { LatLngExpression } from 'leaflet';
 import { getDrivingRoute, getClosestMajorCity, type Coordinates, type RouteInfo } from '@/lib/distance';
@@ -19,11 +19,17 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
   const [route, setRoute] = useState<RouteInfo | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const isMountedRef = useRef(true);
   const isValid = Number.isFinite(latitude) && Number.isFinite(longitude);
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
   const position: [number, number] = [latitude, longitude];
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (showRoute) {
@@ -32,26 +38,38 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '', showR
         try {
           const propertyCoords: Coordinates = { latitude, longitude };
           const closestCity = getClosestMajorCity(propertyCoords);
-          
+
           if (closestCity) {
-            const cityCoords = closestCity.city === 'Stockholm' 
+            const cityCoords = closestCity.city === 'Stockholm'
               ? { latitude: 59.3293, longitude: 18.0686 }
               : closestCity.city === 'Gothenburg'
               ? { latitude: 57.7089, longitude: 11.9746 }
               : { latitude: 55.6050, longitude: 13.0038 };
-            
+
             const routeInfo = await getDrivingRoute(cityCoords, propertyCoords);
-            setRoute(routeInfo);
+            // Only set state if component is still mounted
+            if (isMountedRef.current) {
+              setRoute(routeInfo);
+            }
           }
         } catch (error) {
           console.error('Failed to load route:', error);
         } finally {
-          setRouteLoading(false);
+          if (isMountedRef.current) {
+            setRouteLoading(false);
+          }
         }
       };
       loadRoute();
     }
   }, [latitude, longitude, showRoute]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
 
   // Convert route geometry to Leaflet LatLng format

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, X, ShoppingCart } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getCurrentUser, onAuthStateChange, isApprovedHost } from "@/services/authService";
 
 interface MainNavigationProps {
@@ -14,6 +14,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const previousUserIdRef = useRef<string | null>(null);
 
   const isPropertyPage =
     location.pathname.includes("/villa-") ||
@@ -30,7 +31,9 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
     const initUser = async () => {
       const currentUser = await getCurrentUser();
       setUser(currentUser ? { id: currentUser.id, email: currentUser.email } : null);
-      if (currentUser) {
+      // BUG-038: Only check host status if userId actually changed
+      if (currentUser && currentUser.id !== previousUserIdRef.current) {
+        previousUserIdRef.current = currentUser.id;
         checkHostStatus(currentUser.id);
       }
     };
@@ -39,8 +42,12 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
 
     const unsubscribe = onAuthStateChange((authUser) => {
       setUser(authUser ? { id: authUser.id, email: authUser.email } : null);
-      if (authUser) {
+      // BUG-038: Only check host status if userId actually changed
+      if (authUser && authUser.id !== previousUserIdRef.current) {
+        previousUserIdRef.current = authUser.id;
         checkHostStatus(authUser.id);
+      } else if (!authUser) {
+        previousUserIdRef.current = null;
       }
     });
 

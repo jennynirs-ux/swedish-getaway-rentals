@@ -16,6 +16,7 @@ interface ContactFormProps {
 }
 
 const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmän förfrågan' }) => {
+  // BUG-052: TODO - Use i18n system from src/lib/i18n/ instead of hardcoded Swedish strings
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
@@ -47,6 +48,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const validateForm = () => {
     try {
@@ -114,10 +116,15 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
         // Don't throw - message is saved in DB
       }
 
+      // BUG-049: Longer toast duration and persistent success state
       toast({
         title: "Meddelande skickat!",
         description: "Vi kommer att svara dig så snart som möjligt.",
+        duration: 8000, // 8 seconds instead of default 5
       });
+
+      // Show persistent success banner
+      setShowSuccessMessage(true);
 
       // Reset form
       setFormData({
@@ -128,6 +135,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
         message: ''
       });
       setValidationErrors({});
+
+      // Hide success message after 5 seconds
+      setTimeout(() => setShowSuccessMessage(false), 5000);
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -164,6 +174,13 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* BUG-049: Persistent success state banner */}
+        {showSuccessMessage && (
+          <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg">
+            <p className="text-green-800 font-semibold">Tack för ditt meddelande!</p>
+            <p className="text-green-700 text-sm">Vi kontaktar dig så snart som möjligt.</p>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="name">Namn</Label>

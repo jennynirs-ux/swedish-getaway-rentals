@@ -24,20 +24,27 @@ interface Order {
 const OrdersManagement = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
-    loadOrders();
+    loadOrders(0);
   }, []);
 
-  const loadOrders = async () => {
+  const loadOrders = async (page: number) => {
     try {
+      const from = page * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
       setOrders(data || []);
+      setCurrentPage(page);
     } catch (error) {
       console.error('Error loading orders:', error);
       toast({
@@ -233,6 +240,29 @@ const OrdersManagement = () => {
           <p className="text-muted-foreground">
             Orders will appear here once customers start purchasing products
           </p>
+        </div>
+      )}
+
+      {/* BUG-036: Pagination controls */}
+      {orders.length > 0 && (
+        <div className="flex justify-between items-center pt-4 gap-4">
+          <Button
+            variant="outline"
+            onClick={() => loadOrders(currentPage - 1)}
+            disabled={currentPage === 0}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage + 1}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => loadOrders(currentPage + 1)}
+            disabled={orders.length < ITEMS_PER_PAGE}
+          >
+            Load More
+          </Button>
         </div>
       )}
     </div>

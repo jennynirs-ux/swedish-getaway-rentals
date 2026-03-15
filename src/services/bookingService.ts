@@ -55,6 +55,12 @@ export async function checkBookingAvailability(
     });
 
     if (error) throw error;
+
+    // Validate response type
+    if (typeof data !== 'boolean') {
+      throw new Error(`Invalid RPC response type: expected boolean, got ${typeof data}`);
+    }
+
     return !data; // Returns true if no conflict (available)
   } catch (error) {
     throw new Error(

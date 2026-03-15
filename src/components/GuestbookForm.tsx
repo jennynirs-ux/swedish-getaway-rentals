@@ -32,6 +32,7 @@ interface GuestbookFormProps {
   checkInDate: string;
 }
 
+// BUG-052: TODO - Use i18n system from src/lib/i18n/ instead of hardcoded Swedish strings
 const GuestbookForm = ({ 
   propertyId, 
   propertyTitle, 
@@ -50,7 +51,7 @@ const GuestbookForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Validate input
       const sanitizedData = {
@@ -66,6 +67,32 @@ const GuestbookForm = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Please sign in to submit your guestbook entry");
+        return;
+      }
+
+      // Validate token before submitting
+      const { data: tokenData, error: tokenFetchError } = await supabase
+        .from("guestbook_tokens")
+        .select("id, expires_at, used_at")
+        .eq("token", token)
+        .eq("booking_id", bookingId)
+        .single();
+
+      if (tokenFetchError || !tokenData) {
+        toast.error("Invalid or expired guestbook link");
+        return;
+      }
+
+      // Check if token is already used
+      if (tokenData.used_at) {
+        toast.error("This guestbook link has already been used");
+        return;
+      }
+
+      // Check if token is expired
+      const expiresAt = new Date(tokenData.expires_at);
+      if (expiresAt < new Date()) {
+        toast.error("This guestbook link has expired");
         return;
       }
 
@@ -95,7 +122,7 @@ const GuestbookForm = ({
       if (tokenError) console.error("Error marking token as used:", tokenError);
 
       toast.success("Thank you for your guestbook entry! It will be published after review.");
-      
+
       // Redirect to property page after 2 seconds
       setTimeout(() => {
         navigate(`/property/${propertyId}`);
@@ -144,7 +171,7 @@ const GuestbookForm = ({
 
               <div className="space-y-2">
                 <Label>Rating (Optional)</Label>
-                <div className="flex gap-2 p-3 bg-secondary/20 rounded-lg w-fit">
+                <div className="flex gap-2 p-3 bg-secondary/20 rounded-lg w-fit" role="radiogroup" aria-label="Rating">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <button
                       key={i}
@@ -152,7 +179,21 @@ const GuestbookForm = ({
                       onClick={() => setRating(i + 1)}
                       onMouseEnter={() => setHoveredRating(i + 1)}
                       onMouseLeave={() => setHoveredRating(0)}
-                      className="transition-transform hover:scale-110"
+                      onKeyDown={(e) => {
+                        // BUG-045: Arrow key navigation for accessibility
+                        if (e.key === 'ArrowRight' && i < 4) {
+                          setRating(i + 2);
+                          e.preventDefault();
+                        } else if (e.key === 'ArrowLeft' && i > 0) {
+                          setRating(i);
+                          e.preventDefault();
+                        }
+                      }}
+                      className="transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary rounded"
+                      role="radio"
+                      aria-checked={rating === i + 1}
+                      aria-label={`${i + 1} star rating`}
+                      tabIndex={rating === i + 1 ? 0 : -1}
                     >
                       <Star
                         className={`h-8 w-8 ${

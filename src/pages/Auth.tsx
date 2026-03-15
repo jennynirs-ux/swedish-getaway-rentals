@@ -94,9 +94,10 @@ const Auth = () => {
 
     try {
       const redirectUrl = `${window.location.origin}/`;
-      
+      const normalizedEmail = email.toLowerCase().trim();
+
       const { error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
         options: {
           emailRedirectTo: redirectUrl
@@ -163,13 +164,26 @@ const Auth = () => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Attempt to send password reset link
+      // Always show the same success message regardless of whether the email exists
+      // This prevents email enumeration attacks
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: `${window.location.origin}/auth`,
       });
-      if (error) throw error;
-      toast.success('Password reset link sent! Check your email.');
+
+      // Always show the generic success message
+      toast.success('If an account exists with this email, you will receive a password reset link shortly.');
+
+      // Optionally log error but don't expose it to the user
+      if (error && error.message) {
+        console.error('Password reset error:', error.message);
+      }
     } catch (error: any) {
-      toast.error(error.message);
+      // Also show generic message on catch
+      toast.success('If an account exists with this email, you will receive a password reset link shortly.');
+      console.error('Unexpected error during password reset:', error);
     } finally {
       setLoading(false);
     }
@@ -181,8 +195,10 @@ const Auth = () => {
     setError(null);
 
     try {
+      const normalizedEmail = email.toLowerCase().trim();
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password
       });
 

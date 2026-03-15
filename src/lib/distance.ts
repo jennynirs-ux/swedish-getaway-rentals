@@ -17,6 +17,9 @@ export const MAJOR_CITIES: Record<string, Coordinates> = {
   Malmö: { latitude: 55.605, longitude: 13.0038 }
 };
 
+// TODO: Extract city groups to database for international expansion
+// These hardcoded city groups should be migrated to a database table
+// to support multiple regions and languages dynamically
 export const CITY_GROUPS: Record<string, string[]> = {
   Gothenburg: ['lerum', 'mölnlycke', 'partille', 'kungsbacka', 'göteborg'],
   Stockholm: ['nacka', 'täby', 'solna', 'sundbyberg'],
@@ -135,50 +138,59 @@ export const getDrivingRoute = async (from: Coordinates, to: Coordinates): Promi
   if (!API_KEY) {
     console.warn('OpenRouteService API key not configured. Please set VITE_OPENROUTESERVICE_API_KEY environment variable.');
   }
-  
+
   try {
-    const response = await fetch(
-      `${OPENROUTE_BASE_URL}?api_key=${API_KEY}&start=${from.longitude},${from.latitude}&end=${to.longitude},${to.latitude}`,
-      {
-        headers: {
-          'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8'
-        }
-      }
-    );
+    // BUG-051: Add 10-second timeout for fetch
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
-    if (!response.ok) {
-      console.error('OpenRouteService error:', response.status);
-      // Fallback to simple calculation
-      return getFallbackRoute(from, to);
-    }
-
-    const data = await response.json();
-    
-    if (!data.features || data.features.length === 0) {
-      return getFallbackRoute(from, to);
-    }
-
-    const feature = data.features[0];
-    const properties = feature.properties;
-    const geometry = feature.geometry.coordinates; // [lng, lat][] format
-
-    const routeInfo: RouteInfo = {
-      distance: Math.round((properties.summary.distance / 1000) * 10) / 10, // Convert m to km, round to 1 decimal
-      duration: Math.round(properties.summary.duration / 60), // Convert seconds to minutes
-      geometry: geometry.map(([lng, lat]: [number, number]) => [lng, lat])
-    };
-
-    // Cache the result
     try {
-      localStorage.setItem(cacheKey, JSON.stringify({
-        data: routeInfo,
-        timestamp: Date.now()
-      }));
-    } catch (error) {
-      console.error('Route cache write error:', error);
-    }
+      const response = await fetch(
+        `${OPENROUTE_BASE_URL}?api_key=${API_KEY}&start=${from.longitude},${from.latitude}&end=${to.longitude},${to.latitude}`,
+        {
+          headers: {
+            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8'
+          },
+          signal: controller.signal
+        }
+      );
 
-    return routeInfo;
+      if (!response.ok) {
+        console.error('OpenRouteService error:', response.status);
+        // Fallback to simple calculation
+        return getFallbackRoute(from, to);
+      }
+
+      const data = await response.json();
+
+      if (!data.features || data.features.length === 0) {
+        return getFallbackRoute(from, to);
+      }
+
+      const feature = data.features[0];
+      const properties = feature.properties;
+      const geometry = feature.geometry.coordinates; // [lng, lat][] format
+
+      const routeInfo: RouteInfo = {
+        distance: Math.round((properties.summary.distance / 1000) * 10) / 10, // Convert m to km, round to 1 decimal
+        duration: Math.round(properties.summary.duration / 60), // Convert seconds to minutes
+        geometry: geometry.map(([lng, lat]: [number, number]) => [lng, lat])
+      };
+
+      // Cache the result
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+          data: routeInfo,
+          timestamp: Date.now()
+        }));
+      } catch (error) {
+        console.error('Route cache write error:', error);
+      }
+
+      return routeInfo;
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch (error) {
     console.error('Driving route error:', error);
     return getFallbackRoute(from, to);
