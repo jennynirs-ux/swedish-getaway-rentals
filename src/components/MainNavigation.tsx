@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, X, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser, onAuthStateChange, isApprovedHost } from "@/services/authService";
 
 interface MainNavigationProps {
   showBackButton?: boolean;
@@ -27,33 +27,34 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const [isHost, setIsHost] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) {
-        checkHostStatus(user.id);
+    const initUser = async () => {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser ? { id: currentUser.id, email: currentUser.email } : null);
+      if (currentUser) {
+        checkHostStatus(currentUser.id);
+      }
+    };
+
+    initUser();
+
+    const unsubscribe = onAuthStateChange((authUser) => {
+      setUser(authUser ? { id: authUser.id, email: authUser.email } : null);
+      if (authUser) {
+        checkHostStatus(authUser.id);
       }
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkHostStatus(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const checkHostStatus = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('is_host, host_approved')
-      .eq('user_id', userId)
-      .single();
-    
-    setIsHost(data?.is_host && data?.host_approved);
+    try {
+      const hostApproved = await isApprovedHost(userId);
+      setIsHost(hostApproved);
+    } catch (error) {
+      console.error('Error checking host status:', error);
+      setIsHost(false);
+    }
   };
 
   const handleProfileClick = () => {

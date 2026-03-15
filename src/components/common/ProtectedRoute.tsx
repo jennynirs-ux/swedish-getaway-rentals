@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { getCurrentUser, getUserProfile, isApprovedHost } from "@/services/authService";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ProtectedRouteProps {
@@ -17,31 +18,33 @@ const ProtectedRoute = ({ children, requireAuth = true, requireHost = false, req
 
   useEffect(() => {
     const check = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+      try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+          setAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+
+        setAuthenticated(true);
+
+        if (requireHost) {
+          const hostApproved = await isApprovedHost(user.id);
+          setAuthorized(hostApproved);
+        } else if (requireAdmin) {
+          const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+          setAuthorized(!!data);
+        } else {
+          setAuthorized(true);
+        }
+      } catch (error) {
+        console.error('Error checking authorization:', error);
         setAuthenticated(false);
+        setAuthorized(false);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setAuthenticated(true);
-
-      if (requireHost) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('is_host, host_approved')
-          .eq('user_id', user.id)
-          .single();
-        setAuthorized(!!data?.is_host && !!data?.host_approved);
-      } else if (requireAdmin) {
-        const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-        setAuthorized(!!data);
-      } else {
-        setAuthorized(true);
-      }
-
-      setLoading(false);
     };
 
     check();

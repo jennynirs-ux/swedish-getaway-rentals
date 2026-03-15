@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { getProperties } from '@/services/propertyService';
 
 export interface Property {
   id: string;
@@ -71,29 +71,8 @@ export const useProperties = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      // Optimized query: select only needed fields for listing view
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`
-          id, title, description, location, price_per_night, currency,
-          max_guests, bedrooms, bathrooms, hero_image_url, amenities, 
-          active, review_rating, review_count, property_type, 
-          special_amenities, featured_amenities, host_id, 
-          weekly_discount_percentage, monthly_discount_percentage,
-          cancellation_policy, preparation_days, latitude, longitude, city
-        `)
-        .eq('active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      const mappedData = (data || []).map((item: any) => ({
-        ...item,
-        amenities: Array.isArray(item.amenities) ? item.amenities : [],
-        gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : [],
-        special_amenities: Array.isArray(item.special_amenities) ? item.special_amenities : [],
-        featured_amenities: Array.isArray(item.featured_amenities) ? item.featured_amenities : []
-      }));
-      setProperties(mappedData);
+      const data = await getProperties();
+      setProperties(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch properties');
     } finally {

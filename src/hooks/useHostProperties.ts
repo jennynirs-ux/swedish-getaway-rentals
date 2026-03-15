@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getCurrentUser, getUserProfile } from '@/services/authService';
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from './useProperties';
 
@@ -10,13 +11,16 @@ export const useHostProperties = () => {
   const fetchHostProperties = async () => {
     try {
       setLoading(true);
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
+      const user = await getCurrentUser();
 
-      if (profileError) throw profileError;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const profile = await getUserProfile(user.id);
+      if (!profile?.id) {
+        throw new Error('User profile not found');
+      }
 
       const { data, error } = await supabase
         .from('properties')
@@ -45,7 +49,7 @@ export const useHostProperties = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       const mappedData = (data || []).map((item: any) => ({
         ...item,
         gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : [],
@@ -54,7 +58,7 @@ export const useHostProperties = () => {
         featured_amenities: Array.isArray(item.featured_amenities) ? item.featured_amenities : [],
         amenities_data: Array.isArray(item.amenities_data) ? item.amenities_data : []
       }));
-      
+
       setProperties(mappedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch properties');

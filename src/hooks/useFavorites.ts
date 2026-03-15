@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { getFavoriteIds, toggleFavorite as toggleFavoriteService, getFavoriteProperties } from '@/services/favoritesService';
 import { useToast } from '@/hooks/use-toast';
 
 export const useFavorites = (userId?: string) => {
@@ -9,16 +9,11 @@ export const useFavorites = (userId?: string) => {
 
   const fetchFavorites = async () => {
     if (!userId) return;
-    
+
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('user_favorites')
-        .select('property_id')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      setFavorites(data?.map(f => f.property_id) || []);
+      const favoriteIds = await getFavoriteIds(userId);
+      setFavorites(favoriteIds);
     } catch (error) {
       console.error('Error fetching favorites:', error);
     } finally {
@@ -39,22 +34,11 @@ export const useFavorites = (userId?: string) => {
     const isFavorite = favorites.includes(propertyId);
 
     try {
-      if (isFavorite) {
-        const { error } = await supabase
-          .from('user_favorites')
-          .delete()
-          .eq('user_id', userId)
-          .eq('property_id', propertyId);
-
-        if (error) throw error;
-        setFavorites(prev => prev.filter(id => id !== propertyId));
-      } else {
-        const { error } = await supabase
-          .from('user_favorites')
-          .insert({ user_id: userId, property_id: propertyId });
-
-        if (error) throw error;
+      const newFavoritedState = await toggleFavoriteService(userId, propertyId);
+      if (newFavoritedState) {
         setFavorites(prev => [...prev, propertyId]);
+      } else {
+        setFavorites(prev => prev.filter(id => id !== propertyId));
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -66,36 +50,11 @@ export const useFavorites = (userId?: string) => {
     }
   };
 
-  const getFavoriteProperties = async () => {
+  const getFavedProperties = async () => {
     if (!userId) return [];
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_favorites')
-        .select(`
-          property_id,
-          properties (
-            id,
-            title,
-            description,
-            location,
-            price_per_night,
-            currency,
-            bedrooms,
-            bathrooms,
-            max_guests,
-            amenities,
-            hero_image_url,
-            active,
-            host_id,
-            review_rating,
-            review_count
-          )
-        `)
-        .eq('user_id', userId);
 
-      if (error) throw error;
-      return data?.map(f => f.properties).filter(Boolean) || [];
+    try {
+      return await getFavoriteProperties(userId);
     } catch (error) {
       console.error('Error fetching favorite properties:', error);
       return [];
@@ -110,7 +69,7 @@ export const useFavorites = (userId?: string) => {
     favorites,
     loading,
     toggleFavorite,
-    getFavoriteProperties,
+    getFavoriteProperties: getFavedProperties,
     isFavorite: (propertyId: string) => favorites.includes(propertyId)
   };
 };
