@@ -1,4 +1,5 @@
 import React from 'react';
+import { captureError } from '@/lib/errorMonitoring';
 
 interface ErrorBoundaryProps {
   fallback?: React.ReactNode;
@@ -20,6 +21,19 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   componentDidCatch(error: unknown) {
+    // Capture error with monitoring system
+    if (error instanceof Error) {
+      captureError(error, {
+        component: 'ErrorBoundary',
+        action: 'React component render error'
+      });
+    } else {
+      captureError(new Error(String(error)), {
+        component: 'ErrorBoundary',
+        action: 'Unknown error caught'
+      });
+    }
+
     // Log error details only in development
     if (process.env.NODE_ENV === 'development') {
       console.error('ErrorBoundary caught:', error);

@@ -1,9 +1,15 @@
+// IMP-005: TODO - Add bulk moderation actions (approve/reject multiple reviews)
+// IMP-006: TODO - Add review sentiment analysis and flagging thresholds
+// IMP-008: TODO - Add export functionality for review reports
+// IMP-010: TODO - Add moderation audit trail
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Star, Eye, Flag, Trash2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,6 +40,7 @@ const ReviewsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
@@ -93,8 +100,6 @@ const ReviewsManagement = () => {
   };
 
   const handleDelete = async (reviewId: string) => {
-    if (!confirm('Are you sure you want to delete this review?')) return;
-
     try {
       const { error } = await supabase
         .from('reviews')
@@ -104,6 +109,7 @@ const ReviewsManagement = () => {
       if (error) throw error;
 
       toast.success('Review deleted successfully');
+      setDeleteConfirm(null);
       fetchReviews(currentPage);
     } catch (error: any) {
       toast.error('Failed to delete review');
@@ -225,7 +231,7 @@ const ReviewsManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleDelete(review.id)}
+                        onClick={() => setDeleteConfirm(review.id)}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -235,7 +241,7 @@ const ReviewsManagement = () => {
               ))}
             </TableBody>
           </Table>
-          
+
           {reviews.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No reviews found
@@ -266,6 +272,30 @@ const ReviewsManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Review</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this review? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirm) {
+                  handleDelete(deleteConfirm);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

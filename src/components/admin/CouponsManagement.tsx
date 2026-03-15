@@ -1,9 +1,14 @@
+// IMP-005: TODO - Add bulk actions for coupons (enable/disable multiple)
+// IMP-006: TODO - Add coupon usage analytics and detailed reports
+// IMP-008: TODO - Add export functionality for coupon data
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Edit, Trash2, Plus, Calendar, Percent } from "lucide-react";
 import CouponForm from "@/components/CouponForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +41,7 @@ const CouponsManagement = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCoupons();
@@ -98,8 +104,6 @@ const CouponsManagement = () => {
   };
 
   const handleDelete = async (couponId: string) => {
-    if (!confirm('Are you sure you want to delete this coupon?')) return;
-
     try {
       const { error } = await supabase
         .from('coupons')
@@ -109,6 +113,7 @@ const CouponsManagement = () => {
       if (error) throw error;
 
       toast.success('Coupon deleted successfully');
+      setDeleteConfirm(null);
       fetchCoupons();
     } catch (error: any) {
       toast.error('Failed to delete coupon');
@@ -231,7 +236,7 @@ const CouponsManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDelete(coupon.id)}
+                            onClick={() => setDeleteConfirm(coupon.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -241,7 +246,7 @@ const CouponsManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-              
+
               {bookingCoupons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No booking coupons found
@@ -319,7 +324,7 @@ const CouponsManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDelete(coupon.id)}
+                            onClick={() => setDeleteConfirm(coupon.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -329,7 +334,7 @@ const CouponsManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-              
+
               {productCoupons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No product coupons found
@@ -413,7 +418,7 @@ const CouponsManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDelete(coupon.id)}
+                            onClick={() => setDeleteConfirm(coupon.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -423,7 +428,7 @@ const CouponsManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-              
+
               {propertyCoupons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No property coupons found
@@ -433,6 +438,30 @@ const CouponsManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Coupon</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this coupon? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirm) {
+                  handleDelete(deleteConfirm);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

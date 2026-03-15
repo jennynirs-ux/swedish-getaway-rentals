@@ -1,3 +1,8 @@
+// IMP-005: TODO - Add bulk actions (select multiple bookings)
+// IMP-006: TODO - Add email notification templates for status changes
+// IMP-008: TODO - Add export functionality (CSV/PDF)
+// IMP-010: TODO - Add audit log for booking status changes
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +41,8 @@ const BookingsManagement = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ bookingId: string; newStatus: string } | null>(null);
@@ -48,9 +54,15 @@ const BookingsManagement = () => {
     fetchBookings(0);
   }, []);
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   useEffect(() => {
     filterBookings();
-  }, [bookings, searchTerm, statusFilter]);
+  }, [bookings, debouncedSearch, statusFilter]);
 
   const fetchBookings = async (page: number) => {
     try {
@@ -84,11 +96,11 @@ const BookingsManagement = () => {
   const filterBookings = () => {
     let filtered = bookings;
 
-    if (searchTerm) {
+    if (debouncedSearch) {
       filtered = filtered.filter(booking =>
-        booking.guest_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.guest_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.properties.title.toLowerCase().includes(searchTerm.toLowerCase())
+        booking.guest_name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        booking.guest_email.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        booking.properties.title.toLowerCase().includes(debouncedSearch.toLowerCase())
       );
     }
 
@@ -100,6 +112,12 @@ const BookingsManagement = () => {
   };
 
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+    // Optimistic update: update local state immediately
+    const originalBookings = bookings;
+    setBookings(bookings.map(b =>
+      b.id === bookingId ? { ...b, status: newStatus } : b
+    ));
+
     try {
       const { error } = await supabase
         .from('bookings')
@@ -114,8 +132,11 @@ const BookingsManagement = () => {
       });
 
       setConfirmDialog(null);
+      // Refetch to ensure consistency with server
       fetchBookings(currentPage);
     } catch (error) {
+      // Rollback on error
+      setBookings(originalBookings);
       console.error('Error updating booking status:', error);
       toast({
         title: "Fel",
@@ -177,8 +198,8 @@ const BookingsManagement = () => {
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Sök bokningar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-9 w-64"
             />
           </div>

@@ -1,3 +1,13 @@
+/**
+ * @deprecated Use @tanstack/react-query's useQuery directly instead.
+ * This hook was created before React Query was properly integrated.
+ * New code should use useQuery from @tanstack/react-query.
+ *
+ * Migration guide:
+ * - Replace useOptimizedQuery({ queryKey, queryFn, staleTime })
+ *   with useQuery({ queryKey, queryFn, staleTime, gcTime })
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
