@@ -85,12 +85,12 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
       if (error) throw error;
 
       // Generate the export URL for this property's calendar
-      const baseUrl = 'https://bbuutvozqfzbsnllsiai.supabase.co';
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const url = `${baseUrl}/functions/v1/export-ical/${propertyId}?secret=${property.ical_export_secret}`;
       setExportUrl(url);
     } catch (error) {
       console.error('Error generating export URL:', error);
-      const baseUrl = 'https://bbuutvozqfzbsnllsiai.supabase.co';
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const url = `${baseUrl}/functions/v1/export-ical/${propertyId}`;
       setExportUrl(url);
     }

@@ -115,7 +115,7 @@ interface RouteCache {
 
 export const getDrivingRoute = async (from: Coordinates, to: Coordinates): Promise<RouteInfo | null> => {
   const cacheKey = `${CACHE_KEY_PREFIX_ROUTE}${from.latitude}_${from.longitude}_${to.latitude}_${to.longitude}`;
-  
+
   // Check cache first
   try {
     const cached = localStorage.getItem(cacheKey);
@@ -129,8 +129,12 @@ export const getDrivingRoute = async (from: Coordinates, to: Coordinates): Promi
     console.error('Route cache read error:', error);
   }
 
-  // Use public demo API key (rate limited) - in production, use environment variable
-  const API_KEY = '5b3ce3597851110001cf6248d7f1d8d1e77a4c6ca8c6b1e4c3d4e5f6'; // Demo key for testing
+  // Get API key from environment variables
+  const API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY;
+
+  if (!API_KEY) {
+    console.warn('OpenRouteService API key not configured. Please set VITE_OPENROUTESERVICE_API_KEY environment variable.');
+  }
   
   try {
     const response = await fetch(

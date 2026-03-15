@@ -10,9 +10,9 @@ interface UseBookingRealtimeOptions {
 export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
   const { onBookingUpdate, enableAdminNotifications = false } = options;
 
+  // TODO: Add detailed error handling and retry logic for failed subscriptions
+  // TODO: Consider implementing exponential backoff for connection failures
   const handleBookingInsert = useCallback((payload: any) => {
-    
-    
     if (enableAdminNotifications) {
       toast({
         title: "New Booking Received!",
@@ -25,8 +25,6 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
   }, [onBookingUpdate, enableAdminNotifications]);
 
   const handleBookingUpdate = useCallback((payload: any) => {
-    
-    
     if (enableAdminNotifications && payload.new.status === 'confirmed') {
       toast({
         title: "Booking Confirmed!",

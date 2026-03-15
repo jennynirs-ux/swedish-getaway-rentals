@@ -3,39 +3,19 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LazyImage from "@/components/LazyImage";
-import { 
-  MapPin, 
-  Users, 
-  Wifi, 
-  TreePine, 
-  Waves,
-  Anchor,
+import {
+  MapPin,
+  Users,
   Bed,
   Bath,
-  Sparkles,
   Heart,
   Share2,
-  Coffee,
-  Utensils,
-  Mountain,
-  Home,
-  Flame,
-  UtensilsCrossed,
-  Car,
-  Thermometer,
-  Tv,
-  Dumbbell,
-  PawPrint,
-  Snowflake,
-  Droplets,
-  HeartHandshake,
-  Cigarette,
-  Sun,
-  Wind
+  Home
 } from "lucide-react";
-import { useState, memo, useMemo } from "react";
+import { useState, memo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
+import { getAmenityIcon } from "@/lib/amenityIcons";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
 
 export interface PropertyCardData {
@@ -103,56 +83,11 @@ const PropertyCard = memo(({
     }
   }
 
-  // Memoized amenity icon mapping for performance
-  const getAmenityIcon = useMemo(() => {
-    return (amenity: unknown) => {
-      if (typeof amenity !== "string" || !amenity) {
-        return <Home className="w-4 h-4" />;
-      }
-      
-      const lower = amenity.toLowerCase().trim();
-      
-      // Exact matches first for consistency
-      if (lower === "lake access") return <Waves className="w-4 h-4" />;
-      if (lower === "ocean access") return <Waves className="w-4 h-4" />;
-      if (lower === "beach access") return <Waves className="w-4 h-4" />;
-      if (lower === "wifi") return <Wifi className="w-4 h-4" />;
-      if (lower === "parking") return <Car className="w-4 h-4" />;
-      if (lower === "kitchen") return <UtensilsCrossed className="w-4 h-4" />;
-      if (lower === "hot tub") return <Sparkles className="w-4 h-4" />;
-      if (lower === "sauna") return <Flame className="w-4 h-4" />;
-      if (lower === "fireplace") return <Flame className="w-4 h-4" />;
-      if (lower === "pool") return <Droplets className="w-4 h-4" />;
-      
-      // Partial matches for flexibility
-      if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="w-4 h-4" />;
-      if (lower.includes("lake") || lower.includes("ocean") || lower.includes("beach")) return <Waves className="w-4 h-4" />;
-      if (lower.includes("parking") || lower.includes("garage")) return <Car className="w-4 h-4" />;
-      if (lower.includes("coffee")) return <Coffee className="w-4 h-4" />;
-      if (lower.includes("kitchen")) return <UtensilsCrossed className="w-4 h-4" />;
-      if (lower.includes("boat") || lower.includes("canoe") || lower.includes("kayak")) return <Anchor className="w-4 h-4" />;
-      if (lower.includes("dining") || lower.includes("restaurant")) return <Utensils className="w-4 h-4" />;
-      if (lower.includes("jacuzzi") || lower.includes("spa") || lower.includes("hot tub")) return <Sparkles className="w-4 h-4" />;
-      if (lower.includes("pool") || lower.includes("swimming")) return <Droplets className="w-4 h-4" />;
-      if (lower.includes("forest") || lower.includes("nature")) return <TreePine className="w-4 h-4" />;
-      if (lower.includes("mountain") || lower.includes("view")) return <Mountain className="w-4 h-4" />;
-      if (lower.includes("bedroom") || lower.includes("bed")) return <Bed className="w-4 h-4" />;
-      if (lower.includes("bathroom") || lower.includes("bath")) return <Bath className="w-4 h-4" />;
-      if (lower.includes("guest") || lower.includes("people")) return <Users className="w-4 h-4" />;
-      if (lower.includes("fireplace") || lower.includes("fire") || lower.includes("sauna")) return <Flame className="w-4 h-4" />;
-      if (lower.includes("heating") || lower.includes("warm")) return <Thermometer className="w-4 h-4" />;
-      if (lower.includes("ac") || lower.includes("air") || lower.includes("cooling")) return <Snowflake className="w-4 h-4" />;
-      if (lower.includes("tv") || lower.includes("television")) return <Tv className="w-4 h-4" />;
-      if (lower.includes("gym") || lower.includes("fitness")) return <Dumbbell className="w-4 h-4" />;
-      if (lower.includes("pet") || lower.includes("dog")) return <PawPrint className="w-4 h-4" />;
-      if (lower.includes("smoking")) return <Cigarette className="w-4 h-4" />;
-      if (lower.includes("outdoor") || lower.includes("sun")) return <Sun className="w-4 h-4" />;
-      if (lower.includes("wind") || lower.includes("fan")) return <Wind className="w-4 h-4" />;
-      if (lower.includes("romantic")) return <HeartHandshake className="w-4 h-4" />;
-      
-      return <Home className="w-4 h-4" />;
-    };
-  }, []);
+  // Get amenity icon from shared utility and render with size
+  const renderAmenityIcon = (amenity: unknown) => {
+    const IconComponent = getAmenityIcon(amenity);
+    return <IconComponent className="w-4 h-4" />;
+  };
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();

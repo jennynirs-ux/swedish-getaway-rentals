@@ -15,6 +15,9 @@ interface Property {
   gallery_images: string[];
   active: boolean;
   host_id: string;
+  created_at: string;
+  review_rating: number | null;
+  review_count: number | null;
 }
 
 interface SearchFilters {
@@ -110,11 +113,19 @@ export const usePropertyFilters = (properties: Property[]) => {
       case 'price_desc':
         return sorted.sort((a, b) => b.price_per_night - a.price_per_night);
       case 'rating':
-        // For now, we'll sort by a mock rating based on title length (placeholder)
-        return sorted.sort((a, b) => b.title.length - a.title.length);
+        // Sort by review rating, with fallback to 0 for properties without ratings
+        return sorted.sort((a, b) => {
+          const ratingA = a.review_rating ?? 0;
+          const ratingB = b.review_rating ?? 0;
+          // If ratings are equal, use review count as tiebreaker
+          if (ratingB === ratingA) {
+            return (b.review_count ?? 0) - (a.review_count ?? 0);
+          }
+          return ratingB - ratingA;
+        });
       case 'newest':
-        // Sort alphabetically for now (placeholder)
-        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+        // Sort by created_at in descending order (newest first)
+        return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       case 'recommended':
       default:
         // Prioritize properties with more amenities and higher price (quality indicator)
