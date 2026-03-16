@@ -23,30 +23,59 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
-import Index from "./pages/Index";
-import Shop from "./pages/Shop";
-import Cart from "./pages/Cart";
-import BookingSuccess from "./pages/BookingSuccess";
-import PropertyGuide from "./pages/PropertyGuide";
-import PropertyGuestbookPage from "./pages/PropertyGuestbookPage";
-import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
-import HostApplication from "./pages/HostApplication";
-import HostDashboard from "./components/host/HostDashboard";
-import PropertyPage from "./pages/PropertyPage";
-import OrderSuccess from "./pages/OrderSuccess";
-import ProductDetail from "./pages/ProductDetail";
-import Gallery from "./pages/Gallery";
-import Amenities from "./pages/Amenities";
-import Contact from "./pages/Contact";
-import BookNow from "./pages/BookNow";
-import Profile from "./pages/Profile";
-import FirstTimeInSweden from "./pages/FirstTimeInSweden";
-import PricingGuide from "./pages/PricingGuide";
-import BecomeHost from "./pages/BecomeHost";
+import { lazy, Suspense } from "react";
 
-const queryClient = new QueryClient();
+// Immediate load - critical pages
+import Index from "./pages/Index";
+import PropertyPage from "./pages/PropertyPage";
+import Cart from "./pages/Cart";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+
+// Lazy load - secondary pages
+const Shop = lazy(() => import("./pages/Shop"));
+const BookingSuccess = lazy(() => import("./pages/BookingSuccess"));
+const PropertyGuide = lazy(() => import("./pages/PropertyGuide"));
+const PropertyGuestbookPage = lazy(() => import("./pages/PropertyGuestbookPage"));
+const Admin = lazy(() => import("./pages/Admin"));
+const HostApplication = lazy(() => import("./pages/HostApplication"));
+const HostDashboard = lazy(() => import("./components/host/HostDashboard"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const Amenities = lazy(() => import("./pages/Amenities"));
+const Contact = lazy(() => import("./pages/Contact"));
+const BookNow = lazy(() => import("./pages/BookNow"));
+const Profile = lazy(() => import("./pages/Profile"));
+const FirstTimeInSweden = lazy(() => import("./pages/FirstTimeInSweden"));
+const PricingGuide = lazy(() => import("./pages/PricingGuide"));
+const BecomeHost = lazy(() => import("./pages/BecomeHost"));
+
+// Optimized QueryClient configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 1,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+
+// Fallback component for lazy loaded pages
+const SuspenseFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-pulse text-center">
+      <div className="h-12 w-12 bg-primary rounded-full mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
 
 const App = () => {
   return (
@@ -56,7 +85,8 @@ const App = () => {
           <TooltipProvider>
             <ErrorBoundary>
               <Toaster />
-              <Routes>
+              <Suspense fallback={<SuspenseFallback />}>
+                <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/villa-hacken" element={<PropertyPage />} />
                 <Route path="/villa-hacken/guide" element={<PropertyGuide />} />
@@ -100,6 +130,7 @@ const App = () => {
                 <Route path="/become-host" element={<BecomeHost />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
             </ErrorBoundary>
           </TooltipProvider>
         </CartProvider>

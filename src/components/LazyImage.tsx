@@ -5,6 +5,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   priority?: boolean;
   decoding?: "async" | "sync" | "auto";
   generateSrcSet?: boolean;
+  aspectRatio?: number; // width / height ratio
 }
 
 /**
@@ -34,6 +35,9 @@ const LazyImage: React.FC<LazyImageProps> = ({
   decoding = "async",
   generateSrcSet = true,
   sizes,
+  aspectRatio = 16 / 9, // Default aspect ratio
+  width,
+  height,
   ...props
 }) => {
   const [imgSrc, setImgSrc] = useState(src || fallbackSrc);
@@ -46,6 +50,12 @@ const LazyImage: React.FC<LazyImageProps> = ({
   // Default sizes for responsive images if not provided
   const defaultSizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw";
 
+  // CSS for aspect ratio preservation (prevents CLS)
+  const containerStyle = {
+    ...props.style,
+    aspectRatio: aspectRatio.toString(),
+  } as React.CSSProperties;
+
   return (
     <img
       {...props}
@@ -55,7 +65,10 @@ const LazyImage: React.FC<LazyImageProps> = ({
       alt={alt}
       loading={priority ? "eager" : "lazy"}
       decoding={decoding}
+      width={width || 800}
+      height={height || Math.round(800 / aspectRatio)}
       onError={() => setImgSrc(fallbackSrc)}
+      style={containerStyle}
       className={props.className || "object-cover w-full h-full"}
     />
   );

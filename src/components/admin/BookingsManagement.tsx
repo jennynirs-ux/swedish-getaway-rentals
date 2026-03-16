@@ -3,7 +3,7 @@
 // IMP-008: TODO - Add export functionality (CSV/PDF)
 // IMP-010: TODO - Add audit log for booking status changes
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,148 @@ interface Booking {
     location: string;
   };
 }
+
+/**
+ * OPTIMIZED: Memoized booking row component to prevent unnecessary re-renders
+ * Only re-renders when booking data actually changes
+ */
+interface BookingRowProps {
+  booking: Booking;
+  onStatusChange: (bookingId: string, newStatus: string) => void;
+  getStatusBadge: (status: string) => React.ReactNode;
+  calculateNights: (checkIn: string, checkOut: string) => number;
+  setSelectedBooking: (booking: Booking) => void;
+}
+
+const BookingRow = memo(function BookingRow({
+  booking,
+  onStatusChange,
+  getStatusBadge,
+  calculateNights,
+  setSelectedBooking
+}: BookingRowProps) {
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="font-medium">{booking.guest_name}</span>
+          <span className="text-sm text-muted-foreground">{booking.guest_email}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="font-medium">{booking.properties.title}</span>
+          <span className="text-sm text-muted-foreground">{booking.properties.location}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <span>{format(new Date(booking.check_in_date), 'dd MMM', { locale: sv })}</span>
+          <span className="text-sm text-muted-foreground">
+            - {format(new Date(booking.check_out_date), 'dd MMM', { locale: sv })}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell>{booking.number_of_guests}</TableCell>
+      <TableCell>{calculateNights(booking.check_in_date, booking.check_out_date)}</TableCell>
+      <TableCell className="font-medium">{(booking.total_amount / 100).toLocaleString()} SEK</TableCell>
+      <TableCell>{getStatusBadge(booking.status)}</TableCell>
+      <TableCell>
+        <div className="flex gap-2">
+          {booking.status === 'pending' && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onStatusChange(booking.id, 'confirmed')}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onStatusChange(booking.id, 'cancelled')}
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" onClick={() => setSelectedBooking(booking)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Bokningsdetaljer</DialogTitle>
+                <DialogDescription>Detaljerad information om bokningen</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Gäst information</Label>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span>{booking.guest_name}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{booking.guest_email}</div>
+                      {booking.guest_phone && (
+                        <div className="text-sm text-muted-foreground">{booking.guest_phone}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Property</Label>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{booking.properties.title}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{booking.properties.location}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Bokningsperiod</Label>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {format(new Date(booking.check_in_date), 'dd MMMM yyyy', { locale: sv })} -
+                        {format(new Date(booking.check_out_date), 'dd MMMM yyyy', { locale: sv })}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {calculateNights(booking.check_in_date, booking.check_out_date)} nätter
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Betalning</Label>
+                     <div className="flex items-center gap-2">
+                       <CreditCard className="h-4 w-4 text-muted-foreground" />
+                       <span className="font-medium">{(booking.total_amount / 100).toLocaleString()} SEK</span>
+                     </div>
+                    <div>{getStatusBadge(booking.status)}</div>
+                  </div>
+                </div>
+
+                {booking.special_requests && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Speciella önskemål</Label>
+                    <p className="text-sm bg-muted p-3 rounded">{booking.special_requests}</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
 
 const BookingsManagement = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -250,127 +392,14 @@ const BookingsManagement = () => {
             </TableHeader>
             <TableBody>
               {filteredBookings.map((booking) => (
-                <TableRow key={booking.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{booking.guest_name}</span>
-                      <span className="text-sm text-muted-foreground">{booking.guest_email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{booking.properties.title}</span>
-                      <span className="text-sm text-muted-foreground">{booking.properties.location}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span>{format(new Date(booking.check_in_date), 'dd MMM', { locale: sv })}</span>
-                      <span className="text-sm text-muted-foreground">
-                        - {format(new Date(booking.check_out_date), 'dd MMM', { locale: sv })}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{booking.number_of_guests}</TableCell>
-                  <TableCell>{calculateNights(booking.check_in_date, booking.check_out_date)}</TableCell>
-                  <TableCell className="font-medium">{(booking.total_amount / 100).toLocaleString()} SEK</TableCell>
-                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      {booking.status === 'pending' && (
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" onClick={() => setSelectedBooking(booking)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Bokningsdetaljer</DialogTitle>
-                            <DialogDescription>Detaljerad information om bokningen</DialogDescription>
-                          </DialogHeader>
-                          {selectedBooking && (
-                            <div className="grid gap-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium">Gäst information</Label>
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <User className="h-4 w-4 text-muted-foreground" />
-                                      <span>{selectedBooking.guest_name}</span>
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">{selectedBooking.guest_email}</div>
-                                    {selectedBooking.guest_phone && (
-                                      <div className="text-sm text-muted-foreground">{selectedBooking.guest_phone}</div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium">Property</Label>
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                                      <span>{selectedBooking.properties.title}</span>
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">{selectedBooking.properties.location}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium">Bokningsperiod</Label>
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                                    <span>
-                                      {format(new Date(selectedBooking.check_in_date), 'dd MMMM yyyy', { locale: sv })} - 
-                                      {format(new Date(selectedBooking.check_out_date), 'dd MMMM yyyy', { locale: sv })}
-                                    </span>
-                                  </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {calculateNights(selectedBooking.check_in_date, selectedBooking.check_out_date)} nätter
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium">Betalning</Label>
-                                   <div className="flex items-center gap-2">
-                                     <CreditCard className="h-4 w-4 text-muted-foreground" />
-                                     <span className="font-medium">{(selectedBooking.total_amount / 100).toLocaleString()} SEK</span>
-                                   </div>
-                                  <div>{getStatusBadge(selectedBooking.status)}</div>
-                                </div>
-                              </div>
-                              
-                              {selectedBooking.special_requests && (
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium">Speciella önskemål</Label>
-                                  <p className="text-sm bg-muted p-3 rounded">{selectedBooking.special_requests}</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <BookingRow
+                  key={booking.id}
+                  booking={booking}
+                  onStatusChange={handleStatusChange}
+                  getStatusBadge={getStatusBadge}
+                  calculateNights={calculateNights}
+                  setSelectedBooking={setSelectedBooking}
+                />
               ))}
             </TableBody>
           </Table>

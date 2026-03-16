@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -17,7 +17,11 @@ interface SearchFiltersBarProps {
   resultCount: number;
 }
 
-export function SearchFiltersBar({ filters, onFiltersChange, resultCount }: SearchFiltersBarProps) {
+/**
+ * OPTIMIZED: Memoized component to prevent unnecessary re-renders
+ * Used in search and filter heavy views
+ */
+export const SearchFiltersBar = memo(function SearchFiltersBar({ filters, onFiltersChange, resultCount }: SearchFiltersBarProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const activeFilterCount = [
@@ -143,4 +147,4 @@ export function SearchFiltersBar({ filters, onFiltersChange, resultCount }: Sear
       </div>
     </div>
   );
-}
+});

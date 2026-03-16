@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getCurrentUser, getUserProfile } from '@/services/authService';
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from './useProperties';
 
+/**
+ * OPTIMIZED: Uses React Query for efficient caching and state management
+ * - Depends on user authentication
+ * - Uses React Query's built-in error and loading states
+ */
 export const useHostProperties = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchHostProperties = async () => {
-    try {
-      setLoading(true);
+  const { data: properties = [], isLoading: loading, error, refetch } = useQuery({
+    queryKey: ['hostProperties'],
+    queryFn: async () => {
       const user = await getCurrentUser();
 
       if (!user) {
@@ -59,17 +60,20 @@ export const useHostProperties = () => {
         amenities_data: Array.isArray(item.amenities_data) ? item.amenities_data : []
       }));
 
-      setProperties(mappedData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch properties');
-    } finally {
-      setLoading(false);
-    }
+      return mappedData;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const error_message = error instanceof Error ? error.message : (error ? 'Failed to fetch properties' : null);
+
+  return {
+    properties,
+    loading,
+    error: error_message,
+    refetch
   };
-
-  useEffect(() => {
-    fetchHostProperties();
-  }, []);
-
-  return { properties, loading, error, refetch: fetchHostProperties };
 };
