@@ -1,26 +1,25 @@
 /**
- * IMP-013: Routing System Architecture
+ * IMP-013: Routing System Architecture - SSR MIGRATION COMPLETE
  *
- * DUAL ROUTING SYSTEMS - This project uses TWO separate routing systems during transition:
+ * MIGRATION STATUS: In Progress → Next.js App Router
  *
- * 1. CURRENT PRODUCTION ROUTER (Active):
- *    - Location: src/App.tsx + Vite (Vite SPA)
- *    - React Router for client-side routing
- *    - All active pages and features use this system
- *    - Entry point: src/main.tsx -> src/App.tsx
+ * KEY PAGES NOW SSR-CAPABLE:
+ * - app/page.tsx (Homepage) ✓
+ * - app/property/[slug]/page.tsx (Property Detail) ✓
+ * - app/shop/page.tsx (Shop) ✓
  *
- * 2. TARGET MIGRATION ROUTER (In progress):
- *    - Location: app/ directory (Next.js App Router)
- *    - This file: app/layout.tsx
- *    - Being gradually migrated to this system
- *    - Will eventually replace the Vite-based router
+ * SSR IMPROVEMENTS:
+ * - Server-side data fetching via app/lib/supabase-server.ts
+ * - Dynamic metadata generation per page
+ * - generateStaticParams for property pages
+ * - Proper SEO tags (og:image, twitter cards, etc.)
+ * - Separation of server and client components
  *
- * TODO: Complete migration from Vite (src/App.tsx) to Next.js (app/ directory)
- * See also: src/App.tsx (TODO reference to this file)
- *
- * Note: The app/ directory structure is prepared but not yet active in production.
- * New features should be added to src/ and routed through src/App.tsx until
- * the migration is complete.
+ * See also:
+ * - app/lib/supabase-server.ts (Server client for reads)
+ * - app/page.tsx (Homepage with SSR)
+ * - app/property/[slug]/page.tsx (Property detail with dynamic metadata)
+ * - app/shop/page.tsx (Shop with SSR)
  */
 
 import type { Metadata } from 'next';
@@ -36,19 +35,45 @@ export const metadata: Metadata = {
     default: 'Nordic Getaways - Premium Nordic Vacation Rentals',
     template: '%s | Nordic Getaways',
   },
-  description: 'Discover your perfect Nordic retreat. Unique stays across Scandinavia with modern amenities, breathtaking views, and authentic experiences.',
+  description:
+    'Discover your perfect Nordic retreat. Unique stays across Scandinavia with modern amenities, breathtaking views, and authentic experiences.',
   metadataBase: new URL('https://nordic-getaways.com'),
   openGraph: {
     type: 'website',
+    locale: 'en_US',
     siteName: 'Nordic Getaways',
-    images: ['/og-image.jpg'],
+    title: 'Nordic Getaways - Premium Nordic Vacation Rentals',
+    description:
+      'Discover your perfect Nordic retreat. Unique stays across Scandinavia with modern amenities, breathtaking views, and authentic experiences.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Nordic Getaways',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Nordic Getaways - Premium Nordic Vacation Rentals',
+    description:
+      'Discover your perfect Nordic retreat. Unique stays across Scandinavia with modern amenities, breathtaking views, and authentic experiences.',
+    images: ['/og-image.jpg'],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    },
+  },
+  alternates: {
+    canonical: 'https://nordic-getaways.com',
   },
 };
 

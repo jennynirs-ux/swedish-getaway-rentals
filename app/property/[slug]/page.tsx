@@ -1,11 +1,195 @@
 import type { Metadata } from 'next';
-import PropertyPageClient from './PropertyPageClient';
+import { notFound } from 'next/navigation';
+import { createServerClient } from '@/app/lib/supabase-server';
+import PropertyClient from './property-client';
+import { Property } from '@/types/property';
 
-export const metadata: Metadata = {
-  title: 'Property Details',
-  description: 'View property details and book your Nordic getaway.',
-};
+async function getPropertyBySlug(slug: string): Promise<Property | null> {
+  try {
+    const supabase = createServerClient();
 
-export default function PropertyPage({ params }: { params: { slug: string } }) {
-  return <PropertyPageClient slug={params.slug} />;
+    // Try to fetch by ID directly first
+    let { data: directProperty, error: directError } = await supabase
+      .from('properties')
+      .select(
+        `
+        id,
+        host_id,
+        title,
+        description,
+        location,
+        price_per_night,
+        currency,
+        bedrooms,
+        bathrooms,
+        max_guests,
+        amenities,
+        hero_image_url,
+        tagline_line1,
+        tagline_line2,
+        review_rating,
+        review_count,
+        active,
+        latitude,
+        longitude,
+        city
+      `
+      )
+      .eq('id', slug)
+      .eq('active', true)
+      .single();
+
+    if (directProperty && !directError) {
+      return directProperty as Property;
+    }
+
+    // If no direct match, try legacy slug resolution
+    let propertyId = slug;
+    if (slug === 'villa-hacken') {
+      const { data } = await supabase
+        .from('properties')
+        .select('id')
+        .ilike('title', '%villa%')
+        .eq('active', true)
+        .limit(1)
+        .single();
+      if (data) propertyId = data.id;
+    } else if (slug === 'lakehouse-getaway') {
+      const { data } = await supabase
+        .from('properties')
+        .select('id')
+        .or('title.ilike.%lakehouse%,title.ilike.%lake%')
+        .eq('active', true)
+        .limit(1)
+        .single();
+      if (data) propertyId = data.id;
+    }
+
+    // Fetch the resolved property
+    const { data: property, error } = await supabase
+      .from('properties')
+      .select(
+        `
+        id,
+        host_id,
+        title,
+        description,
+        location,
+        price_per_night,
+        currency,
+        bedrooms,
+        bathrooms,
+        max_guests,
+        amenities,
+        hero_image_url,
+        tagline_line1,
+        tagline_line2,
+        review_rating,
+        review_count,
+        active,
+        latitude,
+        longitude,
+        city
+      `
+      )
+      .eq('id', propertyId)
+      .eq('active', true)
+      .single();
+
+    if (error || !property) {
+      return null;
+    }
+
+    return property as Property;
+  } catch (error) {
+    console.error('Failed to fetch property:', error);
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const property = await getPropertyBySlug(params.slug);
+
+  if (!property) {
+    return {
+      title: 'Property Not Found',
+      description: 'The property you are looking for does not exist.',
+    };
+  }
+
+  const imageUrl = property.hero_image_url || '/og-image.jpg';
+
+  return {
+    title: `${property.title} - Nordic Getaways`,
+    description:
+      property.description ||
+      `Book ${property.title} - ${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms for ${property.max_guests} guests`,
+    keywords: [
+      property.title,
+      property.location,
+      property.city || 'Nordic',
+      'vacation rental',
+      'accommodation',
+    ],
+    openGraph: {
+      type: 'website',
+      url: `https://nordic-getaways.com/property/${params.slug}`,
+      title: `${property.title} - Nordic Getaways`,
+      description:
+        property.description ||
+        `Book ${property.title} - ${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms for ${property.max_guests} guests`,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: property.title,
+        },
+      ],
+      siteName: 'Nordic Getaways',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${property.title} - Nordic Getaways`,
+      description: property.description || property.title,
+      images: [imageUrl],
+    },
+  };
+}
+
+export async function generateStaticParams() {
+  try {
+    const supabase = createServerClient();
+
+    const { data: properties, error } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('active', true)
+      .limit(50); // Limit to prevent long build times
+
+    if (error || !properties) {
+      return [];
+    }
+
+    return properties.map((property) => ({
+      slug: property.id,
+    }));
+  } catch (error) {
+    console.error('Failed to generate static params:', error);
+    return [];
+  }
+}
+
+export default async function PropertyPage({ params }: { params: { slug: string } }) {
+  const property = await getPropertyBySlug(params.slug);
+
+  if (!property) {
+    notFound();
+  }
+
+  return <PropertyClient initialLightProperty={property} slug={params.slug} />;
 }
