@@ -33,3 +33,8 @@ out/
 *.sln
 *.sw?
 coverage/
+
+# Playwright
+test-results/
+playwright-report/
+.playwright/
