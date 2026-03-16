@@ -35,7 +35,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
     }
 
     // Log error details only in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught:', error);
     } else {
       console.error('An error occurred');

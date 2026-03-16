@@ -81,7 +81,7 @@ const PropertyCard = memo(({
   const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
 
   // Dev warning for missing critical fields
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     if (!property.id || !property.title) {
       console.warn('PropertyCard: Missing critical fields', { id: property.id, title: property.title });
     }

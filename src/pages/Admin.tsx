@@ -1,7 +1,8 @@
 import { useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LogOut, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import UnifiedAdmin from "@/components/admin/UnifiedAdmin";
@@ -85,7 +86,43 @@ const Admin = memo(() => {
   }
 
   if (!isAdmin) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Nordic Getaways Admin</h1>
+              <p className="text-muted-foreground">Manage your rentals, shop, and orders</p>
+            </div>
+            <Button onClick={handleSignOut} variant="outline">
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-md mx-auto">
+            <Card className="border-destructive/50">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <ShieldAlert className="h-12 w-12 text-destructive" />
+                </div>
+                <CardTitle className="text-2xl text-destructive">Access Denied</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-center">
+                <p className="text-muted-foreground">
+                  You don't have admin privileges to access this page.
+                </p>
+                <Button onClick={() => navigate('/')} className="w-full">
+                  Go to Home
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -81,7 +81,7 @@ export const BookingChat: React.FC<BookingChatProps> = ({
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
 
-    await sendMessage(newMessage, userType);
+    await sendMessage(newMessage);
     setNewMessage('');
   };
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
@@ -21,6 +21,7 @@ const passwordSchema = z.string()
   .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 
 const Auth = () => {
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
@@ -111,7 +112,7 @@ const Auth = () => {
     // Validate password strength
     if (!validatePassword(password)) {
       setLoading(false);
-      toast.error('Password does not meet security requirements');
+      toast({ title: 'Error', description: 'Password does not meet security requirements', variant: 'destructive' });
       return;
     }
 
@@ -129,10 +130,10 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast.success('Check your email for the confirmation link!');
+      toast({ title: 'Success', description: 'Check your email for the confirmation link!' });
     } catch (error: any) {
       setError(error.message);
-      toast.error(error.message);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -153,7 +154,7 @@ const Auth = () => {
       if (error) throw error;
     } catch (error: any) {
       setError(error.message);
-      toast.error(error.message);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -174,7 +175,7 @@ const Auth = () => {
       if (error) throw error;
     } catch (error: any) {
       setError(error.message);
-      toast.error(error.message);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -182,7 +183,7 @@ const Auth = () => {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      toast.error('Please enter your email address first');
+      toast({ title: 'Error', description: 'Please enter your email address first', variant: 'destructive' });
       return;
     }
 
@@ -190,7 +191,7 @@ const Auth = () => {
     const now = Date.now();
     if (lastPasswordResetTime && now - lastPasswordResetTime < 60000) {
       const secondsRemaining = Math.ceil((60000 - (now - lastPasswordResetTime)) / 1000);
-      toast.error(`Please wait ${secondsRemaining} seconds before requesting another reset`);
+      toast({ title: 'Error', description: `Please wait ${secondsRemaining} seconds before requesting another reset`, variant: 'destructive' });
       return;
     }
 
@@ -210,7 +211,7 @@ const Auth = () => {
       setResetEmail(normalizedEmail);
 
       // Always show the generic success message
-      toast.success('If an account exists with this email, you will receive a password reset link shortly.');
+      toast({ title: 'Success', description: 'If an account exists with this email, you will receive a password reset link shortly.' });
 
       // Update last reset time
       setLastPasswordResetTime(now);
@@ -221,7 +222,7 @@ const Auth = () => {
       }
     } catch (error: any) {
       // Also show generic message on catch
-      toast.success('If an account exists with this email, you will receive a password reset link shortly.');
+      toast({ title: 'Success', description: 'If an account exists with this email, you will receive a password reset link shortly.' });
       console.error('Unexpected error during password reset:', error);
     } finally {
       setLoading(false);
@@ -243,10 +244,10 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast.success('Successfully signed in!');
+      toast({ title: 'Success', description: 'Successfully signed in!' });
     } catch (error: any) {
       setError(error.message);
-      toast.error(error.message);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }

@@ -83,7 +83,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     if (appliedCoupon) {
       setAppliedCoupon(undefined);
     }
-  }, [checkIn, checkOut]);
+  }, [checkIn, checkOut, appliedCoupon]);
 
   // Input validation schema with sanitization via transforms
   const bookingSchema = z.object({

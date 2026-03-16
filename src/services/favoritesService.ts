@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Property } from '@/hooks/useProperties';
+import type { Property } from '@/types/property';
 
 export interface UserFavorite {
   user_id: string;
@@ -74,62 +74,9 @@ export async function getFavoriteProperties(userId: string): Promise<Property[]>
 }
 
 /**
- * Add a property to user favorites
- * @param userId - User ID
- * @param propertyId - Property ID
- * @returns Promise containing created favorite record
- * @throws Error if insertion fails
+ * Check if a property is in user favorites (private helper)
  */
-export async function addFavorite(userId: string, propertyId: string): Promise<UserFavorite> {
-  try {
-    const { data, error } = await supabase
-      .from('user_favorites')
-      .insert({ user_id: userId, property_id: propertyId })
-      .select()
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error('Failed to add favorite');
-
-    return data;
-  } catch (error) {
-    throw new Error(
-      `Failed to add favorite: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
-}
-
-/**
- * Remove a property from user favorites
- * @param userId - User ID
- * @param propertyId - Property ID
- * @returns Promise that resolves when deletion is complete
- * @throws Error if deletion fails
- */
-export async function removeFavorite(userId: string, propertyId: string): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('user_favorites')
-      .delete()
-      .eq('user_id', userId)
-      .eq('property_id', propertyId);
-
-    if (error) throw error;
-  } catch (error) {
-    throw new Error(
-      `Failed to remove favorite: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
-}
-
-/**
- * Check if a property is in user favorites
- * @param userId - User ID
- * @param propertyId - Property ID
- * @returns Promise containing boolean indicating if property is favorited
- * @throws Error if query fails
- */
-export async function isFavorited(userId: string, propertyId: string): Promise<boolean> {
+async function isFavorited(userId: string, propertyId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
       .from('user_favorites')
@@ -147,6 +94,25 @@ export async function isFavorited(userId: string, propertyId: string): Promise<b
   } catch (error) {
     throw new Error(
       `Failed to check favorite status: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Remove a property from user favorites (private helper)
+ */
+async function removeFavorite(userId: string, propertyId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('user_favorites')
+      .delete()
+      .eq('user_id', userId)
+      .eq('property_id', propertyId);
+
+    if (error) throw error;
+  } catch (error) {
+    throw new Error(
+      `Failed to remove favorite: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }

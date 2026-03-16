@@ -34,6 +34,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate webhook secret is configured
+  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET_SHOP');
+  if (!webhookSecret) {
+    console.error('Webhook secret not configured');
+    return new Response('Webhook secret not configured', {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
   try {
     // Get raw body for signature verification
     const rawBody = await req.text();

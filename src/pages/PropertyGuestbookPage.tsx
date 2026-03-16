@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import GuestbookForm from "@/components/GuestbookForm";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 const PropertyGuestbookPage = () => {
+  const { toast } = useToast();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const PropertyGuestbookPage = () => {
 
   const validateToken = async () => {
     if (!token || !id) {
-      toast.error("Invalid guestbook link");
+      toast({ title: 'Error', description: 'Invalid guestbook link', variant: 'destructive' });
       navigate(`/property/${id}`);
       return;
     }
@@ -46,21 +47,21 @@ const PropertyGuestbookPage = () => {
         .single();
 
       if (tokenError || !tokenData) {
-        toast.error("Invalid or expired guestbook invitation");
+        toast({ title: 'Error', description: 'Invalid or expired guestbook invitation', variant: 'destructive' });
         navigate(`/property/${id}`);
         return;
       }
 
       // Check if token is expired
       if (new Date(tokenData.expires_at) < new Date()) {
-        toast.error("This guestbook invitation has expired");
+        toast({ title: 'Error', description: 'This guestbook invitation has expired', variant: 'destructive' });
         navigate(`/property/${id}`);
         return;
       }
 
       // Check if token was already used
       if (tokenData.used_at) {
-        toast.error("This guestbook invitation has already been used");
+        toast({ title: 'Error', description: 'This guestbook invitation has already been used', variant: 'destructive' });
         navigate(`/property/${id}`);
         return;
       }
@@ -69,7 +70,7 @@ const PropertyGuestbookPage = () => {
       
       // Validate property ID matches
       if (booking.property_id !== id) {
-        toast.error("Invalid property for this guestbook invitation");
+        toast({ title: 'Error', description: 'Invalid property for this guestbook invitation', variant: 'destructive' });
         navigate(`/property/${id}`);
         return;
       }
@@ -82,7 +83,7 @@ const PropertyGuestbookPage = () => {
         .single();
 
       if (propertyError || !property) {
-        toast.error("Property not found");
+        toast({ title: 'Error', description: 'Property not found', variant: 'destructive' });
         navigate("/");
         return;
       }
@@ -92,7 +93,7 @@ const PropertyGuestbookPage = () => {
       setValidToken(true);
     } catch (error) {
       console.error("Error validating token:", error);
-      toast.error("Failed to validate guestbook invitation");
+      toast({ title: 'Error', description: 'Failed to validate guestbook invitation', variant: 'destructive' });
       navigate(`/property/${id}`);
     } finally {
       setLoading(false);

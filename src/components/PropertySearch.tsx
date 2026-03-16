@@ -109,7 +109,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       setIsGeocodingLocation(false);
       setShowSearchHistory(false);
     }
-  }, [filters.location, searchHistory]);
+  }, [filters.location, searchHistory, onFiltersChange]);
 
   const clearFilters = () => {
     const clearedFilters: SearchFilters = {

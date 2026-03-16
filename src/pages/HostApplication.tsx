@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { Gift } from "lucide-react";
 
 const HostApplication = () => {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const [referralCode, setReferralCode] = useState("");
@@ -44,14 +45,14 @@ const HostApplication = () => {
     try {
       // Validate phone number
       if (formData.contactPhone && !validatePhone(formData.contactPhone)) {
-        toast.error('Please enter a valid phone number');
+        toast({ title: 'Error', description: 'Please enter a valid phone number', variant: 'destructive' });
         setLoading(false);
         return;
       }
 
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) {
-        toast.error('Please log in to submit an application');
+        toast({ title: 'Error', description: 'Please log in to submit an application', variant: 'destructive' });
         navigate('/auth');
         return;
       }
@@ -65,19 +66,19 @@ const HostApplication = () => {
           .single();
 
         if (referralError || !referralData) {
-          toast.error("Invalid referral code");
+          toast({ title: 'Error', description: 'Invalid referral code', variant: 'destructive' });
           setLoading(false);
           return;
         }
 
         if (referralData.status !== "pending") {
-          toast.error("This referral code has already been used");
+          toast({ title: 'Error', description: 'This referral code has already been used', variant: 'destructive' });
           setLoading(false);
           return;
         }
 
         if (new Date(referralData.expires_at) < new Date()) {
-          toast.error("This referral code has expired");
+          toast({ title: 'Error', description: 'This referral code has expired', variant: 'destructive' });
           setLoading(false);
           return;
         }
@@ -97,7 +98,7 @@ const HostApplication = () => {
       }
 
       if (existingApplication) {
-        toast.error('You have already submitted a host application');
+        toast({ title: 'Error', description: 'You have already submitted a host application', variant: 'destructive' });
         return;
       }
 
@@ -131,11 +132,11 @@ const HostApplication = () => {
         }
       }
 
-      toast.success('Host application submitted successfully! We will review it and get back to you.');
+      toast({ title: 'Success', description: 'Host application submitted successfully! We will review it and get back to you.' });
       navigate('/');
     } catch (error) {
       console.error('Error submitting application:', error);
-      toast.error('Failed to submit application');
+      toast({ title: 'Error', description: 'Failed to submit application', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

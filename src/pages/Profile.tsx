@@ -14,7 +14,7 @@ import MainNavigation from "@/components/MainNavigation";
 
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
 
 interface Profile {
@@ -35,6 +35,7 @@ interface Profile {
 }
 
 const Profile = () => {
+  const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -103,7 +104,7 @@ const Profile = () => {
       }
     } catch (error: any) {
       if (isMountedRef.current) {
-        toast.error('Failed to load profile');
+        toast({ title: 'Error', description: 'Failed to load profile', variant: 'destructive' });
       }
     } finally {
       if (isMountedRef.current) {
@@ -174,9 +175,9 @@ const Profile = () => {
 
       await fetchProfile(profile.user_id);
       setEditing(false);
-      toast.success('Profile updated successfully!');
+      toast({ title: 'Success', description: 'Profile updated successfully!' });
     } catch (error: any) {
-      toast.error('Failed to update profile');
+      toast({ title: 'Error', description: 'Failed to update profile', variant: 'destructive' });
     }
   };
 

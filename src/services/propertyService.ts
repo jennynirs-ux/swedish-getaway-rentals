@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Property } from '@/hooks/useProperties';
+import type { Property } from '@/types/property';
 
 export interface PropertySearchFilters {
   minPrice?: number;
@@ -96,61 +96,6 @@ export async function getPropertyById(id: string): Promise<Property> {
   } catch (error) {
     throw new Error(
       `Failed to fetch property: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
-}
-
-/**
- * Fetch full property details including heavy data (gallery, video, amenities_data, etc.)
- * Use this for property detail pages that need all data
- * @param id - Property ID
- * @returns Promise containing complete property data
- * @throws Error if query fails
- */
-export async function getPropertyFull(id: string): Promise<Partial<Property>> {
-  try {
-    const { data, error } = await supabase
-      .from('properties')
-      .select(`
-        id,
-        gallery_images,
-        video_urls,
-        amenities_data,
-        guidebook_sections,
-        special_highlights,
-        featured_amenities,
-        pricing_table,
-        get_in_touch_info,
-        footer_quick_links,
-        gallery_metadata,
-        video_metadata,
-        what_makes_special,
-        introduction_text,
-        availability_text,
-        contact_response_time
-      `)
-      .eq('id', id)
-      .eq('active', true)
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error('Property not found');
-
-    return {
-      ...data,
-      gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
-      video_urls: Array.isArray(data.video_urls) ? data.video_urls : [],
-      gallery_metadata: Array.isArray(data.gallery_metadata) ? data.gallery_metadata : [],
-      video_metadata: Array.isArray(data.video_metadata) ? data.video_metadata : [],
-      amenities_data: Array.isArray(data.amenities_data) ? data.amenities_data : [],
-      guidebook_sections: Array.isArray(data.guidebook_sections) ? data.guidebook_sections : [],
-      special_highlights: Array.isArray(data.special_highlights) ? data.special_highlights : [],
-      featured_amenities: Array.isArray(data.featured_amenities) ? data.featured_amenities : [],
-      footer_quick_links: Array.isArray(data.footer_quick_links) ? data.footer_quick_links : []
-    };
-  } catch (error) {
-    throw new Error(
-      `Failed to fetch property details: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }
@@ -300,38 +245,3 @@ export async function getNearbyProperties(
   }
 }
 
-/**
- * Resolve legacy property route to actual property ID
- * @param incomingId - Legacy property slug or ID
- * @returns Promise containing resolved property ID
- * @throws Error if property not found
- */
-export async function resolvePropertyId(incomingId: string): Promise<string> {
-  try {
-    if (incomingId === 'villa-hacken') {
-      const { data } = await supabase
-        .from('properties')
-        .select('id')
-        .ilike('title', '%villa%')
-        .eq('active', true)
-        .limit(1)
-        .single();
-      if (data) return data.id;
-    } else if (incomingId === 'lakehouse-getaway') {
-      const { data } = await supabase
-        .from('properties')
-        .select('id')
-        .or('title.ilike.%lakehouse%,title.ilike.%lake%')
-        .eq('active', true)
-        .limit(1)
-        .single();
-      if (data) return data.id;
-    }
-
-    return incomingId;
-  } catch (error) {
-    throw new Error(
-      `Failed to resolve property ID: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
-}
