@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Edit, Search, Calendar, User, MapPin, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import { logBookingStatusChange } from '@/lib/auditLog';
 
 interface Booking {
   id: string;
@@ -48,6 +49,7 @@ const BookingsManagement = () => {
   const [confirmDialog, setConfirmDialog] = useState<{ bookingId: string; newStatus: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 50;
   const { toast } = useToast();
 
@@ -70,7 +72,7 @@ const BookingsManagement = () => {
       const from = page * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('bookings')
         .select(`
           *,
@@ -82,6 +84,10 @@ const BookingsManagement = () => {
       if (error) throw error;
       setBookings(data || []);
       setCurrentPage(page);
+      // IMP-005: Store total count for pagination display
+      if (count !== null) {
+        setTotalCount(count);
+      }
       // Disable load more if we got fewer items than requested (meaning no more data)
       setHasMore((data?.length ?? 0) >= ITEMS_PER_PAGE);
     } catch (error) {
@@ -117,6 +123,9 @@ const BookingsManagement = () => {
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     // Optimistic update: update local state immediately
     const originalBookings = bookings;
+    const oldBooking = bookings.find(b => b.id === bookingId);
+    const oldStatus = oldBooking?.status || 'unknown';
+
     setBookings(bookings.map(b =>
       b.id === bookingId ? { ...b, status: newStatus } : b
     ));
@@ -128,6 +137,9 @@ const BookingsManagement = () => {
         .eq('id', bookingId);
 
       if (error) throw error;
+
+      // IMP-007: Log the booking status change
+      await logBookingStatusChange(bookingId, oldStatus, newStatus);
 
       toast({
         title: "Framgång",
@@ -389,7 +401,7 @@ const BookingsManagement = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* BUG-019: Pagination controls */}
+      {/* BUG-019: Pagination controls with IMP-005 total count display */}
       {filteredBookings.length > 0 && (
         <div className="flex justify-between items-center pt-4 gap-4">
           <Button
@@ -400,7 +412,8 @@ const BookingsManagement = () => {
             Föregående
           </Button>
           <span className="text-sm text-muted-foreground">
-            Sida {currentPage + 1}
+            {/* IMP-005: Show items being displayed and total count */}
+            Visar {currentPage * ITEMS_PER_PAGE + 1}-{Math.min((currentPage + 1) * ITEMS_PER_PAGE, totalCount)} av {totalCount} bokningar
           </span>
           <Button
             variant="outline"

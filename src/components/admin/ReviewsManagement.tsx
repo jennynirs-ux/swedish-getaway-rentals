@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Star, Eye, Flag, Trash2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logReviewModeration } from "@/lib/auditLog";
 
 interface Review {
   id: string;
@@ -42,6 +43,7 @@ const ReviewsManagement = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
@@ -68,11 +70,15 @@ const ReviewsManagement = () => {
         query = query.eq('moderation_status', filter);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw error;
 
       setReviews((data as Review[]) || []);
       setCurrentPage(page);
+      // IMP-005: Store total count for pagination display
+      if (count !== null) {
+        setTotalCount(count);
+      }
       // Disable load more if we got fewer items than requested (meaning no more data)
       setHasMore((data?.length ?? 0) >= ITEMS_PER_PAGE);
     } catch (error: any) {
@@ -110,6 +116,13 @@ const ReviewsManagement = () => {
         .eq('id', reviewId);
 
       if (error) throw error;
+
+      // IMP-007: Log review moderation action
+      if (status === 'approved') {
+        await logReviewModeration(reviewId, 'approve');
+      } else if (status === 'rejected') {
+        await logReviewModeration(reviewId, 'reject');
+      }
 
       toast.success(`Review ${status} successfully`);
       fetchReviews(currentPage);
@@ -267,7 +280,7 @@ const ReviewsManagement = () => {
             </div>
           )}
 
-          {/* BUG-021: Pagination controls */}
+          {/* BUG-021: Pagination controls with IMP-005 total count display */}
           {reviews.length > 0 && (
             <div className="flex justify-between items-center pt-4 border-t">
               <Button
@@ -278,7 +291,8 @@ const ReviewsManagement = () => {
                 Previous
               </Button>
               <span className="text-sm text-muted-foreground">
-                Page {currentPage + 1}
+                {/* IMP-005: Show items being displayed and total count */}
+                Showing {currentPage * ITEMS_PER_PAGE + 1}-{Math.min((currentPage + 1) * ITEMS_PER_PAGE, totalCount)} of {totalCount} reviews
               </span>
               <Button
                 variant="outline"

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { pressFeedback } from '@/lib/haptics';
 
 interface MobileBookingBarProps {
   pricePerNight: number;
@@ -23,7 +24,10 @@ export function MobileBookingBar({ pricePerNight, currency, onBookClick, isAvail
           <p className="text-xs text-muted-foreground">per night</p>
         </div>
         <Button
-          onClick={onBookClick}
+          onClick={() => {
+            pressFeedback();
+            onBookClick();
+          }}
           disabled={!isAvailable}
           size="lg"
           className="bg-primary hover:bg-primary/90 text-white px-8"

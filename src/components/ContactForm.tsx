@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { z } from "zod";
 import DOMPurify from "dompurify";
 
@@ -15,11 +16,12 @@ interface ContactFormProps {
   subject?: string;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmän förfrågan' }) => {
-  // BUG-052: TODO - Use i18n system from src/lib/i18n/ instead of hardcoded Swedish strings
+const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject }) => {
+  const { t } = useTranslation();
+  const defaultSubject = subject || t('forms.contact.whatIsRequest');
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  
+
   // Input validation schema
   const contactSchema = z.object({
     name: z.string()
@@ -43,7 +45,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
     name: '',
     email: '',
     phone: '',
-    subject: subject,
+    subject: defaultSubject,
     message: ''
   });
 
@@ -59,7 +61,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
         subject: DOMPurify.sanitize(formData.subject.trim()),
         message: DOMPurify.sanitize(formData.message.trim())
       };
-      
+
       contactSchema.parse(sanitizedData);
       setValidationErrors({});
       return sanitizedData;
@@ -79,7 +81,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validatedData = validateForm();
     if (!validatedData) return;
 
@@ -118,8 +120,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
 
       // BUG-049: Longer toast duration and persistent success state
       toast({
-        title: "Meddelande skickat!",
-        description: "Vi kommer att svara dig så snart som möjligt.",
+        title: t('forms.contact.messageSent'),
+        description: t('forms.contact.messageSentDesc'),
         duration: 8000, // 8 seconds instead of default 5
       });
 
@@ -131,7 +133,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
         name: '',
         email: '',
         phone: '',
-        subject: subject,
+        subject: defaultSubject,
         message: ''
       });
       setValidationErrors({});
@@ -141,8 +143,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
-        title: "Fel",
-        description: "Kunde inte skicka meddelandet. Försök igen.",
+        title: t('forms.contact.error'),
+        description: t('forms.contact.errorDesc'),
         variant: "destructive",
       });
     } finally {
@@ -152,7 +154,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors(prev => {
@@ -161,7 +163,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
         return newErrors;
       });
     }
-    
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -170,20 +172,20 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          Kontakta Oss
+          {t('forms.contact.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {/* BUG-049: Persistent success state banner */}
         {showSuccessMessage && (
           <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg">
-            <p className="text-green-800 font-semibold">Tack för ditt meddelande!</p>
-            <p className="text-green-700 text-sm">Vi kontaktar dig så snart som möjligt.</p>
+            <p className="text-green-800 font-semibold">{t('forms.contact.thanksMessage')}</p>
+            <p className="text-green-700 text-sm">{t('forms.contact.thanksDesc')}</p>
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Namn</Label>
+            <Label htmlFor="name">{t('forms.contact.name')}</Label>
             <Input
               id="name"
               name="name"
@@ -192,7 +194,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               onChange={handleChange}
               maxLength={100}
               required
-              placeholder="Ditt fullständiga namn"
+              placeholder={t('forms.contact.fullName')}
               className={validationErrors.name ? "border-destructive" : ""}
             />
             {validationErrors.name && (
@@ -201,7 +203,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
           </div>
 
           <div>
-            <Label htmlFor="email">E-postadress</Label>
+            <Label htmlFor="email">{t('forms.contact.email')}</Label>
             <Input
               id="email"
               name="email"
@@ -210,7 +212,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               onChange={handleChange}
               maxLength={255}
               required
-              placeholder="din@email.com"
+              placeholder={t('forms.contact.emailAddress')}
               className={validationErrors.email ? "border-destructive" : ""}
             />
             {validationErrors.email && (
@@ -219,7 +221,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
           </div>
 
           <div>
-            <Label htmlFor="phone">Telefonnummer (valfritt)</Label>
+            <Label htmlFor="phone">{t('forms.contact.phone')}</Label>
             <Input
               id="phone"
               name="phone"
@@ -227,7 +229,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               value={formData.phone}
               onChange={handleChange}
               maxLength={15}
-              placeholder="+46 XX XXX XX XX"
+              placeholder={t('forms.contact.phoneNumber')}
               className={validationErrors.phone ? "border-destructive" : ""}
             />
             {validationErrors.phone && (
@@ -236,7 +238,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
           </div>
 
           <div>
-            <Label htmlFor="subject">Ämne</Label>
+            <Label htmlFor="subject">{t('forms.contact.subject')}</Label>
             <Input
               id="subject"
               name="subject"
@@ -245,7 +247,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               onChange={handleChange}
               maxLength={200}
               required
-              placeholder="Vad gäller din förfrågan?"
+              placeholder={t('forms.contact.whatIsRequest')}
               className={validationErrors.subject ? "border-destructive" : ""}
             />
             {validationErrors.subject && (
@@ -254,7 +256,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
           </div>
 
           <div>
-            <Label htmlFor="message">Meddelande</Label>
+            <Label htmlFor="message">{t('forms.contact.message')}</Label>
             <Textarea
               id="message"
               name="message"
@@ -263,7 +265,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
               maxLength={5000}
               required
               rows={4}
-              placeholder="Beskriv din förfrågan eller frågor..."
+              placeholder={t('forms.contact.describeRequest')}
               className={validationErrors.message ? "border-destructive" : ""}
             />
             {validationErrors.message && (
@@ -272,7 +274,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject = 'Allmä
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Skickar...' : 'Skicka Meddelande'}
+            {loading ? t('forms.contact.sending') : t('forms.contact.sendMessage')}
           </Button>
         </form>
       </CardContent>

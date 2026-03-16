@@ -19,13 +19,14 @@ export const emailSchema = z
 
 /**
  * Phone number validation schema (optional)
+ * IMP-008: Updated to require at least some digits (7-20 chars of digits/spaces/parens/dashes)
  * Accepts formats like: +46 XX XXX XX XX, +46701234567, etc.
  */
 export const phoneSchema = z
   .string()
   .optional()
   .refine(
-    (val) => !val || /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val),
+    (val) => !val || /^[+]?[\d\s()-]{7,20}$/.test(val),
     'Invalid phone number'
   )
   .transform((val) => (val ? sanitize(val) : undefined));

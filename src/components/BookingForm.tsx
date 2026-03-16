@@ -15,6 +15,8 @@ import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDispla
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
+import { VAT_RATE } from "@/lib/constants";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 interface BookingFormProps {
   propertyId: string;
@@ -32,7 +34,6 @@ interface PropertyDiscounts {
 
 const maxAdvanceBookingDays = 365;
 
-// BUG-052: TODO - Use i18n system from src/lib/i18n/ instead of hardcoded Swedish strings
 const BookingForm: React.FC<BookingFormProps> = ({
   propertyId,
   propertyTitle,
@@ -41,13 +42,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
   maxGuests,
   onOpenGuidebook
 }) => {
+  const { t } = useTranslation();
   const { createBooking, loading } = useBooking();
   const { calculatePrice } = usePricingRules(propertyId);
   const [propertyDiscounts, setPropertyDiscounts] = useState<PropertyDiscounts>({
     weekly_discount_percentage: 0,
     monthly_discount_percentage: 0
   });
-  
+
   // Fetch property discounts
   useEffect(() => {
     const fetchDiscounts = async () => {
@@ -56,7 +58,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         .select('weekly_discount_percentage, monthly_discount_percentage')
         .eq('id', propertyId)
         .single();
-      
+
       if (data) {
         setPropertyDiscounts({
           weekly_discount_percentage: data.weekly_discount_percentage || 0,
@@ -66,7 +68,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     };
     fetchDiscounts();
   }, [propertyId]);
-  
+
   // Enable real-time calendar updates when bookings are made
   useBookingRealtime({
     onBookingUpdate: (booking) => {
@@ -100,7 +102,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
       .optional()
       .transform(val => val ? DOMPurify.sanitize(val.trim()) : '')
       .pipe(z.string()
-        .refine((val) => !val || /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val), "Invalid phone number")),
+        // IMP-008: Updated phone validation to require digits and allow 7-20 chars
+        .refine((val) => !val || /^[+]?[\d\s()-]{7,20}$/.test(val), "Invalid phone number")),
     number_of_guests: z.number()
       .min(1, "At least 1 guest required")
       .max(maxGuests, `Maximum ${maxGuests} guests allowed`),
@@ -124,7 +127,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
   const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
-  
+
   const [appliedCoupon, setAppliedCoupon] = useState<{
     id: string;
     code: string;
@@ -162,12 +165,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const priceCalculation = calculateTotalAmount();
   const subtotalBeforeDiscount = priceCalculation?.total || 0;
   const applicableDiscount = getApplicableDiscount();
-  const stayDiscount = applicableDiscount 
+  const stayDiscount = applicableDiscount
     ? Math.round(subtotalBeforeDiscount * (applicableDiscount.percentage / 100))
     : 0;
-  const subtotal = subtotalBeforeDiscount - stayDiscount;
+  const subtotalBeforeVat = subtotalBeforeDiscount - stayDiscount;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
-  const totalAmount = Math.max(0, subtotal - couponDiscount);
+  const subtotalAfterCoupon = Math.max(0, subtotalBeforeVat - couponDiscount);
+  // IMP-002: Add Swedish VAT (12%) to the subtotal
+  const vatAmount = Math.round(subtotalAfterCoupon * VAT_RATE);
+  const totalAmount = subtotalAfterCoupon + vatAmount;
 
   const validateForm = () => {
     try {
@@ -194,7 +200,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     if (totalAmount <= 0) return;
 
     if (!houseRulesAccepted) {
-      setValidationErrors({ houseRules: "You must accept the house rules to proceed" });
+      setValidationErrors({ houseRules: t('forms.booking.acceptRules') });
       return;
     }
 
@@ -207,11 +213,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
     const checkInUTC = new Date(Date.UTC(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate()));
 
     if (checkInUTC < todayUTC) {
-      setValidationErrors({ checkIn: "Check-in date cannot be in the past" });
+      setValidationErrors({ checkIn: t('forms.booking.pastDate') });
       return;
     }
     if (checkOut <= checkIn) {
-      setValidationErrors({ checkOut: "Check-out must be after check-in date" });
+      setValidationErrors({ checkOut: t('forms.booking.checkOutAfter') });
       return;
     }
 
@@ -219,10 +225,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + maxAdvanceBookingDays);
     if (checkIn > maxDate) {
-      setValidationErrors({ checkIn: `Check-in date cannot be more than ${maxAdvanceBookingDays} days in advance` });
+      setValidationErrors({ checkIn: t('forms.booking.maxAdvance').replace('{{days}}', maxAdvanceBookingDays.toString()) });
       return;
     }
-  
+
     try {
       await createBooking({
         property_id: propertyId,
@@ -237,7 +243,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         special_requests: validatedData.special_requests,
         coupon_id: appliedCoupon?.id
       });
-  
+
       // Reset form
       setFormData({
         guest_name: "",
@@ -258,7 +264,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors(prev => {
@@ -267,7 +273,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         return newErrors;
       });
     }
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: name === 'number_of_guests' ? parseInt(value) || 0 : value
@@ -279,7 +285,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarDays className="h-5 w-5" />
-          Complete Your Booking
+          {t('forms.booking.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -298,7 +304,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         {/* Gästinfo */}
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           <div className="space-y-2">
-            <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
+            <Label htmlFor="number_of_guests">{t('forms.booking.numberOfGuests')} (max {maxGuests})</Label>
             <Input
               id="number_of_guests"
               name="number_of_guests"
@@ -315,77 +321,89 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {checkIn && checkOut && priceCalculation && (
             <div className="p-4 bg-accent rounded-lg space-y-3">
               <div className="flex justify-between">
-                <span>Check-in:</span>
+                <span>{t('forms.booking.checkInDate')}</span>
                 <span className="font-medium">{checkIn.toDateString()}</span>
               </div>
               <div className="flex justify-between">
-                <span>Check-out:</span>
+                <span>{t('forms.booking.checkOutDate')}</span>
                 <span className="font-medium">{checkOut.toDateString()}</span>
               </div>
               <div className="flex justify-between">
-                <span>Number of nights:</span>
+                <span>{t('forms.booking.numberOfNights')}</span>
                 <span className="font-medium">{nights}</span>
               </div>
-              
+
               {/* Price Breakdown */}
               <div className="border-t pt-3 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>{nights} night{nights !== 1 ? 's' : ''} × {pricePerNight.toLocaleString()} {currency}</span>
+                  <span>{nights} {nights !== 1 ? t('forms.booking.nightsLabel') : t('forms.booking.nightLabel')} × {pricePerNight.toLocaleString()} {currency}</span>
                   <span>{(priceCalculation.breakdown.accommodation / 100).toLocaleString()} {currency}</span>
                 </div>
-                
+
                 {priceCalculation.cleaningFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Cleaning fee</span>
+                    <span>{t('forms.booking.cleaningFee')}</span>
                     <span>{(priceCalculation.cleaningFee / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
-                
+
                 {priceCalculation.extraGuestFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Extra guest fee ({Math.max(0, formData.number_of_guests - 1)} guest{Math.max(0, formData.number_of_guests - 1) !== 1 ? 's' : ''} × {nights} night{nights !== 1 ? 's' : ''})</span>
+                    <span>{t('forms.booking.extraGuestFee')} ({Math.max(0, formData.number_of_guests - 1)} {Math.max(0, formData.number_of_guests - 1) !== 1 ? t('forms.booking.guests') : t('forms.booking.guest')} × {nights} {nights !== 1 ? t('forms.booking.nights') : t('forms.booking.nightLabel')})</span>
                     <span>{(priceCalculation.extraGuestFee / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
-                
+
                 {priceCalculation.extraServices > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Additional services</span>
+                    <span>{t('forms.booking.additionalServices')}</span>
                     <span>{(priceCalculation.extraServices / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
-                
+
                 {/* Weekly/Monthly Discount */}
                 {applicableDiscount && stayDiscount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span className="flex items-center gap-1">
                       <Tag className="h-3 w-3" />
-                      {applicableDiscount.type === 'monthly' ? 'Monthly' : 'Weekly'} discount ({applicableDiscount.percentage}%)
+                      {applicableDiscount.type === 'monthly' ? t('forms.booking.monthlyDiscount') : t('forms.booking.weeklyDiscount')} ({applicableDiscount.percentage}%)
                     </span>
                     <span>-{(stayDiscount / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
-                
+
                 {appliedCoupon && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Coupon discount ({appliedCoupon.code})</span>
+                    <span>{t('forms.booking.couponDiscount')} ({appliedCoupon.code})</span>
                     <span>-{(couponDiscount / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
+
+                {/* IMP-002: Show subtotal before VAT */}
+                <div className="flex justify-between text-sm font-medium border-t pt-2 mt-2">
+                  <span>{t('forms.booking.subtotal')}</span>
+                  <span>{(subtotalAfterCoupon / 100).toLocaleString()} {currency}</span>
+                </div>
+
+                {/* IMP-002: VAT line item for Swedish compliance */}
+                <div className="flex justify-between text-sm text-amber-600">
+                  <span>{t('forms.booking.vat')}</span>
+                  <span>{(vatAmount / 100).toLocaleString()} {currency}</span>
+                </div>
               </div>
-              
+
               <div className="flex justify-between text-lg font-bold border-t pt-3">
-                <span>Total:</span>
+                <span>{t('forms.booking.total')}</span>
                 <span>{(totalAmount / 100).toLocaleString()} {currency}</span>
               </div>
             </div>
           )}
 
           {/* Coupon Input */}
-          {checkIn && checkOut && subtotal > 0 && (
+          {checkIn && checkOut && subtotalBeforeVat > 0 && (
             <CouponInput
               propertyId={propertyId}
-              totalAmount={subtotal}
+              totalAmount={subtotalBeforeVat}
               onCouponApplied={(couponId, discountAmount, code) => {
                 setAppliedCoupon({
                   id: couponId,
@@ -399,7 +417,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="guest_name">Your name</Label>
+            <Label htmlFor="guest_name">{t('forms.booking.yourName')}</Label>
             <Input
               id="guest_name"
               name="guest_name"
@@ -416,7 +434,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="guest_email">Email</Label>
+            <Label htmlFor="guest_email">{t('forms.booking.email')}</Label>
             <Input
               id="guest_email"
               name="guest_email"
@@ -434,7 +452,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="guest_phone">Phone (optional)</Label>
+            <Label htmlFor="guest_phone">{t('forms.booking.phone')}</Label>
             <Input
               id="guest_phone"
               name="guest_phone"
@@ -451,7 +469,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="special_requests">Special requests</Label>
+            <Label htmlFor="special_requests">{t('forms.booking.specialRequests')}</Label>
             <Textarea
               id="special_requests"
               name="special_requests"
@@ -491,21 +509,21 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 cursor-pointer"
                 >
                   <Shield className="h-4 w-4 text-primary" />
-                  I have read and agree to the{" "}
+                  {t('forms.booking.houseRulesAccept')}{" "}
                   {onOpenGuidebook ? (
                     <button
                       type="button"
                       onClick={onOpenGuidebook}
                       className="text-primary underline hover:text-primary/80"
                     >
-                      House Rules
+                      {t('forms.booking.houseRules')}
                     </button>
                   ) : (
-                    "House Rules"
+                    t('forms.booking.houseRules')
                   )}
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  You'll receive a link to the full guest guidebook after booking
+                  {t('forms.booking.houseRulesDesc')}
                 </p>
                 {validationErrors.houseRules && (
                   <p className="text-destructive text-sm">{validationErrors.houseRules}</p>
@@ -524,7 +542,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               className="w-full"
               disabled={loading || totalAmount <= 0 || !houseRulesAccepted}
             >
-              {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
+              {loading ? t('forms.booking.processing') : `${t('forms.booking.completeBooking')} • ${(totalAmount / 100).toLocaleString()} ${currency}`}
             </Button>
           </div>
         </form>

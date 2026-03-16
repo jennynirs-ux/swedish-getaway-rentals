@@ -10,6 +10,7 @@ import MainNavigation from "@/components/MainNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { Mail, ArrowLeft } from 'lucide-react';
 
 // Password validation schema
 const passwordSchema = z.string()
@@ -31,6 +32,9 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   // BUG-049: Client-side rate limiting for password reset
   const [lastPasswordResetTime, setLastPasswordResetTime] = useState<number | null>(null);
+  // IMP-015: Track password reset email sent state
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   // Validate redirect URL to prevent open redirect attacks
   const getValidatedRedirect = (redirectUrl: string | null): string => {
@@ -201,6 +205,10 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/auth`,
       });
 
+      // IMP-015: Show distinct "check your email" state
+      setResetEmailSent(true);
+      setResetEmail(normalizedEmail);
+
       // Always show the generic success message
       toast.success('If an account exists with this email, you will receive a password reset link shortly.');
 
@@ -262,19 +270,55 @@ const Auth = () => {
       
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center text-2xl">
-                {redirectTo === '/host-dashboard' ? 'Sign in to become a Host' : 'Welcome'}
-              </CardTitle>
-              {redirectTo === '/host-dashboard' && (
-                <p className="text-center text-muted-foreground mt-2">
-                  Create an account to access your host dashboard and start listing your property.
-                </p>
-              )}
-            </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          {/* IMP-015: Show distinct "check your email" state after password reset request */}
+          {resetEmailSent ? (
+            <Card>
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <Mail className="h-12 w-12 text-primary" />
+                </div>
+                <CardTitle className="text-2xl">Check your email</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="text-center space-y-2">
+                  <p className="text-muted-foreground">
+                    We've sent a password reset link to:
+                  </p>
+                  <p className="font-semibold text-foreground break-all">
+                    {resetEmail}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-4">
+                    Click the link in the email to reset your password. If you don't see the email, check your spam folder.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setResetEmailSent(false);
+                    setResetEmail("");
+                    setEmail("");
+                  }}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to login
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center text-2xl">
+                  {redirectTo === '/host-dashboard' ? 'Sign in to become a Host' : 'Welcome'}
+                </CardTitle>
+                {redirectTo === '/host-dashboard' && (
+                  <p className="text-center text-muted-foreground mt-2">
+                    Create an account to access your host dashboard and start listing your property.
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="signin" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -440,9 +484,10 @@ const Auth = () => {
                     </div>
                   </form>
                 </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

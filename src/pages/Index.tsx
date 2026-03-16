@@ -12,6 +12,7 @@ import MainNavigation from "@/components/MainNavigation";
 import BookPromotion from "@/components/BookPromotion";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
 import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
+import { MobileRefreshButton } from "@/components/mobile/MobileRefreshButton";
 
 import forestHeroBg from "@/assets/forest-hero-light.jpg";
 import { addDays, subDays, differenceInCalendarDays } from "date-fns";
@@ -66,7 +67,7 @@ const HomePage = memo(() => {
     return { data: data || [], error: null };
   }, []);
 
-  const { data: properties = [], loading } = useOptimizedQuery(
+  const { data: properties = [], loading, refetch } = useOptimizedQuery(
     "homepage-properties",
     propertiesQueryFn,
     {
@@ -311,6 +312,9 @@ const HomePage = memo(() => {
       {/* Property Cards */}
       <main className="pb-12">
         <div className="container mx-auto px-4 pt-16">
+          {/* IMP-010: Mobile refresh button */}
+          <MobileRefreshButton onRefresh={refetch} isLoading={loading} />
+
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -327,6 +331,19 @@ const HomePage = memo(() => {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : checkingAvailability ? (
+            // IMP-004: Show loading indicator during geocoding/availability check
+            <div className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Searching...
+                </h3>
+                <p className="text-muted-foreground">
+                  Checking availability for your selected dates
+                </p>
+              </div>
             </div>
           ) : filteredProperties.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">

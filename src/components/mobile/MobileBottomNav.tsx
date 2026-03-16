@@ -3,6 +3,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Heart, CalendarDays, MessageCircle, User } from 'lucide-react';
+import { tapFeedback } from '@/lib/haptics';
 
 const navItems = [
   { icon: Search, label: 'Explore', path: '/' },
@@ -29,7 +30,10 @@ export function MobileBottomNav() {
           return (
             <button
               key={label}
-              onClick={() => navigate(path)}
+              onClick={() => {
+                tapFeedback();
+                navigate(path);
+              }}
               className={`flex flex-col items-center justify-center gap-1 flex-1 min-h-[44px] min-w-[44px] transition-colors ${
                 isActive ? 'text-primary' : 'text-muted-foreground'
               }`}

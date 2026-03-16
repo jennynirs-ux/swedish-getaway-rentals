@@ -1,3 +1,21 @@
+/**
+ * IMP-013: Routing System Architecture
+ *
+ * CURRENT PRODUCTION ROUTER (Active):
+ * This file is the main entry point for the application routing system.
+ * Uses React Router (client-side) with Vite as the build tool.
+ *
+ * Dual routing system in transition:
+ * - This file (src/App.tsx): CURRENT PRODUCTION
+ * - Target: app/ directory (Next.js App Router)
+ *
+ * TODO: Migrate to app/layout.tsx (Next.js)
+ * See also: app/layout.tsx (TODO reference to this file)
+ *
+ * All new pages and features should be added here until migration is complete.
+ * The app/ directory is prepared but not yet active.
+ */
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
