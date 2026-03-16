@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback, memo, useEffect } from "react";
+import { useState, useMemo, useCallback, memo, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
-import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
 import LazyImage from "@/components/LazyImage";
 import { Grid3X3 } from "lucide-react";
@@ -14,7 +14,7 @@ import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distan
 import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
 import { MobileRefreshButton } from "@/components/mobile/MobileRefreshButton";
 
-import forestHeroBg from "@/assets/forest-hero-light.jpg";
+import forestHeroBg from "@/assets/forest-hero-light.webp";
 import { addDays, subDays, differenceInCalendarDays } from "date-fns";
 
 interface PropertyFilters {
@@ -67,19 +67,46 @@ const HomePage = memo(() => {
     return { data: data || [], error: null };
   }, []);
 
-  const { data: properties = [], loading, refetch } = useOptimizedQuery(
-    "homepage-properties",
-    propertiesQueryFn,
-    {
-      cacheTime: CACHE_GC_TIME,
-      staleTime: CACHE_STALE_TIME,
-      enableRealtime: false,
-    }
-  );
+  const { data: properties = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ["homepage-properties"],
+    queryFn: propertiesQueryFn,
+    gcTime: CACHE_GC_TIME,
+    staleTime: CACHE_STALE_TIME,
+  });
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
   const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  /** Debounced filter handler - only applies debounce to location changes */
+  const handleFiltersChange = useCallback((newFilters: PropertyFilters) => {
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Check if only location changed (text-based change)
+    const isOnlyLocationChange = filters &&
+      newFilters.location !== filters.location &&
+      newFilters.checkIn === filters.checkIn &&
+      newFilters.checkOut === filters.checkOut &&
+      newFilters.guests === filters.guests &&
+      newFilters.propertyType === filters.propertyType &&
+      JSON.stringify(newFilters.amenities) === JSON.stringify(filters.amenities) &&
+      JSON.stringify(newFilters.priceRange) === JSON.stringify(filters.priceRange) &&
+      newFilters.dateFlexibility === filters.dateFlexibility;
+
+    if (isOnlyLocationChange) {
+      // Debounce location changes by 300ms
+      debounceTimeoutRef.current = setTimeout(() => {
+        setFilters(newFilters);
+      }, 300);
+    } else {
+      // Apply date/guest/amenity changes immediately
+      setFilters(newFilters);
+    }
+  }, [filters]);
 
   /** Bygg lista med amenities */
   const availableAmenities = useMemo(() => {
@@ -303,7 +330,7 @@ const HomePage = memo(() => {
 
           {/* Search bar */}
           <PropertySearch
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             availableAmenities={availableAmenities}
           />
         </div>

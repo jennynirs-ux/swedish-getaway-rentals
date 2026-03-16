@@ -23,12 +23,9 @@ export async function getProperties(): Promise<Property[]> {
     const { data, error } = await supabase
       .from('properties')
       .select(`
-        id, title, description, location, price_per_night, currency,
-        max_guests, bedrooms, bathrooms, hero_image_url, amenities,
-        active, review_rating, review_count, property_type,
-        special_amenities, featured_amenities, host_id,
-        weekly_discount_percentage, monthly_discount_percentage,
-        cancellation_policy, preparation_days, latitude, longitude, city
+        id, title, location, price_per_night, currency,
+        review_rating, review_count, hero_image_url, amenities,
+        property_type, max_guests, latitude, longitude, created_at
       `)
       .eq('active', true)
       .order('created_at', { ascending: false });

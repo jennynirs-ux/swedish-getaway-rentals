@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import forestHero from "@/assets/forest-hero-light.jpg";
+import forestHero from "@/assets/forest-hero-light.webp";
 import {
   Home,
   TrendingUp,

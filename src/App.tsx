@@ -24,6 +24,7 @@ import { CartProvider } from "@/context/CartContext";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import { lazy, Suspense } from "react";
+import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
 
 // Immediate load - critical pages
 import Index from "./pages/Index";
@@ -55,8 +56,8 @@ const BecomeHost = lazy(() => import("./pages/BecomeHost"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      staleTime: CACHE_STALE_TIME, // 10 minutes
+      gcTime: CACHE_GC_TIME, // 20 minutes (formerly cacheTime)
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       retry: 1,

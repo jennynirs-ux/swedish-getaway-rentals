@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
 import ShopFilters, { ShopFilters as ShopFiltersType } from "@/components/ShopFilters";
-import forestHeroBg from "@/assets/forest-hero-bg.jpg";
+import forestHeroBg from "@/assets/forest-hero-bg.webp";
 
 interface ShopProduct {
   id: string;

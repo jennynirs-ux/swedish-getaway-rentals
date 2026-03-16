@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback, memo, Suspense, lazy, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/hooks/useProperties";
-import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import PropertyNavigation from "@/components/PropertyNavigation";
 import PropertyHero from "@/components/PropertyHero";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,28 +28,25 @@ const NearbyPropertiesWrapper = memo(({ currentPropertyId, currentCoordinates }:
 }) => {
   const fetchNearbyPropertiesFn = useCallback(async () => {
     // BUG-037: N+1 query for nearby properties. In production, should use PostGIS for efficient proximity search.
-    // For now, limiting to 10 properties to reduce query overhead.
+    // For now, limiting to 4 properties to reduce query overhead and payload.
     const { data, error } = await supabase
       .from("properties")
       .select("id, title, hero_image_url, latitude, longitude, location")
       .eq("active", true)
       .not("latitude", "is", null)
       .not("longitude", "is", null)
-      .limit(10);
+      .limit(4);
 
     if (error) throw error;
     return { data: data || [], error: null };
   }, []);
 
-  const { data: allProperties = [] } = useOptimizedQuery(
-    "all-properties-nearby",
-    fetchNearbyPropertiesFn,
-    {
-      cacheTime: CACHE_GC_TIME,
-      staleTime: CACHE_STALE_TIME,
-      enableRealtime: false,
-    }
-  );
+  const { data: allProperties = [] } = useQuery({
+    queryKey: ["all-properties-nearby"],
+    queryFn: fetchNearbyPropertiesFn,
+    gcTime: CACHE_GC_TIME,
+    staleTime: CACHE_STALE_TIME,
+  });
 
   return (
     <NearbyProperties
@@ -139,15 +136,13 @@ const PropertyPage = memo(() => {
     return { data, error: null };
   }, [resolvedPropertyId]);
 
-  const { data: lightProperty, loading, error } = useOptimizedQuery(
-    `property-light-${id}`,
-    propertyLightQueryFn,
-    {
-      cacheTime: 10 * 60 * 1000,
-      staleTime: 2 * 60 * 1000,
-      enableRealtime: false,
-    }
-  );
+  const { data: lightProperty, isLoading: loading, error } = useQuery({
+    queryKey: [`property-light-${id}`],
+    queryFn: propertyLightQueryFn,
+    gcTime: 10 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    enabled: !!resolvedPropertyId,
+  });
 
   /** Heavy query */
   const propertyHeavyQueryFn = useCallback(async () => {
@@ -177,15 +172,13 @@ const PropertyPage = memo(() => {
     return { data, error: null };
   }, [resolvedPropertyId]);
 
-  const { data: heavyProperty } = useOptimizedQuery(
-    `property-heavy-${id}`,
-    propertyHeavyQueryFn,
-    {
-      cacheTime: 10 * 60 * 1000,
-      staleTime: 5 * 60 * 1000,
-      enableRealtime: false,
-    }
-  );
+  const { data: heavyProperty } = useQuery({
+    queryKey: [`property-heavy-${id}`],
+    queryFn: propertyHeavyQueryFn,
+    gcTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    enabled: !!resolvedPropertyId,
+  });
 
   const handleGuideOpen = useCallback((sectionId?: string) => {
     setGuideSectionId(sectionId);

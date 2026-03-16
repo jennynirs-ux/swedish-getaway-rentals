@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
+// CSS is imported here to ensure it's only loaded when this map component is used
 import 'leaflet/dist/leaflet.css';
 
 interface MapSearchPanelProps {

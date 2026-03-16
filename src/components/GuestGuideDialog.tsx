@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, type ElementType, lazy, Suspense } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from "jspdf";
 import {
   Tooltip,
   TooltipContent,
@@ -152,7 +151,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
     const pdf = new jsPDF();
     let yPosition = 20;
 
@@ -500,7 +500,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
                 <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
                 <div className="flex gap-2 mt-1">
                   <Button variant="outline" size="icon" onClick={shareGuide}><Share2 className="h-4 w-4" /></Button>
-                  <Button variant="outline" size="icon" onClick={exportToPDF}><Download className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" onClick={() => exportToPDF()}><Download className="h-4 w-4" /></Button>
                 </div>
               </div>
             </DialogHeader>
