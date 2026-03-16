@@ -162,7 +162,13 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
               placeholder="City or destination"
               value={filters.location}
               onChange={(e) => updateFilters({ location: e.target.value })}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                } else if (e.key === 'Escape') {
+                  setShowSearchHistory(false);
+                }
+              }}
               onFocus={() => filters.location === '' && searchHistory.length > 0 && setShowSearchHistory(true)}
               onBlur={() => setTimeout(() => setShowSearchHistory(false), 200)}
               className="pl-9 text-sm"
@@ -230,7 +236,13 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
                 mode="range"
                 selected={dateRange}
                 onSelect={handleDateRangeChange}
-                disabled={(date) => date < new Date()}
+                disabled={(date) => {
+                  // Disable past dates and dates before check-in when selecting check-out
+                  if (date < new Date()) return true;
+                  // Disable dates before check-in for the check-out selection
+                  if (dateRange?.from && date < dateRange.from) return true;
+                  return false;
+                }}
                 numberOfMonths={isMobile ? 1 : 2}
                 className={cn("p-3 pointer-events-auto")}
               />

@@ -1,3 +1,3 @@
 'use client';
-import HostDashboard from '@/pages/HostDashboard';
+import HostDashboard from '@/components/host/HostDashboard';
 export default HostDashboard;

@@ -40,18 +40,33 @@ export const useCurrencyConversion = () => {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        // Using free API with SEK as base currency
-        const response = await fetch(
-          "https://api.exchangerate-api.com/v4/latest/SEK"
-        );
+        // Create an AbortController with 5-second timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        // Check if response is successful before parsing JSON
-        if (!response.ok) {
-          throw new Error(`Exchange rate API returned status ${response.status}: ${response.statusText}`);
+        try {
+          // Using free API with SEK as base currency
+          const response = await fetch(
+            "https://api.exchangerate-api.com/v4/latest/SEK",
+            { signal: controller.signal }
+          );
+
+          clearTimeout(timeoutId);
+
+          // Check if response is successful before parsing JSON
+          if (!response.ok) {
+            throw new Error(`Exchange rate API returned status ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          setRates(data.rates || FALLBACK_RATES);
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            throw new Error("Exchange rate fetch timeout after 5 seconds");
+          }
+          throw fetchError;
         }
-
-        const data = await response.json();
-        setRates(data.rates || FALLBACK_RATES);
       } catch (error) {
         console.error("Error fetching exchange rates:", error);
         // Log warning to inform user that fallback rates are being used
@@ -106,8 +121,11 @@ export const useCurrencyConversion = () => {
 
   const convertPrice = (priceInSEK: number, targetCurrency?: string): number => {
     const currency = targetCurrency || userCurrency.code;
-    const rate = rates[currency] || 1;
-    return Math.round(priceInSEK * rate);
+    // If rate is undefined for unknown currencies, fallback to original SEK amount
+    const rate = rates[currency] !== undefined ? rates[currency] : 1;
+    const converted = Math.round(priceInSEK * rate);
+    // Return original amount if conversion resulted in NaN
+    return isNaN(converted) ? priceInSEK : converted;
   };
 
   const formatPrice = (priceInSEK: number, targetCurrency?: string): string => {

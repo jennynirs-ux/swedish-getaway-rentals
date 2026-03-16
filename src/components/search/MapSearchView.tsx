@@ -5,6 +5,7 @@ import PropertyCard from '@/components/PropertyCard';
 import { MapSearchPanel } from './MapSearchPanel';
 import { SearchFiltersBar } from './SearchFiltersBar';
 import { PropertyListSkeleton } from '@/components/skeletons';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { Map, List } from 'lucide-react';
 
 interface MapBounds {
@@ -110,15 +111,17 @@ export function MapSearchView({ properties, isLoading, filters, onFiltersChange 
 
         {/* Map Panel */}
         <div className={`w-full md:w-[40%] md:border-l ${mobileView === 'list' ? 'hidden md:block' : ''}`}>
-          <MapSearchPanel
-            properties={properties}
-            hoveredPropertyId={hoveredPropertyId}
-            onMapMove={handleMapMove}
-            onPropertySelect={(id) => {
-              const el = document.getElementById(`property-${id}`);
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          />
+          <ErrorBoundary>
+            <MapSearchPanel
+              properties={properties}
+              hoveredPropertyId={hoveredPropertyId}
+              onMapMove={handleMapMove}
+              onPropertySelect={(id) => {
+                const el = document.getElementById(`property-${id}`);
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
+          </ErrorBoundary>
         </div>
       </div>
     </div>

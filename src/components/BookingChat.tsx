@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { format } from 'date-fns';
 import { Send, User, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -75,6 +75,7 @@ export const BookingChat: React.FC<BookingChatProps> = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const lastMessageCountRef = useRef<number>(0);
   const { messages, loading, sending, sendMessage, markAsRead } = useBookingChat(bookingId);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -92,18 +93,18 @@ export const BookingChat: React.FC<BookingChatProps> = ({
     }
   }, [messages, userType, markAsRead]);
 
-  // Auto-scroll to bottom when new messages arrive (debounced)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
+  // Auto-scroll to bottom when new messages arrive using useLayoutEffect to prevent race conditions
+  useLayoutEffect(() => {
+    // Only scroll if new messages have arrived
+    if (messages.length > lastMessageCountRef.current) {
       if (scrollAreaRef.current) {
         const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
         if (scrollContainer) {
           scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }
       }
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
+    }
+    lastMessageCountRef.current = messages.length;
   }, [messages]);
 
   return (

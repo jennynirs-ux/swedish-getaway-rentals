@@ -118,7 +118,9 @@ serve(async (req) => {
       });
     }
 
-    // CRITICAL BUG-001: Check for conflicting bookings before creating payment session
+    // CRITICAL BUG-001: Check for conflicting bookings and create reservation lock
+    // Pattern: Check for existing bookings, then immediately insert a 'pending' booking
+    // to prevent race condition where another booking sneaks in between check and confirmation
     const { data: existingBookings, error: bookingCheckError } = await supabaseClient
       .from("bookings")
       .select("id, status, check_in_date, check_out_date")
@@ -142,6 +144,40 @@ serve(async (req) => {
         status: 409,
       });
     }
+
+    // Insert a temporary 'pending' booking to act as a reservation lock
+    // This prevents other concurrent requests from booking the same dates
+    // If payment fails, this pending record will be cleaned up by a separate process
+    const { data: reservationLock, error: lockError } = await supabaseClient
+      .from("bookings")
+      .insert({
+        property_id: propertyId,
+        user_id: user?.id || null,
+        guest_name: guestName,
+        guest_email: guestEmail,
+        guest_phone: guestPhone || null,
+        check_in_date: checkInDate,
+        check_out_date: checkOutDate,
+        number_of_guests: numberOfGuests,
+        special_requests: specialRequests || null,
+        total_amount: 0, // Will be updated after payment confirmation
+        currency: (property.currency || currency || "SEK").toUpperCase(),
+        status: 'payment_pending', // Temporary status indicating payment in progress
+        stripe_payment_intent_id: null
+      })
+      .select()
+      .single();
+
+    if (lockError) {
+      logStep("Error creating reservation lock", { error: lockError });
+      return new Response(JSON.stringify({ error: "Unable to reserve dates. Please try again." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    const reservationLockId = reservationLock.id;
+    logStep("Reservation lock created", { reservationLockId, checkInDate, checkOutDate });
 
     // CRITICAL: Recalculate total amount server-side - never trust client-supplied amounts
     const nightCount = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
@@ -320,19 +356,20 @@ serve(async (req) => {
       serverCalculatedAmount
     });
     
-    // Allow small rounding differences (1% tolerance) but reject significant discrepancies
+    // BUG-009: Stricter amount verification with 0.1% tolerance instead of 1% to prevent manipulation
+    // on large bookings, and never leak server-calculated amount in error response
     const amountDifference = Math.abs(totalAmount - serverCalculatedAmount);
-    const tolerance = serverCalculatedAmount * 0.01;
-    
+    const tolerance = serverCalculatedAmount * 0.001; // 0.1% instead of 1%
+
     if (amountDifference > tolerance) {
-      logStep("Amount mismatch detected", { 
-        clientAmount: totalAmount, 
+      logStep("Amount mismatch detected", {
+        clientAmount: totalAmount,
         serverAmount: serverCalculatedAmount,
-        difference: amountDifference 
+        difference: amountDifference
       });
-      return new Response(JSON.stringify({ 
-        error: "Price calculation error. Please refresh and try again.",
-        serverCalculatedAmount // Return correct amount for client to update
+      // Do NOT return serverCalculatedAmount to prevent information leakage
+      return new Response(JSON.stringify({
+        error: "Price mismatch, please refresh and try again."
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
@@ -394,6 +431,10 @@ serve(async (req) => {
       },
     ];
 
+    // Calculate VAT amount for audit trail (typically 25% in Sweden)
+    const vatRate = 0.25; // Swedish VAT rate
+    const vatAmount = Math.ceil(validatedAmount * vatRate);
+
     // Stripe checkout session config
     const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "https://swedish-getaway-rentals.lovable.app";
     const sessionConfig: any = {
@@ -419,8 +460,10 @@ serve(async (req) => {
         totalAmount: validatedAmount.toString(),
         subtotal: subtotal.toString(),
         discountAmount: discountAmount.toString(),
+        vatAmount: vatAmount.toString(),
         couponId: validatedCoupon?.id || "",
         couponCode: validatedCoupon?.code || "",
+        reservationLockId: reservationLockId,
         hostAmount: hostAmount.toString(),
         platformCommission: platformCommission.toString(),
         commissionRate: commissionRate.toString(),

@@ -62,8 +62,8 @@ export const useBookingChat = (bookingId?: string) => {
   const isMountedRef = useRef(true);
   const { toast } = useToast();
 
-  // BUG-050: Booking messages should be RLS-protected by booking ownership
-  // TODO: Add RLS policy to database:
+  // BUG-011: Booking messages table missing RLS policies
+  // Database RLS policy needed:
   // CREATE POLICY booking_messages_owner ON booking_messages FOR ALL USING (
   //   booking_id IN (
   //     SELECT id FROM bookings
@@ -71,7 +71,7 @@ export const useBookingChat = (bookingId?: string) => {
   //     OR property_id IN (SELECT id FROM properties WHERE host_id = auth.uid())
   //   )
   // );
-  // Client-side ownership check for defense-in-depth
+  // Client-side ownership check for defense-in-depth against unauthorized access
   const checkBookingOwnership = useCallback(async (bId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -83,10 +83,27 @@ export const useBookingChat = (bookingId?: string) => {
         .eq('id', bId)
         .single();
 
-      if (error || !data) return false;
+      if (error || !data) {
+        console.error('Error fetching booking ownership info:', error);
+        return false;
+      }
 
-      // User must be either the guest (user_id) or the host (via property)
-      return data.user_id === user.id || data.properties?.host_id === user.id;
+      // User must be either the booking guest (user_id) or the property host (host_id)
+      // This prevents arbitrary authenticated users from accessing messages for bookings they don't own
+      const isGuest = data.user_id === user.id;
+      const isHost = data.properties?.host_id === user.id;
+
+      if (!isGuest && !isHost) {
+        console.warn('Access denied: User is not guest or host for this booking', {
+          bookingId: bId,
+          userId: user.id,
+          guestId: data.user_id,
+          hostId: data.properties?.host_id
+        });
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Error checking booking ownership:', error);
       return false;

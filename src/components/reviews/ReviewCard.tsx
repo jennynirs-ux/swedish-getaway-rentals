@@ -51,7 +51,7 @@ export function ReviewCard({
           <div className="flex items-center gap-2">
             <span className="font-medium">{guestName}</span>
             {isVerifiedStay && (
-              <span className="flex items-center gap-1 text-xs text-green-600">
+              <span className="flex items-center gap-1 text-xs text-green-700">
                 <BadgeCheck className="h-3.5 w-3.5" />
                 Verified stay
               </span>
@@ -87,11 +87,11 @@ export function ReviewCard({
 
       {/* Actions */}
       <div className="flex items-center gap-3 mt-3">
-        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={onHelpful}>
+        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={onHelpful} aria-label="Mark as helpful">
           <ThumbsUp className="h-3.5 w-3.5 mr-1" />
           Helpful{helpfulCount > 0 && ` (${helpfulCount})`}
         </Button>
-        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={onReport}>
+        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={onReport} aria-label="Report review">
           <Flag className="h-3.5 w-3.5 mr-1" />
           Report
         </Button>

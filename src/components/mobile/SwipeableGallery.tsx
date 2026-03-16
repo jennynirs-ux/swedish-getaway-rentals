@@ -52,16 +52,41 @@ export function SwipeableGallery({ images, alt = 'Property image', onImageClick,
       {images.length > 1 && (
         <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5" role="tablist" aria-label="Image carousel indicators">
           {images.slice(0, Math.min(images.length, 5)).map((_, index) => (
-            <div
+            <button
               key={index}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent ${
                 index === selectedIndex % Math.min(images.length, 5)
                   ? 'w-4 bg-white'
                   : 'w-1.5 bg-white/70'
               }`}
               role="tab"
+              tabIndex={0}
               aria-label={`Image ${index + 1}`}
               aria-current={index === selectedIndex % Math.min(images.length, 5) ? 'true' : 'false'}
+              onClick={() => {
+                // Find the absolute index and select that slide
+                const absoluteIndex = index;
+                if (emblaApi) {
+                  emblaApi.scrollSnapList().forEach((_, snapIndex) => {
+                    if (snapIndex % Math.min(images.length, 5) === absoluteIndex) {
+                      emblaApi.scrollSnapList()[snapIndex] && emblaApi.scrollTo(snapIndex);
+                    }
+                  });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  const absoluteIndex = index;
+                  if (emblaApi) {
+                    emblaApi.scrollSnapList().forEach((_, snapIndex) => {
+                      if (snapIndex % Math.min(images.length, 5) === absoluteIndex) {
+                        emblaApi.scrollSnapList()[snapIndex] && emblaApi.scrollTo(snapIndex);
+                      }
+                    });
+                  }
+                }
+              }}
             />
           ))}
           {images.length > 5 && (

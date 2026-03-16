@@ -17,13 +17,14 @@ const generateSupabaseSrcSet = (src: string): string => {
     return src;
   }
 
-  // If already has query params, append to existing ones
-  const separator = src.includes('?') ? '&' : '?';
-
   // Generate srcSet for common breakpoints
   const widths = [320, 640, 1024, 1280, 1920];
   return widths
-    .map(width => `${src}${separator}width=${width} ${width}w`)
+    .map(width => {
+      // Check if URL already has query params
+      const separator = src.includes('?') ? '&' : '?';
+      return `${src}${separator}width=${width} ${width}w`;
+    })
     .join(', ');
 };
 

@@ -12,6 +12,30 @@ import { User, Session } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { Mail, ArrowLeft } from 'lucide-react';
 
+// IMP-002: List of top common passwords to check against
+const commonPasswords = [
+  'password',
+  '123456',
+  '123456789',
+  'qwerty',
+  'abc123',
+  'monkey',
+  '1234567',
+  'letmein',
+  'trustno1',
+  'dragon',
+  'baseball',
+  'iloveyou',
+  'sunshine',
+  'password123',
+  '123123',
+  'welcome',
+  'login',
+  'admin',
+  'princess',
+  'qwertyuiop'
+];
+
 // Password validation schema
 const passwordSchema = z.string()
   .min(10, 'Password must be at least 10 characters')
@@ -93,6 +117,13 @@ const Auth = () => {
 
   const validatePassword = (pwd: string) => {
     try {
+      // IMP-002: Check if password is a common password (case-insensitive)
+      const lowerPwd = pwd.toLowerCase();
+      if (commonPasswords.includes(lowerPwd)) {
+        setPasswordStrength('This password is too common. Please choose a more unique password.');
+        return false;
+      }
+
       passwordSchema.parse(pwd);
       setPasswordStrength('Strong');
       return true;

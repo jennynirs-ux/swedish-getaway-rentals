@@ -142,10 +142,21 @@ export const getDrivingRoute = async (from: Coordinates, to: Coordinates): Promi
   const API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY;
 
   if (!API_KEY) {
-    // BUG-042: API key exposed in client-side code. Should move to backend proxy.
-    // TODO: Implement a backend proxy endpoint to handle OpenRouteService API calls
-    // This will prevent exposing the API key in client-side code and improve security.
-    console.warn('OpenRouteService API key not configured. Falling back to simple route calculation.');
+    // BUG-010: SECURITY ISSUE - OpenRouteService API key is exposed in client-side code
+    // TODO: This needs to be moved server-side through a backend proxy endpoint.
+    // The current implementation exposes the API key in the browser bundle, which:
+    // 1. Allows anyone to extract and abuse the API key
+    // 2. Makes quota tracking per client impossible
+    // 3. Violates principle of least privilege
+    //
+    // IMPLEMENTATION PLAN:
+    // 1. Create a backend endpoint (e.g., /api/routing) that accepts from/to coordinates
+    // 2. Move the API key to server-side environment variables only
+    // 3. Have the client call the backend endpoint instead of calling OpenRouteService directly
+    // 4. Remove VITE_OPENROUTESERVICE_API_KEY from environment
+    //
+    // For now, gracefully fall back to Haversine (straight-line) distance calculation
+    console.warn('OpenRouteService API key not configured. Using Haversine fallback for route calculation.');
     return getFallbackRoute(from, to);
   }
 

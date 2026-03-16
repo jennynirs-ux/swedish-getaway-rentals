@@ -9,7 +9,7 @@ on:
 env:
   NODE_ENV: test
   VITE_SUPABASE_URL: https://placeholder.supabase.co
-  VITE_SUPABASE_ANON_KEY: placeholder-key
+  VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-key
 
 jobs:
   test:

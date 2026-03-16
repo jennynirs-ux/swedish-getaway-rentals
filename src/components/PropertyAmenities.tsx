@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Property } from "@/hooks/useProperties";
-import { AmenityDialog } from "@/components/AmenityDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { getAmenityIcon } from "@/lib/amenityIcons";
@@ -162,11 +161,38 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
       </div>
 
       {/* Amenity Detail Dialog */}
-      <AmenityDialog 
-        amenity={selectedAmenity}
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-      />
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedAmenity?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedAmenity && (
+            <div className="space-y-4">
+              {selectedAmenity.image_url && (
+                <img
+                  src={selectedAmenity.image_url}
+                  alt={selectedAmenity.title}
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              )}
+              <p className="text-muted-foreground">{selectedAmenity.tagline}</p>
+              {selectedAmenity.description && (
+                <p className="text-sm leading-relaxed">{selectedAmenity.description}</p>
+              )}
+              {selectedAmenity.features && selectedAmenity.features.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Features</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {selectedAmenity.features.map((feature, idx) => (
+                      <li key={idx} className="text-sm text-muted-foreground">{feature}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* All Standard Amenities Dialog */}
       <Dialog open={showAllAmenities} onOpenChange={setShowAllAmenities}>

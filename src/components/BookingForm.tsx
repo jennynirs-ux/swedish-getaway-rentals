@@ -137,18 +137,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return null;
     // pricePerNight is in SEK, convert to cents for calculation
+    // BUG-015: TODO - Pass seasonal/availability prices from calendar when available
+    // The calendar may have per-date pricing set by the host, but these are not currently
+    // being passed to calculatePrice. This should be integrated with PropertyCalendarOptimized
+    // to extract date-specific prices from the availability data.
     const calculation = calculatePrice(
       pricePerNight * 100,
       checkIn,
       checkOut,
-      formData.number_of_guests
+      formData.number_of_guests,
+      {} // availabilityPrices - currently always empty, needs integration with calendar
     );
     return calculation;
   };
 
   // BUG-035: Use UTC-based calculation to avoid DST issues
+  // BUG-014: Use Math.ceil to match edge function calculation (prevents price discrepancies)
   const nights = checkIn && checkOut
-    ? Math.round((Date.UTC(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate()) - Date.UTC(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())) / 86400000)
+    ? Math.ceil((Date.UTC(checkOut.getFullYear(), checkOut.getMonth(), checkOut.getDate()) - Date.UTC(checkIn.getFullYear(), checkIn.getMonth(), checkIn.getDate())) / 86400000)
     : 0;
 
   // Determine applicable discount based on stay length

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { ImageUpload } from "./admin/ImageUpload";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 const guestbookSchema = z.object({
   guestName: z.string()
@@ -32,16 +33,16 @@ interface GuestbookFormProps {
   checkInDate: string;
 }
 
-// BUG-052: TODO - Use i18n system from src/lib/i18n/ instead of hardcoded Swedish strings
-const GuestbookForm = ({ 
-  propertyId, 
-  propertyTitle, 
-  token, 
+const GuestbookForm = ({
+  propertyId,
+  propertyTitle,
+  token,
   bookingId,
   guestEmail,
-  checkInDate 
+  checkInDate
 }: GuestbookFormProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -66,7 +67,7 @@ const GuestbookForm = ({
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Please sign in to submit your guestbook entry");
+        toast.error(t('guestbook.error.signIn', 'Please sign in to submit your guestbook entry'));
         return;
       }
 
@@ -79,20 +80,20 @@ const GuestbookForm = ({
         .single();
 
       if (tokenFetchError || !tokenData) {
-        toast.error("Invalid or expired guestbook link");
+        toast.error(t('guestbook.error.invalidToken', 'Invalid or expired guestbook link'));
         return;
       }
 
       // Check if token is already used
       if (tokenData.used_at) {
-        toast.error("This guestbook link has already been used");
+        toast.error(t('guestbook.error.tokenUsed', 'This guestbook link has already been used'));
         return;
       }
 
       // Check if token is expired
       const expiresAt = new Date(tokenData.expires_at);
       if (expiresAt < new Date()) {
-        toast.error("This guestbook link has expired");
+        toast.error(t('guestbook.error.tokenExpired', 'This guestbook link has expired'));
         return;
       }
 
@@ -121,7 +122,7 @@ const GuestbookForm = ({
 
       if (tokenError) console.error("Error marking token as used:", tokenError);
 
-      toast.success("Thank you for your guestbook entry! It will be published after review.");
+      toast.success(t('guestbook.success', 'Thank you for your guestbook entry! It will be published after review.'));
 
       // Redirect to property page after 2 seconds
       setTimeout(() => {
@@ -135,7 +136,7 @@ const GuestbookForm = ({
         });
       } else {
         console.error("Error submitting guestbook entry:", error);
-        toast.error(error.message || "Failed to submit guestbook entry");
+        toast.error(error.message || t('guestbook.error.submit', 'Failed to submit guestbook entry'));
       }
     } finally {
       setLoading(false);
@@ -148,21 +149,21 @@ const GuestbookForm = ({
         <Card className="border-border/40 shadow-xl">
           <CardHeader className="text-center space-y-2 pb-8">
             <div className="text-4xl mb-2">🌿</div>
-            <CardTitle className="text-3xl font-bold">Words from Our Guests</CardTitle>
+            <CardTitle className="text-3xl font-bold">{t('guestbook.title', 'Words from Our Guests')}</CardTitle>
             <CardDescription className="text-base">
-              Share your experience at <strong>{propertyTitle}</strong>
+              {t('guestbook.subtitle', 'Share your experience at')} <strong>{propertyTitle}</strong>
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="guestName">Your Name *</Label>
+                <Label htmlFor="guestName">{t('guestbook.yourName', 'Your Name')} *</Label>
                 <Input
                   id="guestName"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="Enter your name"
+                  placeholder={t('guestbook.namePlaceholder', 'Enter your name')}
                   maxLength={100}
                   required
                   className="border-border/50 focus:border-primary"
@@ -170,7 +171,7 @@ const GuestbookForm = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Rating (Optional)</Label>
+                <Label>{t('guestbook.rating', 'Rating')} ({t('guestbook.optional', 'Optional')})</Label>
                 <div className="flex gap-2 p-3 bg-secondary/20 rounded-lg w-fit" role="radiogroup" aria-label="Rating">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <button
@@ -208,29 +209,29 @@ const GuestbookForm = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="message">Your Message *</Label>
+                <Label htmlFor="message">{t('guestbook.message', 'Your Message')} *</Label>
                 <Textarea
                   id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Share your favorite moments, what made your stay special, or simply a kind word..."
+                  placeholder={t('guestbook.messagePlaceholder', 'Share your favorite moments, what made your stay special, or simply a kind word...')}
                   rows={6}
                   maxLength={2000}
                   required
                   className="border-border/50 focus:border-primary resize-none"
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {message.length}/2000 characters
+                  {message.length}/2000 {t('guestbook.characters', 'characters')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Share a Photo (Optional)</Label>
+                <Label>{t('guestbook.photo', 'Share a Photo')} ({t('guestbook.optional', 'Optional')})</Label>
                 <ImageUpload
                   value={imageUrl}
                   onChange={setImageUrl}
                   onRemove={() => setImageUrl("")}
-                  label="Upload a memory from your stay"
+                  label={t('guestbook.uploadLabel', 'Upload a memory from your stay')}
                 />
               </div>
 
@@ -244,15 +245,15 @@ const GuestbookForm = ({
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Submitting...
+                      {t('guestbook.submitting', 'Submitting...')}
                     </>
                   ) : (
-                    "Submit Guestbook Entry 🌿"
+                    t('guestbook.submitButton', 'Submit Guestbook Entry 🌿')
                   )}
                 </Button>
-                
+
                 <p className="text-sm text-muted-foreground text-center">
-                  Your entry will be reviewed and published within 24 hours
+                  {t('guestbook.reviewNotice', 'Your entry will be reviewed and published within 24 hours')}
                 </p>
               </div>
             </form>

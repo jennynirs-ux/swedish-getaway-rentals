@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { createServerClient } from '@/app/lib/supabase-server';
-import ShopClient from '@/app/shop-client';
+import { createServerClient } from '../lib/supabase-server';
+import ShopClient from '../shop-client';
 
 export const metadata: Metadata = {
   title: 'The Nordic Collection - Nordic Getaways',

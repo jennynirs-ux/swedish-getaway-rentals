@@ -178,7 +178,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ propertyId, subject }) => {
       <CardContent>
         {/* BUG-049: Persistent success state banner */}
         {showSuccessMessage && (
-          <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg">
+          <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg" role="alert" aria-live="polite">
             <p className="text-green-800 font-semibold">{t('forms.contact.thanksMessage')}</p>
             <p className="text-green-700 text-sm">{t('forms.contact.thanksDesc')}</p>
           </div>

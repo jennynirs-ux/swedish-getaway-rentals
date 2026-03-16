@@ -110,12 +110,28 @@ const CartPage = () => {
       return;
     }
 
-    // Use fallback rates (assume Sweden for now)
-    const swedenRate = shippingSettings.fallback_rates?.find((rate: any) => rate.region === 'Sweden');
-    if (swedenRate) {
-      setShippingCost(swedenRate.rate);
+    // Use currency-specific shipping rates
+    const itemCurrency = items[0]?.currency || 'SEK';
+    const regionMap: Record<string, string> = {
+      'SEK': 'Sweden',
+      'NOK': 'Norway',
+      'DKK': 'Denmark',
+      'EUR': 'EU',
+      'USD': 'USA',
+      'GBP': 'UK'
+    };
+
+    const region = regionMap[itemCurrency] || 'Sweden';
+    const rateForCurrency = shippingSettings.fallback_rates?.find((rate: any) => rate.region === region);
+
+    if (rateForCurrency) {
+      setShippingCost(rateForCurrency.rate);
     } else {
-      setShippingCost(4900); // Default fallback
+      // Default fallback in the item's currency
+      const defaultRates: Record<string, number> = {
+        'SEK': 4900, 'NOK': 4700, 'DKK': 650, 'EUR': 60, 'USD': 65, 'GBP': 55
+      };
+      setShippingCost(defaultRates[itemCurrency] || 4900);
     }
   };
 
@@ -158,6 +174,19 @@ const CartPage = () => {
     setAppliedCoupon(undefined);
   };
 
+  const handleAddItem = (item: any) => {
+    // Check for currency mismatch before adding
+    if (items.length > 0 && item.currency && item.currency !== currency) {
+      toast({
+        title: 'Currency mismatch',
+        description: `Your cart uses ${currency}, but this item is in ${item.currency}. Please remove existing items or shop in a single currency.`,
+        variant: 'destructive'
+      });
+      return;
+    }
+    addItem(item);
+  };
+
   const checkout = async () => {
     if (items.length === 0 || hasIncompleteVariants) return;
     setCheckingOut(true);
@@ -198,7 +227,12 @@ const CartPage = () => {
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
       if (data.url) {
-        window.open(data.url, '_blank');
+        // Validate checkout URL for security before opening
+        if (typeof data.url === 'string' && data.url.startsWith('https://checkout.stripe.com')) {
+          window.open(data.url, '_blank');
+        } else {
+          throw new Error('Invalid checkout URL');
+        }
       }
     } catch (error) {
       console.error('Error creating cart payment:', error);

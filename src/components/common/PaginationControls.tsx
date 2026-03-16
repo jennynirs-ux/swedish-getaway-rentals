@@ -85,6 +85,8 @@ export function PaginationControls({
               }
             }}
             className={!canGoPrevious ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+            aria-disabled={!canGoPrevious}
+            tabIndex={!canGoPrevious ? -1 : 0}
           />
         </PaginationItem>
 
@@ -120,6 +122,8 @@ export function PaginationControls({
               }
             }}
             className={!canGoNext ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+            aria-disabled={!canGoNext}
+            tabIndex={!canGoNext ? -1 : 0}
           />
         </PaginationItem>
       </PaginationContent>

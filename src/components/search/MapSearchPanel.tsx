@@ -42,7 +42,7 @@ function MapEventHandler({ onMapMove }: { onMapMove: MapSearchPanelProps['onMapM
     handleMove(); // Initial bounds
 
     return () => { map.off('moveend', handleMove); };
-  }, [map, onMapMove]);
+  }, [map, onMapMove, properties]);
 
   return null;
 }

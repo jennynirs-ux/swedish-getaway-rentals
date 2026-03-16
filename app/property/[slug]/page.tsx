@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createServerClient } from '@/app/lib/supabase-server';
+import { createServerClient } from '../../lib/supabase-server';
 import PropertyClient from './property-client';
 import { Property } from '@/types/property';
 

@@ -83,8 +83,8 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
                     key={index}
                     onClick={() => setCurrentIndex(index)}
                     className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      index === currentIndex 
-                        ? 'border-primary ring-2 ring-primary/20' 
+                      index === currentIndex
+                        ? 'border-primary ring-2 ring-primary/20'
                         : 'border-border hover:border-primary/50'
                     }`}
                   >
@@ -92,6 +92,10 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
                       src={image.src}
                       alt={image.alt}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
                     />
                   </button>
                 ))}

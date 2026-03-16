@@ -1,3 +1,24 @@
+/**
+ * Next.js Configuration
+ *
+ * IMPORTANT: This is the FUTURE production build system.
+ * Currently, the primary build system is Vite (see package.json).
+ *
+ * Vite scripts (production):
+ *   - npm run build       (Vite - used by CI)
+ *   - npm run dev        (Vite dev server)
+ *
+ * Next.js scripts (future):
+ *   - npm run build:next  (Next.js build)
+ *   - npm run dev:next   (Next.js dev server)
+ *   - npm run start:next (Next.js production start)
+ *
+ * When transitioning to Next.js as the primary build:
+ * 1. Update CI to use "npm run build:next" instead of "npm run build"
+ * 2. Update deployment scripts to use start:next
+ * 3. Remove Vite build configuration from package.json
+ */
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,

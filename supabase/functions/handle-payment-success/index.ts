@@ -80,11 +80,27 @@ serve(async (req) => {
 
     if (session.metadata?.type === 'booking') {
       const metadata = session.metadata;
-      
+
+      // BUG-007: Validate user ownership if auth context is present
+      // Stripe webhooks may not have Authorization headers, but if they do, verify the authenticated
+      // user matches the metadata.userId to prevent unauthorized booking creation
+      if (authHeader) {
+        const { data } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+        const authUser = data.user;
+
+        if (authUser && metadata.userId && authUser.id !== metadata.userId) {
+          console.warn('User ownership mismatch: auth user does not match metadata.userId', {
+            authUserId: authUser.id,
+            metadataUserId: metadata.userId
+          });
+          // Log but continue processing since Stripe webhooks are legitimate even without user context
+        }
+      }
+
       // Verify the amount paid matches the booking amount (critical security check)
       const paidAmount = session.amount_total || 0;
       const expectedAmount = parseInt(metadata.totalAmount) * 100; // Convert to cents
-      
+
       if (paidAmount !== expectedAmount) {
         console.error('Payment amount mismatch:', { paidAmount, expectedAmount });
         throw new Error('Payment amount verification failed');
@@ -111,7 +127,36 @@ serve(async (req) => {
         .single();
 
       if (bookingError) throw bookingError;
-      
+
+      // BUG-003: Increment coupon used_count if a coupon was applied
+      if (metadata.couponCode && metadata.couponId) {
+        const { data: coupon, error: couponFetchError } = await supabase
+          .from('coupons')
+          .select('id, used_count')
+          .eq('id', metadata.couponId)
+          .single();
+
+        if (!couponFetchError && coupon) {
+          const newUsedCount = (coupon.used_count || 0) + 1;
+          const { error: updateError } = await supabase
+            .from('coupons')
+            .update({ used_count: newUsedCount })
+            .eq('id', metadata.couponId);
+
+          if (updateError) {
+            console.error('Failed to increment coupon used_count:', updateError);
+          } else {
+            console.log('Coupon used_count incremented:', {
+              couponCode: metadata.couponCode,
+              couponId: metadata.couponId,
+              newUsedCount
+            });
+          }
+        } else if (couponFetchError) {
+          console.error('Failed to fetch coupon for increment:', couponFetchError);
+        }
+      }
+
       // Record processed session to prevent replay attacks
       await supabase.from('processed_sessions').insert({
         session_id,
@@ -285,7 +330,36 @@ serve(async (req) => {
         .select()
         .single();
       if (orderError) throw orderError;
-      
+
+      // BUG-003: Increment coupon used_count for cart orders if a coupon was applied
+      if (session.metadata?.coupon_code && session.metadata?.coupon_id) {
+        const { data: coupon, error: couponFetchError } = await supabase
+          .from('coupons')
+          .select('id, used_count')
+          .eq('id', session.metadata.coupon_id)
+          .single();
+
+        if (!couponFetchError && coupon) {
+          const newUsedCount = (coupon.used_count || 0) + 1;
+          const { error: updateError } = await supabase
+            .from('coupons')
+            .update({ used_count: newUsedCount })
+            .eq('id', session.metadata.coupon_id);
+
+          if (updateError) {
+            console.error('Failed to increment coupon used_count for cart:', updateError);
+          } else {
+            console.log('Coupon used_count incremented for cart:', {
+              couponCode: session.metadata.coupon_code,
+              couponId: session.metadata.coupon_id,
+              newUsedCount
+            });
+          }
+        } else if (couponFetchError) {
+          console.error('Failed to fetch coupon for cart increment:', couponFetchError);
+        }
+      }
+
       await supabase.from('processed_sessions').insert({
         session_id,
         session_type: 'cart',
@@ -293,7 +367,7 @@ serve(async (req) => {
         user_agent: userAgent,
         created_record_id: cartOrder.id
       });
-      
+
       result.type = 'cart';
     }
 

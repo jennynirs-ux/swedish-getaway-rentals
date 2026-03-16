@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, memo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import PropertyCard, { PropertyCardData } from '@/components/PropertyCard';
 import LazyImage from '@/components/LazyImage';
@@ -385,7 +385,7 @@ const HomeClient = memo(({ initialProperties }: HomeClientProps) => {
                 Discover authentic Nordic experiences in our handpicked properties.
               </p>
               <div className="flex gap-2">
-                <Link to="/become-host">
+                <Link href="/become-host">
                   <Button variant="outline">Become a Host</Button>
                 </Link>
               </div>
@@ -395,17 +395,17 @@ const HomeClient = memo(({ initialProperties }: HomeClientProps) => {
               <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <Link to="/shop" className="hover:text-foreground">
+                  <Link href="/shop" className="hover:text-foreground">
                     The Nordic Collection
                   </Link>
                 </li>
                 <li>
-                  <Link to="/first-time-in-sweden" className="hover:text-foreground">
+                  <Link href="/first-time-in-sweden" className="hover:text-foreground">
                     First time in Sweden?
                   </Link>
                 </li>
                 <li>
-                  <Link to="/contact" className="hover:text-foreground">
+                  <Link href="/contact" className="hover:text-foreground">
                     Contact
                   </Link>
                 </li>
@@ -416,17 +416,17 @@ const HomeClient = memo(({ initialProperties }: HomeClientProps) => {
               <h4 className="font-semibold text-foreground mb-4">For Guests</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <li>
-                  <Link to="/pricing-guide" className="hover:text-foreground">
+                  <Link href="/pricing-guide" className="hover:text-foreground">
                     Pricing Guide
                   </Link>
                 </li>
                 <li>
-                  <Link to="/auth" className="hover:text-foreground">
+                  <Link href="/auth" className="hover:text-foreground">
                     Sign In / Register
                   </Link>
                 </li>
                 <li>
-                  <Link to="/profile" className="hover:text-foreground">
+                  <Link href="/profile" className="hover:text-foreground">
                     My Bookings
                   </Link>
                 </li>

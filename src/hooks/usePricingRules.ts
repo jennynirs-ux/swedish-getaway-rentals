@@ -65,6 +65,44 @@ export const usePricingRules = (propertyId: string) => {
     availabilityPrices: Record<string, number> = {}, // seasonal prices
     selectedServices: string[] = []
   ): PricingCalculation => {
+    // Validate inputs to prevent invalid pricing calculations
+    if (basePrice <= 0) {
+      return {
+        basePrice: 0,
+        nights: 0,
+        guests: numberOfGuests,
+        extraGuestFee: 0,
+        cleaningFee: 0,
+        extraServices: 0,
+        total: 0,
+        breakdown: {
+          accommodation: 0,
+          extraGuests: 0,
+          cleaning: 0,
+          services: 0
+        }
+      };
+    }
+
+    // Validate dates: checkout must be after checkin
+    if (checkOutDate <= checkInDate) {
+      return {
+        basePrice: 0,
+        nights: 0,
+        guests: numberOfGuests,
+        extraGuestFee: 0,
+        cleaningFee: 0,
+        extraServices: 0,
+        total: 0,
+        breakdown: {
+          accommodation: 0,
+          extraGuests: 0,
+          cleaning: 0,
+          services: 0
+        }
+      };
+    }
+
     // BUG-046: Use UTC-based calculation to avoid DST issues
     const nights = Math.ceil(
       (Date.UTC(checkOutDate.getFullYear(), checkOutDate.getMonth(), checkOutDate.getDate()) -
@@ -89,6 +127,8 @@ export const usePricingRules = (propertyId: string) => {
     const serviceRules = rules.filter(r => r.rule_type === 'extra_service' && selectedServices.includes(r.id));
 
     // Calculate extra guest fees
+    // TODO: This assumes the base price includes 1 guest. Properties should have a base_guests_included field
+    // to make this configurable instead of hardcoded to 1.
     let extraGuestTotal = 0;
     extraGuestRules.forEach(rule => {
       const extraGuests = Math.max(0, numberOfGuests - 1); // Assuming base price includes 1 guest
