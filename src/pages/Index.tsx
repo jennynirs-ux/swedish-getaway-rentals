@@ -337,7 +337,7 @@ const HomePage = memo(() => {
       </header>
 
       {/* Property Cards */}
-      <main className="pb-12">
+      <main id="main-content" className="pb-12">
         <div className="container mx-auto px-4 pt-16">
           {/* IMP-010: Mobile refresh button */}
           <MobileRefreshButton onRefresh={refetch} isLoading={loading} />

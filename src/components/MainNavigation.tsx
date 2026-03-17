@@ -76,7 +76,11 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   };
 
   return (
-    <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
+    <>
+    <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded">
+      Skip to main content
+    </a>
+    <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6" aria-label="Main navigation">
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo always links to Home */}
         <Link to="/" className="flex items-center">
@@ -150,7 +154,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         {/* Mobile Hamburger */}
         {!isPropertyPage && (
           <div className="md:hidden">
-            <button onClick={() => setMenuOpen(!menuOpen)}>
+            <button onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
               {menuOpen ? (
                 <X className="w-6 h-6 text-white" />
               ) : (
@@ -207,6 +211,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         </div>
       )}
     </nav>
+    </>
   );
 };
 

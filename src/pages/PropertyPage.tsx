@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
 import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { VacationRentalJsonLd } from "@/components/seo/JsonLd";
+import { useSeoMeta } from "@/hooks/useSeoMeta";
 
 // Lazy-loaded heavy components
 const PropertyGallery = lazy(() => import("@/components/PropertyGallery"));
@@ -218,6 +221,17 @@ const PropertyPage = memo(() => {
     } as Property;
   }, [lightProperty, heavyProperty]);
 
+  // Dynamic SEO meta tags per property
+  useSeoMeta({
+    title: property?.title,
+    description: property?.description?.slice(0, 160) || undefined,
+    ogTitle: property?.title,
+    ogDescription: property?.description?.slice(0, 160) || undefined,
+    ogImage: property?.hero_image_url || undefined,
+    ogUrl: property ? `https://nordic-getaways.com/property/${property.id}` : undefined,
+    canonical: property ? `https://nordic-getaways.com/property/${property.id}` : undefined,
+  });
+
   // Loading
   if (loading) {
     return (
@@ -256,7 +270,29 @@ const PropertyPage = memo(() => {
   // Render
   return (
     <div className="min-h-screen bg-background">
+      <VacationRentalJsonLd
+        name={property.title}
+        description={property.description || ''}
+        image={property.hero_image_url || ''}
+        url={`https://nordic-getaways.com/property/${property.id}`}
+        address={{ locality: property.location, country: 'SE' }}
+        bedrooms={property.bedrooms}
+        bathrooms={property.bathrooms}
+        maxGuests={property.max_guests}
+        pricePerNight={property.price_per_night}
+        currency={property.currency || 'SEK'}
+        rating={property.average_rating}
+        reviewCount={property.review_count}
+        amenities={Array.isArray(property.amenities) ? property.amenities as string[] : []}
+        registrationNumber={property.registration_number}
+      />
       <PropertyNavigation />
+      <div className="container mx-auto px-4">
+        <Breadcrumbs items={[
+          { label: 'Properties', href: '/' },
+          { label: property.title },
+        ]} />
+      </div>
       <PropertyHero property={property} />
 
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>

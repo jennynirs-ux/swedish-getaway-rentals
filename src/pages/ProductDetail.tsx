@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
+import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 interface ShopProduct {
   id: string;
@@ -201,6 +202,20 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductJsonLd
+        name={product.title}
+        description={product.description || ''}
+        image={product.image_url || ''}
+        url={`https://nordic-getaways.com/shop/${product.id}`}
+        price={product.price}
+        currency="SEK"
+        sku={product.id}
+      />
+      <BreadcrumbJsonLd items={[
+        { name: 'Home', url: 'https://nordic-getaways.com' },
+        { name: 'Shop', url: 'https://nordic-getaways.com/shop' },
+        { name: product.title, url: `https://nordic-getaways.com/shop/${product.id}` },
+      ]} />
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
         <div className="container mx-auto">
