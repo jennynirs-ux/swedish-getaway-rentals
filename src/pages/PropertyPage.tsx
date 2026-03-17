@@ -21,6 +21,7 @@ const PropertySpecialHighlights = lazy(() => import("@/components/PropertySpecia
 const PropertyBooking = lazy(() => import("@/components/PropertyBooking"));
 const PropertyFooter = lazy(() => import("@/components/PropertyFooter"));
 const PropertyLocation = lazy(() => import("@/components/PropertyLocation"));
+const RelatedProperties = lazy(() => import("@/components/RelatedProperties"));
 const PropertyGuestbook = lazy(() => import("@/components/PropertyGuestbook"));
 const NearbyProperties = lazy(() => import("@/components/NearbyProperties"));
 
@@ -340,6 +341,14 @@ const PropertyPage = memo(() => {
           />
         </Suspense>
       )}
+
+      <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+        <RelatedProperties
+          currentPropertyId={property.id}
+          location={property.location}
+          maxGuests={property.max_guests}
+        />
+      </Suspense>
 
       <Suspense fallback={<Skeleton className="h-20 w-full" />}>
         <PropertyFooter property={property} />

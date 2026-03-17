@@ -198,6 +198,20 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               <span>Cart</span>
             </Link>
           )}
+          <Link
+            to="/destinations"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-2"
+          >
+            <span>Destinations</span>
+          </Link>
+          <Link
+            to="/blog"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-2"
+          >
+            <span>Blog</span>
+          </Link>
           <button
             onClick={() => {
               setMenuOpen(false);

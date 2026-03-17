@@ -53,9 +53,12 @@
     <link rel="dns-prefetch" href="https://cdn.supabase.co">
     <link rel="dns-prefetch" href="https://nominatim.openstreetmap.org">
 
-    <!-- Fonts -->
+    <!-- Fonts with display=swap for CLS -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Performance: preload LCP hero image -->
+    <link rel="preload" as="image" type="image/webp" href="/src/assets/forest-hero-light.webp" fetchpriority="high">
 
     <!-- Organization Schema (JSON-LD) -->
     <script type="application/ld+json">

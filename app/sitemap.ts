@@ -38,7 +38,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/first-time-in-sweden`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7, alternates: withAlternates(`${BASE_URL}/first-time-in-sweden`) },
     { url: `${BASE_URL}/pricing-guide`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6, alternates: withAlternates(`${BASE_URL}/pricing-guide`) },
     { url: `${BASE_URL}/become-host`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5, alternates: withAlternates(`${BASE_URL}/become-host`) },
+    { url: `${BASE_URL}/destinations`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9, alternates: withAlternates(`${BASE_URL}/destinations`) },
+    { url: `${BASE_URL}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8, alternates: withAlternates(`${BASE_URL}/blog`) },
   ];
+
+  // Static destination pages
+  const destinationSlugs = ['stockholm-archipelago', 'swedish-lapland', 'dalarna', 'west-coast-sweden', 'lofoten', 'finnish-lakeland', 'danish-coast', 'varmland'];
+  const destinationRoutes: MetadataRoute.Sitemap = destinationSlugs.map((slug) => ({
+    url: `${BASE_URL}/destinations/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+    alternates: withAlternates(`${BASE_URL}/destinations/${slug}`),
+  }));
+
+  // Static blog posts
+  const blogSlugs = ['ultimate-guide-midsommar-sweden', 'best-northern-lights-spots-scandinavia', 'swedish-stuga-culture-explained', 'first-time-renting-scandinavia', 'sustainable-travel-nordic-countries', 'winter-activities-swedish-lapland'];
+  const blogRoutes: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
+    url: `${BASE_URL}/blog/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+    alternates: withAlternates(`${BASE_URL}/blog/${slug}`),
+  }));
 
   // Dynamic property routes (use slug if available, fallback to id)
   const propertyRoutes: MetadataRoute.Sitemap = (properties || []).map((prop) => {
@@ -64,5 +86,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticRoutes, ...propertyRoutes, ...productRoutes];
+  return [...staticRoutes, ...destinationRoutes, ...blogRoutes, ...propertyRoutes, ...productRoutes];
 }

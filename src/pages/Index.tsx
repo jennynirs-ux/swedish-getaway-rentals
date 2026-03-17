@@ -13,6 +13,7 @@ import BookPromotion from "@/components/BookPromotion";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
 import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
 import { MobileRefreshButton } from "@/components/mobile/MobileRefreshButton";
+import { useLocalizedSeo } from "@/hooks/useLocalizedSeo";
 
 import forestHeroBg from "@/assets/forest-hero-light.webp";
 import { addDays, subDays, differenceInCalendarDays } from "date-fns";
@@ -33,6 +34,7 @@ const MemoizedPropertyCard = memo(PropertyCard);
 const MemoizedHomepageProducts = memo(HomepageProducts);
 
 const HomePage = memo(() => {
+  useLocalizedSeo('/');
   /** Hämta properties från supabase */
   const propertiesQueryFn = useCallback(async () => {
     const { data, error } = await supabase

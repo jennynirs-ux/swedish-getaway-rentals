@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://nordic-getaways.com/sitemap.xml
+
+# Disallow admin and auth pages
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile
+Disallow: /host-dashboard
+Disallow: /host-application
+Disallow: /booking-success
+Disallow: /order-success
+Disallow: /book-now
+
+# Allow all assets
+Allow: /assets/
+Allow: /destinations/

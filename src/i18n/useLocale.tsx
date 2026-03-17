@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { type Locale, t as translate, detectLocale, setLocale as storeLocale, SUPPORTED_LOCALES } from './index';
+import { type Locale, t as translate, detectLocale, setLocale as storeLocale, updateHreflangTags, SUPPORTED_LOCALES } from './index';
 
 interface LocaleContextValue {
   locale: Locale;
@@ -24,6 +24,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = locale;
+    updateHreflangTags();
   }, [locale]);
 
   return (

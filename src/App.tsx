@@ -52,6 +52,10 @@ const Profile = lazy(() => import("./pages/Profile"));
 const FirstTimeInSweden = lazy(() => import("./pages/FirstTimeInSweden"));
 const PricingGuide = lazy(() => import("./pages/PricingGuide"));
 const BecomeHost = lazy(() => import("./pages/BecomeHost"));
+const Destinations = lazy(() => import("./pages/Destinations"));
+const DestinationDetail = lazy(() => import("./pages/DestinationDetail"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -131,6 +135,10 @@ const App = () => {
                 <Route path="/first-time-in-sweden" element={<FirstTimeInSweden />} />
                 <Route path="/pricing-guide" element={<PricingGuide />} />
                 <Route path="/become-host" element={<BecomeHost />} />
+                <Route path="/destinations" element={<Destinations />} />
+                <Route path="/destinations/:slug" element={<DestinationDetail />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
