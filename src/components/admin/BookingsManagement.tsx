@@ -16,10 +16,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Edit, Search, Calendar, User, MapPin, CreditCard } from 'lucide-react';
+import { CheckCircle, XCircle, Edit, Search, Calendar, User, MapPin, CreditCard, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { logBookingStatusChange } from '@/lib/auditLog';
+import { exportToCsv } from '@/lib/exportCsv';
+import { Download } from 'lucide-react';
 
 interface Booking {
   id: string;
@@ -196,6 +198,19 @@ const BookingsManagement = () => {
   const ITEMS_PER_PAGE = 50;
   const { toast } = useToast();
 
+  const exportColumns = [
+    { key: 'id', label: 'Booking ID' },
+    { key: 'guest_name', label: 'Guest Name' },
+    { key: 'guest_email', label: 'Guest Email' },
+    { key: 'check_in_date', label: 'Check-in' },
+    { key: 'check_out_date', label: 'Check-out' },
+    { key: 'number_of_guests', label: 'Guests' },
+    { key: 'total_amount', label: 'Amount' },
+    { key: 'currency', label: 'Currency' },
+    { key: 'status', label: 'Status' },
+    { key: 'created_at', label: 'Created' },
+  ];
+
   useEffect(() => {
     fetchBookings(0);
   }, []);
@@ -350,8 +365,12 @@ const BookingsManagement = () => {
           <h2 className="text-2xl font-bold">Bokningshantering</h2>
           <p className="text-muted-foreground">Hantera alla bokningar och reservationer</p>
         </div>
-        
+
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv(bookings || [], exportColumns, 'bookings.csv')}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -361,7 +380,7 @@ const BookingsManagement = () => {
               className="pl-9 w-64"
             />
           </div>
-          
+
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filtrera status" />

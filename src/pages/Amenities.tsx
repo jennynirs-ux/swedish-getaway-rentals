@@ -92,9 +92,11 @@ const Amenities = () => {
                       <p className="text-muted-foreground mb-4">{amenity.description}</p>
                       
                       {amenity.image_url && (
-                        <img 
-                          src={amenity.image_url} 
+                        <img
+                          src={amenity.image_url}
                           alt={amenity.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-32 object-cover rounded-md mb-4"
                         />
                       )}

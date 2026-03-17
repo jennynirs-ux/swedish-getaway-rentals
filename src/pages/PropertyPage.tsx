@@ -162,7 +162,9 @@ const PropertyPage = memo(() => {
         get_in_touch_info,
         footer_quick_links,
         gallery_metadata,
-        video_metadata
+        video_metadata,
+        transport_distances,
+        registration_number
       `)
       .eq("id", resolvedPropertyId)
       .eq("active", true)
@@ -287,6 +289,7 @@ const PropertyPage = memo(() => {
           longitude={property.longitude}
           propertyTitle={property.title}
           location={property.location}
+          transportDistances={property.transport_distances as any}
         />
       </Suspense>
 

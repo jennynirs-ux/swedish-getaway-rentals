@@ -15,7 +15,8 @@ import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDispla
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
-import { VAT_RATE } from "@/lib/constants";
+import { VAT_RATE, SERVICE_FEE_RATE } from "@/lib/constants";
+import { convertForDisplay } from "@/lib/currencyConverter";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 
 interface BookingFormProps {
@@ -177,9 +178,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const subtotalBeforeVat = subtotalBeforeDiscount - stayDiscount;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const subtotalAfterCoupon = Math.max(0, subtotalBeforeVat - couponDiscount);
-  // IMP-002: Add Swedish VAT (12%) to the subtotal
-  const vatAmount = Math.round(subtotalAfterCoupon * VAT_RATE);
-  const totalAmount = subtotalAfterCoupon + vatAmount;
+  // BL-011: Service fee (10%) shown transparently to guest
+  const serviceFee = Math.round(subtotalAfterCoupon * SERVICE_FEE_RATE);
+  const subtotalWithFee = subtotalAfterCoupon + serviceFee;
+  // IMP-002: Add Swedish VAT (12%) to the subtotal including service fee
+  const vatAmount = Math.round(subtotalWithFee * VAT_RATE);
+  const totalAmount = subtotalWithFee + vatAmount;
 
   const validateForm = () => {
     try {
@@ -385,10 +389,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   </div>
                 )}
 
-                {/* IMP-002: Show subtotal before VAT */}
+                {/* IMP-002: Show subtotal before fees */}
                 <div className="flex justify-between text-sm font-medium border-t pt-2 mt-2">
                   <span>{t('forms.booking.subtotal')}</span>
                   <span>{(subtotalAfterCoupon / 100).toLocaleString()} {currency}</span>
+                </div>
+
+                {/* BL-011: Service fee transparency */}
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Service fee ({Math.round(SERVICE_FEE_RATE * 100)}%)</span>
+                  <span>{(serviceFee / 100).toLocaleString()} {currency}</span>
                 </div>
 
                 {/* IMP-002: VAT line item for Swedish compliance */}
@@ -400,7 +410,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
               <div className="flex justify-between text-lg font-bold border-t pt-3">
                 <span>{t('forms.booking.total')}</span>
-                <span>{(totalAmount / 100).toLocaleString()} {currency}</span>
+                <div className="text-right">
+                  <span>{(totalAmount / 100).toLocaleString()} {currency}</span>
+                  {(() => {
+                    const converted = convertForDisplay(totalAmount, currency);
+                    return converted ? (
+                      <span className="block text-xs font-normal text-muted-foreground">{converted.formatted}</span>
+                    ) : null;
+                  })()}
+                </div>
               </div>
             </div>
           )}
@@ -516,17 +534,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 >
                   <Shield className="h-4 w-4 text-primary" />
                   {t('forms.booking.houseRulesAccept')}{" "}
-                  {onOpenGuidebook ? (
-                    <button
-                      type="button"
-                      onClick={onOpenGuidebook}
-                      className="text-primary underline hover:text-primary/80"
-                    >
-                      {t('forms.booking.houseRules')}
-                    </button>
-                  ) : (
-                    t('forms.booking.houseRules')
-                  )}
+                  <button
+                    type="button"
+                    onClick={onOpenGuidebook ?? (() => {
+                      // Fallback: navigate to property guide page if no callback provided
+                      window.open(`/property/${propertyId}/guide`, '_blank');
+                    })}
+                    className="text-primary underline hover:text-primary/80"
+                  >
+                    {t('forms.booking.houseRules')}
+                  </button>
                 </label>
                 <p className="text-sm text-muted-foreground">
                   {t('forms.booking.houseRulesDesc')}

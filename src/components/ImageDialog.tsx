@@ -45,6 +45,8 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
             <img
               src={currentImage?.src}
               alt={currentImage?.alt}
+              loading="lazy"
+              decoding="async"
               className="max-w-full max-h-full w-auto h-auto object-contain"
             />
             
@@ -91,6 +93,8 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
                     <img
                       src={image.src}
                       alt={image.alt}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;

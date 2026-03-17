@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { createServerClient } from '../lib/supabase-server';
 import ShopClient from '../shop-client';
 
+// ISR: Revalidate shop every 2 hours
+export const revalidate = 7200;
+
 export const metadata: Metadata = {
   title: 'The Nordic Collection - Nordic Getaways',
   description:

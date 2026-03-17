@@ -279,7 +279,7 @@ const CartPage = () => {
                         <TableRow key={`${i.productId}-${i.variantId || 'base'}`}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              {i.image && <img src={i.image} alt={i.title} className="w-12 h-12 rounded object-cover" />}
+                              {i.image && <img src={i.image} alt={i.title} loading="lazy" decoding="async" className="w-12 h-12 rounded object-cover" />}
                               <div>
                                 <div className="font-medium">{i.title}</div>
                                 {hasVariants && (

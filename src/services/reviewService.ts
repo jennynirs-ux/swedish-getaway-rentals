@@ -12,6 +12,9 @@ export interface ReviewRecord {
   created_at: string;
   updated_at: string;
   booking_id?: string;
+  host_response?: string | null;
+  host_response_at?: string | null;
+  host_response_by?: string | null;
 }
 
 export interface SubmitReviewData {
@@ -204,6 +207,47 @@ export async function deleteReview(id: string): Promise<void> {
   } catch (error) {
     throw new Error(
       `Failed to delete review: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Submit a host response to a review
+ * @param reviewId - Review ID
+ * @param response - Host response text
+ * @param hostId - Host user ID
+ * @returns Promise containing updated review
+ * @throws Error if response submission fails
+ */
+export async function submitHostResponse(
+  reviewId: string,
+  response: string,
+  hostId: string
+): Promise<ReviewRecord> {
+  try {
+    if (!response.trim()) {
+      throw new Error('Response cannot be empty');
+    }
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({
+        host_response: response.trim(),
+        host_response_at: new Date().toISOString(),
+        host_response_by: hostId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reviewId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Failed to submit host response');
+
+    return data;
+  } catch (error) {
+    throw new Error(
+      `Failed to submit host response: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }

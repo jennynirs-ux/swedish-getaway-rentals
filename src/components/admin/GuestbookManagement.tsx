@@ -190,6 +190,8 @@ const GuestbookManagement = () => {
                     <img
                       src={entry.image_url}
                       alt="Guest memory"
+                      loading="lazy"
+                      decoding="async"
                       className="rounded-lg w-full h-auto object-cover"
                     />
                   </div>

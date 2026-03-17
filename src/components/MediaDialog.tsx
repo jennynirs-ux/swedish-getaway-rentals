@@ -113,6 +113,8 @@ export const MediaDialog = ({
             <img
               src={currentItem.url}
               alt={currentItem.alt || currentItem.title || ""}
+              loading="lazy"
+              decoding="async"
               className="max-w-full max-h-[70vh] object-contain rounded-md"
             />
           ) : (
@@ -163,6 +165,8 @@ export const MediaDialog = ({
                     <img
                       src={item.url}
                       alt={item.alt || `Media ${index + 1}`}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   ) : (

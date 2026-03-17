@@ -20,6 +20,7 @@ import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coord
 import { getAmenityIcon } from "@/lib/amenityIcons";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { convertForDisplay } from "@/lib/currencyConverter";
 
 export interface PropertyCardData {
   id: string;
@@ -277,6 +278,13 @@ const PropertyCard = memo(({
                 </TooltipProvider>
               </div>
               <span className="text-muted-foreground text-sm">/night incl. fees</span>
+              {(() => {
+                const totalPerNight = Math.round((safeProperty.price_per_night || 0) * 1.1 * 100);
+                const converted = convertForDisplay(totalPerNight, safeProperty.currency);
+                return converted ? (
+                  <span className="text-xs text-muted-foreground">{converted.formatted}/night</span>
+                ) : null;
+              })()}
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               View Details

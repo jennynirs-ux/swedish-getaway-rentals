@@ -74,6 +74,8 @@ const GuestbookEntry = ({
                 <img
                   src={imageUrl}
                   alt="Guest memory"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-auto object-cover rounded-lg shadow-md hover:scale-105 transition-transform duration-300"
                 />
               </div>

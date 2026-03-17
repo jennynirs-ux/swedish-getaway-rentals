@@ -208,9 +208,11 @@ const SortableAmenity = ({ id, amenity, index, onUpdate, onRemove, onImageUpload
                   />
                 </div>
                 {amenity.image_url && (
-                  <img 
-                    src={amenity.image_url} 
+                  <img
+                    src={amenity.image_url}
                     alt={amenity.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-16 h-16 object-cover rounded-md"
                   />
                 )}

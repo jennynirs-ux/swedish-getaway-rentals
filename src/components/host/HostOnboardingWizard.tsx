@@ -584,7 +584,7 @@ const Step6Photos: React.FC<{ formData: WizardFormData; onChange: (field: string
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {formData.photoUrls.map((url, idx) => (
                 <div key={idx} className="relative group">
-                  <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                  <img src={url} alt={`Photo ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-32 object-cover rounded-lg" />
                   <button
                     onClick={() => onChange('photoUrls', formData.photoUrls.filter((_, i) => i !== idx))}
                     className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

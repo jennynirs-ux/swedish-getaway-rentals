@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Tooltip,
@@ -27,7 +27,9 @@ import {
   Globe,
   XCircle,
   CheckCircle2,
+  Download,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /* ---------- Typer ---------- */
 
@@ -532,6 +534,18 @@ const sections: SectionDef[] = [
 const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const handleDownloadCleaningPdf = useCallback(async () => {
+    const { generateCleaningGuidePdf } = await import("@/lib/generateGuidePdf");
+    const cleaningSection = sections.find((s) => s.id === "cleaning-checklist");
+    if (!cleaningSection) return;
+    const { rooms, final } = cleaningSection.content;
+    const roomList = Object.entries(rooms as Record<string, string[]>).map(([name, tasks]) => ({
+      name,
+      tasks,
+    }));
+    await generateCleaningGuidePdf("Your Property", roomList, final || []);
+  }, []);
+
   const renderPriceGuideBlocks = (blocks: PriceGuideBlock[]) => {
     return (
       <div className="space-y-8">
@@ -915,6 +929,12 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
                 <DialogTitle className="text-3xl font-bold">
                   {sections[activeIndex].title}
                 </DialogTitle>
+                {sections[activeIndex].id === "cleaning-checklist" && (
+                  <Button variant="outline" size="sm" onClick={handleDownloadCleaningPdf} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Download PDF
+                  </Button>
+                )}
               </div>
             </DialogHeader>
 

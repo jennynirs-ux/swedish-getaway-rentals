@@ -172,6 +172,8 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
                 <img
                   src={selectedAmenity.image_url}
                   alt={selectedAmenity.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-64 object-cover rounded-lg"
                 />
               )}

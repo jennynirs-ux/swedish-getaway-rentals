@@ -1,0 +1,83 @@
+{
+  "common": {
+    "search": "Search",
+    "book_now": "Book Now",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "back": "Back",
+    "next": "Next",
+    "per_night": "per night",
+    "guests": "Guests",
+    "nights": "nights",
+    "total": "Total",
+    "view_details": "View Details",
+    "sign_in": "Sign In",
+    "sign_out": "Sign Out",
+    "sign_up": "Sign Up"
+  },
+  "nav": {
+    "home": "Home",
+    "properties": "Properties",
+    "shop": "Shop",
+    "about": "About",
+    "contact": "Contact",
+    "host_dashboard": "Host Dashboard",
+    "become_host": "Become a Host",
+    "my_bookings": "My Bookings",
+    "profile": "Profile"
+  },
+  "home": {
+    "hero_title": "Discover Your Nordic Getaway",
+    "hero_subtitle": "Unique stays across Scandinavia with modern amenities, breathtaking views, and authentic experiences",
+    "search_placeholder": "Where do you want to go?",
+    "featured_properties": "Featured Properties",
+    "popular_destinations": "Popular Destinations",
+    "why_choose_us": "Why Choose Nordic Getaways"
+  },
+  "property": {
+    "amenities": "Amenities",
+    "location": "Location",
+    "reviews": "Reviews",
+    "host": "Host",
+    "check_in": "Check-in",
+    "check_out": "Check-out",
+    "availability": "Availability",
+    "description": "Description",
+    "house_rules": "House Rules",
+    "no_reviews": "No reviews yet",
+    "write_review": "Write a Review",
+    "per_night": "SEK / night",
+    "max_guests": "Max guests"
+  },
+  "booking": {
+    "your_booking": "Your Booking",
+    "booking_confirmed": "Booking Confirmed!",
+    "booking_pending": "Booking Pending Approval",
+    "check_in_date": "Check-in Date",
+    "check_out_date": "Check-out Date",
+    "number_of_guests": "Number of Guests",
+    "total_price": "Total Price",
+    "proceed_to_payment": "Proceed to Payment",
+    "booking_summary": "Booking Summary"
+  },
+  "host": {
+    "dashboard": "Host Dashboard",
+    "properties": "My Properties",
+    "bookings": "Bookings",
+    "analytics": "Analytics",
+    "messages": "Messages",
+    "tax_report": "Tax Report",
+    "settings": "Settings",
+    "add_property": "Add Property"
+  },
+  "footer": {
+    "about": "About Us",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "contact": "Contact Us",
+    "copyright": "© {year} Nordic Getaways. All rights reserved."
+  }
+}

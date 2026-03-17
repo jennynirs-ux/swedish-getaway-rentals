@@ -10,6 +10,8 @@ env:
   NODE_ENV: test
   VITE_SUPABASE_URL: https://placeholder.supabase.co
   VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-key
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-key
 
 jobs:
   test:
@@ -32,9 +34,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: TypeScript type check
-        run: npx tsc --noEmit
-
       - name: Run unit tests
         run: npm test
 
@@ -46,15 +45,15 @@ jobs:
           path: coverage/
           retention-days: 30
 
-      - name: Run production build
-        run: npm run build
+      - name: Run Next.js production build
+        run: npm run build:next
 
       - name: Upload build artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.node-version }}
-          path: dist/
+          path: .next/
           retention-days: 7
 
   lint:

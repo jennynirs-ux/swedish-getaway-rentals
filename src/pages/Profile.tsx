@@ -16,6 +16,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
+import { VerifyIdentityButton } from "@/components/VerifyIdentityButton";
 
 interface Profile {
   user_id: string;
@@ -244,6 +245,7 @@ const Profile = () => {
                   <div className="text-sm text-muted-foreground">
                     {profile.total_stays} stays
                   </div>
+                  <VerifyIdentityButton compact />
                 </div>
               </div>
             </div>
@@ -301,6 +303,8 @@ const Profile = () => {
                             <img
                               src={booking.property.hero_image_url}
                               alt={booking.property.title}
+                              loading="lazy"
+                              decoding="async"
                               className="w-32 h-32 object-cover rounded-lg"
                             />
                           )}

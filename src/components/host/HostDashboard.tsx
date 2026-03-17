@@ -17,6 +17,8 @@ import HostGuidebookDialog from "./HostGuidebookDialog";
 import { HostPropertyEditor } from "./HostPropertyEditor";
 import { HostInvitationDialog } from "./HostInvitationDialog";
 import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
+import { HostAnalytics } from "./HostAnalytics";
+import { HostTaxReport } from "./HostTaxReport";
 
 interface HostStats {
   total_properties: number;
@@ -99,6 +101,7 @@ const HostDashboard = () => {
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
+  const [hostProfileId, setHostProfileId] = useState<string | null>(null);
 
   const { properties, refetch: refetchProperties } = useHostProperties();
 
@@ -120,6 +123,7 @@ const HostDashboard = () => {
         .single();
 
       if (!profile) return;
+      setHostProfileId(profile.id);
 
       const { count: propertiesCount } = await supabase
         .from("properties")
@@ -368,8 +372,22 @@ const HostDashboard = () => {
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="tax">Tax Report</TabsTrigger>
               <TabsTrigger value="payouts">Bank Account</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="analytics" className="space-y-6">
+              {hostProfileId ? (
+                <HostAnalytics hostId={hostProfileId} />
+              ) : (
+                <p className="text-muted-foreground">Loading analytics...</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="tax" className="space-y-6">
+              <HostTaxReport />
+            </TabsContent>
 
             <TabsContent value="payouts" className="space-y-6">
               <BankAccountSetup />

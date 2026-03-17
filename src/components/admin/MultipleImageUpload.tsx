@@ -124,6 +124,8 @@ const MultipleImageUpload = ({
                 <img
                   src={image.url}
                   alt={image.alt}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-48 object-cover rounded"
                 />
                 <Button

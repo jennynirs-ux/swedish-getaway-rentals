@@ -4,6 +4,9 @@ import { createServerClient } from '../../lib/supabase-server';
 import PropertyClient from './property-client';
 import { Property } from '@/types/property';
 
+// ISR: Revalidate property pages every hour
+export const revalidate = 3600;
+
 async function getPropertyBySlug(slug: string): Promise<Property | null> {
   try {
     const supabase = createServerClient();
@@ -184,6 +187,52 @@ export async function generateStaticParams() {
   }
 }
 
+function PropertyJsonLd({ property }: { property: Property }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'VacationRental',
+    name: property.title,
+    description: property.description,
+    image: property.hero_image_url,
+    url: `https://nordic-getaways.com/property/${property.id}`,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: property.location,
+      addressLocality: property.city || undefined,
+      addressCountry: 'SE',
+    },
+    numberOfBedrooms: property.bedrooms,
+    numberOfBathroomsTotal: property.bathrooms,
+    occupancy: {
+      '@type': 'QuantitativeValue',
+      maxValue: property.max_guests,
+    },
+    ...(property.amenities?.length ? {
+      amenityFeature: property.amenities.map((a: string) => ({
+        '@type': 'LocationFeatureSpecification',
+        name: a,
+        value: true,
+      })),
+    } : {}),
+    ...(property.review_count && property.review_rating ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: property.review_rating,
+        reviewCount: property.review_count,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    } : {}),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
 export default async function PropertyPage({ params }: { params: { slug: string } }) {
   const property = await getPropertyBySlug(params.slug);
 
@@ -191,5 +240,10 @@ export default async function PropertyPage({ params }: { params: { slug: string 
     notFound();
   }
 
-  return <PropertyClient initialLightProperty={property} slug={params.slug} />;
+  return (
+    <>
+      <PropertyJsonLd property={property} />
+      <PropertyClient initialLightProperty={property} slug={params.slug} />
+    </>
+  );
 }

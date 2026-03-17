@@ -42,6 +42,7 @@ export function SwipeableGallery({ images, alt = 'Property image', onImageClick,
                 alt={`${alt} ${index + 1}`}
                 className="w-full h-64 sm:h-80 object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
               />
             </div>
           ))}

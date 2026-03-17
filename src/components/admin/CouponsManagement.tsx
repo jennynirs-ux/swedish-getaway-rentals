@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, Plus, Calendar, Percent } from "lucide-react";
+import { Edit, Trash2, Plus, Calendar, Percent, Download } from "lucide-react";
 import CouponForm from "@/components/CouponForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { exportToCsv } from "@/lib/exportCsv";
 
 interface Coupon {
   id: string;
@@ -42,6 +43,17 @@ const CouponsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const exportColumns = [
+    { key: 'id', label: 'Coupon ID' },
+    { key: 'code', label: 'Code' },
+    { key: 'discount_type', label: 'Type' },
+    { key: 'discount_value', label: 'Value' },
+    { key: 'used_count', label: 'Used' },
+    { key: 'usage_limit', label: 'Max Uses' },
+    { key: 'is_active', label: 'Active' },
+    { key: 'valid_until', label: 'Expires' },
+  ];
 
   useEffect(() => {
     fetchCoupons();
@@ -142,12 +154,18 @@ const CouponsManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-4">
             <CardTitle>Coupons Management</CardTitle>
-            <Button onClick={() => setShowForm(!showForm)}>
-              <Plus className="h-4 w-4 mr-2" />
-              {showForm ? 'Hide Form' : 'Create Coupon'}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => exportToCsv(coupons || [], exportColumns, 'coupons.csv')}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button onClick={() => setShowForm(!showForm)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {showForm ? 'Hide Form' : 'Create Coupon'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         

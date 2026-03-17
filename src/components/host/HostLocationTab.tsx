@@ -53,7 +53,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("street, postal_code, city, country, latitude, longitude")
+        .select("street, postal_code, city, country, latitude, longitude, transport_distances")
         .eq("id", propertyId)
         .single();
 
@@ -68,6 +68,12 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
           latitude: data.latitude || null,
           longitude: data.longitude || null,
         });
+
+        // Load saved transport distances
+        const saved = data.transport_distances as NearbyLocation[] | null;
+        if (saved && Array.isArray(saved) && saved.length > 0) {
+          setNearbyLocations(saved);
+        }
       }
     } catch (error) {
       console.error("Error loading location data:", error);
@@ -77,6 +83,11 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
   const handleSaveLocation = async () => {
     setSaving(true);
     try {
+      // Filter out empty entries before saving
+      const validDistances = nearbyLocations.filter(
+        (loc) => loc.name.trim() !== "" && loc.distance > 0
+      );
+
       const { error } = await supabase
         .from("properties")
         .update({
@@ -86,6 +97,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
           country: locationData.country,
           latitude: locationData.latitude,
           longitude: locationData.longitude,
+          transport_distances: validDistances,
           updated_at: new Date().toISOString(),
         })
         .eq("id", propertyId);

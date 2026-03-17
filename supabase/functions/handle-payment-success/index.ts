@@ -12,8 +12,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let rawBody = '';
   try {
-    const rawBody = await req.text();
+    rawBody = await req.text();
     const requestBody = JSON.parse(rawBody);
     const { session_id } = requestBody;
     
@@ -56,13 +57,13 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Check for duplicate processing (idempotency)
+    // Check for duplicate processing (idempotency) — use upsert pattern to prevent race conditions
     const { data: existingSession } = await supabase
       .from('processed_sessions')
       .select('id, session_type, created_record_id')
       .eq('session_id', session_id)
       .single();
-    
+
     if (existingSession) {
       console.log('Session already processed:', session_id);
       return new Response(JSON.stringify({
@@ -70,6 +71,38 @@ serve(async (req) => {
         type: existingSession.session_type,
         bookingId: existingSession.created_record_id,
         message: 'Already processed'
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Claim this session immediately to prevent race conditions with concurrent requests.
+    // If another request claimed it between our check and this insert, the unique constraint
+    // on session_id will cause this to fail, and we return the existing result.
+    const { error: claimError } = await supabase
+      .from('processed_sessions')
+      .insert({
+        session_id,
+        session_type: 'pending',
+        ip_address: clientIP,
+        user_agent: userAgent,
+        created_record_id: null,
+      });
+
+    if (claimError) {
+      // Another request claimed this session — fetch and return its result
+      console.log('Session claimed by concurrent request:', session_id);
+      const { data: claimed } = await supabase
+        .from('processed_sessions')
+        .select('session_type, created_record_id')
+        .eq('session_id', session_id)
+        .single();
+      return new Response(JSON.stringify({
+        success: true,
+        type: claimed?.session_type || 'unknown',
+        bookingId: claimed?.created_record_id,
+        message: 'Already processed (concurrent)'
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -84,6 +117,7 @@ serve(async (req) => {
       // BUG-007: Validate user ownership if auth context is present
       // Stripe webhooks may not have Authorization headers, but if they do, verify the authenticated
       // user matches the metadata.userId to prevent unauthorized booking creation
+      const authHeader = req.headers.get('authorization');
       if (authHeader) {
         const { data } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
         const authUser = data.user;
@@ -106,6 +140,17 @@ serve(async (req) => {
         throw new Error('Payment amount verification failed');
       }
       
+      // Check if property requires host approval before confirming
+      const { data: propertySettings } = await supabase
+        .from('properties')
+        .select('requires_host_approval')
+        .eq('id', metadata.propertyId)
+        .single();
+
+      const bookingStatus = propertySettings?.requires_host_approval
+        ? 'pending_approval'
+        : 'confirmed';
+
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -120,7 +165,7 @@ serve(async (req) => {
           special_requests: metadata.specialRequests || null,
           total_amount: parseInt(metadata.totalAmount),
           currency: metadata.currency?.toUpperCase() || 'SEK',
-          status: 'confirmed',
+          status: bookingStatus,
           stripe_payment_intent_id: session.payment_intent as string
         })
         .select()
@@ -157,14 +202,10 @@ serve(async (req) => {
         }
       }
 
-      // Record processed session to prevent replay attacks
-      await supabase.from('processed_sessions').insert({
-        session_id,
-        session_type: 'booking',
-        ip_address: clientIP,
-        user_agent: userAgent,
-        created_record_id: booking.id
-      });
+      // Update the claimed session with the actual result
+      await supabase.from('processed_sessions')
+        .update({ session_type: 'booking', created_record_id: booking.id })
+        .eq('session_id', session_id);
       
       // Send notification emails
       if (booking) {
@@ -239,13 +280,10 @@ serve(async (req) => {
 
       if (orderError) throw orderError;
       
-      await supabase.from('processed_sessions').insert({
-        session_id,
-        session_type: 'product',
-        ip_address: clientIP,
-        user_agent: userAgent,
-        created_record_id: order.id
-      });
+      // Update the claimed session with the actual result
+      await supabase.from('processed_sessions')
+        .update({ session_type: 'product', created_record_id: order.id })
+        .eq('session_id', session_id);
 
       // Create Printful order if we have the necessary data
       if (printfulVariantId && session.shipping_details) {
@@ -360,13 +398,10 @@ serve(async (req) => {
         }
       }
 
-      await supabase.from('processed_sessions').insert({
-        session_id,
-        session_type: 'cart',
-        ip_address: clientIP,
-        user_agent: userAgent,
-        created_record_id: cartOrder.id
-      });
+      // Update the claimed session with the actual result
+      await supabase.from('processed_sessions')
+        .update({ session_type: 'cart', created_record_id: cartOrder.id })
+        .eq('session_id', session_id);
 
       result.type = 'cart';
     }
@@ -377,13 +412,30 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Error handling payment success:", {
-      message: error instanceof Error ? error.message : String(error),
+      message: errorMessage,
       stack: error instanceof Error ? error.stack : undefined
     });
-    
-    return new Response(JSON.stringify({ 
-      error: "Unable to process payment confirmation. Please contact support if the issue persists." 
+
+    // Log failed webhook to database for admin visibility and manual recovery
+    try {
+      const supabaseForLog = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      await supabaseForLog.from('webhook_failures').insert({
+        function_name: 'handle-payment-success',
+        payload: rawBody ? JSON.parse(rawBody) : null,
+        error_message: errorMessage,
+        retry_count: 0,
+      });
+    } catch (logError) {
+      console.error('Failed to log webhook failure:', logError);
+    }
+
+    return new Response(JSON.stringify({
+      error: "Unable to process payment confirmation. Please contact support if the issue persists."
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

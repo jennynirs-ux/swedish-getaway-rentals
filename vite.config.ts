@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('node_modules/leaflet') || id.includes('node_modules/react-leaflet')) return 'vendor-maps';
           if (id.includes('node_modules/@tanstack')) return 'vendor-query';
           if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/@hookform') || id.includes('node_modules/zod')) return 'vendor-forms';
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) return 'vendor-charts';
         }
       }
     }

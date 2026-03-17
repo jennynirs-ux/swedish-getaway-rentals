@@ -82,6 +82,8 @@ const SortableItem = ({
             <img
               src={image}
               alt={`Gallery image ${index + 1}`}
+              loading="lazy"
+              decoding="async"
               className="w-24 h-24 object-cover rounded-md border"
             />
             {isHero && (

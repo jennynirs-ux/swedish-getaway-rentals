@@ -1,0 +1,83 @@
+{
+  "common": {
+    "search": "Sök",
+    "book_now": "Boka nu",
+    "cancel": "Avbryt",
+    "save": "Spara",
+    "loading": "Laddar...",
+    "error": "Fel",
+    "success": "Klart",
+    "back": "Tillbaka",
+    "next": "Nästa",
+    "per_night": "per natt",
+    "guests": "Gäster",
+    "nights": "nätter",
+    "total": "Totalt",
+    "view_details": "Visa detaljer",
+    "sign_in": "Logga in",
+    "sign_out": "Logga ut",
+    "sign_up": "Registrera dig"
+  },
+  "nav": {
+    "home": "Hem",
+    "properties": "Boenden",
+    "shop": "Butik",
+    "about": "Om oss",
+    "contact": "Kontakt",
+    "host_dashboard": "Värdpanel",
+    "become_host": "Bli värd",
+    "my_bookings": "Mina bokningar",
+    "profile": "Profil"
+  },
+  "home": {
+    "hero_title": "Upptäck ditt nordiska äventyr",
+    "hero_subtitle": "Unika boenden i hela Skandinavien med moderna bekvämligheter, fantastisk utsikt och autentiska upplevelser",
+    "search_placeholder": "Vart vill du åka?",
+    "featured_properties": "Utvalda boenden",
+    "popular_destinations": "Populära resmål",
+    "why_choose_us": "Varför välja Nordic Getaways"
+  },
+  "property": {
+    "amenities": "Bekvämligheter",
+    "location": "Plats",
+    "reviews": "Omdömen",
+    "host": "Värd",
+    "check_in": "Incheckning",
+    "check_out": "Utcheckning",
+    "availability": "Tillgänglighet",
+    "description": "Beskrivning",
+    "house_rules": "Husregler",
+    "no_reviews": "Inga omdömen ännu",
+    "write_review": "Skriv ett omdöme",
+    "per_night": "kr / natt",
+    "max_guests": "Max gäster"
+  },
+  "booking": {
+    "your_booking": "Din bokning",
+    "booking_confirmed": "Bokning bekräftad!",
+    "booking_pending": "Bokning inväntar godkännande",
+    "check_in_date": "Incheckningsdatum",
+    "check_out_date": "Utcheckningsdatum",
+    "number_of_guests": "Antal gäster",
+    "total_price": "Totalt pris",
+    "proceed_to_payment": "Gå till betalning",
+    "booking_summary": "Bokningsöversikt"
+  },
+  "host": {
+    "dashboard": "Värdpanel",
+    "properties": "Mina boenden",
+    "bookings": "Bokningar",
+    "analytics": "Analys",
+    "messages": "Meddelanden",
+    "tax_report": "Skattedeklaration",
+    "settings": "Inställningar",
+    "add_property": "Lägg till boende"
+  },
+  "footer": {
+    "about": "Om oss",
+    "terms": "Villkor",
+    "privacy": "Integritetspolicy",
+    "contact": "Kontakta oss",
+    "copyright": "© {year} Nordic Getaways. Alla rättigheter förbehållna."
+  }
+}

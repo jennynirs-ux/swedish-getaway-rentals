@@ -228,6 +228,8 @@ const ProductDetail = () => {
                 <img
                   src={allImages[currentImageIndex] || '/placeholder.svg'}
                   alt={title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
                 
@@ -270,6 +272,8 @@ const ProductDetail = () => {
                     <img
                       src={image}
                       alt={`${title} view ${index + 1}`}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   </button>

@@ -10,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Star, Eye, Flag, Trash2, Check, X } from "lucide-react";
+import { Star, Eye, Flag, Trash2, Check, X, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logReviewModeration } from "@/lib/auditLog";
+import { exportToCsv } from "@/lib/exportCsv";
 
 interface Review {
   id: string;
@@ -45,6 +46,15 @@ const ReviewsManagement = () => {
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 50;
+
+  const exportColumns = [
+    { key: 'id', label: 'Review ID' },
+    { key: 'guest_name', label: 'Guest' },
+    { key: 'rating', label: 'Rating' },
+    { key: 'comment', label: 'Comment' },
+    { key: 'status', label: 'Status' },
+    { key: 'created_at', label: 'Created' },
+  ];
 
   useEffect(() => {
     setCurrentPage(0);
@@ -166,20 +176,26 @@ const ReviewsManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-4">
             <CardTitle>Reviews Management</CardTitle>
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Reviews</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="flagged">Flagged</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => exportToCsv(reviews || [], exportColumns, 'reviews.csv')}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Reviews</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="flagged">Flagged</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

@@ -57,9 +57,11 @@ const Gallery = () => {
               {content.images.map((image, index) => (
                 <Card key={index} className="overflow-hidden">
                   <CardContent className="p-0">
-                    <img 
-                      src={image} 
+                    <img
+                      src={image}
                       alt={`Gallery image ${index + 1}`}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
                     />
                   </CardContent>

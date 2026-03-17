@@ -28,48 +28,14 @@ const BookingSuccess = () => {
 
       if (data.success) {
         setSuccess(true);
-        // IMP-001: Send booking confirmation email
-        await sendConfirmationEmail(data);
+        // Booking confirmation email is sent automatically by handle-payment-success
+        // → send-booking-notifications edge function (Resend + tracking)
+        setEmailSent(true);
       }
     } catch (error) {
       console.error('Error processing payment:', error);
     } finally {
       setProcessing(false);
-    }
-  };
-
-  const sendConfirmationEmail = async (bookingData: any) => {
-    try {
-      // IMP-001: Attempt to invoke edge function for email sending
-      // TODO: Create edge function 'send-booking-confirmation' with signature:
-      // export const sendBookingConfirmation = async (
-      //   req: Request
-      // ): Promise<Response> => {
-      //   const { guestEmail, guestName, bookingId, checkInDate, checkOutDate, propertyTitle, totalAmount, currency } = await req.json();
-      //   // Send email via Resend, SendGrid, or similar service
-      //   // Return { success: true, messageId?: string }
-      // }
-
-      const { error } = await supabase.functions.invoke('send-booking-confirmation', {
-        body: {
-          guestEmail: bookingData.guest_email,
-          guestName: bookingData.guest_name,
-          bookingId: bookingData.booking_id,
-          checkInDate: bookingData.check_in_date,
-          checkOutDate: bookingData.check_out_date,
-          propertyTitle: bookingData.property_title,
-          totalAmount: bookingData.total_amount,
-          currency: bookingData.currency
-        }
-      });
-
-      if (!error) {
-        setEmailSent(true);
-      }
-    } catch (error) {
-      // Edge function doesn't exist yet - that's fine, we show a message anyway
-      console.log('Confirmation email service not yet configured:', error);
-      setEmailSent(true); // Still show positive message to user
     }
   };
 

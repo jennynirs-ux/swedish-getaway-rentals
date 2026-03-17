@@ -300,7 +300,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {recentProperties.map((p) => (
               <div key={p.id} className="border rounded-lg p-3">
-                <img src={p.hero_image_url || "/placeholder.svg"} alt={p.title} className="w-full h-32 object-cover rounded-md mb-2" />
+                <img src={p.hero_image_url || "/placeholder.svg"} alt={p.title} loading="lazy" decoding="async" className="w-full h-32 object-cover rounded-md mb-2" />
                 <h4 className="font-medium text-sm">{p.title}</h4>
                 <p className="text-xs text-muted-foreground">{formatCurrency(p.price_per_night * 100)} / night</p>
               </div>
@@ -320,7 +320,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {recentProducts.map((prod) => (
               <div key={prod.id} className="border rounded-lg p-3">
-                <img src={prod.main_image_override || prod.image_url || "/placeholder.svg"} alt={prod.title_override || prod.title} className="w-full h-32 object-cover rounded-md mb-2" />
+                <img src={prod.main_image_override || prod.image_url || "/placeholder.svg"} alt={prod.title_override || prod.title} loading="lazy" decoding="async" className="w-full h-32 object-cover rounded-md mb-2" />
                 <h4 className="font-medium text-sm">{prod.title_override || prod.title}</h4>
                 <p className="text-xs text-muted-foreground">{formatCurrency(prod.price_override || prod.price)}</p>
               </div>

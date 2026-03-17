@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { createServerClient } from './lib/supabase-server';
 import HomeClient from './home-client';
 
+// ISR: Revalidate homepage every 30 minutes
+export const revalidate = 1800;
+
 export const metadata: Metadata = {
   title: 'Nordic Getaways - Premium Nordic Vacation Rentals',
   description:

@@ -61,7 +61,12 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
             </div>
           </div>
 
-          <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center">
+          <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center space-y-2">
+            {(property as any).registration_number && (
+              <p className="text-primary-foreground/60 text-xs">
+                EU Rental Registration: {(property as any).registration_number}
+              </p>
+            )}
             <p className="text-primary-foreground/80">
               © 2025 Nordic Getaways. Created with love for Nordic experiences.
             </p>

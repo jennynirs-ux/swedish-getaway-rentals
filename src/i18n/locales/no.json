@@ -1,0 +1,83 @@
+{
+  "common": {
+    "search": "Søk",
+    "book_now": "Bestill nå",
+    "cancel": "Avbryt",
+    "save": "Lagre",
+    "loading": "Laster...",
+    "error": "Feil",
+    "success": "Fullført",
+    "back": "Tilbake",
+    "next": "Neste",
+    "per_night": "per natt",
+    "guests": "Gjester",
+    "nights": "netter",
+    "total": "Totalt",
+    "view_details": "Se detaljer",
+    "sign_in": "Logg inn",
+    "sign_out": "Logg ut",
+    "sign_up": "Registrer deg"
+  },
+  "nav": {
+    "home": "Hjem",
+    "properties": "Boliger",
+    "shop": "Butikk",
+    "about": "Om oss",
+    "contact": "Kontakt",
+    "host_dashboard": "Vertspanel",
+    "become_host": "Bli vert",
+    "my_bookings": "Mine bestillinger",
+    "profile": "Profil"
+  },
+  "home": {
+    "hero_title": "Oppdag ditt nordiske eventyr",
+    "hero_subtitle": "Unike overnattingssteder i hele Skandinavia med moderne fasiliteter, fantastisk utsikt og autentiske opplevelser",
+    "search_placeholder": "Hvor vil du reise?",
+    "featured_properties": "Utvalgte boliger",
+    "popular_destinations": "Populære reisemål",
+    "why_choose_us": "Hvorfor velge Nordic Getaways"
+  },
+  "property": {
+    "amenities": "Fasiliteter",
+    "location": "Beliggenhet",
+    "reviews": "Anmeldelser",
+    "host": "Vert",
+    "check_in": "Innsjekking",
+    "check_out": "Utsjekking",
+    "availability": "Tilgjengelighet",
+    "description": "Beskrivelse",
+    "house_rules": "Husregler",
+    "no_reviews": "Ingen anmeldelser ennå",
+    "write_review": "Skriv en anmeldelse",
+    "per_night": "kr / natt",
+    "max_guests": "Maks gjester"
+  },
+  "booking": {
+    "your_booking": "Din bestilling",
+    "booking_confirmed": "Bestilling bekreftet!",
+    "booking_pending": "Bestilling venter godkjenning",
+    "check_in_date": "Innsjekkingsdato",
+    "check_out_date": "Utsjekkingsdato",
+    "number_of_guests": "Antall gjester",
+    "total_price": "Totalpris",
+    "proceed_to_payment": "Gå til betaling",
+    "booking_summary": "Bestillingsoversikt"
+  },
+  "host": {
+    "dashboard": "Vertspanel",
+    "properties": "Mine boliger",
+    "bookings": "Bestillinger",
+    "analytics": "Analyse",
+    "messages": "Meldinger",
+    "tax_report": "Skatterapport",
+    "settings": "Innstillinger",
+    "add_property": "Legg til bolig"
+  },
+  "footer": {
+    "about": "Om oss",
+    "terms": "Vilkår",
+    "privacy": "Personvern",
+    "contact": "Kontakt oss",
+    "copyright": "© {year} Nordic Getaways. Alle rettigheter forbeholdt."
+  }
+}

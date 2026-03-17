@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Package, User, Mail, Phone, MapPin, Search } from "lucide-react";
+import { Package, User, Mail, Phone, MapPin, Search, Download } from "lucide-react";
+import { exportToCsv } from "@/lib/exportCsv";
 
 interface Order {
   id: string;
@@ -40,6 +41,16 @@ const OrdersManagement = () => {
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const ITEMS_PER_PAGE = 50;
+
+  const exportColumns = [
+    { key: 'id', label: 'Order ID' },
+    { key: 'customer_name', label: 'Customer' },
+    { key: 'customer_email', label: 'Email' },
+    { key: 'total_amount', label: 'Amount' },
+    { key: 'currency', label: 'Currency' },
+    { key: 'status', label: 'Status' },
+    { key: 'created_at', label: 'Created' },
+  ];
 
   useEffect(() => {
     loadOrders(0);
@@ -142,20 +153,26 @@ const OrdersManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-4">
         <div>
           <h2 className="text-2xl font-bold">Orders Management</h2>
           <p className="text-muted-foreground">View and manage all shop orders</p>
         </div>
-        {/* IMP-006: Add search input for orders */}
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search orders..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv(orders || [], exportColumns, 'orders.csv')}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          {/* IMP-006: Add search input for orders */}
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search orders..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
       </div>
 

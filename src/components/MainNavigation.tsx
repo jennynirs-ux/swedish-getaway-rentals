@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, X, ShoppingCart } from "lucide-react";
+import { ShoppingBag, User, Menu, X, ShoppingCart, Home } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentUser, onAuthStateChange, isApprovedHost } from "@/services/authService";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface MainNavigationProps {
   showBackButton?: boolean;
@@ -89,13 +90,27 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         {/* Desktop Navigation */}
         {!isPropertyPage && (
           <div className="hidden md:flex items-center gap-3">
+            {!user && (
+              <Link to="/become-host" title="Become a Host">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-white border-white/30 bg-white/10
+                             hover:bg-white/20 hover:border-white/50
+                             backdrop-blur-sm transition-all gap-1.5"
+                >
+                  <Home className="w-4 h-4" />
+                  <span className="text-sm">Become a Host</span>
+                </Button>
+              </Link>
+            )}
             {!isShopPage && (
               <Link to="/shop" title="Shop">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="text-white border-white/30 bg-white/10 
-                             hover:bg-white/20 hover:border-white/50 
+                  className="text-white border-white/30 bg-white/10
+                             hover:bg-white/20 hover:border-white/50
                              backdrop-blur-sm transition-all"
                 >
                   <ShoppingBag className="w-5 h-5" />
@@ -115,13 +130,16 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                 </Button>
               </Link>
             )}
+            <div className="text-white">
+              <LanguageSwitcher />
+            </div>
             <Button
               variant="outline"
               size="icon"
               title={user ? (isHost ? "Host Dashboard" : "Profile") : "Sign In"}
               onClick={handleProfileClick}
-              className="text-white border-white/30 bg-white/10 
-                         hover:bg-white/20 hover:border-white/50 
+              className="text-white border-white/30 bg-white/10
+                         hover:bg-white/20 hover:border-white/50
                          backdrop-blur-sm transition-all"
             >
               <User className="w-5 h-5" />
@@ -146,6 +164,16 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
       {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
         <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-4 flex flex-col">
+          {!user && (
+            <Link
+              to="/become-host"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <Home className="w-5 h-5" />
+              <span>Become a Host</span>
+            </Link>
+          )}
           {!isShopPage && (
             <Link
               to="/shop"

@@ -203,6 +203,18 @@ export const useBookingChat = (bookingId?: string) => {
 
       if (error) throw error;
 
+      // Trigger AI auto-reply for guest messages (fire-and-forget)
+      if (senderType === 'guest' && data?.id) {
+        supabase.functions
+          .invoke('ai-guest-reply', {
+            body: { bookingId, messageId: data.id },
+          })
+          .then((res) => {
+            if (res.error) console.warn('AI auto-reply skipped:', res.error);
+          })
+          .catch((err) => console.warn('AI auto-reply failed:', err));
+      }
+
       // Message will be added via real-time subscription
     } catch (error) {
       console.error('Error sending message:', error);

@@ -21,6 +21,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
+import { LocaleProvider } from "@/i18n/useLocale";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import { lazy, Suspense } from "react";
@@ -81,6 +82,7 @@ const SuspenseFallback = () => (
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
+      <LocaleProvider>
       <BrowserRouter>
         <CartProvider>
           <TooltipProvider>
@@ -136,6 +138,7 @@ const App = () => {
           </TooltipProvider>
         </CartProvider>
       </BrowserRouter>
+      </LocaleProvider>
     </QueryClientProvider>
   );
 };

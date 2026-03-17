@@ -107,22 +107,18 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
 
   const handleRevokeCode = async (logId: string) => {
     try {
-      const { error } = await supabase
-        .from('lock_access_log')
-        .update({ 
-          status: 'revoked',
-          revoked_at: new Date().toISOString(),
-          revoked_by: (await supabase.auth.getUser()).data.user?.id 
-        })
-        .eq('id', logId);
-      
+      // Call edge function which revokes on Seam (physical lock) + DB
+      const { data, error } = await supabase.functions.invoke('revoke-access-code', {
+        body: { logId },
+      });
+
       if (error) throw error;
-      
+
       toast({
         title: 'Code Revoked',
-        description: 'Access code has been revoked successfully',
+        description: 'Access code removed from lock and deactivated.',
       });
-      
+
       fetchAccessLogs();
     } catch (error) {
       console.error('Error revoking code:', error);

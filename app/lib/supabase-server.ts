@@ -13,12 +13,13 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
 export function createServerClient() {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  // Support both VITE_* (transition) and NEXT_PUBLIC_* (target) prefixes
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      'Missing Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY environment variables.'
+      'Missing Supabase configuration. Set NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or VITE_* equivalents).'
     );
   }
 
