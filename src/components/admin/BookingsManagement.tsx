@@ -21,7 +21,6 @@ import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { logBookingStatusChange } from '@/lib/auditLog';
 import { exportToCsv } from '@/lib/exportCsv';
-import { Download } from 'lucide-react';
 
 interface Booking {
   id: string;

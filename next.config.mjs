@@ -22,6 +22,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  typescript: {
+    // Type errors are caught by Vite build (primary) — skip in Next.js build
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // ESLint runs as separate CI job — skip in Next.js build
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import PropertyCard, { PropertyCardData } from '@/components/PropertyCard';
+import PropertyCard from '@/components/PropertyCard';
 import LazyImage from '@/components/LazyImage';
 import { Grid3X3 } from 'lucide-react';
 import HomepageProducts from '@/components/HomepageProducts';
@@ -60,7 +60,7 @@ interface HomeClientProps {
 }
 
 const HomeClient = memo(({ initialProperties }: HomeClientProps) => {
-  const [properties, setProperties] = useState<Property[]>(initialProperties);
+  const [properties, _setProperties] = useState<Property[]>(initialProperties);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
   const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
@@ -136,7 +136,7 @@ const HomeClient = memo(({ initialProperties }: HomeClientProps) => {
               const checkDate = addDays(s, i);
               const d = new Date(checkDate.getTime() - checkDate.getTimezoneOffset() * 60000)
                 .toISOString()
-                .split('T')[0];
+                .split('T')[0] as string;
               if (blocked.has(d)) {
                 ok = false;
                 break;
