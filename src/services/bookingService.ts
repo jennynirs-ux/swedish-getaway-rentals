@@ -15,6 +15,8 @@ export interface CreateBookingData {
   property_title?: string;
 }
 
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+
 export interface BookingRecord {
   id: string;
   property_id: string;
@@ -27,7 +29,7 @@ export interface BookingRecord {
   special_requests?: string;
   total_amount: number;
   currency: string;
-  status: string;
+  status: BookingStatus;
   created_at: string;
   updated_at: string;
   user_id?: string;
@@ -232,7 +234,7 @@ export async function getBookingsByUser(userId: string): Promise<BookingRecord[]
  * @returns Promise containing updated booking data
  * @throws Error if update fails
  */
-export async function updateBookingStatus(id: string, status: string): Promise<BookingRecord> {
+export async function updateBookingStatus(id: string, status: BookingStatus): Promise<BookingRecord> {
   try {
     const { data, error } = await supabase
       .from('bookings')
