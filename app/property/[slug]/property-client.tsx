@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, memo, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/property';
-import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
+import { useQuery } from '@tanstack/react-query';
 import PropertyNavigation from '@/components/PropertyNavigation';
 import PropertyHero from '@/components/PropertyHero';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,15 +49,15 @@ const NearbyPropertiesWrapper = memo(
       return { data: data || [], error: null };
     }, []);
 
-    const { data: allProperties = [] } = useOptimizedQuery(
-      'all-properties-nearby',
-      fetchNearbyPropertiesFn,
-      {
-        cacheTime: CACHE_GC_TIME,
-        staleTime: CACHE_STALE_TIME,
-        enableRealtime: false,
-      }
-    );
+    const { data: allProperties = [] } = useQuery({
+      queryKey: ['all-properties-nearby'],
+      queryFn: async () => {
+        const result = await fetchNearbyPropertiesFn();
+        return result.data;
+      },
+      staleTime: CACHE_STALE_TIME,
+      gcTime: CACHE_GC_TIME,
+    });
 
     return (
       <NearbyProperties
@@ -122,15 +122,16 @@ const PropertyClient = memo(({ initialLightProperty, slug }: PropertyClientProps
     return { data, error: null };
   }, [lightProperty?.id]);
 
-  const { data: heavyProperty } = useOptimizedQuery(
-    `property-heavy-${slug}`,
-    propertyHeavyQueryFn,
-    {
-      cacheTime: 10 * 60 * 1000,
-      staleTime: 5 * 60 * 1000,
-      enableRealtime: false,
-    }
-  );
+  const { data: heavyProperty } = useQuery({
+    queryKey: ['property-heavy', slug],
+    queryFn: async () => {
+      const result = await propertyHeavyQueryFn();
+      return result.data;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: !!lightProperty?.id,
+  });
 
   const property = useMemo(() => {
     if (!lightProperty) return null;

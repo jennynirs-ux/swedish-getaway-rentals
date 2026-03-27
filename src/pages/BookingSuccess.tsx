@@ -15,6 +15,9 @@ const BookingSuccess = () => {
   useEffect(() => {
     if (sessionId) {
       handlePaymentSuccess();
+    } else {
+      // No session_id in URL — show error instead of infinite spinner
+      setProcessing(false);
     }
   }, [sessionId]);
 
@@ -26,10 +29,8 @@ const BookingSuccess = () => {
 
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         setSuccess(true);
-        // Booking confirmation email is sent automatically by handle-payment-success
-        // → send-booking-notifications edge function (Resend + tracking)
         setEmailSent(true);
       }
     } catch (error) {

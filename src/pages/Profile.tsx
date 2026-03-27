@@ -89,7 +89,14 @@ const Profile = () => {
         .eq('user_id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // PGRST116 = no rows returned — new user with no profile yet
+        if (error.code === 'PGRST116') {
+          if (isMountedRef.current) setLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       // BUG-043: Check if mounted before setState
       if (isMountedRef.current) {

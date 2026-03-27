@@ -14,6 +14,9 @@ const OrderSuccess = () => {
   useEffect(() => {
     if (sessionId) {
       handlePaymentSuccess();
+    } else {
+      // No session_id in URL — show error instead of infinite spinner
+      setProcessing(false);
     }
   }, [sessionId]);
 
@@ -24,8 +27,8 @@ const OrderSuccess = () => {
       });
 
       if (error) throw error;
-      
-      if (data.success) {
+
+      if (data?.success) {
         setSuccess(true);
       }
     } catch (error) {
