@@ -10,27 +10,24 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22
 
-      - name: Delete old lockfile and regenerate
+      - name: Regenerate lockfile
         run: |
           rm -f package-lock.json
           npm install --package-lock-only
-          echo "Lockfile regenerated successfully"
 
       - name: Verify npm ci works
         run: npm ci
 
-      - name: Commit updated lockfile
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package-lock.json
-          git diff --cached --quiet || git commit -m "fix: regenerate package-lock.json for npm ci compatibility"
+          git diff --cached --quiet || git commit -m "fix: regenerate package-lock.json"
           git push

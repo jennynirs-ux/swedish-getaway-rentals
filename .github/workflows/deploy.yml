@@ -1,7 +1,5 @@
 name: Deploy Pipeline
 
-# Vercel auto-deploys on push to main. This workflow verifies the build.
-
 on:
   push:
     branches: [ main ]
@@ -17,24 +15,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm test
-
-      - name: Build the project (Next.js)
-        run: npm run build
-
-      - name: Deployment summary
-        if: success()
-        run: echo "Build verified. Vercel will auto-deploy this commit."
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: echo "Build verified. Vercel will auto-deploy this commit."
