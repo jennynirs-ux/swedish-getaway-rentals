@@ -306,10 +306,23 @@ const HomeClient = memo(({ initialProperties }: HomeClientProps) => {
           <p className="text-xl md:text-2xl text-white/90 mb-10">Discover your perfect retreat in the Nordic</p>
 
           <PropertySearch onFiltersChange={setFilters} availableAmenities={availableAmenities} />
+
+          <div className="mt-6">
+            <a
+              href="#properties"
+              className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Or browse all properties ↓
+            </a>
+          </div>
         </div>
       </header>
 
-      <main className="pb-12">
+      <main id="properties" className="pb-12">
         <div className="container mx-auto px-4 pt-16">
           <MobileRefreshButton onRefresh={handleRefresh} isLoading={loading} />
 

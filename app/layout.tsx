@@ -23,15 +23,23 @@
  */
 
 import type { Metadata } from 'next';
+import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-/**
- * Font strategy: Use CSS-based font loading instead of next/font/google.
- * This avoids build failures when Google Fonts API is unreachable (CI, offline).
- * Fonts are loaded via the CSS variables --font-body and --font-display
- * defined in globals.css, with Google Fonts loaded via <link> in the head.
- */
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-body',
+  weight: ['300', '400', '500', '600', '700'],
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   title: {
@@ -92,14 +100,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             src="https://plausible.io/js/script.js"
           />
         )}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
