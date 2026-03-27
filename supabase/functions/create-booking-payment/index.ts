@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 // Secure CORS configuration - replace with your domain in production
 const allowedOrigins = [
@@ -30,6 +31,10 @@ serve(async (req) => {
   }
 
   try {
+    // Server-side rate limiting: 5 payment requests per minute per user/IP
+    const rateLimitResponse = await enforceRateLimit(req, "payment", headers);
+    if (rateLimitResponse) return rateLimitResponse;
+
     // Input validation and sanitization
     const requestBody = await req.json();
     const { bookingData } = requestBody;
@@ -61,11 +66,7 @@ serve(async (req) => {
       throw new Error("Invalid amount");
     }
 
-    // Rate limiting check
-    const userAgent = req.headers.get('user-agent') || 'unknown';
-    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
-    
-    console.log(`Booking payment request from IP: ${clientIP}, User-Agent: ${userAgent}, Email: ${bookingData.guest_email}`);
+    console.log(`Booking payment request for: ${bookingData.guest_email}`);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
