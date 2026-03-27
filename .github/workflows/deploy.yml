@@ -1,19 +1,16 @@
 name: Deploy Pipeline
 
-# Deployment is handled by Vercel's Git integration (auto-deploys on push to main).
-# This workflow runs a post-deploy verification check.
-# To enable manual Vercel deploys via GitHub Actions, set these repository secrets:
-#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+# Vercel auto-deploys on push to main. This workflow verifies the build.
 
 on:
   push:
     branches: [ main ]
 
 env:
-  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key' }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key' }}
+  VITE_SUPABASE_URL: https://placeholder.supabase.co
+  VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-key
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key
 
 jobs:
   verify:
@@ -31,19 +28,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        env:
-          NODE_ENV: development
 
       - name: Run unit tests
         run: npm test
-        env:
-          NODE_ENV: test
 
       - name: Build the project (Next.js)
         run: npm run build
 
       - name: Deployment summary
         if: success()
-        run: |
-          echo "Build verified successfully!"
-          echo "Vercel will auto-deploy this commit to production."
+        run: echo "Build verified. Vercel will auto-deploy this commit."
