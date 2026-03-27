@@ -11,7 +11,8 @@ import {
   Heart,
   Share2,
   Home,
-  HelpCircle
+  HelpCircle,
+  Star
 } from "lucide-react";
 import { useState, memo } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -198,11 +199,18 @@ const PropertyCard = memo(({
               </h3>
               <div className="flex items-center text-muted-foreground text-sm mt-1">
                 <MapPin className="w-4 h-4 mr-1" />
-                {safeProperty.city 
+                {safeProperty.city
                   ? `${safeProperty.city.charAt(0).toUpperCase() + safeProperty.city.slice(1)}, Sweden`
                   : (safeProperty.location || "Sweden")}
               </div>
             </div>
+            {safeProperty.review_rating && safeProperty.review_count && safeProperty.review_count > 0 && (
+              <div className="flex items-center gap-1 shrink-0">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold text-sm">{safeProperty.review_rating.toFixed(1)}</span>
+                <span className="text-muted-foreground text-xs">({safeProperty.review_count})</span>
+              </div>
+            )}
           </div>
         </CardHeader>
 

@@ -161,6 +161,9 @@ export async function generateMetadata({
       description: property.description || property.title,
       images: [imageUrl],
     },
+    alternates: {
+      canonical: `/property/${params.slug}`,
+    },
   };
 }
 

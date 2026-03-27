@@ -84,6 +84,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {/* Analytics — set NEXT_PUBLIC_ANALYTICS_DOMAIN to activate */}
+        {process.env.NEXT_PUBLIC_ANALYTICS_DOMAIN && (
+          <script
+            defer
+            data-domain={process.env.NEXT_PUBLIC_ANALYTICS_DOMAIN}
+            src="https://plausible.io/js/script.js"
+          />
+        )}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

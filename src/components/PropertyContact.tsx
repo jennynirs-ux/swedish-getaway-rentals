@@ -14,12 +14,16 @@ interface PropertyContactProps {
 }
 
 const PropertyContact = ({ contactInfo, responseTime }: PropertyContactProps) => {
+  // Strip spaces/dashes for tel: links, replace leading 0 with 46 for WhatsApp
+  const cleanPhone = contactInfo.contact_phone?.replace(/[\s\-\(\)]/g, '') || '';
+  const whatsAppNumber = cleanPhone.replace(/^\+/, '').replace(/^0/, '46');
+
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-4xl font-bold text-center mb-12">Get In Touch</h2>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-center">Contact Information</CardTitle>
@@ -32,9 +36,11 @@ const PropertyContact = ({ contactInfo, responseTime }: PropertyContactProps) =>
                     <p className="font-medium">Email</p>
                     <p className="text-muted-foreground">{contactInfo.contact_email}</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Send Email
-                  </Button>
+                  <a href={`mailto:${contactInfo.contact_email}`}>
+                    <Button variant="outline" size="sm">
+                      Send Email
+                    </Button>
+                  </a>
                 </div>
               )}
 
@@ -45,9 +51,11 @@ const PropertyContact = ({ contactInfo, responseTime }: PropertyContactProps) =>
                     <p className="font-medium">Phone</p>
                     <p className="text-muted-foreground">{contactInfo.contact_phone}</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Call Now
-                  </Button>
+                  <a href={`tel:${cleanPhone}`}>
+                    <Button variant="outline" size="sm">
+                      Call Now
+                    </Button>
+                  </a>
                 </div>
               )}
 
@@ -58,9 +66,11 @@ const PropertyContact = ({ contactInfo, responseTime }: PropertyContactProps) =>
                     <p className="font-medium">WhatsApp</p>
                     <p className="text-muted-foreground">Quick messaging</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    WhatsApp
-                  </Button>
+                  <a href={`https://wa.me/${whatsAppNumber}`} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm">
+                      WhatsApp
+                    </Button>
+                  </a>
                 </div>
               )}
 
