@@ -1,6 +1,51 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Property } from '@/types/property';
 
+export interface AvailabilityRecord {
+  id: string;
+  property_id: string;
+  date: string;
+  is_available: boolean;
+  price_override?: number;
+  [key: string]: unknown;
+}
+
+export interface NearbyProperty {
+  id: string;
+  title: string;
+  hero_image_url: string;
+  latitude: number | null;
+  longitude: number | null;
+  location: string;
+}
+
+interface PropertyListingRow {
+  id: string;
+  title: string;
+  location: string;
+  price_per_night: number;
+  currency: string;
+  review_rating: number | null;
+  review_count: number | null;
+  hero_image_url: string;
+  amenities: string[] | null;
+  property_type: string | null;
+  max_guests: number;
+  latitude: number | null;
+  longitude: number | null;
+  created_at: string;
+  special_amenities?: string[] | null;
+  featured_amenities?: Record<string, unknown>[] | null;
+}
+
+interface PropertySearchRow extends PropertyListingRow {
+  description: string;
+  bedrooms: number;
+  bathrooms: number;
+  active: boolean;
+  host_id: string;
+}
+
 export interface PropertySearchFilters {
   minPrice?: number;
   maxPrice?: number;
@@ -32,7 +77,7 @@ export async function getProperties(): Promise<Property[]> {
 
     if (error) throw error;
 
-    const mappedData = (data || []).map((item: any) => ({
+    const mappedData = (data || []).map((item: PropertyListingRow) => ({
       ...item,
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
       special_amenities: Array.isArray(item.special_amenities) ? item.special_amenities : [],
@@ -109,7 +154,7 @@ export async function getPropertyAvailability(
   propertyId: string,
   startDate?: string,
   endDate?: string
-): Promise<any[]> {
+): Promise<AvailabilityRecord[]> {
   try {
     let query = supabase
       .from('availability')
@@ -179,7 +224,7 @@ export async function searchProperties(filters: PropertySearchFilters): Promise<
 
     if (error) throw error;
 
-    return (data || []).map((item: any) => ({
+    return (data || []).map((item: PropertySearchRow) => ({
       ...item,
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
       special_amenities: Array.isArray(item.special_amenities) ? item.special_amenities : [],
@@ -204,7 +249,7 @@ export async function getNearbyProperties(
   latitude: number,
   longitude: number,
   radiusKm: number = 50
-): Promise<any[]> {
+): Promise<NearbyProperty[]> {
   try {
     const { data, error } = await supabase
       .from('properties')
@@ -216,7 +261,7 @@ export async function getNearbyProperties(
     if (error) throw error;
 
     // Filter by radius using Haversine formula (rough approximation in JS)
-    const nearby = (data || []).filter((property: any) => {
+    const nearby = (data || []).filter((property: NearbyProperty) => {
       if (!property.latitude || !property.longitude) return false;
 
       const R = 6371; // Earth's radius in km

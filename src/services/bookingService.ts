@@ -33,6 +33,23 @@ export interface BookingRecord {
   user_id?: string;
 }
 
+export interface AccessCodeResponse {
+  code?: string;
+  expires_at?: string;
+  [key: string]: unknown;
+}
+
+export interface BookingMessage {
+  id: string;
+  booking_id: string;
+  message: string;
+  sender_type: string;
+  sender_id?: string;
+  message_type: string;
+  created_at: string;
+  [key: string]: unknown;
+}
+
 /**
  * Check if booking dates conflict with existing bookings
  * Uses the check_booking_conflict RPC function
@@ -117,7 +134,7 @@ export async function generateAccessCode(
   propertyId: string,
   checkInDate: string,
   checkOutDate: string
-): Promise<any> {
+): Promise<AccessCodeResponse> {
   try {
     const { data, error } = await supabase.functions.invoke('generate-yale-code', {
       body: {
@@ -241,7 +258,7 @@ export async function updateBookingStatus(id: string, status: string): Promise<B
  * @returns Promise containing array of messages
  * @throws Error if query fails
  */
-export async function getBookingMessages(bookingId: string): Promise<any[]> {
+export async function getBookingMessages(bookingId: string): Promise<BookingMessage[]> {
   try {
     const { data, error } = await supabase
       .from('booking_messages')
@@ -274,7 +291,7 @@ export async function sendBookingMessage(
   senderType: string,
   senderId?: string,
   messageType?: string
-): Promise<any> {
+): Promise<BookingMessage> {
   try {
     const { data, error } = await supabase
       .from('booking_messages')

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
   id: string;
@@ -54,7 +55,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
  * @returns Promise containing session data or null
  * @throws Error if session check fails
  */
-export async function getSession(): Promise<any | null> {
+export async function getSession(): Promise<Session | null> {
   try {
     const {
       data: { session },

@@ -7,6 +7,11 @@ export interface UserFavorite {
   created_at: string;
 }
 
+interface FavoriteWithProperty {
+  property_id: string;
+  properties: Property | null;
+}
+
 /**
  * Fetch list of favorite property IDs for a user
  * @param userId - User ID
@@ -65,7 +70,7 @@ export async function getFavoriteProperties(userId: string): Promise<Property[]>
       .eq('user_id', userId);
 
     if (error) throw error;
-    return data?.map((f: any) => f.properties).filter(Boolean) || [];
+    return data?.map((f: FavoriteWithProperty) => f.properties).filter((p): p is Property => p !== null) || [];
   } catch (error) {
     throw new Error(
       `Failed to fetch favorite properties: ${error instanceof Error ? error.message : 'Unknown error'}`
