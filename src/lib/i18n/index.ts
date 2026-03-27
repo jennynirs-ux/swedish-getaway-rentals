@@ -1,10 +1,16 @@
 import type { Locale, TranslationMessages } from './types';
 import { en } from './en';
 import { sv } from './sv';
+import { no } from './no';
+import { da } from './da';
+import { de } from './de';
 
 const translations: Record<string, TranslationMessages> = {
   en,
   sv,
+  no,
+  da,
+  de,
 };
 
 /**

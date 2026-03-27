@@ -98,7 +98,7 @@ serve(async (req) => {
     
     const resend = new Resend(resendApiKey);
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const baseUrl = Deno.env.get("SITE_URL") || "https://jolofsson.lovable.app";
+    const baseUrl = Deno.env.get("SITE_URL") || "";
     const guidebookUrl = `${baseUrl}/property/${property.id}/guide`;
     
     // Format property address

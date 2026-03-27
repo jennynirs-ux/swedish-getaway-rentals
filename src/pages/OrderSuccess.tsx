@@ -128,7 +128,7 @@ const OrderSuccess = () => {
                     <li>• You'll receive an order confirmation email shortly</li>
                     <li>• Your order will be processed and printed</li>
                     <li>• You'll get tracking information once shipped</li>
-                    <li>• Questions? Contact us at jolofsson87@gmail.com</li>
+                    <li>• Questions? Contact us at support@mojjo.se</li>
                   </ul>
                 </div>
               </div>

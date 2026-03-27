@@ -1,28 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-// Secure CORS configuration
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://bbuutvozqfzbsnllsiai.supabase.co",
-  "https://stuga-escapes.lovable.app"
-];
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  // Validate origin for security
-  const origin = req.headers.get("origin");
-  const validOrigin = origin && allowedOrigins.includes(origin);
-  const headers = {
-    ...corsHeaders,
-    "Access-Control-Allow-Origin": validOrigin ? origin : allowedOrigins[0]
-  };
+  const headers = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers });

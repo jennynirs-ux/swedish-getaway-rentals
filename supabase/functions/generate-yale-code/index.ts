@@ -157,7 +157,7 @@ serve(async (req) => {
     );
 
     const accessCode = seamCode.code;
-    console.log("Seam access code created:", seamCode.access_code_id, "PIN:", accessCode);
+    console.log("Seam access code created:", seamCode.access_code_id);
 
     // ── Log to our database ───────────────────────────────────────────
     const { error: logError } = await supabaseClient

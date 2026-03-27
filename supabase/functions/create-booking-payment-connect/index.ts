@@ -436,7 +436,7 @@ serve(async (req) => {
     const vatAmount = Math.ceil(validatedAmount * vatRate);
 
     // Stripe checkout session config
-    const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "https://swedish-getaway-rentals.lovable.app";
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "";
     const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : guestEmail,

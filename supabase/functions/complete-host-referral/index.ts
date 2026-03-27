@@ -150,7 +150,7 @@ serve(async (req: Request) => {
 
     // Send email to referrer with discount code
     const { error: emailError } = await resend.emails.send({
-      from: "Nordic Collection <onboarding@resend.dev>",
+      from: "Nordic Getaways <support@mojjo.se>",
       to: [referral.referrer.email],
       subject: "Your Referral Reward is Here! 🎉",
       html: `
@@ -166,7 +166,7 @@ serve(async (req: Request) => {
           </div>
           <p>Use this code at checkout in the Nordic Collection shop. Valid for 1 year!</p>
           <p style="margin: 30px 0;">
-            <a href="${Deno.env.get("SITE_URL") || "http://localhost:5173"}/shop" 
+            <a href="${Deno.env.get("SITE_URL") || ""}/shop" 
                style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
               Shop Now
             </a>

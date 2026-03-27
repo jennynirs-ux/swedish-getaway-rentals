@@ -73,7 +73,7 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
           if (status === 'SUBSCRIBED') {
             // Reset retry counter on successful subscription
             retryCountRef.current = 0;
-            console.log('Booking realtime subscription established');
+            if (import.meta.env.DEV) console.log('Booking realtime subscription established');
           }
         });
 
@@ -106,7 +106,7 @@ export const useBookingRealtime = (options: UseBookingRealtimeOptions = {}) => {
     const delayMs = calculateBackoffDelay(retryCountRef.current);
     retryCountRef.current += 1;
 
-    console.log(`Reconnecting in ${delayMs}ms (attempt ${retryCountRef.current}/${maxRetriesRef.current})`);
+    if (import.meta.env.DEV) console.log(`Reconnecting in ${delayMs}ms (attempt ${retryCountRef.current}/${maxRetriesRef.current})`);
 
     // Schedule reconnection
     reconnectTimeoutRef.current = setTimeout(() => {

@@ -106,7 +106,7 @@ export const sv: TranslationMessages = {
       weeklyDiscount: 'Veckodiscount',
       couponDiscount: 'Kupongdiscount',
       subtotal: 'Delsumma:',
-      vat: 'VAT (12%)',
+      vat: 'Moms (12 %)',
       total: 'Totalt:',
       houseRulesAccept: 'Jag har läst och godkänner',
       houseRules: 'Husregler',
