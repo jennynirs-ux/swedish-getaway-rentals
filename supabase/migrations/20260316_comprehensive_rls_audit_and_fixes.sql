@@ -304,13 +304,28 @@ USING (
   )
 );
 
--- INSERT: Users can send messages if they're part of booking
+-- INSERT: Users can send messages only if sender_id matches AND they're part of the booking
+-- Note: system messages must be created via service_role key (edge functions), not client
 CREATE POLICY "Booking Messages INSERT policy"
 ON public.booking_messages FOR INSERT
 WITH CHECK (
   public.is_user_admin(auth.uid()) OR
-  sender_id = auth.uid() OR
-  sender_type = 'system'
+  (
+    sender_id = auth.uid() AND
+    (
+      booking_id IN (
+        SELECT b.id FROM bookings b
+        WHERE b.user_id = auth.uid() OR
+        b.guest_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+      ) OR
+      booking_id IN (
+        SELECT b.id FROM bookings b
+        JOIN properties p ON b.property_id = p.id
+        JOIN profiles pr ON p.host_id = pr.id
+        WHERE pr.user_id = auth.uid()
+      )
+    )
+  )
 );
 
 -- UPDATE: Users can update read status for their messages, admins can update any
@@ -1032,6 +1047,20 @@ COMMENT ON FUNCTION public.user_in_booking IS
 'Security definer function to check if user is involved in a booking (guest or host).';
 
 -- ============================================================================
+-- SECTION 24: ADMIN BOOTSTRAP
+-- ============================================================================
+-- The user_roles RLS policies require an existing admin to INSERT new roles.
+-- This creates a chicken-and-egg problem on fresh installs.
+-- Use the Supabase service_role key (via SQL Editor or Edge Function) to seed
+-- the first admin:
+--
+--   INSERT INTO public.user_roles (user_id, role)
+--   VALUES ('<your-admin-user-uuid>', 'admin');
+--
+-- After the first admin exists, they can assign additional roles via the app.
+-- ============================================================================
+
+-- ============================================================================
 -- MIGRATION COMPLETE
 -- ============================================================================
 -- This migration ensures comprehensive RLS coverage across all tables
@@ -1042,4 +1071,6 @@ COMMENT ON FUNCTION public.user_in_booking IS
 -- 4. Performance indexes on frequently-queried columns
 -- 5. Removed complex nested subqueries to prevent timeouts
 -- 6. Added documentation for future maintenance
+-- 7. Fixed message INSERT to validate sender is booking participant
+-- 8. Removed system sender_type bypass (use service_role for system messages)
 -- ============================================================================
