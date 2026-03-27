@@ -1,10 +1,10 @@
-import { memo, useCallback } from "react";
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
-import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
+import { useQuery } from "@tanstack/react-query";
 import LazyImage from "@/components/LazyImage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/context/CartContext";
@@ -33,53 +33,42 @@ const HomepageProducts = memo(() => {
   const { addItem } = useCart();
   const navigate = useNavigate();
 
-  // Optimized products query with caching
-  const productsQueryFn = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("shop_products")
-      .select(`
-        id,
-        title,
-        description,
-        price,
-        currency,
-        image_url,
-        custom_description,
-        custom_price,
-        title_override,
-        description_override,
-        price_override,
-        main_image_override,
-        is_visible_home,
-        is_visible_shop,
-        visible,
-        sort_order,
-        printful_data
-      `)
-      .eq("is_visible_home", true)
-      .eq("visible", true)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false })
-      .limit(6);
+  const { data: products = [], isLoading: loading } = useQuery({
+    queryKey: ["homepage-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shop_products")
+        .select(`
+          id,
+          title,
+          description,
+          price,
+          currency,
+          image_url,
+          custom_description,
+          custom_price,
+          title_override,
+          description_override,
+          price_override,
+          main_image_override,
+          is_visible_home,
+          is_visible_shop,
+          visible,
+          sort_order,
+          printful_data
+        `)
+        .eq("is_visible_home", true)
+        .eq("visible", true)
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(6);
 
-    if (error) throw error;
-    return { data: data || [], error: null };
-  }, []);
-
-  const { data: products = [], loading } = useOptimizedQuery(
-    "homepage-products",
-    productsQueryFn,
-    {
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-      staleTime: 3 * 60 * 1000, // 3 minutes
-      enableRealtime: true,
-      realtimeFilter: {
-        event: "*",
-        schema: "public",
-        table: "shop_products",
-      },
-    }
-  );
+      if (error) throw error;
+      return (data ?? []) as ShopProduct[];
+    },
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat("sv-SE", {
