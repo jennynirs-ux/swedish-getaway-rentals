@@ -126,6 +126,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
+  const [availabilityPrices, setAvailabilityPrices] = useState<Record<string, number>>({});
   const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
 
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -137,16 +138,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return null;
     // pricePerNight is in SEK, convert to cents for calculation
-    // BUG-015: TODO - Pass seasonal/availability prices from calendar when available
-    // The calendar may have per-date pricing set by the host, but these are not currently
-    // being passed to calculatePrice. This should be integrated with PropertyCalendarOptimized
-    // to extract date-specific prices from the availability data.
+    // BUG-015 FIXED: seasonal prices from calendar are now passed through
     const calculation = calculatePrice(
       pricePerNight * 100,
       checkIn,
       checkOut,
       formData.number_of_guests,
-      {} // availabilityPrices - currently always empty, needs integration with calendar
+      availabilityPrices
     );
     return calculation;
   };
@@ -304,9 +302,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
           basePrice={pricePerNight}
           currency={currency}
           mode="guest"
-          onDateSelect={({ checkIn, checkOut }) => {
+          onDateSelect={({ checkIn, checkOut, availabilityPrices: prices }) => {
             setCheckIn(checkIn);
             setCheckOut(checkOut);
+            setAvailabilityPrices(prices || {});
           }}
         />
 

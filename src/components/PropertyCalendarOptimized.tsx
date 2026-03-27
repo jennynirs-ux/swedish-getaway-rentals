@@ -17,7 +17,7 @@ interface PropertyCalendarOptimizedProps {
   propertyId: string;
   basePrice: number;
   currency: string;
-  onDateSelect?: (dates: { checkIn: Date | null; checkOut: Date | null }) => void;
+  onDateSelect?: (dates: { checkIn: Date | null; checkOut: Date | null; availabilityPrices?: Record<string, number> }) => void;
   mode?: 'guest' | 'admin';
 }
 
@@ -116,9 +116,19 @@ const PropertyCalendarOptimized = memo(({
           });
           return;
         }
+        // Build seasonal price map for selected date range
+        const prices: Record<string, number> = {};
+        const days = eachDayOfInterval({ start: checkIn, end: addDays(date, -1) });
+        for (const day of days) {
+          const avail = getDateAvailability(day);
+          if (avail?.seasonal_price) {
+            prices[format(day, 'yyyy-MM-dd')] = avail.seasonal_price * 100; // convert to cents
+          }
+        }
+
         // Set as check-out date
         setSelectedDates({ checkIn, checkOut: date });
-        onDateSelect?.({ checkIn, checkOut: date });
+        onDateSelect?.({ checkIn, checkOut: date, availabilityPrices: prices });
       }
     }
   };
