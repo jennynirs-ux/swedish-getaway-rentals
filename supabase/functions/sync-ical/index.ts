@@ -6,7 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+/**
+ * The canonical reason string for iCal-synced availability blocks.
+ * AvailabilityCalendar.tsx checks for this exact string to mark dates
+ * as read-only (orange, non-clickable) in the host calendar UI.
+ */
+const ICAL_SYNC_REASON = 'ical_sync';
+
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SYNC-ICAL] ${step}${detailsStr}`);
 };
@@ -16,11 +23,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Parse body once and store feedId for error handler
+  let feedId: string | undefined;
+
   try {
     logStep("Function started");
 
-    const { feedId } = await req.json();
-    
+    const body = await req.json();
+    feedId = body.feedId;
+
     if (!feedId) {
       throw new Error("Feed ID is required");
     }
@@ -59,36 +70,67 @@ serve(async (req) => {
     const events = parseICalEvents(icalData);
     logStep("Parsed events", { eventCount: events.length });
 
-    // Update availability based on events
-    let updatedDates = 0;
+    // Collect all blocked dates from the feed
+    const blockedDates = new Set<string>();
     for (const event of events) {
-      const startDate = event.startDate;
-      const endDate = event.endDate;
-      
-      // Block dates for each day in the event
-      let currentDate = new Date(startDate);
-      while (currentDate < endDate) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-        
-        // Upsert availability (mark as unavailable)
-        const { error: upsertError } = await supabaseClient
-          .from('availability')
-          .upsert({
-            property_id: feed.property_id,
-            date: dateStr,
-            available: false,
-            reason: `Blocked by ${feed.name}`,
-          }, {
-            onConflict: 'property_id,date'
-          });
-
-        if (upsertError) {
-          logStep("Error upserting availability", { error: upsertError.message, date: dateStr });
-        } else {
-          updatedDates++;
-        }
-
+      const currentDate = new Date(event.startDate);
+      while (currentDate < event.endDate) {
+        blockedDates.add(formatDate(currentDate));
         currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+
+    // Upsert blocked dates (mark unavailable)
+    let updatedDates = 0;
+    for (const dateStr of blockedDates) {
+      const { error: upsertError } = await supabaseClient
+        .from('availability')
+        .upsert({
+          property_id: feed.property_id,
+          date: dateStr,
+          available: false,
+          reason: ICAL_SYNC_REASON,
+        }, {
+          onConflict: 'property_id,date'
+        });
+
+      if (upsertError) {
+        logStep("Error upserting availability", { error: upsertError.message, date: dateStr });
+      } else {
+        updatedDates++;
+      }
+    }
+
+    // CLEANUP: Unblock dates that were previously synced but are no longer in the feed.
+    // This handles cancellations on external platforms — without this, dates stay
+    // blocked forever even after the external booking is removed.
+    const { data: previouslySynced } = await supabaseClient
+      .from('availability')
+      .select('date')
+      .eq('property_id', feed.property_id)
+      .eq('reason', ICAL_SYNC_REASON)
+      .eq('available', false);
+
+    let unblockedDates = 0;
+    if (previouslySynced) {
+      const staleDates = previouslySynced
+        .map(row => row.date)
+        .filter(date => !blockedDates.has(date));
+
+      if (staleDates.length > 0) {
+        const { error: deleteError } = await supabaseClient
+          .from('availability')
+          .delete()
+          .eq('property_id', feed.property_id)
+          .eq('reason', ICAL_SYNC_REASON)
+          .in('date', staleDates);
+
+        if (deleteError) {
+          logStep("Error cleaning up stale dates", { error: deleteError.message });
+        } else {
+          unblockedDates = staleDates.length;
+          logStep("Cleaned up stale dates", { count: staleDates.length });
+        }
       }
     }
 
@@ -106,12 +148,13 @@ serve(async (req) => {
       logStep("Error updating feed status", { error: updateError.message });
     }
 
-    logStep("Sync completed", { updatedDates, eventCount: events.length });
+    logStep("Sync completed", { updatedDates, unblockedDates, eventCount: events.length });
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       eventsProcessed: events.length,
-      datesUpdated: updatedDates 
+      datesUpdated: updatedDates,
+      datesUnblocked: unblockedDates,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -120,10 +163,9 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in sync-ical", { message: errorMessage });
 
-    // Try to update the feed with error status
-    try {
-      const { feedId } = await req.json();
-      if (feedId) {
+    // Update feed error status (feedId is captured from the parsed body above)
+    if (feedId) {
+      try {
         const supabaseClient = createClient(
           Deno.env.get("SUPABASE_URL") ?? "",
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -136,9 +178,9 @@ serve(async (req) => {
             error_message: errorMessage
           })
           .eq('id', feedId);
+      } catch (updateError) {
+        logStep("Failed to update error status", { error: updateError });
       }
-    } catch (updateError) {
-      logStep("Failed to update error status", { error: updateError });
     }
 
     return new Response(JSON.stringify({ error: errorMessage }), {
@@ -182,11 +224,18 @@ function parseICalEvents(icalData: string) {
   return events;
 }
 
+/**
+ * Format a Date as YYYY-MM-DD using UTC to avoid timezone off-by-one errors.
+ */
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
 function parseICalDate(dateStr: string): Date {
-  // Format: YYYYMMDD
+  // Format: YYYYMMDD — use UTC to avoid timezone-dependent shifts
   const year = parseInt(dateStr.substring(0, 4));
   const month = parseInt(dateStr.substring(4, 6)) - 1; // Month is 0-based
   const day = parseInt(dateStr.substring(6, 8));
-  
-  return new Date(year, month, day);
+
+  return new Date(Date.UTC(year, month, day));
 }

@@ -137,14 +137,17 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
     return date < today;
   };
 
+  const isICalReason = (reason: string | null | undefined): boolean =>
+    reason === 'ical_sync' || (!!reason && reason.startsWith('Blocked by '));
+
   const isSyncedDate = (date: Date) => {
     const avail = getDateAvailability(date);
-    return avail?.reason === 'ical_sync';
+    return isICalReason(avail?.reason);
   };
 
   const modifiers = {
     blocked: availability
-      .filter(a => !a.available && a.reason !== 'preparation' && a.reason !== 'ical_sync')
+      .filter(a => !a.available && a.reason !== 'preparation' && !isICalReason(a.reason))
       .map(a => new Date(a.date)),
     special: availability
       .filter(a => a.seasonal_price !== null)
@@ -153,7 +156,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
       .filter(a => a.reason === 'preparation')
       .map(a => new Date(a.date)),
     synced: availability
-      .filter(a => a.reason === 'ical_sync')
+      .filter(a => isICalReason(a.reason))
       .map(a => new Date(a.date))
   };
 
