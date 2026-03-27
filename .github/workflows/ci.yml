@@ -10,6 +10,8 @@ env:
   NODE_ENV: test
   VITE_SUPABASE_URL: https://placeholder.supabase.co
   VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-key
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key
 
 jobs:
   test:
@@ -43,7 +45,7 @@ jobs:
           path: coverage/
           retention-days: 30
 
-      - name: Run Vite production build
+      - name: Run Next.js production build
         run: npm run build
 
       - name: Upload build artifacts
@@ -51,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.node-version }}
-          path: dist/
+          path: .next/
           retention-days: 7
 
   lint:

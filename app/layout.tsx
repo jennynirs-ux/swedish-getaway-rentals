@@ -92,6 +92,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Nordic Getaways',
+              url: 'https://nordic-getaways.com',
+              logo: 'https://nordic-getaways.com/logo.png',
+              sameAs: [],
+              contactPoint: {
+                '@type': 'ContactPoint',
+                email: 'support@mojjo.se',
+                contactType: 'customer service',
+              },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'Nordic Getaways',
+              url: 'https://nordic-getaways.com',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: 'https://nordic-getaways.com/destinations?q={search_term_string}',
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
         <Providers>
           {children}
         </Providers>

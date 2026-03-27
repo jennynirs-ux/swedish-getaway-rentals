@@ -1,33 +1,22 @@
 /**
- * Next.js Configuration
+ * Next.js Configuration — PRIMARY BUILD SYSTEM
  *
- * IMPORTANT: This is the FUTURE production build system.
- * Currently, the primary build system is Vite (see package.json).
+ * Scripts:
+ *   - npm run dev         (Next.js dev server)
+ *   - npm run build       (Next.js production build)
+ *   - npm run start       (Next.js production server)
  *
- * Vite scripts (production):
- *   - npm run build       (Vite - used by CI)
- *   - npm run dev        (Vite dev server)
- *
- * Next.js scripts (future):
- *   - npm run build:next  (Next.js build)
- *   - npm run dev:next   (Next.js dev server)
- *   - npm run start:next (Next.js production start)
- *
- * When transitioning to Next.js as the primary build:
- * 1. Update CI to use "npm run build:next" instead of "npm run build"
- * 2. Update deployment scripts to use start:next
- * 3. Remove Vite build configuration from package.json
+ * Vite is retained only for unit tests (vitest).
  */
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   typescript: {
-    // Type errors are caught by Vite build (primary) — skip in Next.js build
+    // ESLint + TypeScript run as separate CI jobs
     ignoreBuildErrors: true,
   },
   eslint: {
-    // ESLint runs as separate CI job — skip in Next.js build
     ignoreDuringBuilds: true,
   },
   images: {
@@ -54,15 +43,58 @@ const nextConfig = {
     maxInactiveAge: 60 * 1000,
     pagesBufferLength: 5,
   },
-  // Proper redirects from old routes if needed
   async redirects() {
     return [
-      // Add legacy route redirects here if needed
-      // {
-      //   source: '/legacy/:path*',
-      //   destination: '/new/:path*',
-      //   permanent: true,
-      // },
+      {
+        source: '/villa-hacken',
+        destination: '/property/villa-hacken',
+        permanent: true,
+      },
+      {
+        source: '/villa-hacken/guide',
+        destination: '/property/villa-hacken/guide',
+        permanent: true,
+      },
+      {
+        source: '/lakehouse-getaway',
+        destination: '/property/lakehouse-getaway',
+        permanent: true,
+      },
+      {
+        source: '/lakehouse-getaway/guide',
+        destination: '/property/lakehouse-getaway/guide',
+        permanent: true,
+      },
+      {
+        source: '/product/:id',
+        destination: '/shop/:id',
+        permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(self)',
+          },
+        ],
+      },
     ];
   },
 };

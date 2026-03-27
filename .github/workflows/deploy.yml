@@ -33,7 +33,7 @@ jobs:
         run: npm test
 
       - name: Build the project (Next.js)
-        run: npm run build:next
+        run: npm run build
 
       - name: Deploy to Vercel
         uses: vercel/action@v6

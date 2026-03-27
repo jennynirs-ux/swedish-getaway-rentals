@@ -3,8 +3,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { CartProvider } from '@/context/CartContext';
+import { LocaleProvider } from '@/i18n/useLocale';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { useState } from 'react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -17,16 +19,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
     },
   }));
 
+  // BrowserRouter is kept temporarily for components using react-router-dom.
+  // TODO: Incrementally migrate components to next/navigation, then remove BrowserRouter.
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <CartProvider>
-          <TooltipProvider>
-            <Toaster />
-            {children}
-          </TooltipProvider>
-        </CartProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <LocaleProvider>
+            <CartProvider>
+              <TooltipProvider>
+                <Toaster />
+                {children}
+              </TooltipProvider>
+            </CartProvider>
+          </LocaleProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
