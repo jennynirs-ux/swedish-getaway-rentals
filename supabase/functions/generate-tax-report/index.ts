@@ -14,7 +14,9 @@ interface TaxReportLine {
   total_bookings: number;
   total_nights: number;
   avg_nightly_rate: number;
-  platform_fees: number; // 15% platform commission
+  platform_fees: number;
+  total_expenses: number;
+  expenses_by_category: Record<string, number>;
   net_income: number;
 }
 
@@ -105,6 +107,14 @@ serve(async (req) => {
       .lte('check_in_date', yearEnd)
       .in('status', ['confirmed', 'completed']);
 
+    // Fetch expenses for the tax year
+    const { data: expenses } = await supabase
+      .from('expenses')
+      .select('property_id, category, amount')
+      .in('property_id', propertyIds)
+      .gte('expense_date', yearStart)
+      .lte('expense_date', yearEnd);
+
     const PLATFORM_FEE_RATE = 0.15; // 15% platform commission
 
     // Build per-property report lines
@@ -119,8 +129,16 @@ serve(async (req) => {
         return sum + Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
       }, 0);
 
+      // Calculate expenses per property
+      const propExpenses = (expenses || []).filter((e) => e.property_id === prop.id);
+      const totalExpenses = propExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const expensesByCategory: Record<string, number> = {};
+      for (const e of propExpenses) {
+        expensesByCategory[e.category] = (expensesByCategory[e.category] || 0) + e.amount;
+      }
+
       const platformFees = Math.round(totalRevenue * PLATFORM_FEE_RATE);
-      const netIncome = totalRevenue - platformFees;
+      const netIncome = totalRevenue - platformFees - totalExpenses;
       const avgNightlyRate = totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0;
 
       return {
@@ -132,6 +150,8 @@ serve(async (req) => {
         total_nights: totalNights,
         avg_nightly_rate: avgNightlyRate,
         platform_fees: platformFees,
+        total_expenses: totalExpenses,
+        expenses_by_category: expensesByCategory,
         net_income: netIncome,
       };
     });
@@ -139,6 +159,7 @@ serve(async (req) => {
     // Summary
     const totalGross = propertyLines.reduce((s, p) => s + p.total_revenue, 0);
     const totalFees = propertyLines.reduce((s, p) => s + p.platform_fees, 0);
+    const totalExpenses = propertyLines.reduce((s, p) => s + p.total_expenses, 0);
     const totalNet = propertyLines.reduce((s, p) => s + p.net_income, 0);
     const totalBookingsCount = propertyLines.reduce((s, p) => s + p.total_bookings, 0);
     const totalNightsCount = propertyLines.reduce((s, p) => s + p.total_nights, 0);
@@ -162,6 +183,7 @@ serve(async (req) => {
       summary: {
         total_gross_revenue: totalGross,
         total_platform_fees: totalFees,
+        total_expenses: totalExpenses,
         total_net_income: totalNet,
         total_bookings: totalBookingsCount,
         total_nights: totalNightsCount,
