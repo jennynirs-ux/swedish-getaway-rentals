@@ -8,40 +8,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v6
-
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-
-      - name: Show versions
-        run: |
-          node --version
-          npm --version
-          cat package.json | head -25
-
-      - name: Try npm ci first (see if it works with current lockfile)
-        run: npm ci 2>&1 || echo "npm ci failed, will regenerate"
-        continue-on-error: true
-
+      - run: node --version && npm --version
       - name: Regenerate lockfile
         run: |
           rm -f package-lock.json bun.lockb bun.lock
           npm install
-          echo "Install complete, lockfile regenerated"
-
-      - name: Verify npm ci works with new lockfile
+      - name: Verify npm ci
         run: npm ci
-
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
+          git add package-lock.json .npmrc
           git rm --cached bun.lockb bun.lock 2>/dev/null || true
-          git diff --cached --quiet || git commit -m "fix: regenerate package-lock.json for Node 22
-
-          Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          git diff --cached --quiet || git commit -m "fix: regenerate package-lock.json with legacy-peer-deps"
           git push
