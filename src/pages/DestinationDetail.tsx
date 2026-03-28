@@ -185,6 +185,16 @@ export default function DestinationDetail() {
   const { slug } = useParams<{ slug: string }>();
   const destination = slug ? DESTINATIONS[slug] : null;
 
+  useSeoMeta(destination ? {
+    title: `${destination.name} — Nordic Vacation Rentals`,
+    description: destination.longDescription.slice(0, 160),
+    canonical: `https://nordic-getaways.com/destinations/${slug}`,
+    ogImage: destination.image,
+  } : {
+    title: 'Destination Not Found',
+    description: 'The destination you are looking for does not exist.',
+  });
+
   if (!destination) {
     return (
       <div className="min-h-screen bg-background">
@@ -198,13 +208,6 @@ export default function DestinationDetail() {
       </div>
     );
   }
-
-  useSeoMeta({
-    title: `${destination.name} — Nordic Vacation Rentals`,
-    description: destination.longDescription.slice(0, 160),
-    canonical: `https://nordic-getaways.com/destinations/${destination.slug}`,
-    ogImage: destination.image,
-  });
 
   return (
     <div className="min-h-screen bg-background">

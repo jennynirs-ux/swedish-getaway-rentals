@@ -67,6 +67,15 @@ export default function BlogPost() {
   const post = BLOG_POSTS.find((p) => p.slug === slug);
   const content = slug ? BLOG_CONTENT[slug] : null;
 
+  useSeoMeta(post ? {
+    title: `${post.title} — Nordic Getaways Blog`,
+    description: post.excerpt,
+    canonical: `https://nordic-getaways.com/blog/${slug}`,
+  } : {
+    title: 'Post Not Found',
+    description: 'The blog post you are looking for does not exist.',
+  });
+
   if (!post || !content) {
     return (
       <div className="min-h-screen bg-background">
@@ -84,12 +93,6 @@ export default function BlogPost() {
   const postIndex = BLOG_POSTS.findIndex((p) => p.slug === slug);
   const prevPost = postIndex > 0 ? BLOG_POSTS[postIndex - 1] : null;
   const nextPost = postIndex < BLOG_POSTS.length - 1 ? BLOG_POSTS[postIndex + 1] : null;
-
-  useSeoMeta({
-    title: `${post.title} — Nordic Getaways Blog`,
-    description: post.excerpt,
-    canonical: `https://nordic-getaways.com/blog/${post.slug}`,
-  });
 
   const articleSchema = {
     '@context': 'https://schema.org',
