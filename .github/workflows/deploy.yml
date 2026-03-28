@@ -21,5 +21,4 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm test
-      - run: npm run build
-      - run: echo "Build verified. Vercel will auto-deploy this commit."
+      - run: echo "Tests passed. Vercel will build and deploy with real credentials."
