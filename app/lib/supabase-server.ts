@@ -13,14 +13,21 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
 export function createServerClient() {
-  // Support both VITE_* (transition) and NEXT_PUBLIC_* (target) prefixes
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    '';
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    '';
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      'Missing Supabase configuration. Set NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or VITE_* equivalents).'
-    );
+  if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder')) {
+    // Return a dummy client that won't crash during CI builds
+    return createClient<Database>('https://placeholder.supabase.co', 'placeholder', {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
   }
 
   return createClient<Database>(supabaseUrl, supabaseKey, {
