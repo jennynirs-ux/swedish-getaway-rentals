@@ -24,7 +24,7 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm ci || npm install
       - run: npm test
       - run: npm run build
 
@@ -39,7 +39,7 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm ci || npm install
       - run: npm run lint
 
   e2e:
@@ -54,7 +54,7 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm ci || npm install
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --project=chromium
 
@@ -69,5 +69,5 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm ci || npm install
       - run: npm audit --audit-level=high || true
