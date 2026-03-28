@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Building2, ShoppingBag, Mail, Clock, Ban, Loader2 } from "lucide-react";
+import { Home, Building2, ShoppingBag, Mail, Clock, Ban, Loader2, Wallet, Sparkles } from "lucide-react";
 
 // Lazy-load all tab components — splits the 510 kB admin chunk into per-tab chunks
 const DashboardOverview = lazy(() => import("./DashboardOverview"));
@@ -20,6 +20,13 @@ const MessagesInbox = lazy(() => import("./MessagesInbox"));
 const BookingEmailSettings = lazy(() => import("./BookingEmailSettings").then(m => ({ default: m.BookingEmailSettings })));
 const PreArrivalSettings = lazy(() => import("./PreArrivalSettings"));
 const CancellationPolicySettings = lazy(() => import("./CancellationPolicySettings").then(m => ({ default: m.CancellationPolicySettings })));
+
+// V2: Financial, Cleaning, and Channel Management
+const ExpenseManagement = lazy(() => import("./ExpenseManagement"));
+const CleaningManagement = lazy(() => import("./CleaningManagement"));
+const RevenueByChannel = lazy(() => import("./RevenueByChannel"));
+const ProfitabilityView = lazy(() => import("./ProfitabilityView"));
+const OccupancyTrend = lazy(() => import("./OccupancyTrend"));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
@@ -42,7 +49,7 @@ const UnifiedAdmin = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Home className="w-4 h-4" />
             Dashboard
@@ -50,6 +57,14 @@ const UnifiedAdmin = () => {
           <TabsTrigger value="rentals" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Rentals
+          </TabsTrigger>
+          <TabsTrigger value="financials" className="flex items-center gap-2">
+            <Wallet className="w-4 h-4" />
+            Financials
+          </TabsTrigger>
+          <TabsTrigger value="cleaning" className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Cleaning
           </TabsTrigger>
           <TabsTrigger value="shop" className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4" />
@@ -143,6 +158,40 @@ const UnifiedAdmin = () => {
               </TabsContent>
             </Suspense>
           </Tabs>
+        </TabsContent>
+
+        {/* V2: Financials Tab */}
+        <TabsContent value="financials" className="space-y-6">
+          <Tabs defaultValue="expenses" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              <TabsTrigger value="revenue-channel">Revenue by Channel</TabsTrigger>
+              <TabsTrigger value="profitability">Profitability</TabsTrigger>
+              <TabsTrigger value="occupancy">Occupancy</TabsTrigger>
+            </TabsList>
+
+            <Suspense fallback={<TabFallback />}>
+              <TabsContent value="expenses">
+                <ExpenseManagement />
+              </TabsContent>
+              <TabsContent value="revenue-channel">
+                <RevenueByChannel />
+              </TabsContent>
+              <TabsContent value="profitability">
+                <ProfitabilityView />
+              </TabsContent>
+              <TabsContent value="occupancy">
+                <OccupancyTrend />
+              </TabsContent>
+            </Suspense>
+          </Tabs>
+        </TabsContent>
+
+        {/* V2: Cleaning Tab */}
+        <TabsContent value="cleaning" className="space-y-6">
+          <Suspense fallback={<TabFallback />}>
+            <CleaningManagement />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="shop" className="space-y-6">
