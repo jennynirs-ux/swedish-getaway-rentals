@@ -3,9 +3,6 @@ name: Regenerate package-lock.json
 on:
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   fix:
     runs-on: ubuntu-latest
@@ -13,22 +10,19 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 
-      - name: Show npm and node versions
-        run: |
-          node --version
-          npm --version
+      - name: Show versions
+        run: node --version && npm --version
 
       - name: Regenerate lockfile
         run: |
           rm -f package-lock.json bun.lockb bun.lock
           npm install --package-lock-only
-          echo "Lockfile regenerated"
 
       - name: Verify npm ci works
         run: npm ci
