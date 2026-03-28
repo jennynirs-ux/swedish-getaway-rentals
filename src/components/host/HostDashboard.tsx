@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen, Trash2 } from "lucide-react";
+import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen, Trash2, Check, X, Search, Wallet, Sparkles, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import { toast } from "sonner";
@@ -19,6 +22,19 @@ import { HostInvitationDialog } from "./HostInvitationDialog";
 import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
 import { HostAnalytics } from "./HostAnalytics";
 import { HostTaxReport } from "./HostTaxReport";
+
+// Lazy-load v2 components
+const ExpenseManagement = lazy(() => import("@/components/admin/ExpenseManagement"));
+const CleaningManagement = lazy(() => import("@/components/admin/CleaningManagement"));
+const RevenueByChannel = lazy(() => import("@/components/admin/RevenueByChannel"));
+const ProfitabilityView = lazy(() => import("@/components/admin/ProfitabilityView"));
+const OccupancyTrend = lazy(() => import("@/components/admin/OccupancyTrend"));
+
+const TabFallback = () => (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+  </div>
+);
 
 interface HostStats {
   total_properties: number;
@@ -35,6 +51,7 @@ interface Booking {
   check_out_date: string;
   total_amount: number;
   status: string;
+  source?: string;
   created_at: string;
   properties: {
     title: string;
@@ -43,6 +60,21 @@ interface Booking {
     hero_image_url?: string;
   };
 }
+
+const statusColors: Record<string, string> = {
+  confirmed: "bg-green-100 text-green-800",
+  pending: "bg-yellow-100 text-yellow-800",
+  cancelled: "bg-red-100 text-red-800",
+  completed: "bg-blue-100 text-blue-800",
+  pending_approval: "bg-orange-100 text-orange-800",
+};
+
+const sourceColors: Record<string, string> = {
+  airbnb: "bg-rose-100 text-rose-800",
+  booking_com: "bg-blue-100 text-blue-800",
+  direct: "bg-green-100 text-green-800",
+  blocked: "bg-gray-100 text-gray-600",
+};
 
 // Wrapper: använder PropertyCard men lägger till Edit-knapp
 const HostPropertyCard = ({
@@ -368,13 +400,19 @@ const HostDashboard = () => {
           </div>
 
           <Tabs defaultValue="properties" className="space-y-6">
-            <TabsList>
+            <TabsList className="flex-wrap h-auto gap-1">
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
+              <TabsTrigger value="cleaning" className="flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Cleaning
+              </TabsTrigger>
+              <TabsTrigger value="financials" className="flex items-center gap-1">
+                <Wallet className="w-3 h-3" /> Financials
+              </TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="tax">Tax Report</TabsTrigger>
-              <TabsTrigger value="payouts">Bank Account</TabsTrigger>
+              <TabsTrigger value="payouts">Payouts</TabsTrigger>
             </TabsList>
 
             <TabsContent value="analytics" className="space-y-6">
@@ -442,37 +480,32 @@ const HostDashboard = () => {
             </TabsContent>
 
             <TabsContent value="bookings" className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4">Recent Bookings</h2>
-              {bookings.length === 0 ? (
-                <Card>
-                  <CardContent className="py-16 text-center">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No bookings yet</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {bookings.slice(0, 10).map((booking) => (
-                    <Card key={booking.id}>
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">{booking.properties.title}</h3>
-                            <p className="text-sm text-muted-foreground">Guest: {booking.guest_name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">{booking.total_amount.toLocaleString()} {booking.properties.currency || 'SEK'}</p>
-                            <p className="text-sm text-muted-foreground capitalize">{booking.status}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              <HostBookingsTab bookings={bookings} onStatusChange={fetchHostStats} />
+            </TabsContent>
+
+            {/* V2: Cleaning Tab */}
+            <TabsContent value="cleaning" className="space-y-6">
+              <Suspense fallback={<TabFallback />}>
+                <CleaningManagement />
+              </Suspense>
+            </TabsContent>
+
+            {/* V2: Financials Tab */}
+            <TabsContent value="financials" className="space-y-6">
+              <Tabs defaultValue="expenses" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                  <TabsTrigger value="revenue">Revenue by Channel</TabsTrigger>
+                  <TabsTrigger value="profit">Profitability</TabsTrigger>
+                  <TabsTrigger value="occupancy">Occupancy</TabsTrigger>
+                </TabsList>
+                <Suspense fallback={<TabFallback />}>
+                  <TabsContent value="expenses"><ExpenseManagement /></TabsContent>
+                  <TabsContent value="revenue"><RevenueByChannel /></TabsContent>
+                  <TabsContent value="profit"><ProfitabilityView /></TabsContent>
+                  <TabsContent value="occupancy"><OccupancyTrend /></TabsContent>
+                </Suspense>
+              </Tabs>
             </TabsContent>
 
           </Tabs>
@@ -530,6 +563,148 @@ const HostDashboard = () => {
           </AlertDialog>
         </div>
       </TooltipProvider>
+    </div>
+  );
+};
+
+// Enhanced bookings tab with filters, pagination, and approve/reject
+const HostBookingsTab = ({ bookings, onStatusChange }: { bookings: Booking[]; onStatusChange: () => void }) => {
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
+
+  const filtered = bookings.filter((b) => {
+    if (statusFilter !== "all" && b.status !== statusFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        b.guest_name?.toLowerCase().includes(q) ||
+        b.properties?.title?.toLowerCase().includes(q) ||
+        b.guest_email?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  const handleApprove = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "confirmed" })
+        .eq("id", bookingId);
+      if (error) throw error;
+      toast.success("Booking approved");
+      onStatusChange();
+    } catch {
+      toast.error("Failed to approve booking");
+    }
+  };
+
+  const handleReject = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", bookingId);
+      if (error) throw error;
+      toast.success("Booking rejected");
+      onStatusChange();
+    } catch {
+      toast.error("Failed to reject booking");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-semibold">Bookings ({filtered.length})</h2>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search guest or property..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+              className="pl-9 w-48"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="pending_approval">Needs Approval</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {paginated.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 text-center">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">No bookings match your filters</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {paginated.map((booking) => (
+            <Card key={booking.id}>
+              <CardContent className="p-4">
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                  <div className="flex-1 min-w-[200px]">
+                    <h3 className="font-semibold">{booking.properties.title}</h3>
+                    <p className="text-sm text-muted-foreground">{booking.guest_name} · {booking.guest_email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(booking.check_in_date).toLocaleDateString("sv-SE")} → {new Date(booking.check_out_date).toLocaleDateString("sv-SE")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {booking.source && (
+                      <Badge variant="outline" className={sourceColors[booking.source] || ""}>
+                        {booking.source === "booking_com" ? "Booking.com" : booking.source}
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className={statusColors[booking.status] || ""}>
+                      {booking.status}
+                    </Badge>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">
+                      {(booking.total_amount / 100).toLocaleString("sv-SE")} {booking.properties.currency || "SEK"}
+                    </p>
+                  </div>
+                  {(booking.status === "pending" || booking.status === "pending_approval") && (
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="text-green-700" onClick={() => handleApprove(booking.id)}>
+                        <Check className="h-4 w-4 mr-1" /> Approve
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-red-700" onClick={() => handleReject(booking.id)}>
+                        <X className="h-4 w-4 mr-1" /> Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</Button>
+          <span className="text-sm text-muted-foreground self-center">Page {page + 1} of {totalPages}</span>
+          <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>Next</Button>
+        </div>
+      )}
     </div>
   );
 };
