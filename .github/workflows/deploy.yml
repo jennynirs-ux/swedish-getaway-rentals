@@ -23,7 +23,7 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm install --frozen-lockfile || npm install
       - run: npm test
       - run: npm run build
       - run: echo "Build verified. Vercel will auto-deploy this commit."

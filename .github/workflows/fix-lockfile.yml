@@ -19,10 +19,16 @@ jobs:
         with:
           node-version: 22
 
+      - name: Show npm and node versions
+        run: |
+          node --version
+          npm --version
+
       - name: Regenerate lockfile
         run: |
-          rm -f package-lock.json
+          rm -f package-lock.json bun.lockb bun.lock
           npm install --package-lock-only
+          echo "Lockfile regenerated"
 
       - name: Verify npm ci works
         run: npm ci
@@ -32,5 +38,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package-lock.json
-          git diff --cached --quiet || git commit -m "fix: regenerate package-lock.json for Node 22"
+          git rm --cached bun.lockb bun.lock 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "fix: regenerate package-lock.json, remove bun lockfiles"
           git push
