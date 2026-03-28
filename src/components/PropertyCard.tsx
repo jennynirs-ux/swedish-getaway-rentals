@@ -46,6 +46,7 @@ export interface PropertyCardData {
   latitude?: number | null;
   longitude?: number | null;
   city?: string | null;
+  requires_host_approval?: boolean;
 }
 
 interface PropertyCardProps {
@@ -183,11 +184,16 @@ const PropertyCard = memo(({
             </Button>
           </div>
 
-          {/* Property Type Badge */}
-          <div className="absolute bottom-4 left-4">
+          {/* Property Type + Instant Book Badges */}
+          <div className="absolute bottom-4 left-4 flex gap-1.5">
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
               {safeProperty.property_type || "Property"}
             </Badge>
+            {safeProperty.requires_host_approval === false && (
+              <Badge className="bg-green-600/90 text-white backdrop-blur-sm border-0">
+                Instant Book
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -285,7 +291,7 @@ const PropertyCard = memo(({
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <span className="text-muted-foreground text-sm">/night incl. fees</span>
+              <span className="text-muted-foreground text-sm">/night — total price, no hidden fees</span>
               {(() => {
                 const totalPerNight = Math.round((safeProperty.price_per_night || 0) * 1.1 * 100);
                 const converted = convertForDisplay(totalPerNight, safeProperty.currency);

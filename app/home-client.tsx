@@ -10,6 +10,7 @@ import HomepageProducts from '@/components/HomepageProducts';
 import PropertySearch from '@/components/PropertySearch';
 import MainNavigation from '@/components/MainNavigation';
 import BookPromotion from '@/components/BookPromotion';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import { calculateDistance, isInCityGroup, type Coordinates } from '@/lib/distance';
 import { addDays, subDays, differenceInCalendarDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -388,6 +389,13 @@ const HomeClient = memo(({ initialProperties }: HomeClientProps) => {
       <BookPromotion />
 
       <MemoizedHomepageProducts />
+
+      {/* Newsletter signup */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <NewsletterSignup />
+        </div>
+      </section>
 
       <footer className="py-16 border-t border-border bg-card">
         <div className="container mx-auto px-4">

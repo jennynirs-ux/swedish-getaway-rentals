@@ -36,6 +36,7 @@ interface PropertyListingRow {
   created_at: string;
   special_amenities?: string[] | null;
   featured_amenities?: Record<string, unknown>[] | null;
+  requires_host_approval?: boolean;
 }
 
 interface PropertySearchRow extends PropertyListingRow {
@@ -70,7 +71,8 @@ export async function getProperties(): Promise<Property[]> {
       .select(`
         id, title, location, price_per_night, currency,
         review_rating, review_count, hero_image_url, amenities,
-        property_type, max_guests, latitude, longitude, created_at
+        property_type, max_guests, latitude, longitude, created_at,
+        requires_host_approval
       `)
       .eq('active', true)
       .order('created_at', { ascending: false });
