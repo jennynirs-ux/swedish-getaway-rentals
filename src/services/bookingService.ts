@@ -16,6 +16,7 @@ export interface CreateBookingData {
 }
 
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+export type BookingSource = 'airbnb' | 'booking_com' | 'direct' | 'blocked';
 
 export interface BookingRecord {
   id: string;
@@ -30,6 +31,7 @@ export interface BookingRecord {
   total_amount: number;
   currency: string;
   status: BookingStatus;
+  source: BookingSource;
   created_at: string;
   updated_at: string;
   user_id?: string;
