@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import ProductClient from './ProductClient';
-import { createServerClient } from '@/app/lib/supabase-server';
+import { createServerClient } from '../../lib/supabase-server';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
