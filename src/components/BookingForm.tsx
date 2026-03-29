@@ -37,7 +37,7 @@ const maxAdvanceBookingDays = 365;
 
 const BookingForm: React.FC<BookingFormProps> = ({
   propertyId,
-  propertyTitle,
+  propertyTitle: _propertyTitle,
   pricePerNight,
   currency,
   maxGuests,

@@ -55,7 +55,7 @@ interface GuidebookBlock {
   mapPins?: Array<{ lat: number; lng: number; label: string; address?: string }>;
 }
 
-interface GuidebookSection {
+interface _GuidebookSection {
   id: string;
   icon: ElementType;
   title: string;
