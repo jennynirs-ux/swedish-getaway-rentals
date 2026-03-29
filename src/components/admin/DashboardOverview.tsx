@@ -17,6 +17,12 @@ interface DashboardStats {
   total_orders: number;
   monthly_orders: number;
   shop_revenue: number;
+  todays_checkins: number;
+  todays_checkouts: number;
+  pending_cleaning: number;
+  sync_failures: number;
+  double_bookings: number;
+  monthly_expenses: number;
 }
 
 interface Property {
@@ -132,16 +138,12 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           .limit(5)
       ]);
 
-      // Check for errors
-      if (statsResult.error) throw statsResult.error;
-      if (productsCountResult.error) throw productsCountResult.error;
-      if (ordersCountResult.error) throw ordersCountResult.error;
-      if (propertiesResult.error) throw propertiesResult.error;
-      if (productsResult.error) throw productsResult.error;
-      if (bookingsResult.error) throw bookingsResult.error;
-      if (ordersResult.error) throw ordersResult.error;
+      // Log errors but don't crash the dashboard
+      if (statsResult.error) console.error("Stats RPC error:", statsResult.error);
+      if (productsCountResult.error) console.error("Products count error:", productsCountResult.error);
+      if (ordersCountResult.error) console.error("Orders count error:", ordersCountResult.error);
 
-      const basicStats = statsResult.data;
+      const basicStats = statsResult.data || {};
       const totalProductsCount = productsCountResult.count;
       const totalOrdersCount = ordersCountResult.count;
       const properties = propertiesResult.data;
@@ -155,17 +157,23 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
       const monthlyOrders = orders?.filter(order => new Date(order.created_at) >= currentMonth) || [];
       const shopRevenue = monthlyOrders.reduce((sum, order) => sum + order.total_amount, 0);
   
-      const statsData = basicStats as any;
+      const statsData = basicStats as Record<string, unknown>;
       setStats({
-        active_rentals: statsData?.active_rentals || 0,
-        total_bookings: statsData?.total_bookings || 0,
-        upcoming_bookings: statsData?.upcoming_bookings || 0,
-        unread_messages: statsData?.unread_messages || 0,
-        monthly_revenue: statsData?.monthly_revenue || 0,
-        total_products: totalProductsCount ?? 0, // 👈 använder null-coalescing
-        total_orders: totalOrdersCount ?? 0,     // 👈 använder null-coalescing
+        active_rentals: Number(statsData?.active_rentals) || 0,
+        total_bookings: Number(statsData?.total_bookings) || 0,
+        upcoming_bookings: Number(statsData?.upcoming_bookings) || 0,
+        unread_messages: Number(statsData?.unread_messages) || 0,
+        monthly_revenue: Number(statsData?.monthly_revenue) || 0,
+        total_products: totalProductsCount ?? 0,
+        total_orders: totalOrdersCount ?? 0,
         monthly_orders: monthlyOrders.length,
         shop_revenue: shopRevenue,
+        todays_checkins: Number(statsData?.todays_checkins) || 0,
+        todays_checkouts: Number(statsData?.todays_checkouts) || 0,
+        pending_cleaning: Number(statsData?.pending_cleaning) || 0,
+        sync_failures: Number(statsData?.sync_failures) || 0,
+        double_bookings: Number(statsData?.double_bookings) || 0,
+        monthly_expenses: Number(statsData?.monthly_expenses) || 0,
       });
   
       setRecentProperties(properties || []);

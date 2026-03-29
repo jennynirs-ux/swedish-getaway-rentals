@@ -24,6 +24,7 @@ import { HostAnalytics } from "./HostAnalytics";
 import { HostTaxReport } from "./HostTaxReport";
 
 // Lazy-load v2 components
+const TodayWidget = lazy(() => import("@/components/admin/TodayWidget"));
 const ExpenseManagement = lazy(() => import("@/components/admin/ExpenseManagement"));
 const CleaningManagement = lazy(() => import("@/components/admin/CleaningManagement"));
 const RevenueByChannel = lazy(() => import("@/components/admin/RevenueByChannel"));
@@ -172,28 +173,33 @@ const HostDashboard = () => {
       // Default to 0.9 (10% commission) if not found
       const commissionMultiplier = settingsData?.setting_value?.rate ?? 0.9;
 
-      // Use secure view for masked contact data
+      // Fetch bookings with source field for channel tracking
       const { data: bookingsData, error: bookingsError } = await supabase
-        .from("bookings_secure")
+        .from("bookings")
         .select(
           `
-          *,
+          id, guest_name, guest_email, check_in_date, check_out_date,
+          total_amount, status, source, created_at,
           properties!inner(title, host_id, currency, hero_image_url)
         `
         )
-        .eq("properties.host_id", profile.id);
+        .eq("properties.host_id", profile.id)
+        .order("created_at", { ascending: false });
 
       if (bookingsError) throw bookingsError;
 
-      const totalBookings = bookingsData.length;
-      const pendingBookings = bookingsData.filter((b) => b.status === "pending").length;
+      const totalBookings = bookingsData?.length || 0;
+      const pendingBookings = (bookingsData || []).filter(
+        (b) => b.status === "pending" || b.status === "pending_approval"
+      ).length;
 
       const currentMonth = new Date().toISOString().slice(0, 7);
-      const monthlyBookings = bookingsData.filter(
+      const monthlyBookings = (bookingsData || []).filter(
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
+      // Revenue in öre → divide by 100, apply commission
       const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + booking.total_amount * commissionMultiplier;
+        return sum + (booking.total_amount / 100) * commissionMultiplier;
       }, 0);
 
       setStats({
@@ -347,6 +353,17 @@ const HostDashboard = () => {
 
       <TooltipProvider>
         <div className="container mx-auto px-4 py-8">
+          {/* Today Widget */}
+          <div className="mb-6">
+            <Suspense fallback={<TabFallback />}>
+              <TodayWidget
+                checkIns={bookings.filter(b => b.check_in_date === new Date().toISOString().split('T')[0] && b.status === 'confirmed').map(b => ({ id: b.id, guest_name: b.guest_name, property_title: b.properties?.title || '' }))}
+                checkOuts={bookings.filter(b => b.check_out_date === new Date().toISOString().split('T')[0] && b.status === 'confirmed').map(b => ({ id: b.id, guest_name: b.guest_name, property_title: b.properties?.title || '' }))}
+                cleaningTasks={[]}
+              />
+            </Suspense>
+          </div>
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
@@ -384,7 +401,7 @@ const HostDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {Math.round(stats.monthly_revenue).toLocaleString()} SEK
+                  {Math.round(stats.monthly_revenue).toLocaleString("sv-SE")} kr
                 </div>
               </CardContent>
             </Card>

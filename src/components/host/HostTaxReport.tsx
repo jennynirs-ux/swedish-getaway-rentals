@@ -14,6 +14,8 @@ interface TaxReportProperty {
   total_nights: number;
   avg_nightly_rate: number;
   platform_fees: number;
+  total_expenses: number;
+  expenses_by_category: Record<string, number>;
   net_income: number;
 }
 
@@ -27,6 +29,7 @@ interface TaxReport {
   summary: {
     total_gross_revenue: number;
     total_platform_fees: number;
+    total_expenses: number;
     total_net_income: number;
     total_bookings: number;
     total_nights: number;
@@ -139,7 +142,7 @@ export const HostTaxReport = () => {
       {report && (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <p className="text-xs text-muted-foreground">Gross Revenue</p>
@@ -150,6 +153,12 @@ export const HostTaxReport = () => {
               <CardContent className="pt-6">
                 <p className="text-xs text-muted-foreground">Platform Fees</p>
                 <p className="text-xl font-bold text-destructive">-{formatSEK(report.summary.total_platform_fees)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-xs text-muted-foreground">Expenses</p>
+                <p className="text-xl font-bold text-destructive">-{formatSEK(report.summary.total_expenses || 0)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -195,6 +204,7 @@ export const HostTaxReport = () => {
                       <th className="text-right py-2 px-2">Nights</th>
                       <th className="text-right py-2 px-2">Gross</th>
                       <th className="text-right py-2 px-2">Fees</th>
+                      <th className="text-right py-2 px-2">Expenses</th>
                       <th className="text-right py-2 pl-2">Net</th>
                     </tr>
                   </thead>
@@ -216,6 +226,7 @@ export const HostTaxReport = () => {
                         <td className="text-right py-2 px-2">{p.total_nights}</td>
                         <td className="text-right py-2 px-2">{formatSEK(p.total_revenue)}</td>
                         <td className="text-right py-2 px-2 text-destructive">-{formatSEK(p.platform_fees)}</td>
+                        <td className="text-right py-2 px-2 text-destructive">-{formatSEK(p.total_expenses || 0)}</td>
                         <td className="text-right py-2 pl-2 font-medium">{formatSEK(p.net_income)}</td>
                       </tr>
                     ))}
@@ -227,6 +238,7 @@ export const HostTaxReport = () => {
                       <td className="text-right py-2 px-2">{report.summary.total_nights}</td>
                       <td className="text-right py-2 px-2">{formatSEK(report.summary.total_gross_revenue)}</td>
                       <td className="text-right py-2 px-2 text-destructive">-{formatSEK(report.summary.total_platform_fees)}</td>
+                      <td className="text-right py-2 px-2 text-destructive">-{formatSEK(report.summary.total_expenses || 0)}</td>
                       <td className="text-right py-2 pl-2">{formatSEK(report.summary.total_net_income)}</td>
                     </tr>
                   </tfoot>
