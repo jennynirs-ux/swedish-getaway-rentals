@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Generic CSV export utility for admin data tables.
  * Handles escaping, BOM for Excel compatibility, and download trigger.

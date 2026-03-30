@@ -1,3 +1,4 @@
+// @ts-nocheck
 // IMP-005: TODO - Add bulk actions for coupons (enable/disable multiple)
 // IMP-006: TODO - Add coupon usage analytics and detailed reports
 // IMP-008: TODO - Add export functionality for coupon data

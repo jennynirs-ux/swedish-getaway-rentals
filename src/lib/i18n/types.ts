@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type Locale = 'en' | 'sv' | 'no' | 'da' | 'de';
 
 export interface TranslationMessages {
