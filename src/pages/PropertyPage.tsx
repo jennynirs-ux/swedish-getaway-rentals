@@ -328,7 +328,7 @@ const PropertyPage = memo(() => {
           longitude={property.longitude}
           propertyTitle={property.title}
           location={property.location}
-          transportDistances={property.transport_distances as any}
+          transportDistances={(property as any).transport_distances as any}
         />
       </Suspense>
 
