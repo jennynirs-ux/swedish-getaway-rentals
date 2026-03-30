@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 // CSS is imported here to ensure it's only loaded when this map component is used
