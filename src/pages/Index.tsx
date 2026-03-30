@@ -80,7 +80,7 @@ const HomePage = memo(() => {
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
   const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Debounced filter handler - only applies debounce to location changes */
   const handleFiltersChange = useCallback((newFilters: PropertyFilters) => {
