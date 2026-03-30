@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isSameDay, addDays, eachDayOfInterval } from 'date-fns';

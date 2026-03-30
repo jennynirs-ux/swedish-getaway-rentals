@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 // react-leaflet imports moved to lazy-loaded inner component
-import type { LatLngExpression } from 'leaflet';
+// leaflet types used by lazy-loaded inner component
 import { getDrivingRoute, getClosestMajorCity, type Coordinates, type RouteInfo } from '@/lib/distance';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 

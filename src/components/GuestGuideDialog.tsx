@@ -200,10 +200,10 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
                       </div>
                     }>
                       <LeafletPropertyMapBasic
-                        position={[block.mapPins[0].lat, block.mapPins[0].lng] as [number, number]}
-                        propertyTitle={block.mapPins[0].label}
-                        googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${block.mapPins[0].lat},${block.mapPins[0].lng}`}
-                        routePositions={block.mapPins.slice(1).map(pin => [pin.lat, pin.lng] as [number, number])}
+                        position={[block.mapPins![0]!.lat, block.mapPins![0]!.lng] as [number, number]}
+                        propertyTitle={block.mapPins![0]!.label}
+                        googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${block.mapPins![0]!.lat},${block.mapPins![0]!.lng}`}
+                        routePositions={block.mapPins!.slice(1).map(pin => [pin.lat, pin.lng] as [number, number])}
                       />
                     </Suspense>
                   </div>

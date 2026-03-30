@@ -52,17 +52,19 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
 
       // Parse datetime-local value and convert to UTC timestamp
       // datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-      const [datePart, timePart] = formData.valid_until.split('T');
-      const [year, month, day] = datePart.split('-');
-      const [hour, minute] = timePart.split(':');
+      const parts = formData.valid_until.split('T');
+      const datePart = parts[0] || '';
+      const timePart = parts[1] || '00:00';
+      const dateParts = datePart.split('-');
+      const timeParts = timePart.split(':');
       
       // Create date in local timezone
       const localDate = new Date(
-        parseInt(year),
-        parseInt(month) - 1, // month is 0-indexed
-        parseInt(day),
-        parseInt(hour),
-        parseInt(minute),
+        parseInt(dateParts[0] || '0'),
+        parseInt(dateParts[1] || '1') - 1,
+        parseInt(dateParts[2] || '1'),
+        parseInt(timeParts[0] || '0'),
+        parseInt(timeParts[1] || '0'),
         0
       );
       const validUntilUTC = localDate.toISOString();

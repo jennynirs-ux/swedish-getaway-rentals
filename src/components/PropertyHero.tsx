@@ -1,6 +1,6 @@
 import { MapPin, Users, Calendar, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LazyImage from "@/components/LazyImage";
+// LazyImage available if needed
 import { Property } from "@/hooks/useProperties";
 import { memo } from 'react';
 

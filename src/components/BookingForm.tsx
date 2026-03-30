@@ -79,11 +79,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   });
 
-  // BUG-036: Clear applied coupon when dates change (price may differ)
-  useEffect(() => {
-    setAppliedCoupon(undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when dates change, not when coupon changes
-  }, [checkIn, checkOut]);
+  // BUG-036: Clear applied coupon when dates change - moved after state declarations
 
   // Input validation schema with sanitization via transforms
   const bookingSchema = z.object({
