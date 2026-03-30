@@ -200,25 +200,28 @@ const PropertyPage = memo(() => {
   const property = useMemo(() => {
     if (!lightProperty) return null;
 
+    const light = (lightProperty as any)?.data ?? lightProperty;
+    const heavy = (heavyProperty as any)?.data ?? heavyProperty;
+
     return {
-      ...lightProperty,
-      ...heavyProperty,
-      amenities: Array.isArray(lightProperty?.amenities) ? lightProperty.amenities : [],
-      gallery_images: Array.isArray(heavyProperty?.gallery_images) ? heavyProperty.gallery_images : [],
-      video_urls: Array.isArray(heavyProperty?.video_urls) ? heavyProperty.video_urls : [],
-      gallery_metadata: Array.isArray(heavyProperty?.gallery_metadata) ? heavyProperty.gallery_metadata : [],
-      video_metadata: Array.isArray(heavyProperty?.video_metadata) ? heavyProperty.video_metadata : [],
-      amenities_data: Array.isArray(heavyProperty?.amenities_data) ? heavyProperty.amenities_data : [],
-      guidebook_sections: Array.isArray(heavyProperty?.guidebook_sections) ? heavyProperty.guidebook_sections : [],
-      special_highlights: Array.isArray(heavyProperty?.special_highlights) ? heavyProperty.special_highlights : [],
-      featured_amenities: Array.isArray(heavyProperty?.featured_amenities) ? heavyProperty.featured_amenities : [],
-      footer_quick_links: Array.isArray(heavyProperty?.footer_quick_links)
-        ? heavyProperty.footer_quick_links
+      ...light,
+      ...heavy,
+      amenities: Array.isArray(light?.amenities) ? light.amenities : [],
+      gallery_images: Array.isArray(heavy?.gallery_images) ? heavy.gallery_images : [],
+      video_urls: Array.isArray(heavy?.video_urls) ? heavy.video_urls : [],
+      gallery_metadata: Array.isArray(heavy?.gallery_metadata) ? heavy.gallery_metadata : [],
+      video_metadata: Array.isArray(heavy?.video_metadata) ? heavy.video_metadata : [],
+      amenities_data: Array.isArray(heavy?.amenities_data) ? heavy.amenities_data : [],
+      guidebook_sections: Array.isArray(heavy?.guidebook_sections) ? heavy.guidebook_sections : [],
+      special_highlights: Array.isArray(heavy?.special_highlights) ? heavy.special_highlights : [],
+      featured_amenities: Array.isArray(heavy?.featured_amenities) ? heavy.featured_amenities : [],
+      footer_quick_links: Array.isArray(heavy?.footer_quick_links)
+        ? heavy.footer_quick_links
         : ["Photo Gallery", "Amenities", "Book Now", "Contact"],
-      pricing_table: heavyProperty?.pricing_table ?? null,
-      latitude: lightProperty.latitude ?? null,
-      longitude: lightProperty.longitude ?? null,
-      city: lightProperty.city ?? null,
+      pricing_table: heavy?.pricing_table ?? null,
+      latitude: light?.latitude ?? null,
+      longitude: light?.longitude ?? null,
+      city: light?.city ?? null,
     } as Property;
   }, [lightProperty, heavyProperty]);
 
