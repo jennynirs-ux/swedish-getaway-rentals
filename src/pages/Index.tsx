@@ -344,7 +344,7 @@ const HomePage = memo(() => {
       <main id="main-content" className="pb-12">
         <div className="container mx-auto px-4 pt-16">
           {/* IMP-010: Mobile refresh button */}
-          <MobileRefreshButton onRefresh={refetch} isLoading={loading} />
+          <MobileRefreshButton onRefresh={() => { refetch(); }} isLoading={loading} />
 
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">

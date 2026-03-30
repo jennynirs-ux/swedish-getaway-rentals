@@ -46,7 +46,7 @@ const NearbyPropertiesWrapper = memo(({ currentPropertyId, currentCoordinates }:
     return { data: data || [], error: null };
   }, []);
 
-  const { data: allProperties = [] } = useQuery({
+  const { data: allProperties = [] as any[] } = useQuery({
     queryKey: ["all-properties-nearby"],
     queryFn: fetchNearbyPropertiesFn,
     gcTime: CACHE_GC_TIME,

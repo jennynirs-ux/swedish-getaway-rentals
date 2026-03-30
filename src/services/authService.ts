@@ -81,9 +81,9 @@ export async function getSession(): Promise<Session | null> {
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
