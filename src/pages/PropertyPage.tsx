@@ -168,8 +168,7 @@ const PropertyPage = memo(() => {
         footer_quick_links,
         gallery_metadata,
         video_metadata,
-        transport_distances,
-        registration_number
+        amenities_descriptions
       `)
       .eq("id", resolvedPropertyId)
       .eq("active", true)
