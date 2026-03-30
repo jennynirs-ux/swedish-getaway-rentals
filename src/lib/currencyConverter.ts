@@ -1,11 +1,10 @@
 /**
- * BL-004: Multi-currency display-only converter.
+ * Multi-currency display-only converter.
  *
- * Detects the user's locale and shows an approximate converted price
- * alongside the primary SEK price. This is display-only — Stripe
- * always charges in the property's base currency.
+ * Fetches live rates from frankfurter.app (free, no API key),
+ * caches in localStorage for 24 hours, falls back to hardcoded rates.
  *
- * Rates are approximate and cached in localStorage for 24 hours.
+ * This is display-only — Stripe charges in the property's base currency.
  */
 
 export interface ConvertedPrice {
@@ -15,7 +14,7 @@ export interface ConvertedPrice {
   formatted: string;
 }
 
-// Fallback rates (updated periodically, last: Mar 2026)
+// Fallback rates if API is unreachable (last updated: Mar 2026)
 const FALLBACK_RATES: Record<string, number> = {
   SEK: 1,
   EUR: 0.087,
@@ -37,25 +36,61 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 const LOCALE_CURRENCY_MAP: Record<string, string> = {
   "en-US": "USD",
   "en-GB": "GBP",
-  "de": "EUR",
-  "fr": "EUR",
-  "es": "EUR",
-  "it": "EUR",
-  "nl": "EUR",
-  "de-DE": "EUR",
-  "de-AT": "EUR",
-  "fr-FR": "EUR",
-  "es-ES": "EUR",
-  "it-IT": "EUR",
-  "nl-NL": "EUR",
-  "nb": "NOK",
-  "nb-NO": "NOK",
-  "nn-NO": "NOK",
-  "da": "DKK",
-  "da-DK": "DKK",
-  "sv": "SEK",
-  "sv-SE": "SEK",
+  "de": "EUR", "de-DE": "EUR", "de-AT": "EUR",
+  "fr": "EUR", "fr-FR": "EUR",
+  "es": "EUR", "es-ES": "EUR",
+  "it": "EUR", "it-IT": "EUR",
+  "nl": "EUR", "nl-NL": "EUR",
+  "fi": "EUR", "fi-FI": "EUR",
+  "nb": "NOK", "nb-NO": "NOK", "nn-NO": "NOK",
+  "da": "DKK", "da-DK": "DKK",
+  "sv": "SEK", "sv-SE": "SEK",
 };
+
+const CACHE_KEY = "ng_exchange_rates";
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * Fetch live exchange rates from Frankfurter API (free, no key needed).
+ * Caches in localStorage for 24 hours.
+ */
+async function getLiveRates(): Promise<Record<string, number>> {
+  if (typeof window === "undefined") return FALLBACK_RATES;
+
+  // Check cache
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { rates, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_TTL && rates) {
+        return rates;
+      }
+    }
+  } catch {
+    // Corrupted cache — ignore
+  }
+
+  // Fetch live rates
+  try {
+    const res = await fetch("https://api.frankfurter.app/latest?from=SEK&to=EUR,USD,GBP,NOK,DKK");
+    if (res.ok) {
+      const data = await res.json();
+      const rates: Record<string, number> = { SEK: 1, ...data.rates };
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ rates, timestamp: Date.now() }));
+      return rates;
+    }
+  } catch {
+    // API unreachable — use fallback
+  }
+
+  return FALLBACK_RATES;
+}
+
+// Pre-fetch rates on module load (non-blocking)
+let _cachedRates: Record<string, number> = FALLBACK_RATES;
+if (typeof window !== "undefined") {
+  getLiveRates().then((rates) => { _cachedRates = rates; });
+}
 
 /**
  * Detect user's likely currency from browser locale.
@@ -64,36 +99,31 @@ export function detectUserCurrency(): string {
   if (typeof navigator === "undefined") return "SEK";
 
   const locale = navigator.language || "sv-SE";
-
-  // Try exact match first, then language-only
   if (LOCALE_CURRENCY_MAP[locale]) return LOCALE_CURRENCY_MAP[locale];
   const lang = locale.split("-")[0];
-  if (LOCALE_CURRENCY_MAP[lang]) return LOCALE_CURRENCY_MAP[lang];
+  if (lang && LOCALE_CURRENCY_MAP[lang]) return LOCALE_CURRENCY_MAP[lang];
 
   // Default to EUR for European locales, USD for others
   if (locale.match(/^(de|fr|es|it|nl|pt|fi|el|pl|cs|sk|hu|ro|bg|hr|sl|lt|lv|et)/)) return "EUR";
-
   return "USD";
 }
 
 /**
- * Convert an amount from the base currency to the user's detected currency.
- * Returns null if the user's currency matches the base currency.
+ * Convert amount from base currency to user's detected currency.
+ * Returns null if same currency.
  *
  * @param amount - Amount in smallest unit (öre/cents)
- * @param baseCurrency - The property's base currency (usually "SEK")
+ * @param baseCurrency - Property's base currency (usually "SEK")
  */
 export function convertForDisplay(
   amount: number,
   baseCurrency: string = "SEK"
 ): ConvertedPrice | null {
   const userCurrency = detectUserCurrency();
-
-  // Don't show conversion if same currency
   if (userCurrency === baseCurrency.toUpperCase()) return null;
 
-  const baseRate = FALLBACK_RATES[baseCurrency.toUpperCase()] || 1;
-  const targetRate = FALLBACK_RATES[userCurrency];
+  const baseRate = _cachedRates[baseCurrency.toUpperCase()] || 1;
+  const targetRate = _cachedRates[userCurrency];
   if (!targetRate) return null;
 
   // Convert: amount in base → SEK → target
@@ -106,10 +136,5 @@ export function convertForDisplay(
     maximumFractionDigits: 0,
   })}`;
 
-  return {
-    amount: converted,
-    currency: userCurrency,
-    symbol,
-    formatted,
-  };
+  return { amount: converted, currency: userCurrency, symbol, formatted };
 }

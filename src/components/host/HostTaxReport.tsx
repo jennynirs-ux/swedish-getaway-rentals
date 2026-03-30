@@ -190,10 +190,19 @@ export const HostTaxReport = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Property Breakdown — {report.tax_year}</CardTitle>
-              <Button variant="outline" size="sm" onClick={downloadCSV}>
-                <Download className="h-4 w-4 mr-1" />
-                Export CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={downloadCSV}>
+                  <Download className="h-4 w-4 mr-1" />
+                  CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={async () => {
+                  const { generateTaxReportPdf } = await import('@/lib/generateFinancialPdf');
+                  await generateTaxReportPdf(report);
+                }}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
