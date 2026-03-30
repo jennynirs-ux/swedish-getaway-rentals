@@ -55,13 +55,7 @@ interface GuidebookBlock {
   mapPins?: Array<{ lat: number; lng: number; label: string; address?: string }>;
 }
 
-interface _GuidebookSection {
-  id: string;
-  icon: ElementType;
-  title: string;
-  blocks?: GuidebookBlock[];
-  image_url?: string;
-}
+// GuidebookSection type is used internally via allSections
 
 interface GuideSection {
   id: string;
