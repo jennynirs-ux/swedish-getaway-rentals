@@ -7,7 +7,7 @@ import { MessageCircle } from "lucide-react";
 import { useState, lazy, Suspense } from "react";
 
 // Lazy load chat component to improve initial page load
-const BookingChat = lazy(() => import("./BookingChat").then(module => ({ default: module.BookingChat })));
+const BookingChatLazy = lazy(() => import("./BookingChat").then(module => ({ default: module.BookingChat })));
 
 interface PropertyBookingProps {
   property: Property;

@@ -55,13 +55,7 @@ interface GuidebookBlock {
   mapPins?: Array<{ lat: number; lng: number; label: string; address?: string }>;
 }
 
-interface _GuidebookSection {
-  id: string;
-  icon: ElementType;
-  title: string;
-  blocks?: GuidebookBlock[];
-  image_url?: string;
-}
+// GuidebookSection type is used internally via allSections
 
 interface GuideSection {
   id: string;
@@ -134,7 +128,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     }
   }, [isOpen, initialSectionId, allSections]);
 
-  const getIndexById = (id: string) => allSections.findIndex((s) => s.id === id);
+  const _getIndexById = (id: string) => allSections.findIndex((s) => s.id === id);
 
   const shareGuide = async () => {
     const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
@@ -206,10 +200,10 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
                       </div>
                     }>
                       <LeafletPropertyMapBasic
-                        position={[block.mapPins[0].lat, block.mapPins[0].lng] as [number, number]}
-                        propertyTitle={block.mapPins[0].label}
-                        googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${block.mapPins[0].lat},${block.mapPins[0].lng}`}
-                        routePositions={block.mapPins.slice(1).map(pin => [pin.lat, pin.lng] as [number, number])}
+                        position={[block.mapPins![0]!.lat, block.mapPins![0]!.lng] as [number, number]}
+                        propertyTitle={block.mapPins![0]!.label}
+                        googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${block.mapPins![0]!.lat},${block.mapPins![0]!.lng}`}
+                        routePositions={block.mapPins!.slice(1).map(pin => [pin.lat, pin.lng] as [number, number])}
                       />
                     </Suspense>
                   </div>

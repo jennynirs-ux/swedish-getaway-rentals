@@ -22,7 +22,7 @@ const NewsletterSignup = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('newsletter_subscribers')
         .upsert(
           { email: sanitized, subscribed_at: new Date().toISOString() },

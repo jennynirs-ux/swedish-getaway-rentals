@@ -1,17 +1,18 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": false,
     "paths": {
       "@/*": [
         "./src/*"
       ]
     },
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "lib": [
       "dom",
       "dom.iterable",

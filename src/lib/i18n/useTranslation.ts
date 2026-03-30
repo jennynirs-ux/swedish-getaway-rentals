@@ -13,8 +13,9 @@ export function useTranslation(initialLocale: Locale = 'en') {
    * Translate a key using the current locale
    * Uses dot notation (e.g., 'common.search')
    */
-  const t = useCallback((path: string): string => {
-    return translate(locale, path);
+  const t = useCallback((path: string, fallback?: string): string => {
+    const result = translate(locale, path);
+    return result === path && fallback ? fallback : result;
   }, [locale]);
 
   /**

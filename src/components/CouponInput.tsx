@@ -46,16 +46,16 @@ const CouponInput = ({
       // Server-side validation in create-booking-payment-connect performs the same checks
       const { data, error } = await supabase.rpc('validate_coupon', {
         coupon_code: couponCode.toUpperCase(),
-        user_id_param: user?.id || null,
-        property_id_param: propertyId || null,
+        user_id_param: user?.id ?? undefined,
+        property_id_param: propertyId ?? undefined,
         booking_amount: totalAmount
       });
 
       if (error) throw error;
 
-      const result = data[0];
-      if (!result.valid) {
-        toast.error(result.message);
+      const result = (data as any[])?.[0];
+      if (!result?.valid) {
+        toast.error(result?.message || 'Invalid coupon');
         return;
       }
 

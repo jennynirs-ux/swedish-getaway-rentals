@@ -56,7 +56,7 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCoupons(data || []);
+      setCoupons((data || []) as Coupon[]);
     } catch (error) {
       console.error('Error fetching coupons:', error);
       toast.error('Failed to load coupons');

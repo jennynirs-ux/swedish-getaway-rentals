@@ -185,6 +185,7 @@ export type Database = {
           number_of_guests: number
           pre_checkin_reminder_sent_at: string | null
           property_id: string
+          source: string
           special_requests: string | null
           status: string
           stripe_payment_intent_id: string | null
@@ -206,6 +207,7 @@ export type Database = {
           number_of_guests: number
           pre_checkin_reminder_sent_at?: string | null
           property_id: string
+          source?: string
           special_requests?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
@@ -227,6 +229,7 @@ export type Database = {
           number_of_guests?: number
           pre_checkin_reminder_sent_at?: string | null
           property_id?: string
+          source?: string
           special_requests?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
@@ -301,6 +304,74 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaning_tasks: {
+        Row: {
+          assigned_to: string | null
+          booking_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          property_id: string
+          scheduled_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id: string
+          scheduled_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          booking_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_id?: string
+          scheduled_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaning_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaning_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaning_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -411,6 +482,63 @@ export type Database = {
           valid_until?: string
         }
         Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          expense_date: string
+          id: string
+          property_id: string
+          receipt_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          property_id: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          property_id?: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guest_messages: {
         Row: {
@@ -1061,8 +1189,6 @@ export type Database = {
           pricing_table: Json | null
           property_timezone: string
           property_type: string | null
-          registration_number: string | null
-          requires_host_approval: boolean
           review_count: number | null
           review_rating: number | null
           special_amenities: string[] | null
@@ -1071,7 +1197,6 @@ export type Database = {
           tagline_line1: string | null
           tagline_line2: string | null
           title: string
-          transport_distances: Json | null
           updated_at: string
           video_metadata: Json | null
           video_urls: string[] | null
@@ -1125,8 +1250,6 @@ export type Database = {
           pricing_table?: Json | null
           property_timezone?: string
           property_type?: string | null
-          registration_number?: string | null
-          requires_host_approval?: boolean
           review_count?: number | null
           review_rating?: number | null
           special_amenities?: string[] | null
@@ -1135,7 +1258,6 @@ export type Database = {
           tagline_line1?: string | null
           tagline_line2?: string | null
           title: string
-          transport_distances?: Json | null
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
@@ -1189,8 +1311,6 @@ export type Database = {
           pricing_table?: Json | null
           property_timezone?: string
           property_type?: string | null
-          registration_number?: string | null
-          requires_host_approval?: boolean
           review_count?: number | null
           review_rating?: number | null
           special_amenities?: string[] | null
@@ -1199,7 +1319,6 @@ export type Database = {
           tagline_line1?: string | null
           tagline_line2?: string | null
           title?: string
-          transport_distances?: Json | null
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
@@ -1294,14 +1413,38 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address: string
+          request_count?: number
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           booking_id: string
           comment: string | null
           created_at: string | null
-          host_response: string | null
-          host_response_at: string | null
-          host_response_by: string | null
           id: string
           is_published: boolean | null
           moderated_at: string | null
@@ -1317,9 +1460,6 @@ export type Database = {
           booking_id: string
           comment?: string | null
           created_at?: string | null
-          host_response?: string | null
-          host_response_at?: string | null
-          host_response_by?: string | null
           id?: string
           is_published?: boolean | null
           moderated_at?: string | null
@@ -1335,9 +1475,6 @@ export type Database = {
           booking_id?: string
           comment?: string | null
           created_at?: string | null
-          host_response?: string | null
-          host_response_at?: string | null
-          host_response_by?: string | null
           id?: string
           is_published?: boolean | null
           moderated_at?: string | null
@@ -1976,6 +2113,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
+      detect_double_bookings: {
+        Args: never
+        Returns: {
+          booking_a_checkin: string
+          booking_a_checkout: string
+          booking_a_guest: string
+          booking_a_id: string
+          booking_a_source: string
+          booking_b_checkin: string
+          booking_b_checkout: string
+          booking_b_guest: string
+          booking_b_id: string
+          booking_b_source: string
+          overlap_days: number
+          property_id: string
+          property_name: string
+        }[]
+      }
       get_booking_statistics: {
         Args: { property_id_filter?: string }
         Returns: {
@@ -2015,7 +2171,16 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      get_dashboard_stats: { Args: never; Returns: Json }
+      get_dashboard_stats:
+        | { Args: never; Returns: Json }
+        | {
+            Args: {
+              p_end_date?: string
+              p_property_id?: string
+              p_start_date?: string
+            }
+            Returns: Json
+          }
       get_host_bookings_masked: {
         Args: { host_user_id: string }
         Returns: {

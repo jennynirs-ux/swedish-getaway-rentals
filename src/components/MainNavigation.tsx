@@ -10,7 +10,7 @@ interface MainNavigationProps {
   currentPage?: string;
 }
 
-const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
+const MainNavigation = ({ showBackButton: _showBackButton = false }: MainNavigationProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);

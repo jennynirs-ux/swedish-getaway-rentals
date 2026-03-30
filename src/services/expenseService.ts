@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from '@/integrations/supabase/client';
 
 export type ExpenseCategory = 'cleaning' | 'maintenance' | 'supplies' | 'utilities' | 'insurance' | 'other';

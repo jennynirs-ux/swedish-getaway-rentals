@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isSameDay, addDays, eachDayOfInterval } from 'date-fns';
@@ -8,9 +8,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface AvailabilityDate {
   date: string;
   available: boolean;
-  reason: string;
+  reason: string | null;
   seasonal_price: number | null;
-  minimum_nights: number;
+  minimum_nights: number | null;
 }
 
 interface PropertyCalendarOptimizedProps {

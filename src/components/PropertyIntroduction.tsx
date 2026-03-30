@@ -3,7 +3,7 @@ interface PropertyIntroductionProps {
   introductionText: string;
 }
 
-const PropertyIntroduction = ({ title, introductionText }: PropertyIntroductionProps) => {
+const PropertyIntroduction = ({ title: _title, introductionText }: PropertyIntroductionProps) => {
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
