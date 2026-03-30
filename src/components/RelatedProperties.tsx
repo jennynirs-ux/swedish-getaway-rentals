@@ -69,7 +69,7 @@ export default function RelatedProperties({ currentPropertyId, location, maxGues
               amenities: Array.isArray(p.amenities) ? p.amenities : [],
               featured_amenities: Array.isArray(p.featured_amenities) ? p.featured_amenities : [],
               special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
-              amenities_data: Array.isArray(p.amenities_data) ? p.amenities_data : [],
+              amenities_data: Array.isArray(p.amenities_data) ? p.amenities_data as any[] : [],
             }}
           />
         ))}
