@@ -137,6 +137,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkIn, checkOut]);
 
+  const calculateTotalAmount = () => {
     if (!checkIn || !checkOut) return null;
     // pricePerNight is in SEK, convert to cents for calculation
     // BUG-015 FIXED: seasonal prices from calendar are now passed through
