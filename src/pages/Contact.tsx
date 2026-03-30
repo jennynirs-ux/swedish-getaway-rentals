@@ -22,9 +22,9 @@ const Contact = () => {
   const [content, setContent] = useState<ContactContent>({
     title: "Contact Nordic Getaways",
     description: "Get in touch with us for bookings, questions, or to become a host.",
-    email: "info@nordicgetaways.com",
-    phone: "+46 123 456 789",
-    address: "Stockholm, Sweden",
+    email: "support@mojjo.se",
+    phone: "+46 73 123 45 67",
+    address: "Lerum, Sweden",
     hours: "Monday - Friday: 9:00 AM - 6:00 PM"
   });
   

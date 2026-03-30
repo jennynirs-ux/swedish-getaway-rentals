@@ -337,6 +337,19 @@ const HomePage = memo(() => {
             onFiltersChange={handleFiltersChange}
             availableAmenities={availableAmenities}
           />
+
+          <div className="mt-6">
+            <a
+              href="#main-content"
+              className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('main-content')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Or browse all properties ↓
+            </a>
+          </div>
         </div>
       </header>
 
