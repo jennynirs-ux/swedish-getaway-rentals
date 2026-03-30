@@ -32,6 +32,7 @@ export default tseslint.config(
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-empty-object-type": "warn",
       "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
       "no-useless-escape": "warn",
       "prefer-const": "warn",
       "no-case-declarations": "warn",
