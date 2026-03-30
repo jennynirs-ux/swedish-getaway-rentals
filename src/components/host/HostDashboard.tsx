@@ -337,7 +337,7 @@ const HostDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-foreground mb-2">Host Dashboard</h1>
-              <p className="text-muted-foreground text-lg">Manage your properties and bookings</p>
+              <p className="text-muted-foreground text-lg">Manage properties, bookings, finances, and cleaning</p>
             </div>
             <Button 
               variant="default" 
