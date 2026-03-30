@@ -114,7 +114,8 @@ const HomePage = memo(() => {
   /** Bygg lista med amenities */
   const availableAmenities = useMemo(() => {
     const all = new Set<string>();
-    (properties || []).forEach((p: any) => {
+    const propList = Array.isArray(properties) ? properties : ((properties as any)?.data || []);
+    (propList || []).forEach((p: any) => {
       if (Array.isArray(p?.amenities)) {
         p.amenities.forEach((a: any) => {
           if (a) all.add(String(a).toLowerCase());
