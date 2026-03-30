@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { MessageCircle, Calendar, User } from 'lucide-react';

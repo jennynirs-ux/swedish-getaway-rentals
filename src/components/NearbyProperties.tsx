@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';

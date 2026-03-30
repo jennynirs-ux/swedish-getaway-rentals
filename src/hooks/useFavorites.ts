@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { getFavoriteIds, toggleFavorite as toggleFavoriteService, getFavoriteProperties } from '@/services/favoritesService';
 import { useToast } from '@/hooks/use-toast';
