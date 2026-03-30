@@ -8,9 +8,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface AvailabilityDate {
   date: string;
   available: boolean;
-  reason: string;
+  reason: string | null;
   seasonal_price: number | null;
-  minimum_nights: number;
+  minimum_nights: number | null;
 }
 
 interface PropertyCalendarOptimizedProps {

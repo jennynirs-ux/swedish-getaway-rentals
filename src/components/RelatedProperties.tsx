@@ -32,7 +32,7 @@ export default function RelatedProperties({ currentPropertyId, location, maxGues
       if ((data?.length || 0) < 3 && location) {
         const { data: moreData } = await supabase
           .from('properties')
-          .select('id, title, hero_image_url, location, price_per_night, currency, average_rating, review_count, max_guests, amenities, bedrooms, bathrooms, featured_amenities, special_amenities, amenities_data, description, slug')
+          .select('id, title, hero_image_url, location, price_per_night, currency, review_count, max_guests, amenities, bedrooms, bathrooms, featured_amenities, special_amenities, amenities_data, description')
           .eq('active', true)
           .neq('id', currentPropertyId)
           .limit(4);
