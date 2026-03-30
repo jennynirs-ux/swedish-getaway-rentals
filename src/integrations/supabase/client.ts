@@ -4,10 +4,14 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+// Use Database types for typed tables, but also export untyped client for tables not in generated types
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: typeof window !== 'undefined' ? localStorage : undefined,
     persistSession: typeof window !== 'undefined',
     autoRefreshToken: true,
   },
 });
+
+// Untyped client for queries using columns/tables not yet in the generated types
+export const supabaseAny = supabase as ReturnType<typeof createClient>;
