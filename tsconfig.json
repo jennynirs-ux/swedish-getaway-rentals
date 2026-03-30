@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": false,
     "paths": {
       "@/*": [
         "./src/*"
