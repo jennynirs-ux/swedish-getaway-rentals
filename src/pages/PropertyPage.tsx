@@ -285,10 +285,9 @@ const PropertyPage = memo(() => {
         maxGuests={property.max_guests}
         pricePerNight={property.price_per_night}
         currency={property.currency || 'SEK'}
-        rating={property.average_rating}
+        rating={(property as any).review_rating ?? (property as any).average_rating}
         reviewCount={property.review_count}
         amenities={Array.isArray(property.amenities) ? property.amenities as string[] : []}
-        registrationNumber={property.registration_number}
       />
       <PropertyNavigation />
       <div className="container mx-auto px-4">
