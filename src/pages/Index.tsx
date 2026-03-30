@@ -80,7 +80,7 @@ const HomePage = memo(() => {
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
   const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Debounced filter handler - only applies debounce to location changes */
   const handleFiltersChange = useCallback((newFilters: PropertyFilters) => {
@@ -114,7 +114,8 @@ const HomePage = memo(() => {
   /** Bygg lista med amenities */
   const availableAmenities = useMemo(() => {
     const all = new Set<string>();
-    (properties || []).forEach((p: any) => {
+    const propList = Array.isArray(properties) ? properties : ((properties as any)?.data || []);
+    (propList || []).forEach((p: any) => {
       if (Array.isArray(p?.amenities)) {
         p.amenities.forEach((a: any) => {
           if (a) all.add(String(a).toLowerCase());
@@ -343,7 +344,7 @@ const HomePage = memo(() => {
       <main id="main-content" className="pb-12">
         <div className="container mx-auto px-4 pt-16">
           {/* IMP-010: Mobile refresh button */}
-          <MobileRefreshButton onRefresh={refetch} isLoading={loading} />
+          <MobileRefreshButton onRefresh={() => { refetch(); }} isLoading={loading} />
 
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
