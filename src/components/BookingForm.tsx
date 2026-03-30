@@ -131,7 +131,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
     discountAmount: number;
   } | undefined>();
 
-  const calculateTotalAmount = () => {
+  // BUG-036: Clear applied coupon when dates change (price may differ)
+  useEffect(() => {
+    setAppliedCoupon(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkIn, checkOut]);
+
     if (!checkIn || !checkOut) return null;
     // pricePerNight is in SEK, convert to cents for calculation
     // BUG-015 FIXED: seasonal prices from calendar are now passed through
