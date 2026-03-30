@@ -128,7 +128,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     }
   }, [isOpen, initialSectionId, allSections]);
 
-  const getIndexById = (id: string) => allSections.findIndex((s) => s.id === id);
+  const _getIndexById = (id: string) => allSections.findIndex((s) => s.id === id);
 
   const shareGuide = async () => {
     const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
