@@ -5,11 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
-import { Gift } from "lucide-react";
+import { Gift, CheckCircle, ArrowRight } from "lucide-react";
 
 const HostApplication = () => {
   const [loading, setLoading] = useState(false);
@@ -17,17 +16,13 @@ const HostApplication = () => {
   const [referralCode, setReferralCode] = useState("");
   const [formData, setFormData] = useState({
     businessName: '',
-    description: '',
-    experience: '',
     contactPhone: ''
   });
   const navigate = useNavigate();
 
   useEffect(() => {
     const ref = searchParams.get("ref");
-    if (ref) {
-      setReferralCode(ref);
-    }
+    if (ref) setReferralCode(ref);
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,199 +32,157 @@ const HostApplication = () => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) {
-        toast.error('Please log in to submit an application');
-        navigate('/auth');
+        toast.error('Please log in first');
+        navigate('/auth?redirect=/host-application');
         return;
       }
 
-      // Validate referral code if provided
-      if (referralCode) {
-        const { data: referralData, error: referralError } = await supabase
-          .from("host_referrals")
-          .select("id, status, expires_at")
-          .eq("referral_code", referralCode)
-          .single();
-
-        if (referralError || !referralData) {
-          toast.error("Invalid referral code");
-          setLoading(false);
-          return;
-        }
-
-        if (referralData.status !== "pending") {
-          toast.error("This referral code has already been used");
-          setLoading(false);
-          return;
-        }
-
-        if (new Date(referralData.expires_at) < new Date()) {
-          toast.error("This referral code has expired");
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Check if user already has an application
-      const { data: existingApplication } = await supabase
-        .from('host_applications')
-        .select('id')
+      // Check if already a host
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, is_host, host_approved')
         .eq('user_id', user.user.id)
         .single();
 
-      if (existingApplication) {
-        toast.error('You have already submitted a host application');
+      if (profile?.is_host && profile?.host_approved) {
+        toast.success('You are already a host!');
+        navigate('/host-dashboard');
         return;
       }
 
-      const { data: applicationData, error } = await supabase
+      // Instantly approve: set is_host and host_approved on the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          is_host: true,
+          host_approved: true,
+          host_business_name: formData.businessName || null,
+          host_onboarding_completed: false,
+        })
+        .eq('user_id', user.user.id);
+
+      if (profileError) throw profileError;
+
+      // Also save to host_applications for record-keeping
+      await supabase
         .from('host_applications')
         .insert({
           user_id: user.user.id,
           business_name: formData.businessName,
-          description: formData.description,
-          experience: formData.experience,
-          contact_phone: formData.contactPhone
+          contact_phone: formData.contactPhone,
+          status: 'approved',
         })
         .select('id')
         .single();
 
-      if (error) throw error;
-
-      // Notify admin about new application
-      if (applicationData?.id) {
-        supabase.functions.invoke('notify-new-host-application', {
-          body: { applicationId: applicationData.id }
-        }).catch(() => {}); // Non-blocking — don't fail submission if notification fails
+      // Handle referral code
+      if (referralCode && profile) {
+        supabase.functions.invoke("complete-host-referral", {
+          body: { referralCode, newHostProfileId: profile.id },
+        }).catch(() => {});
       }
 
-      // If referral code was used and application approved, trigger completion
-      if (referralCode) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("user_id", user.user.id)
-          .single();
+      // Send welcome email (non-blocking)
+      supabase.functions.invoke('notify-host-approved', {
+        body: { userId: user.user.id }
+      }).catch(() => {});
 
-        if (profileData) {
-          await supabase.functions.invoke("complete-host-referral", {
-            body: { 
-              referralCode,
-              newHostProfileId: profileData.id 
-            },
-          });
-        }
-      }
+      // Notify admin (non-blocking)
+      supabase.functions.invoke('notify-new-host-application', {
+        body: { userId: user.user.id }
+      }).catch(() => {});
 
-      toast.success('Host application submitted successfully! We will review it and get back to you.');
-      navigate('/');
+      toast.success('Welcome! You are now a host. Let\'s set up your first property.');
+      navigate('/host-dashboard');
     } catch (error) {
-      console.error('Error submitting application:', error);
-      toast.error('Failed to submit application');
+      console.error('Error becoming host:', error);
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      
+
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-lg mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-4">
-              Become a Nordic Getaways Host
+              Start Hosting
             </h1>
             <p className="text-lg text-muted-foreground">
-              Share your beautiful Nordic property with travelers from around the world
+              List your Nordic property in under 5 minutes
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Host Application</CardTitle>
+              <CardTitle>Quick Setup</CardTitle>
             </CardHeader>
             <CardContent>
               {referralCode && (
                 <Alert className="mb-6 border-primary/20 bg-primary/5">
                   <Gift className="h-4 w-4 text-primary" />
                   <AlertDescription className="text-sm">
-                    You're using a referral code! Complete your application to help your referrer earn a reward.
+                    Referral code applied! You'll both earn a reward.
                   </AlertDescription>
                 </Alert>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <Label htmlFor="businessName">Business Name *</Label>
+                  <Label htmlFor="businessName">Property or Business Name *</Label>
                   <Input
                     id="businessName"
-                    name="businessName"
                     value={formData.businessName}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
                     required
-                    placeholder="Your business or property name"
+                    placeholder="e.g., Lakeside Cabin Dalarna"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Property Description *</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                    placeholder="Describe your property and what makes it special..."
-                    rows={4}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="experience">Hosting Experience</Label>
-                  <Textarea
-                    id="experience"
-                    name="experience"
-                    value={formData.experience}
-                    onChange={handleChange}
-                    placeholder="Tell us about your experience in hospitality or property management..."
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="contactPhone">Contact Phone</Label>
+                  <Label htmlFor="contactPhone">Your Phone (optional)</Label>
                   <Input
                     id="contactPhone"
-                    name="contactPhone"
                     type="tel"
                     value={formData.contactPhone}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
                     placeholder="+46 70 123 45 67"
                   />
                 </div>
 
-                <div className="bg-muted p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">What happens next?</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Our team will review your application within 2-3 business days</li>
-                    <li>• If approved, you'll get access to your host dashboard</li>
-                    <li>• You can then add your properties and start receiving bookings</li>
-                    <li>• We handle payments and take a 10% commission on successful bookings</li>
-                  </ul>
+                {/* What you get */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-sm">What's included:</h3>
+                  <div className="space-y-2">
+                    {[
+                      'Your own host dashboard',
+                      'Calendar sync with Airbnb & Booking.com',
+                      'Automatic booking confirmations',
+                      'Secure payments via Stripe',
+                      'Smart lock integration',
+                    ].map((item) => (
+                      <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    You set the price. We add a 10% service fee for guests.
+                  </p>
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? 'Submitting...' : 'Submit Application'}
+                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                  {loading ? 'Setting up...' : (
+                    <>
+                      Start Hosting Now
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </form>
             </CardContent>
