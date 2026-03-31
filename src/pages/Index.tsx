@@ -67,7 +67,7 @@ const HomePage = memo(() => {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return { data: data || [], error: null };
+    return data || [];
   }, []);
 
   const { data: properties = [], isLoading: loading, refetch } = useQuery({
