@@ -177,7 +177,7 @@ export async function isApprovedHost(userId: string): Promise<boolean> {
       throw error;
     }
 
-    return data?.approved_host === true;
+    return data?.host_approved === true;
   } catch (error) {
     throw new Error(
       `Failed to check host status: ${error instanceof Error ? error.message : 'Unknown error'}`
