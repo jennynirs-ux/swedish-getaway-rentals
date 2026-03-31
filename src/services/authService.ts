@@ -151,7 +151,7 @@ export async function checkUserRole(userId: string, role: string): Promise<boole
       throw error;
     }
 
-    return data?.role === role;
+    return data?.is_host === true;
   } catch (error) {
     throw new Error(
       `Failed to check user role: ${error instanceof Error ? error.message : 'Unknown error'}`
