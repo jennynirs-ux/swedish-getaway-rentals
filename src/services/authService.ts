@@ -168,9 +168,9 @@ export async function checkUserRole(userId: string, role: string): Promise<boole
 export async function isApprovedHost(userId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('approved_host')
-      .eq('id', userId)
+      .from('profiles')
+      .select('host_approved')
+      .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
