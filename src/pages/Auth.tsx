@@ -191,26 +191,6 @@ const Auth = () => {
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      setError(error.message);
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleForgotPassword = async () => {
     if (!email) {
@@ -409,24 +389,15 @@ const Auth = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGoogleSignIn}
-                        disabled={loading}
-                      >
-                        Google
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleFacebookSignIn}
-                        disabled={loading}
-                      >
-                        Facebook
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      Google
+                    </Button>
                   </form>
                 </TabsContent>
             
@@ -496,24 +467,15 @@ const Auth = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGoogleSignIn}
-                        disabled={loading}
-                      >
-                        Google
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleFacebookSignIn}
-                        disabled={loading}
-                      >
-                        Facebook
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      Google
+                    </Button>
                   </form>
                 </TabsContent>
                 </Tabs>
