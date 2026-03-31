@@ -1189,12 +1189,15 @@ export type Database = {
           pricing_table: Json | null
           property_timezone: string
           property_type: string | null
+          registration_number: string | null
           review_count: number | null
           review_rating: number | null
+          slug: string | null
           special_amenities: string[] | null
           special_highlights: Json | null
           street: string | null
           tagline_line1: string | null
+          transport_distances: Json | null
           tagline_line2: string | null
           title: string
           updated_at: string
@@ -1250,11 +1253,14 @@ export type Database = {
           pricing_table?: Json | null
           property_timezone?: string
           property_type?: string | null
+          registration_number?: string | null
           review_count?: number | null
           review_rating?: number | null
+          slug?: string | null
           special_amenities?: string[] | null
           special_highlights?: Json | null
           street?: string | null
+          transport_distances?: Json | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title: string
@@ -1311,11 +1317,14 @@ export type Database = {
           pricing_table?: Json | null
           property_timezone?: string
           property_type?: string | null
+          registration_number?: string | null
           review_count?: number | null
           review_rating?: number | null
+          slug?: string | null
           special_amenities?: string[] | null
           special_highlights?: Json | null
           street?: string | null
+          transport_distances?: Json | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title?: string
