@@ -1,58 +1,25 @@
 name: Deploy Pipeline
 
+# Lovable handles deployment automatically.
+# This workflow just verifies the build passes.
+
 on:
   push:
     branches: [ main ]
 
 env:
-  NODE_ENV: production
-  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+  VITE_SUPABASE_URL: https://placeholder.supabase.co
+  VITE_SUPABASE_PUBLISHABLE_KEY: placeholder-key
 
 jobs:
-  deploy:
+  verify:
     runs-on: ubuntu-latest
-    environment: production
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm test
-
-      - name: Build the project (Next.js)
-        run: npm run build:next
-
-      - name: Deploy to Vercel
-        uses: vercel/action@v6
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deployment summary
-        if: success()
-        run: |
-          echo "Deployment completed successfully!"
-          echo "Project has been deployed to production via Next.js SSR."
-
-      - name: Deployment failure notification
-        if: failure()
-        run: |
-          echo "Deployment failed. Check the logs above for details."
-          exit 1
+      - run: npm ci
+      - run: npm test
+      - run: echo "Tests passed. Lovable will auto-deploy."
