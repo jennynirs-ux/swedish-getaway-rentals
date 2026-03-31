@@ -55,9 +55,9 @@ const BecomeHost = () => {
 
   const handleHostRedirect = () => {
     if (!user) {
-      navigate("/auth?redirect=/host-dashboard");
+      navigate("/auth?redirect=/host-application");
     } else {
-      navigate("/host-dashboard");
+      navigate("/host-application");
     }
   };
 
