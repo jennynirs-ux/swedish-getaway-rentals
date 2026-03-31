@@ -142,9 +142,9 @@ export async function updateUserProfile(
 export async function checkUserRole(userId: string, role: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', userId)
+      .from('profiles')
+      .select('is_host, host_approved')
+      .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
