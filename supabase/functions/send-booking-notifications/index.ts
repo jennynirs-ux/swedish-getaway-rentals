@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.0.0";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("SITE_URL") || "",
@@ -13,6 +14,10 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limit: 5 notification requests per minute
+    const rateLimitResponse = await enforceRateLimit(req, "email", corsHeaders);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const requestData = await req.json();
     const { bookingId } = requestData;
     
@@ -451,7 +456,7 @@ The Nordic Getaways Team
   } catch (error: any) {
     console.error('Error in send-booking-notifications:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to send booking notifications'
+      error: 'Failed to send booking notifications'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
