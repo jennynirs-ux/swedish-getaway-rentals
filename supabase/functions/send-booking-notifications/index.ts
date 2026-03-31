@@ -451,7 +451,7 @@ The Nordic Getaways Team
   } catch (error: any) {
     console.error('Error in send-booking-notifications:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to send booking notifications'
+      error: 'Failed to send booking notifications'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
