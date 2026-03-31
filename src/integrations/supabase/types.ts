@@ -1197,9 +1197,9 @@ export type Database = {
           special_highlights: Json | null
           street: string | null
           tagline_line1: string | null
-          transport_distances: Json | null
           tagline_line2: string | null
           title: string
+          transport_distances: Json | null
           updated_at: string
           video_metadata: Json | null
           video_urls: string[] | null
@@ -1260,10 +1260,10 @@ export type Database = {
           special_amenities?: string[] | null
           special_highlights?: Json | null
           street?: string | null
-          transport_distances?: Json | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title: string
+          transport_distances?: Json | null
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
@@ -1324,10 +1324,10 @@ export type Database = {
           special_amenities?: string[] | null
           special_highlights?: Json | null
           street?: string | null
-          transport_distances?: Json | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title?: string
+          transport_distances?: Json | null
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null

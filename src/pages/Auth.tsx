@@ -467,24 +467,15 @@ const Auth = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGoogleSignIn}
-                        disabled={loading}
-                      >
-                        Google
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleFacebookSignIn}
-                        disabled={loading}
-                      >
-                        Facebook
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      Google
+                    </Button>
                   </form>
                 </TabsContent>
                 </Tabs>
