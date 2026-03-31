@@ -112,12 +112,12 @@ export async function updateUserProfile(
 ): Promise<UserProfile> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
       })
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select()
       .single();
 
