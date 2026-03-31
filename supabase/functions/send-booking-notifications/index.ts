@@ -14,6 +14,10 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limit: 5 notification requests per minute
+    const rateLimitResponse = await enforceRateLimit(req, "email", corsHeaders);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const requestData = await req.json();
     const { bookingId } = requestData;
     
