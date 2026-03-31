@@ -112,12 +112,12 @@ export async function updateUserProfile(
 ): Promise<UserProfile> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
       })
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -142,16 +142,16 @@ export async function updateUserProfile(
 export async function checkUserRole(userId: string, role: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', userId)
+      .from('profiles')
+      .select('is_host, host_approved')
+      .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
       throw error;
     }
 
-    return data?.role === role;
+    return data?.is_host === true;
   } catch (error) {
     throw new Error(
       `Failed to check user role: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -168,16 +168,16 @@ export async function checkUserRole(userId: string, role: string): Promise<boole
 export async function isApprovedHost(userId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('approved_host')
-      .eq('id', userId)
+      .from('profiles')
+      .select('host_approved')
+      .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
       throw error;
     }
 
-    return data?.approved_host === true;
+    return data?.host_approved === true;
   } catch (error) {
     throw new Error(
       `Failed to check host status: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -195,12 +195,12 @@ export async function isApprovedHost(userId: string): Promise<boolean> {
 export async function setHostApprovalStatus(userId: string, approved: boolean): Promise<UserProfile> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({
-        approved_host: approved,
+        host_approved: approved,
         updated_at: new Date().toISOString()
       })
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select()
       .single();
 
