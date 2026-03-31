@@ -191,26 +191,6 @@ const Auth = () => {
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      setError(error.message);
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleForgotPassword = async () => {
     if (!email) {
