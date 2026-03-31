@@ -81,7 +81,7 @@ const HostApplication = () => {
         return;
       }
 
-      const { error } = await supabase
+      const { data: applicationData, error } = await supabase
         .from('host_applications')
         .insert({
           user_id: user.user.id,
@@ -89,9 +89,18 @@ const HostApplication = () => {
           description: formData.description,
           experience: formData.experience,
           contact_phone: formData.contactPhone
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Notify admin about new application
+      if (applicationData?.id) {
+        supabase.functions.invoke('notify-new-host-application', {
+          body: { applicationId: applicationData.id }
+        }).catch(() => {}); // Non-blocking — don't fail submission if notification fails
+      }
 
       // If referral code was used and application approved, trigger completion
       if (referralCode) {
