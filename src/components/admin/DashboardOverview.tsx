@@ -92,7 +92,10 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
     try {
       // Basstatistik från din RPC
       const { data: basicStats, error: statsError } = await supabase.rpc("get_dashboard_stats");
-      if (statsError) throw statsError;
+      if (statsError) {
+        console.error("Dashboard stats RPC error (non-fatal):", statsError.message);
+        // Continue with empty stats — don't crash the dashboard
+      }
   
       // ✅ Count ALL products
       const { count: totalProductsCount, error: productsCountError } = await supabase

@@ -137,7 +137,19 @@ const HostDashboard = () => {
         )
         .eq("properties.host_id", profile.id);
 
-      if (bookingsError) throw bookingsError;
+      if (bookingsError) {
+        console.error("Bookings query error:", bookingsError.message);
+        // Try fallback to regular bookings table
+        const { data: fallbackBookings } = await supabase
+          .from("bookings")
+          .select("*, properties!inner(title, host_id, currency, hero_image_url)")
+          .eq("properties.host_id", profile.id);
+        if (fallbackBookings) {
+          setBookings(fallbackBookings || []);
+        }
+        setLoading(false);
+        return;
+      }
 
       const totalBookings = bookingsData.length;
       const pendingBookings = bookingsData.filter((b) => b.status === "pending").length;
