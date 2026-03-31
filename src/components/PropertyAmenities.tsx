@@ -1,8 +1,13 @@
 import { useState, useMemo } from "react";
 import { Property } from "@/hooks/useProperties";
+import { AmenityDialog } from "@/components/AmenityDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { getAmenityIcon } from "@/lib/amenityIcons";
+import { 
+  Wifi, Car, Coffee, Utensils, Waves, TreePine, Mountain, Home, 
+  Bed, Bath, Users, Flame, UtensilsCrossed, Car as Parking,
+  Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake
+} from "lucide-react";
 
 interface PropertyAmenitiesProps {
   property: Property;
@@ -22,6 +27,28 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
+  // Icon mapping for amenities
+  const getAmenityIcon = (amenity: string) => {
+    const amenityLower = amenity.toLowerCase();
+    if (amenityLower.includes('wifi') || amenityLower.includes('internet')) return Wifi;
+    if (amenityLower.includes('parking') || amenityLower.includes('garage')) return Parking;
+    if (amenityLower.includes('coffee') || amenityLower.includes('kitchen')) return Coffee;
+    if (amenityLower.includes('dining') || amenityLower.includes('restaurant')) return Utensils;
+    if (amenityLower.includes('sauna') || amenityLower.includes('spa') || amenityLower.includes('hot tub')) return Waves;
+    if (amenityLower.includes('forest') || amenityLower.includes('nature')) return TreePine;
+    if (amenityLower.includes('view') || amenityLower.includes('mountain')) return Mountain;
+    if (amenityLower.includes('bedroom') || amenityLower.includes('bed')) return Bed;
+    if (amenityLower.includes('bathroom') || amenityLower.includes('bath')) return Bath;
+    if (amenityLower.includes('guest') || amenityLower.includes('people')) return Users;
+    if (amenityLower.includes('fireplace') || amenityLower.includes('fire')) return Flame;
+    if (amenityLower.includes('heating') || amenityLower.includes('warm')) return Thermometer;
+    if (amenityLower.includes('security') || amenityLower.includes('safe')) return Shield;
+    if (amenityLower.includes('tv') || amenityLower.includes('television')) return Tv;
+    if (amenityLower.includes('gym') || amenityLower.includes('fitness')) return Dumbbell;
+    if (amenityLower.includes('pet') || amenityLower.includes('dog')) return PawPrint;
+    if (amenityLower.includes('air') || amenityLower.includes('cooling')) return Snowflake;
+    return Home;
+  };
 
   // Helper function to categorize amenities
   const categorizeAmenity = (title: string): string => {
@@ -161,40 +188,11 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
       </div>
 
       {/* Amenity Detail Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedAmenity?.title}</DialogTitle>
-          </DialogHeader>
-          {selectedAmenity && (
-            <div className="space-y-4">
-              {selectedAmenity.image_url && (
-                <img
-                  src={selectedAmenity.image_url}
-                  alt={selectedAmenity.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-              )}
-              <p className="text-muted-foreground">{selectedAmenity.tagline}</p>
-              {selectedAmenity.description && (
-                <p className="text-sm leading-relaxed">{selectedAmenity.description}</p>
-              )}
-              {selectedAmenity.features && selectedAmenity.features.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Features</h4>
-                  <ul className="list-disc list-inside space-y-1">
-                    {selectedAmenity.features.map((feature, idx) => (
-                      <li key={idx} className="text-sm text-muted-foreground">{feature}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AmenityDialog 
+        amenity={selectedAmenity}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+      />
 
       {/* All Standard Amenities Dialog */}
       <Dialog open={showAllAmenities} onOpenChange={setShowAllAmenities}>

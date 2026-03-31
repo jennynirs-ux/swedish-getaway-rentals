@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { MAX_PRICE_RANGE } from '@/lib/constants';
 
 interface Property {
   id: string;
@@ -16,9 +15,6 @@ interface Property {
   gallery_images: string[];
   active: boolean;
   host_id: string;
-  created_at: string;
-  review_rating: number | null;
-  review_count: number | null;
 }
 
 interface SearchFilters {
@@ -39,7 +35,7 @@ export const usePropertyFilters = (properties: Property[]) => {
     checkIn: undefined,
     checkOut: undefined,
     guests: 2,
-    priceRange: [0, MAX_PRICE_RANGE],
+    priceRange: [0, 5000],
     amenities: [],
     propertyType: ""
   });
@@ -91,9 +87,9 @@ export const usePropertyFilters = (properties: Property[]) => {
       // Amenities filter
       if (filters.amenities.length > 0) {
         const propertyAmenities = property.amenities?.map(a => a.toLowerCase()) || [];
-        const hasAllAmenities = filters.amenities.every(amenity =>
-          propertyAmenities.some(propAmenity =>
-            propAmenity === amenity.toLowerCase()
+        const hasAllAmenities = filters.amenities.every(amenity => 
+          propertyAmenities.some(propAmenity => 
+            propAmenity.includes(amenity.toLowerCase())
           )
         );
         if (!hasAllAmenities) return false;
@@ -114,40 +110,17 @@ export const usePropertyFilters = (properties: Property[]) => {
       case 'price_desc':
         return sorted.sort((a, b) => b.price_per_night - a.price_per_night);
       case 'rating':
-        // Sort by review rating, with fallback to 0 for properties without ratings
-        return sorted.sort((a, b) => {
-          const ratingA = a.review_rating ?? 0;
-          const ratingB = b.review_rating ?? 0;
-          // If ratings are equal, use review count as tiebreaker
-          if (ratingB === ratingA) {
-            return (b.review_count ?? 0) - (a.review_count ?? 0);
-          }
-          return ratingB - ratingA;
-        });
+        // For now, we'll sort by a mock rating based on title length (placeholder)
+        return sorted.sort((a, b) => b.title.length - a.title.length);
       case 'newest':
-        // Sort by created_at in descending order (newest first)
-        return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        // Sort alphabetically for now (placeholder)
+        return sorted.sort((a, b) => a.title.localeCompare(b.title));
       case 'recommended':
       default:
-        // BUG-039: Normalize both price and rating to 0-1 range for balanced scoring
-        // Find max values for normalization
-        const maxPrice = Math.max(...sorted.map(p => p.price_per_night), 1);
-        const maxRating = 5;
-
+        // Prioritize properties with more amenities and higher price (quality indicator)
         return sorted.sort((a, b) => {
-          const ratingA = a.review_rating ?? 0;
-          const ratingB = b.review_rating ?? 0;
-
-          // Normalize to 0-1 range
-          const normalizedRatingA = ratingA / maxRating;
-          const normalizedRatingB = ratingB / maxRating;
-          const normalizedPriceA = a.price_per_night / maxPrice;
-          const normalizedPriceB = b.price_per_night / maxPrice;
-
-          // Score: 70% rating, 30% inverse price (cheaper is better)
-          const scoreA = (normalizedRatingA * 0.7) + ((1 - normalizedPriceA) * 0.3);
-          const scoreB = (normalizedRatingB * 0.7) + ((1 - normalizedPriceB) * 0.3);
-
+          const scoreA = (a.amenities?.length || 0) + (a.price_per_night / 1000);
+          const scoreB = (b.amenities?.length || 0) + (b.price_per_night / 1000);
           return scoreB - scoreA;
         });
     }
@@ -167,7 +140,7 @@ export const usePropertyFilters = (properties: Property[]) => {
       checkIn: undefined,
       checkOut: undefined,
       guests: 2,
-      priceRange: [0, MAX_PRICE_RANGE],
+      priceRange: [0, 5000],
       amenities: [],
       propertyType: ""
     });

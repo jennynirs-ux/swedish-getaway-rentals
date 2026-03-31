@@ -1,9 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, X, ShoppingCart, Home } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
-import { getCurrentUser, onAuthStateChange, isApprovedHost } from "@/services/authService";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ShoppingBag, User, Menu, X, ShoppingCart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MainNavigationProps {
   showBackButton?: boolean;
@@ -15,7 +14,6 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const previousUserIdRef = useRef<string | null>(null);
 
   const isPropertyPage =
     location.pathname.includes("/villa-") ||
@@ -29,40 +27,33 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const [isHost, setIsHost] = useState(false);
 
   useEffect(() => {
-    const initUser = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser ? { id: currentUser.id, email: currentUser.email } : null);
-      // BUG-038: Only check host status if userId actually changed
-      if (currentUser && currentUser.id !== previousUserIdRef.current) {
-        previousUserIdRef.current = currentUser.id;
-        checkHostStatus(currentUser.id);
-      }
-    };
-
-    initUser();
-
-    const unsubscribe = onAuthStateChange((authUser) => {
-      setUser(authUser ? { id: authUser.id, email: authUser.email } : null);
-      // BUG-038: Only check host status if userId actually changed
-      if (authUser && authUser.id !== previousUserIdRef.current) {
-        previousUserIdRef.current = authUser.id;
-        checkHostStatus(authUser.id);
-      } else if (!authUser) {
-        previousUserIdRef.current = null;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        checkHostStatus(user.id);
       }
     });
 
-    return () => unsubscribe();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkHostStatus(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const checkHostStatus = async (userId: string) => {
-    try {
-      const hostApproved = await isApprovedHost(userId);
-      setIsHost(hostApproved);
-    } catch (error) {
-      console.error('Error checking host status:', error);
-      setIsHost(false);
-    }
+    const { data } = await supabase
+      .from('profiles')
+      .select('is_host, host_approved')
+      .eq('user_id', userId)
+      .single();
+    
+    setIsHost(data?.is_host && data?.host_approved);
   };
 
   const handleProfileClick = () => {
@@ -76,11 +67,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   };
 
   return (
-    <>
-    <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded">
-      Skip to main content
-    </a>
-    <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6" aria-label="Main navigation">
+    <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo always links to Home */}
         <Link to="/" className="flex items-center">
@@ -94,27 +81,13 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         {/* Desktop Navigation */}
         {!isPropertyPage && (
           <div className="hidden md:flex items-center gap-3">
-            {!user && (
-              <Link to="/become-host" title="Become a Host">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-white border-white/30 bg-white/10
-                             hover:bg-white/20 hover:border-white/50
-                             backdrop-blur-sm transition-all gap-1.5"
-                >
-                  <Home className="w-4 h-4" />
-                  <span className="text-sm">Become a Host</span>
-                </Button>
-              </Link>
-            )}
             {!isShopPage && (
               <Link to="/shop" title="Shop">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="text-white border-white/30 bg-white/10
-                             hover:bg-white/20 hover:border-white/50
+                  className="text-white border-white/30 bg-white/10 
+                             hover:bg-white/20 hover:border-white/50 
                              backdrop-blur-sm transition-all"
                 >
                   <ShoppingBag className="w-5 h-5" />
@@ -134,16 +107,13 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                 </Button>
               </Link>
             )}
-            <div className="text-white">
-              <LanguageSwitcher />
-            </div>
             <Button
               variant="outline"
               size="icon"
               title={user ? (isHost ? "Host Dashboard" : "Profile") : "Sign In"}
               onClick={handleProfileClick}
-              className="text-white border-white/30 bg-white/10
-                         hover:bg-white/20 hover:border-white/50
+              className="text-white border-white/30 bg-white/10 
+                         hover:bg-white/20 hover:border-white/50 
                          backdrop-blur-sm transition-all"
             >
               <User className="w-5 h-5" />
@@ -154,7 +124,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         {/* Mobile Hamburger */}
         {!isPropertyPage && (
           <div className="md:hidden">
-            <button onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close menu" : "Open menu"}>
+            <button onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? (
                 <X className="w-6 h-6 text-white" />
               ) : (
@@ -168,16 +138,6 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
       {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
         <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-4 flex flex-col">
-          {!user && (
-            <Link
-              to="/become-host"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2"
-            >
-              <Home className="w-5 h-5" />
-              <span>Become a Host</span>
-            </Link>
-          )}
           {!isShopPage && (
             <Link
               to="/shop"
@@ -198,20 +158,6 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               <span>Cart</span>
             </Link>
           )}
-          <Link
-            to="/destinations"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-2"
-          >
-            <span>Destinations</span>
-          </Link>
-          <Link
-            to="/blog"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-2"
-          >
-            <span>Blog</span>
-          </Link>
           <button
             onClick={() => {
               setMenuOpen(false);
@@ -225,7 +171,6 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         </div>
       )}
     </nav>
-    </>
   );
 };
 

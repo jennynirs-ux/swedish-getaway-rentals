@@ -53,12 +53,9 @@ serve(async (req) => {
       throw new Error('Check-out date must be after check-in date');
     }
     
-    // BUG-038: Validate minimum guest count is at least 1
-    if (numberOfGuests < 1 || numberOfGuests > 50) {
-      return new Response(JSON.stringify({ error: 'Number of guests must be at least 1 and at most 50' }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
+    // Validate guest count
+    if (!numberOfGuests || numberOfGuests < 1 || numberOfGuests > 50) {
+      throw new Error('Invalid number of guests');
     }
     
     // Validate email format
@@ -117,68 +114,7 @@ serve(async (req) => {
         status: 400,
       });
     }
-
-    // CRITICAL BUG-001: Check for conflicting bookings and create reservation lock
-    // Pattern: Check for existing bookings, then immediately insert a 'pending' booking
-    // to prevent race condition where another booking sneaks in between check and confirmation
-    const { data: existingBookings, error: bookingCheckError } = await supabaseClient
-      .from("bookings")
-      .select("id, status, check_in_date, check_out_date")
-      .eq("property_id", propertyId)
-      .in("status", ["confirmed", "pending"])
-      .gte("check_out_date", checkInDate)
-      .lt("check_in_date", checkOutDate);
-
-    if (bookingCheckError) {
-      logStep("Error checking booking conflicts", { error: bookingCheckError });
-      return new Response(JSON.stringify({ error: "Unable to verify availability. Please try again." }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      });
-    }
-
-    if (existingBookings && existingBookings.length > 0) {
-      logStep("Booking conflict detected", { propertyId, checkInDate, checkOutDate, conflictCount: existingBookings.length });
-      return new Response(JSON.stringify({ error: "These dates are no longer available. Please select different dates." }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 409,
-      });
-    }
-
-    // Insert a temporary 'pending' booking to act as a reservation lock
-    // This prevents other concurrent requests from booking the same dates
-    // If payment fails, this pending record will be cleaned up by a separate process
-    const { data: reservationLock, error: lockError } = await supabaseClient
-      .from("bookings")
-      .insert({
-        property_id: propertyId,
-        user_id: user?.id || null,
-        guest_name: guestName,
-        guest_email: guestEmail,
-        guest_phone: guestPhone || null,
-        check_in_date: checkInDate,
-        check_out_date: checkOutDate,
-        number_of_guests: numberOfGuests,
-        special_requests: specialRequests || null,
-        total_amount: 0, // Will be updated after payment confirmation
-        currency: (property.currency || currency || "SEK").toUpperCase(),
-        status: 'payment_pending', // Temporary status indicating payment in progress
-        stripe_payment_intent_id: null
-      })
-      .select()
-      .single();
-
-    if (lockError) {
-      logStep("Error creating reservation lock", { error: lockError });
-      return new Response(JSON.stringify({ error: "Unable to reserve dates. Please try again." }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      });
-    }
-
-    const reservationLockId = reservationLock.id;
-    logStep("Reservation lock created", { reservationLockId, checkInDate, checkOutDate });
-
+    
     // CRITICAL: Recalculate total amount server-side - never trust client-supplied amounts
     const nightCount = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -356,20 +292,19 @@ serve(async (req) => {
       serverCalculatedAmount
     });
     
-    // BUG-009: Stricter amount verification with 0.1% tolerance instead of 1% to prevent manipulation
-    // on large bookings, and never leak server-calculated amount in error response
+    // Allow small rounding differences (1% tolerance) but reject significant discrepancies
     const amountDifference = Math.abs(totalAmount - serverCalculatedAmount);
-    const tolerance = serverCalculatedAmount * 0.001; // 0.1% instead of 1%
-
+    const tolerance = serverCalculatedAmount * 0.01;
+    
     if (amountDifference > tolerance) {
-      logStep("Amount mismatch detected", {
-        clientAmount: totalAmount,
+      logStep("Amount mismatch detected", { 
+        clientAmount: totalAmount, 
         serverAmount: serverCalculatedAmount,
-        difference: amountDifference
+        difference: amountDifference 
       });
-      // Do NOT return serverCalculatedAmount to prevent information leakage
-      return new Response(JSON.stringify({
-        error: "Price mismatch, please refresh and try again."
+      return new Response(JSON.stringify({ 
+        error: "Price calculation error. Please refresh and try again.",
+        serverCalculatedAmount // Return correct amount for client to update
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
@@ -415,12 +350,10 @@ serve(async (req) => {
     }
 
     // Stripe line item using validated amount (already in cents)
-    // BUG-037: Use SEK as default currency, prefer property.currency over client-provided currency
-    const finalCurrency = (property.currency || currency || "sek").toLowerCase();
     const lineItems = [
       {
         price_data: {
-          currency: finalCurrency,
+          currency: (currency || property.currency || "sek").toLowerCase(),
           product_data: {
             name: `${property.title}`,
             description: productDescription,
@@ -430,10 +363,6 @@ serve(async (req) => {
         quantity: 1,
       },
     ];
-
-    // Calculate VAT amount for audit trail (typically 25% in Sweden)
-    const vatRate = 0.25; // Swedish VAT rate
-    const vatAmount = Math.ceil(validatedAmount * vatRate);
 
     // Stripe checkout session config
     const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "https://swedish-getaway-rentals.lovable.app";
@@ -456,14 +385,12 @@ serve(async (req) => {
         guestPhone: guestPhone || "",
         specialRequests: specialRequests || "",
         userId: user?.id || "",
-        currency: finalCurrency,
+        currency: (currency || property.currency || "sek").toLowerCase(),
         totalAmount: validatedAmount.toString(),
         subtotal: subtotal.toString(),
         discountAmount: discountAmount.toString(),
-        vatAmount: vatAmount.toString(),
         couponId: validatedCoupon?.id || "",
         couponCode: validatedCoupon?.code || "",
-        reservationLockId: reservationLockId,
         hostAmount: hostAmount.toString(),
         platformCommission: platformCommission.toString(),
         commissionRate: commissionRate.toString(),

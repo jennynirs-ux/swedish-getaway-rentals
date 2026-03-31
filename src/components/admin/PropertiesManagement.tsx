@@ -9,11 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Edit2, Calendar, Settings, Trash2, Lock } from "lucide-react";
+import { Edit2, Calendar, Settings, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import PropertyDetailEditor from "./PropertyDetailEditor";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface Property {
   id: string;
@@ -26,7 +25,6 @@ interface Property {
 }
 
 const PropertiesManagement = () => {
-  const { isAdmin, isLoading: adminLoading, error: adminError } = useAdminAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Property | null>(null);
@@ -43,14 +41,8 @@ const PropertiesManagement = () => {
   });
 
   useEffect(() => {
-    // BUG-004: Only load properties if user is verified as admin
-    if (!adminLoading && isAdmin) {
-      loadProperties();
-    } else if (!adminLoading && !isAdmin) {
-      setLoading(false);
-      toast({ title: 'Access Denied', description: 'You do not have permission to access admin properties', variant: 'destructive' });
-    }
-  }, [adminLoading, isAdmin]);
+    loadProperties();
+  }, []);
 
   const loadProperties = async () => {
     try {
@@ -136,26 +128,7 @@ const PropertiesManagement = () => {
     }
   };
 
-  // BUG-004: Show access denied error if user is not admin
-  if (!adminLoading && !isAdmin) {
-    return (
-      <Card>
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center justify-center gap-4 text-center">
-            <Lock className="h-12 w-12 text-destructive" />
-            <div>
-              <h3 className="text-lg font-semibold">Access Denied</h3>
-              <p className="text-muted-foreground mt-2">
-                {adminError || 'You do not have permission to access this area. Admin role is required.'}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (loading || adminLoading) {
+  if (loading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -175,9 +148,6 @@ const PropertiesManagement = () => {
         <div>
           <h2 className="text-2xl font-bold">Properties</h2>
           <p className="text-muted-foreground">Manage your rental properties</p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Note: This page requires admin role. Access is verified both client-side and by Supabase RLS policies.
-          </p>
         </div>
       </div>
 

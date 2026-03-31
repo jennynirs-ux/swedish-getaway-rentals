@@ -88,7 +88,7 @@ const MessagesInbox = () => {
     try {
       const { error } = await supabase
         .from('guest_messages')
-        .update({
+        .update({ 
           reply: replyText,
           replied_at: new Date().toISOString(),
           read: true
@@ -97,29 +97,10 @@ const MessagesInbox = () => {
 
       if (error) throw error;
 
-      // Send the reply email to the guest
-      const { error: emailError } = await supabase.functions.invoke('send-guest-reply', {
-        body: {
-          guestEmail: selectedMessage.email,
-          guestName: selectedMessage.name,
-          reply: replyText
-        }
+      toast({
+        title: "Svar skickat",
+        description: "Ditt svar har sparats"
       });
-
-      if (emailError) {
-        console.error('Email send error:', emailError);
-        // Reply is saved in DB but email failed to send
-        toast({
-          title: "Svar sparad med varning",
-          description: "Reply saved but email delivery failed. Guest may not receive the notification.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Svar skickat",
-          description: "Ditt svar har sparats och skickats till gästen"
-        });
-      }
 
       setReplyText('');
       fetchMessages();

@@ -1,20 +1,12 @@
-// IMP-005: TODO - Add bulk moderation actions (approve/reject multiple reviews)
-// IMP-006: TODO - Add review sentiment analysis and flagging thresholds
-// IMP-008: TODO - Add export functionality for review reports
-// IMP-010: TODO - Add moderation audit trail
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Star, Eye, Flag, Trash2, Check, X, Download } from "lucide-react";
+import { Star, Eye, Flag, Trash2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { logReviewModeration } from "@/lib/auditLog";
-import { exportToCsv } from "@/lib/exportCsv";
 
 interface Review {
   id: string;
@@ -41,56 +33,30 @@ const ReviewsManagement = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(0);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
-  const ITEMS_PER_PAGE = 50;
-
-  const exportColumns = [
-    { key: 'id', label: 'Review ID' },
-    { key: 'guest_name', label: 'Guest' },
-    { key: 'rating', label: 'Rating' },
-    { key: 'comment', label: 'Comment' },
-    { key: 'status', label: 'Status' },
-    { key: 'created_at', label: 'Created' },
-  ];
 
   useEffect(() => {
-    setCurrentPage(0);
-    fetchReviews(0);
+    fetchReviews();
   }, [filter]);
 
-  const fetchReviews = async (page: number) => {
+  const fetchReviews = async () => {
     try {
-      const from = page * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-
       let query = supabase
         .from('reviews')
         .select(`
           *,
           reviewer:profiles!reviews_reviewer_id_fkey(full_name, display_name, email),
           reviewee:profiles!reviews_reviewee_id_fkey(full_name, display_name, email)
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        `)
+        .order('created_at', { ascending: false });
 
       if (filter !== "all") {
         query = query.eq('moderation_status', filter);
       }
 
-      const { data, error, count } = await query;
+      const { data, error } = await query;
       if (error) throw error;
 
-      setReviews((data as Review[]) || []);
-      setCurrentPage(page);
-      // IMP-005: Store total count for pagination display
-      if (count !== null) {
-        setTotalCount(count);
-      }
-      // Disable load more if we got fewer items than requested (meaning no more data)
-      setHasMore((data?.length ?? 0) >= ITEMS_PER_PAGE);
+      setReviews((data as any) || []);
     } catch (error: any) {
       toast.error('Failed to load reviews');
     } finally {
@@ -100,48 +66,27 @@ const ReviewsManagement = () => {
 
   const handleModerationAction = async (reviewId: string, status: string) => {
     try {
-      // Validate status is one of the allowed values
-      const allowedStatuses = ['approved', 'rejected', 'pending'];
-      if (!allowedStatuses.includes(status)) {
-        toast.error('Invalid moderation status');
-        return;
-      }
-
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id;
-
-      // Check if user ID is defined - session may have expired
-      if (!userId) {
-        toast.error('Session expired, please log in again');
-        return;
-      }
-
       const { error } = await supabase
         .from('reviews')
-        .update({
+        .update({ 
           moderation_status: status,
           moderated_at: new Date().toISOString(),
-          moderated_by: userId
+          moderated_by: (await supabase.auth.getUser()).data.user?.id
         })
         .eq('id', reviewId);
 
       if (error) throw error;
 
-      // IMP-007: Log review moderation action
-      if (status === 'approved') {
-        await logReviewModeration(reviewId, 'approve');
-      } else if (status === 'rejected') {
-        await logReviewModeration(reviewId, 'reject');
-      }
-
       toast.success(`Review ${status} successfully`);
-      fetchReviews(currentPage);
+      fetchReviews();
     } catch (error: any) {
       toast.error('Failed to update review');
     }
   };
 
   const handleDelete = async (reviewId: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+
     try {
       const { error } = await supabase
         .from('reviews')
@@ -151,8 +96,7 @@ const ReviewsManagement = () => {
       if (error) throw error;
 
       toast.success('Review deleted successfully');
-      setDeleteConfirm(null);
-      fetchReviews(currentPage);
+      fetchReviews();
     } catch (error: any) {
       toast.error('Failed to delete review');
     }
@@ -176,26 +120,20 @@ const ReviewsManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center gap-4">
+          <div className="flex justify-between items-center">
             <CardTitle>Reviews Management</CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => exportToCsv(reviews || [], exportColumns, 'reviews.csv')}>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-              <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Reviews</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="flagged">Flagged</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Reviews</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="flagged">Flagged</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -279,7 +217,7 @@ const ReviewsManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setDeleteConfirm(review.id)}
+                        onClick={() => handleDelete(review.id)}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -289,62 +227,14 @@ const ReviewsManagement = () => {
               ))}
             </TableBody>
           </Table>
-
+          
           {reviews.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No reviews found
             </div>
           )}
-
-          {/* BUG-021: Pagination controls with IMP-005 total count display */}
-          {reviews.length > 0 && (
-            <div className="flex justify-between items-center pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => fetchReviews(currentPage - 1)}
-                disabled={currentPage === 0}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {/* IMP-005: Show items being displayed and total count */}
-                Showing {currentPage * ITEMS_PER_PAGE + 1}-{Math.min((currentPage + 1) * ITEMS_PER_PAGE, totalCount)} of {totalCount} reviews
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => fetchReviews(currentPage + 1)}
-                disabled={!hasMore}
-              >
-                Load More
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
-
-      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Review</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this review? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleteConfirm) {
-                  handleDelete(deleteConfirm);
-                }
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

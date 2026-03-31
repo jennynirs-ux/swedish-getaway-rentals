@@ -34,16 +34,7 @@ const CouponInput = ({
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-
-      // BUG-008: Client-side coupon validation is optimistic and must match server validation
-      // The validate_coupon RPC checks:
-      // - is_active: coupon must be enabled
-      // - valid_from & valid_until: coupon must be within valid date range
-      // - usage_limit vs used_count: coupon must not exceed usage limits
-      // - applicable_to: coupon must apply to bookings
-      // - property_id: coupon must be valid for the specific property
-      // - minimum_amount: booking amount must meet minimum threshold
-      // Server-side validation in create-booking-payment-connect performs the same checks
+      
       const { data, error } = await supabase.rpc('validate_coupon', {
         coupon_code: couponCode.toUpperCase(),
         user_id_param: user?.id || null,

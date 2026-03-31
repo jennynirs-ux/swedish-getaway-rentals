@@ -7,12 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
 import { Gift } from "lucide-react";
 
 const HostApplication = () => {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const [referralCode, setReferralCode] = useState("");
@@ -31,28 +30,14 @@ const HostApplication = () => {
     }
   }, [searchParams]);
 
-  const phoneRegex = /^\+?[\d\s\-()]{7,20}$/;
-
-  const validatePhone = (phone: string): boolean => {
-    if (!phone) return true; // Phone is optional
-    return phoneRegex.test(phone);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Validate phone number
-      if (formData.contactPhone && !validatePhone(formData.contactPhone)) {
-        toast({ title: 'Error', description: 'Please enter a valid phone number', variant: 'destructive' });
-        setLoading(false);
-        return;
-      }
-
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) {
-        toast({ title: 'Error', description: 'Please log in to submit an application', variant: 'destructive' });
+        toast.error('Please log in to submit an application');
         navigate('/auth');
         return;
       }
@@ -66,39 +51,33 @@ const HostApplication = () => {
           .single();
 
         if (referralError || !referralData) {
-          toast({ title: 'Error', description: 'Invalid referral code', variant: 'destructive' });
+          toast.error("Invalid referral code");
           setLoading(false);
           return;
         }
 
         if (referralData.status !== "pending") {
-          toast({ title: 'Error', description: 'This referral code has already been used', variant: 'destructive' });
+          toast.error("This referral code has already been used");
           setLoading(false);
           return;
         }
 
         if (new Date(referralData.expires_at) < new Date()) {
-          toast({ title: 'Error', description: 'This referral code has expired', variant: 'destructive' });
+          toast.error("This referral code has expired");
           setLoading(false);
           return;
         }
       }
 
       // Check if user already has an application
-      const { data: existingApplication, error: existingAppError } = await supabase
+      const { data: existingApplication } = await supabase
         .from('host_applications')
         .select('id')
         .eq('user_id', user.user.id)
         .single();
 
-      // Only treat PGRST116 (not found) as "no existing application"
-      // Re-throw other errors
-      if (existingAppError && existingAppError.code !== 'PGRST116') {
-        throw existingAppError;
-      }
-
       if (existingApplication) {
-        toast({ title: 'Error', description: 'You have already submitted a host application', variant: 'destructive' });
+        toast.error('You have already submitted a host application');
         return;
       }
 
@@ -132,11 +111,11 @@ const HostApplication = () => {
         }
       }
 
-      toast({ title: 'Success', description: 'Host application submitted successfully! We will review it and get back to you.' });
+      toast.success('Host application submitted successfully! We will review it and get back to you.');
       navigate('/');
     } catch (error) {
       console.error('Error submitting application:', error);
-      toast({ title: 'Error', description: 'Failed to submit application', variant: 'destructive' });
+      toast.error('Failed to submit application');
     } finally {
       setLoading(false);
     }

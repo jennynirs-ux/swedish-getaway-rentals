@@ -44,26 +44,6 @@ const TEMPLATE_PLACEHOLDERS = [
   "{check_in_instructions}",
 ];
 
-// BUG-040: Required placeholders for email templates
-const REQUIRED_PLACEHOLDERS: Record<string, string[]> = {
-  booking_confirmation: ["{guest_name}", "{property_name}", "{check_in_date}"],
-  pre_arrival: ["{guest_name}", "{check_in_date}", "{check_in_time}"],
-  check_out: ["{guest_name}", "{check_out_date}", "{check_out_time}"],
-  thank_you: ["{guest_name}", "{property_name}"]
-};
-
-// Helper to validate placeholders
-const validatePlaceholders = (templateType: keyof EmailTemplates, message: string): string | null => {
-  const required = REQUIRED_PLACEHOLDERS[templateType];
-  if (!required) return null;
-
-  const missing = required.filter(placeholder => !message.includes(placeholder));
-  if (missing.length > 0) {
-    return `Missing required placeholders: ${missing.join(", ")}`;
-  }
-  return null;
-};
-
 const DEFAULT_TEMPLATES: EmailTemplates = {
   booking_confirmation: {
     enabled: true,
@@ -133,7 +113,6 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
 
   const renderTemplateEditor = (type: keyof EmailTemplates, title: string, description: string) => {
     const template = localTemplates[type] || DEFAULT_TEMPLATES[type]!;
-    const validationError = validatePlaceholders(type, template.message);
 
     return (
       <Card>
@@ -178,9 +157,6 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
               disabled={!template.enabled}
               className="font-mono text-sm"
             />
-            {validationError && (
-              <p className="text-destructive text-sm mt-2">{validationError}</p>
-            )}
           </div>
           <Alert>
             <Info className="h-4 w-4" />

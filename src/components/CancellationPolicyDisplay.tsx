@@ -15,26 +15,6 @@ interface CancellationPolicyData {
   footer_note: string;
 }
 
-// BUG-041: Runtime validation instead of unsafe type cast
-const isCancellationPolicyData = (value: unknown): value is CancellationPolicyData => {
-  if (!value || typeof value !== 'object') return false;
-  const obj = value as Record<string, unknown>;
-  return (
-    Array.isArray(obj.tiers) &&
-    obj.tiers.every((tier: unknown) => {
-      if (!tier || typeof tier !== 'object') return false;
-      const t = tier as Record<string, unknown>;
-      return (
-        typeof t.min_days === 'number' &&
-        (typeof t.max_days === 'number' || t.max_days === undefined) &&
-        typeof t.refund_percentage === 'number' &&
-        typeof t.label === 'string'
-      );
-    }) &&
-    typeof obj.footer_note === 'string'
-  );
-};
-
 export const CancellationPolicyDisplay = () => {
   const { data: policy, isLoading } = useQuery({
     queryKey: ["cancellation-policy"],
@@ -44,14 +24,9 @@ export const CancellationPolicyDisplay = () => {
         .select("setting_value")
         .eq("setting_key", "cancellation_policy")
         .single();
-
+      
       if (error) throw error;
-
-      const policyData = data?.setting_value;
-      if (!isCancellationPolicyData(policyData)) {
-        throw new Error('Invalid cancellation policy data format');
-      }
-      return policyData;
+      return data?.setting_value as unknown as CancellationPolicyData;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });

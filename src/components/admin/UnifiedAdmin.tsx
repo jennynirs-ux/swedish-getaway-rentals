@@ -1,31 +1,23 @@
-import { useState, lazy, Suspense } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Building2, ShoppingBag, Mail, Clock, Ban, Loader2 } from "lucide-react";
-
-// Lazy-load all tab components — splits the 510 kB admin chunk into per-tab chunks
-const DashboardOverview = lazy(() => import("./DashboardOverview"));
-const BookingsManagement = lazy(() => import("./BookingsManagement"));
-const ShopProductsManagement = lazy(() => import("./ShopProductsManagement"));
-const OrdersManagement = lazy(() => import("./OrdersManagement"));
-const PropertiesManagement = lazy(() => import("./PropertiesManagement"));
-const PropertyDetailEditor = lazy(() => import("./PropertyDetailEditor"));
-const HostManagement = lazy(() => import("./HostManagement"));
-const ContentEditor = lazy(() => import("./ContentEditor").then(m => ({ default: m.ContentEditor })));
-const ShippingEditor = lazy(() => import("./ShippingEditor").then(m => ({ default: m.ShippingEditor })));
-const PricingManagement = lazy(() => import("./PricingManagement"));
-const ReviewsManagement = lazy(() => import("./ReviewsManagement"));
-const GuestbookManagement = lazy(() => import("./GuestbookManagement"));
-const CouponsManagement = lazy(() => import("./CouponsManagement"));
-const MessagesInbox = lazy(() => import("./MessagesInbox"));
-const BookingEmailSettings = lazy(() => import("./BookingEmailSettings").then(m => ({ default: m.BookingEmailSettings })));
-const PreArrivalSettings = lazy(() => import("./PreArrivalSettings"));
-const CancellationPolicySettings = lazy(() => import("./CancellationPolicySettings").then(m => ({ default: m.CancellationPolicySettings })));
-
-const TabFallback = () => (
-  <div className="flex items-center justify-center py-12">
-    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-  </div>
-);
+import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail, Clock, Ban } from "lucide-react";
+import DashboardOverview from "./DashboardOverview";
+import BookingsManagement from "./BookingsManagement";
+import ShopProductsManagement from "./ShopProductsManagement";
+import OrdersManagement from "./OrdersManagement";
+import PropertiesManagement from "./PropertiesManagement";
+import PropertyDetailEditor from "./PropertyDetailEditor";
+import HostManagement from "./HostManagement";
+import { ContentEditor } from "./ContentEditor";
+import { ShippingEditor } from "./ShippingEditor";
+import PricingManagement from "./PricingManagement";
+import ReviewsManagement from "./ReviewsManagement";
+import GuestbookManagement from "./GuestbookManagement";
+import CouponsManagement from "./CouponsManagement";
+import MessagesInbox from "./MessagesInbox";
+import { BookingEmailSettings } from "./BookingEmailSettings";
+import PreArrivalSettings from "./PreArrivalSettings";
+import { CancellationPolicySettings } from "./CancellationPolicySettings";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -58,19 +50,17 @@ const UnifiedAdmin = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
-          <Suspense fallback={<TabFallback />}>
-            <DashboardOverview
-              onNavigateToTab={setActiveTab}
-              onEditProperty={(propertyId) => {
-                setEditingPropertyId(propertyId);
-                setActiveTab("rentals");
-              }}
-              onEditProduct={(productId) => {
-                setEditingProductId(productId);
-                setActiveTab("products");
-              }}
-            />
-          </Suspense>
+          <DashboardOverview 
+            onNavigateToTab={setActiveTab}
+            onEditProperty={(propertyId) => {
+              setEditingPropertyId(propertyId);
+              setActiveTab("rentals");
+            }}
+            onEditProduct={(productId) => {
+              setEditingProductId(productId);
+              setActiveTab("products");
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="rentals" className="space-y-6">
@@ -96,52 +86,50 @@ const UnifiedAdmin = () => {
               </TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Calendar</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="properties">
+              <PropertiesManagement />
+            </TabsContent>
 
-            <Suspense fallback={<TabFallback />}>
-              <TabsContent value="properties">
-                <PropertiesManagement />
-              </TabsContent>
-
-              <TabsContent value="hosts">
-                <HostManagement />
-              </TabsContent>
-
-              <TabsContent value="bookings">
-                <BookingsManagement />
-              </TabsContent>
-
-              <TabsContent value="reviews">
-                <ReviewsManagement />
-              </TabsContent>
-
-              <TabsContent value="guestbook">
-                <GuestbookManagement />
-              </TabsContent>
-
-              <TabsContent value="coupons">
-                <CouponsManagement />
-              </TabsContent>
-
-              <TabsContent value="email">
-                <BookingEmailSettings />
-              </TabsContent>
-
-              <TabsContent value="pre-arrival">
-                <PreArrivalSettings />
-              </TabsContent>
-
-              <TabsContent value="cancellation">
-                <CancellationPolicySettings />
-              </TabsContent>
-
-              <TabsContent value="messages">
-                <MessagesInbox />
-              </TabsContent>
-
-              <TabsContent value="pricing">
-                <PricingManagement />
-              </TabsContent>
-            </Suspense>
+            <TabsContent value="hosts">
+              <HostManagement />
+            </TabsContent>
+            
+            <TabsContent value="bookings">
+              <BookingsManagement />
+            </TabsContent>
+            
+            <TabsContent value="reviews">
+              <ReviewsManagement />
+            </TabsContent>
+            
+            <TabsContent value="guestbook">
+              <GuestbookManagement />
+            </TabsContent>
+            
+            <TabsContent value="coupons">
+              <CouponsManagement />
+            </TabsContent>
+            
+            <TabsContent value="email">
+              <BookingEmailSettings />
+            </TabsContent>
+            
+            <TabsContent value="pre-arrival">
+              <PreArrivalSettings />
+            </TabsContent>
+            
+            <TabsContent value="cancellation">
+              <CancellationPolicySettings />
+            </TabsContent>
+            
+            <TabsContent value="messages">
+              <MessagesInbox />
+            </TabsContent>
+            
+            <TabsContent value="pricing">
+              <PricingManagement />
+            </TabsContent>
           </Tabs>
         </TabsContent>
 
@@ -153,43 +141,39 @@ const UnifiedAdmin = () => {
               <TabsTrigger value="content">Content</TabsTrigger>
               <TabsTrigger value="shipping">Shipping</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="products">
+              <ShopProductsManagement 
+                editingProductId={editingProductId}
+                onClearEditingProduct={() => setEditingProductId(null)}
+              />
+            </TabsContent>
 
-            <Suspense fallback={<TabFallback />}>
-              <TabsContent value="products">
-                <ShopProductsManagement
-                  editingProductId={editingProductId}
-                  onClearEditingProduct={() => setEditingProductId(null)}
-                />
-              </TabsContent>
+            <TabsContent value="orders">
+              <OrdersManagement />
+            </TabsContent>
 
-              <TabsContent value="orders">
-                <OrdersManagement />
-              </TabsContent>
+            <TabsContent value="content">
+              <ContentEditor />
+            </TabsContent>
 
-              <TabsContent value="content">
-                <ContentEditor />
-              </TabsContent>
-
-              <TabsContent value="shipping">
-                <ShippingEditor />
-              </TabsContent>
-            </Suspense>
+            <TabsContent value="shipping">
+              <ShippingEditor />
+            </TabsContent>
           </Tabs>
         </TabsContent>
       </Tabs>
 
       {/* Property Detail Editor */}
       {editingPropertyId && (
-        <Suspense fallback={<TabFallback />}>
-          <PropertyDetailEditor
-            propertyId={editingPropertyId}
-            open={!!editingPropertyId}
-            onClose={() => setEditingPropertyId(null)}
-            onSave={() => {
-              // Refresh data if needed
-            }}
-          />
-        </Suspense>
+        <PropertyDetailEditor
+          propertyId={editingPropertyId}
+          open={!!editingPropertyId}
+          onClose={() => setEditingPropertyId(null)}
+          onSave={() => {
+            // Refresh data if needed
+          }}
+        />
       )}
     </div>
   );

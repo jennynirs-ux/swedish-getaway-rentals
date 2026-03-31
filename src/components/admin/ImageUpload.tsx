@@ -98,8 +98,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           <img
             src={value}
             alt="Uploaded image"
-            loading="lazy"
-            decoding="async"
             className="w-full h-48 object-cover rounded-lg border"
           />
           {onRemove && (

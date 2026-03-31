@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { checkBookingAvailability, createBooking as createBookingService, generateAccessCode } from '@/services/bookingService';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export interface BookingData {
@@ -25,7 +25,14 @@ export const useBooking = () => {
     checkOut: string
   ): Promise<boolean> => {
     try {
-      return await checkBookingAvailability(propertyId, checkIn, checkOut);
+      const { data, error } = await supabase.rpc('check_booking_conflict', {
+        property_id_param: propertyId,
+        check_in_param: checkIn,
+        check_out_param: checkOut
+      });
+
+      if (error) throw error;
+      return !data; // Returns true if no conflict (available)
     } catch (error) {
       console.error('Error checking availability:', error);
       return false;
@@ -53,29 +60,37 @@ export const useBooking = () => {
       }
 
       // Create Stripe Connect payment session
-      const data = await createBookingService({
-        property_id: bookingData.property_id,
-        check_in_date: bookingData.check_in_date,
-        check_out_date: bookingData.check_out_date,
-        number_of_guests: bookingData.number_of_guests,
-        guest_name: bookingData.guest_name,
-        guest_email: bookingData.guest_email,
-        guest_phone: bookingData.guest_phone,
-        special_requests: bookingData.special_requests,
-        total_amount: bookingData.total_amount,
-        currency: bookingData.currency,
-        coupon_id: bookingData.coupon_id
+      const { data, error } = await supabase.functions.invoke('create-booking-payment-connect', {
+        body: {
+          propertyId: bookingData.property_id,
+          checkInDate: bookingData.check_in_date,
+          checkOutDate: bookingData.check_out_date,
+          numberOfGuests: bookingData.number_of_guests,
+          guestName: bookingData.guest_name,
+          guestEmail: bookingData.guest_email,
+          guestPhone: bookingData.guest_phone,
+          specialRequests: bookingData.special_requests,
+          totalAmount: bookingData.total_amount,
+          currency: bookingData.currency,
+          couponId: bookingData.coupon_id
+        }
       });
+
+      if (error) {
+        throw error;
+      }
 
       // Generate Yale access code if property has smart lock configured
       if (data?.bookingId) {
         try {
-          await generateAccessCode(
-            data.bookingId,
-            bookingData.property_id,
-            bookingData.check_in_date,
-            bookingData.check_out_date
-          );
+          await supabase.functions.invoke('generate-yale-code', {
+            body: {
+              bookingId: data.bookingId,
+              propertyId: bookingData.property_id,
+              checkInDate: bookingData.check_in_date,
+              checkOutDate: bookingData.check_out_date,
+            }
+          });
         } catch (codeError) {
           console.error('Failed to generate Yale code:', codeError);
           // Don't fail the booking if code generation fails
@@ -83,10 +98,6 @@ export const useBooking = () => {
       }
 
       if (data?.url) {
-        // BUG-047: Validate redirect URL before navigating
-        if (!data.url || !data.url.startsWith('https://')) {
-          throw new Error('Invalid checkout URL');
-        }
         // Redirect to Stripe Checkout in the same window to avoid popup blockers
         window.location.href = data.url;
       }

@@ -71,8 +71,6 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
               <img
                 src={amenity.image_url}
                 alt={amenity.title}
-                loading="lazy"
-                decoding="async"
                 className="w-full h-40 sm:h-48 object-cover"
               />
             </div>

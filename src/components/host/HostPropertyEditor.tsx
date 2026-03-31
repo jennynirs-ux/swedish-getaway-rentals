@@ -243,12 +243,7 @@ export const HostPropertyEditor = ({
         <TabsContent value="pricing" className="mt-6 space-y-6">
           <div>
             <h2 className="text-2xl font-bold mb-1">Pricing</h2>
-            <p className="text-muted-foreground">
-              Configure pricing rules and special rates.{" "}
-              <a href="/pricing-guide" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">
-                Learn more about pricing strategies
-              </a>
-            </p>
+            <p className="text-muted-foreground">Configure pricing rules and special rates</p>
           </div>
 
           <Card>
@@ -332,11 +327,17 @@ export const HostPropertyEditor = ({
         <TabsContent value="smartlock" className="mt-6 space-y-4">
           <div>
             <h2 className="text-2xl font-bold mb-1">Smart Lock</h2>
-            <p className="text-muted-foreground">
-              Manage your smart lock integration. Time-bound PIN codes are created automatically 3 days before each guest's check-in.
-            </p>
+            <p className="text-muted-foreground">Connect Yale Doorman for automatic access codes</p>
           </div>
-          <SmartLockSetup propertyId={propertyId} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Yale Doorman Lock Integration</CardTitle>
+              <CardDescription>Automatic access code management for your guests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SmartLockSetup propertyId={propertyId} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import MainNavigation from "@/components/MainNavigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface GalleryContent {
   title: string;
@@ -15,9 +16,9 @@ const Gallery = () => {
     description: "Discover the beauty of our properties and the stunning Nordic landscapes.",
     images: []
   });
+  const { toast } = useToast();
 
   useEffect(() => {
-    document.title = 'Gallery | Nordic Getaways';
     fetchContent();
   }, []);
 
@@ -57,11 +58,9 @@ const Gallery = () => {
               {content.images.map((image, index) => (
                 <Card key={index} className="overflow-hidden">
                   <CardContent className="p-0">
-                    <img
-                      src={image}
+                    <img 
+                      src={image} 
                       alt={`Gallery image ${index + 1}`}
-                      loading="lazy"
-                      decoding="async"
                       className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
                     />
                   </CardContent>

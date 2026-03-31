@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
-import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 interface ShopProduct {
   id: string;
@@ -124,20 +123,19 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     if (!product) return;
-
+    
     setPurchasing(true);
     try {
       const { title } = getDisplayData(product);
-      const priceToAdd = getCurrentPrice();
-      addItem({
-        productId: product.id,
-        title,
-        price: priceToAdd,
-        currency: product.currency,
-        quantity,
-        image: product.main_image_override || product.image_url,
-        variantId: selectedVariant,
-        variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null
+      addItem({ 
+        productId: product.id, 
+        title, 
+        price: currentPrice, 
+        currency: product.currency, 
+        quantity, 
+        image: product.main_image_override || product.image_url, 
+        variantId: selectedVariant, 
+        variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null 
       });
       toast({ title: 'Added to cart', description: title });
     } catch (error) {
@@ -202,20 +200,6 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <ProductJsonLd
-        name={product.title}
-        description={product.description || ''}
-        image={product.image_url || ''}
-        url={`https://nordic-getaways.com/shop/${product.id}`}
-        price={product.price}
-        currency="SEK"
-        sku={product.id}
-      />
-      <BreadcrumbJsonLd items={[
-        { name: 'Home', url: 'https://nordic-getaways.com' },
-        { name: 'Shop', url: 'https://nordic-getaways.com/shop' },
-        { name: product.title, url: `https://nordic-getaways.com/shop/${product.id}` },
-      ]} />
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-50 p-4 md:p-6">
         <div className="container mx-auto">
@@ -243,8 +227,6 @@ const ProductDetail = () => {
                 <img
                   src={allImages[currentImageIndex] || '/placeholder.svg'}
                   alt={title}
-                  loading="lazy"
-                  decoding="async"
                   className="w-full h-full object-cover"
                 />
                 
@@ -287,8 +269,6 @@ const ProductDetail = () => {
                     <img
                       src={image}
                       alt={`${title} view ${index + 1}`}
-                      loading="lazy"
-                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   </button>

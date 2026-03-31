@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 interface PricingRule {
   id?: string;
@@ -58,7 +58,7 @@ const PropertyPricingRules: React.FC<PropertyPricingRulesProps> = ({ propertyId 
 
   const saveRule = async () => {
     if (!newRule.name || !newRule.price) {
-      toast.error('Namn och pris måste anges');
+      toast({ title: 'Fel', description: 'Namn och pris måste anges', variant: 'destructive' });
       return;
     }
 
@@ -78,7 +78,7 @@ const PropertyPricingRules: React.FC<PropertyPricingRulesProps> = ({ propertyId 
 
       if (error) throw error;
 
-      toast.success('Prisregeln har lagts till');
+      toast({ title: 'Regel sparad', description: 'Prisregeln har lagts till' });
       setNewRule({
         rule_type: 'extra_guest',
         name: '',
@@ -90,7 +90,7 @@ const PropertyPricingRules: React.FC<PropertyPricingRulesProps> = ({ propertyId 
       loadRules();
     } catch (error) {
       console.error('Error saving rule:', error);
-      toast.error('Kunde inte spara regeln');
+      toast({ title: 'Fel', description: 'Kunde inte spara regeln', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -105,11 +105,11 @@ const PropertyPricingRules: React.FC<PropertyPricingRulesProps> = ({ propertyId 
 
       if (error) throw error;
 
-      toast.success('Prisregeln har tagits bort');
+      toast({ title: 'Regel raderad', description: 'Prisregeln har tagits bort' });
       loadRules();
     } catch (error) {
       console.error('Error deleting rule:', error);
-      toast.error('Kunde inte radera regeln');
+      toast({ title: 'Fel', description: 'Kunde inte radera regeln', variant: 'destructive' });
     }
   };
 

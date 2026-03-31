@@ -48,10 +48,10 @@ serve(async (req) => {
 
     console.log('Starting pre-check-in reminder job...');
 
-    // BL-013: Get bookings checking in within 3 days that haven't received reminder
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 3);
-    const tomorrowStr = targetDate.toISOString().split('T')[0];
+    // Get all bookings checking in tomorrow that haven't received reminder
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
@@ -153,41 +153,6 @@ serve(async (req) => {
           }
         }
 
-        // BL-013: Generate Yale access code if smart lock is configured
-        let accessCode: string | null = null;
-        try {
-          const { data: lock } = await supabase
-            .from('yale_locks')
-            .select('id')
-            .eq('property_id', booking.property_id)
-            .eq('is_active', true)
-            .single();
-
-          if (lock) {
-            // Generate code via the dedicated edge function
-            const yaleResp = await fetch(`${supabaseUrl}/functions/v1/generate-yale-code`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseKey}`,
-              },
-              body: JSON.stringify({
-                bookingId: booking.id,
-                propertyId: booking.property_id,
-                checkInDate: booking.check_in_date,
-                checkOutDate: booking.check_out_date,
-              }),
-            });
-            const yaleData = await yaleResp.json();
-            if (yaleData.success && yaleData.accessCode) {
-              accessCode = yaleData.accessCode;
-              console.log(`Yale access code generated for booking ${booking.id}`);
-            }
-          }
-        } catch (yaleErr) {
-          console.warn(`Yale code generation skipped for booking ${booking.id}:`, yaleErr);
-        }
-
         // Prepare email data
         const lat = booking.properties.latitude;
         const lng = booking.properties.longitude;
@@ -227,7 +192,6 @@ serve(async (req) => {
             "{check_out_time}": booking.properties.check_out_time || "11:00",
             "{property_address}": address,
             "{check_in_instructions}": booking.properties.check_in_instructions || "Check-in instructions will be provided.",
-            "{access_code}": accessCode || "N/A",
           };
 
           emailSubject = preArrivalTemplate.subject;
@@ -256,7 +220,7 @@ serve(async (req) => {
           `;
         } else {
           // Use default template
-          emailSubject = `Your stay at ${booking.properties.title} is in 3 days – everything you need to know`;
+          emailSubject = `Your stay at ${booking.properties.title} starts tomorrow – all details inside`;
           emailHTML = generateEmailHTML({
           guestName: booking.guest_name,
           propertyTitle: booking.properties.title,
@@ -279,8 +243,7 @@ serve(async (req) => {
           parkingInfo: booking.properties.parking_info,
           localTips: booking.properties.local_tips,
             trackingId,
-            supabaseUrl,
-            accessCode,
+            supabaseUrl
           });
         }
 
@@ -352,8 +315,7 @@ function generateEmailHTML(data: any): string {
     parkingInfo,
     localTips,
     trackingId,
-    supabaseUrl,
-    accessCode
+    supabaseUrl
   } = data;
 
   return `
@@ -394,13 +356,13 @@ function generateEmailHTML(data: any): string {
 <body>
   <div class="container">
     <div class="header">
-      <h1>🏡 Your Stay is Almost Here!</h1>
+      <h1>🏡 Your Stay Starts Tomorrow!</h1>
       <p>${propertyTitle} · ${city}</p>
     </div>
-
+    
     <div class="content">
       <p>Dear ${guestName},</p>
-      <p>We're excited to welcome you in 3 days! Here's everything you need for a smooth check-in.</p>
+      <p>We're excited to welcome you tomorrow! Here's everything you need for a smooth check-in.</p>
 
       <div class="info-grid">
         <div class="info-item">
@@ -417,18 +379,6 @@ function generateEmailHTML(data: any): string {
       <div class="card">
         <h2>🔑 Check-In Instructions</h2>
         <p>${checkInInstructions.replace(/\n/g, '<br>')}</p>
-      </div>
-      ` : ''}
-
-      ${accessCode ? `
-      <div class="card" style="border-left-color: #059669; background: #ecfdf5;">
-        <h2>🔐 Your Door Access Code</h2>
-        <div style="text-align: center; margin: 15px 0;">
-          <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #059669; font-family: monospace;">${accessCode}</span>
-        </div>
-        <p style="text-align: center; color: #64748b; font-size: 13px; margin-bottom: 0;">
-          This code activates on your check-in date and expires after check-out. Please keep it confidential.
-        </p>
       </div>
       ` : ''}
 

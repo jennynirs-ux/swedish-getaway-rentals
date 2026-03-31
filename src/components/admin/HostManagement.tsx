@@ -85,28 +85,13 @@ const HostManagement = () => {
 
   const handleApplicationReview = async (applicationId: string, action: 'approve' | 'reject') => {
     try {
-      if (action === 'approve') {
-        // Use RPC for approval
-        const { error } = await supabase.rpc('approve_host_application', {
-          application_id: applicationId,
-          admin_notes: adminNotes
-        });
+      const { error } = await supabase.rpc('approve_host_application', {
+        application_id: applicationId
+      });
 
-        if (error) throw error;
-      } else if (action === 'reject') {
-        // Directly update host_applications table for rejection
-        const { error } = await supabase
-          .from('host_applications')
-          .update({
-            status: 'rejected',
-            admin_notes: adminNotes
-          })
-          .eq('id', applicationId);
+      if (error) throw error;
 
-        if (error) throw error;
-      }
-
-      toast.success(`Application ${action}ed successfully`);
+      toast.success(`Application ${action}d successfully`);
       fetchData();
     } catch (error) {
       console.error('Error reviewing application:', error);
@@ -116,17 +101,6 @@ const HostManagement = () => {
 
   const updateHostCommission = async (hostId: string, commissionRate: number) => {
     try {
-      // Validate commission rate bounds
-      if (isNaN(commissionRate)) {
-        toast.error('Commission rate must be a valid number');
-        return;
-      }
-
-      if (commissionRate < 0 || commissionRate > 100) {
-        toast.error('Commission rate must be between 0% and 100%');
-        return;
-      }
-
       const { error } = await supabase
         .from('profiles')
         .update({ commission_rate: commissionRate })

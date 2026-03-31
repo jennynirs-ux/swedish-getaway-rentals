@@ -3,24 +3,40 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LazyImage from "@/components/LazyImage";
-import {
-  MapPin,
-  Users,
+import { 
+  MapPin, 
+  Users, 
+  Wifi, 
+  TreePine, 
+  Waves,
+  Anchor,
   Bed,
   Bath,
+  Sparkles,
   Heart,
   Share2,
+  Coffee,
+  Utensils,
+  Mountain,
   Home,
-  HelpCircle
+  Flame,
+  UtensilsCrossed,
+  Car,
+  Thermometer,
+  Tv,
+  Dumbbell,
+  PawPrint,
+  Snowflake,
+  Droplets,
+  HeartHandshake,
+  Cigarette,
+  Sun,
+  Wind
 } from "lucide-react";
-import { useState, memo } from "react";
+import { useState, memo, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle } from "lucide-react";
 import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
-import { getAmenityIcon } from "@/lib/amenityIcons";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { convertForDisplay } from "@/lib/currencyConverter";
 
 export interface PropertyCardData {
   id: string;
@@ -55,17 +71,16 @@ interface PropertyCardProps {
   size?: "default" | "large";
 }
 
-const PropertyCard = memo(({
-  property,
-  onFavoriteToggle,
-  isFavorite = false,
+const PropertyCard = memo(({ 
+  property, 
+  onFavoriteToggle, 
+  isFavorite = false, 
   showFullDescription = false,
-  size = "default"
+  size = "default" 
 }: PropertyCardProps) => {
   const { toast } = useToast();
   const [selectedAmenity, setSelectedAmenity] = useState<any>(null);
   const [isAmenityDialogOpen, setIsAmenityDialogOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   // Defensive data normalization
   const safeProperty = {
@@ -82,17 +97,62 @@ const PropertyCard = memo(({
   const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
 
   // Dev warning for missing critical fields
-  if (import.meta.env.DEV) {
+  if (process.env.NODE_ENV === 'development') {
     if (!property.id || !property.title) {
       console.warn('PropertyCard: Missing critical fields', { id: property.id, title: property.title });
     }
   }
 
-  // Get amenity icon from shared utility and render with size
-  const renderAmenityIcon = (amenity: unknown) => {
-    const IconComponent = getAmenityIcon(amenity);
-    return <IconComponent className="w-4 h-4" />;
-  };
+  // Memoized amenity icon mapping for performance
+  const getAmenityIcon = useMemo(() => {
+    return (amenity: unknown) => {
+      if (typeof amenity !== "string" || !amenity) {
+        return <Home className="w-4 h-4" />;
+      }
+      
+      const lower = amenity.toLowerCase().trim();
+      
+      // Exact matches first for consistency
+      if (lower === "lake access") return <Waves className="w-4 h-4" />;
+      if (lower === "ocean access") return <Waves className="w-4 h-4" />;
+      if (lower === "beach access") return <Waves className="w-4 h-4" />;
+      if (lower === "wifi") return <Wifi className="w-4 h-4" />;
+      if (lower === "parking") return <Car className="w-4 h-4" />;
+      if (lower === "kitchen") return <UtensilsCrossed className="w-4 h-4" />;
+      if (lower === "hot tub") return <Sparkles className="w-4 h-4" />;
+      if (lower === "sauna") return <Flame className="w-4 h-4" />;
+      if (lower === "fireplace") return <Flame className="w-4 h-4" />;
+      if (lower === "pool") return <Droplets className="w-4 h-4" />;
+      
+      // Partial matches for flexibility
+      if (lower.includes("wifi") || lower.includes("internet")) return <Wifi className="w-4 h-4" />;
+      if (lower.includes("lake") || lower.includes("ocean") || lower.includes("beach")) return <Waves className="w-4 h-4" />;
+      if (lower.includes("parking") || lower.includes("garage")) return <Car className="w-4 h-4" />;
+      if (lower.includes("coffee")) return <Coffee className="w-4 h-4" />;
+      if (lower.includes("kitchen")) return <UtensilsCrossed className="w-4 h-4" />;
+      if (lower.includes("boat") || lower.includes("canoe") || lower.includes("kayak")) return <Anchor className="w-4 h-4" />;
+      if (lower.includes("dining") || lower.includes("restaurant")) return <Utensils className="w-4 h-4" />;
+      if (lower.includes("jacuzzi") || lower.includes("spa") || lower.includes("hot tub")) return <Sparkles className="w-4 h-4" />;
+      if (lower.includes("pool") || lower.includes("swimming")) return <Droplets className="w-4 h-4" />;
+      if (lower.includes("forest") || lower.includes("nature")) return <TreePine className="w-4 h-4" />;
+      if (lower.includes("mountain") || lower.includes("view")) return <Mountain className="w-4 h-4" />;
+      if (lower.includes("bedroom") || lower.includes("bed")) return <Bed className="w-4 h-4" />;
+      if (lower.includes("bathroom") || lower.includes("bath")) return <Bath className="w-4 h-4" />;
+      if (lower.includes("guest") || lower.includes("people")) return <Users className="w-4 h-4" />;
+      if (lower.includes("fireplace") || lower.includes("fire") || lower.includes("sauna")) return <Flame className="w-4 h-4" />;
+      if (lower.includes("heating") || lower.includes("warm")) return <Thermometer className="w-4 h-4" />;
+      if (lower.includes("ac") || lower.includes("air") || lower.includes("cooling")) return <Snowflake className="w-4 h-4" />;
+      if (lower.includes("tv") || lower.includes("television")) return <Tv className="w-4 h-4" />;
+      if (lower.includes("gym") || lower.includes("fitness")) return <Dumbbell className="w-4 h-4" />;
+      if (lower.includes("pet") || lower.includes("dog")) return <PawPrint className="w-4 h-4" />;
+      if (lower.includes("smoking")) return <Cigarette className="w-4 h-4" />;
+      if (lower.includes("outdoor") || lower.includes("sun")) return <Sun className="w-4 h-4" />;
+      if (lower.includes("wind") || lower.includes("fan")) return <Wind className="w-4 h-4" />;
+      if (lower.includes("romantic")) return <HeartHandshake className="w-4 h-4" />;
+      
+      return <Home className="w-4 h-4" />;
+    };
+  }, []);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -133,29 +193,16 @@ const PropertyCard = memo(({
       <Card className={cardClass}>
         <div className={`relative ${cardHeight}`}>
           {/* Image with LazyImage for performance */}
-          {!imageError ? (
-            <LazyImage
-              src={safeProperty.hero_image_url}
-              alt={safeProperty.title}
-              fallbackSrc="/placeholder.jpg"
-              priority={false}
-              className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
-              decoding="async"
-              width={800}
-              height={600}
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            /* BUG-047: Final fallback with colored placeholder */
-            <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground flex items-center justify-center">
-              <div className="text-center p-4">
-                <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm break-words max-w-[90%]">
-                  {safeProperty.title}
-                </p>
-              </div>
-            </div>
-          )}
+          <LazyImage
+            src={safeProperty.hero_image_url}
+            alt={safeProperty.title}
+            fallbackSrc="/placeholder.jpg"
+            priority={false}
+            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+            decoding="async"
+            width={800}
+            height={600}
+          />
 
           {/* Image Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -243,9 +290,9 @@ const PropertyCard = memo(({
                   <span className="font-medium">{amenity.title}</span>
                 </div>
               ))}
-              {safeProperty.amenities.length > 3 && (
+              {safeProperty.amenities.length > 0 && (
                 <div className="text-xs text-muted-foreground font-medium px-2 py-1">
-                  +{safeProperty.amenities.length - 3} more
+                  +{safeProperty.amenities.length} amenities
                 </div>
               )}
             </div>
@@ -254,37 +301,10 @@ const PropertyCard = memo(({
           {/* Price and CTA */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-foreground">
-                  {Math.round((safeProperty.price_per_night || 0) * 1.1).toLocaleString()} {safeProperty.currency}
-                </span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <div className="space-y-1">
-                        <p className="font-semibold">Total price includes service fee</p>
-                        <p className="text-xs">
-                          Base: {Math.round((safeProperty.price_per_night || 0)).toLocaleString()} {safeProperty.currency}
-                        </p>
-                        <p className="text-xs">
-                          Service fee (10%): {Math.round(((safeProperty.price_per_night || 0) * 0.1)).toLocaleString()} {safeProperty.currency}
-                        </p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <span className="text-muted-foreground text-sm">/night incl. fees</span>
-              {(() => {
-                const totalPerNight = Math.round((safeProperty.price_per_night || 0) * 1.1 * 100);
-                const converted = convertForDisplay(totalPerNight, safeProperty.currency);
-                return converted ? (
-                  <span className="text-xs text-muted-foreground">{converted.formatted}/night</span>
-                ) : null;
-              })()}
+              <span className="text-2xl font-bold text-foreground">
+                {Math.round((safeProperty.price_per_night || 0) * 1.1).toLocaleString()} {safeProperty.currency}
+              </span>
+              <span className="text-muted-foreground text-sm ml-1">/night</span>
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               View Details

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Plus, AlertTriangle, ExternalLink, Info } from 'lucide-react';
+import { Lock, Plus, AlertTriangle } from 'lucide-react';
 import { YaleLockManagement } from '@/components/admin/YaleLockManagement';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -14,12 +14,11 @@ interface SmartLockSetupProps {
 }
 
 export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
-  const [deviceId, setDeviceId] = useState('');
+  const [lockId, setLockId] = useState('');
   const [lockName, setLockName] = useState('');
   const [accessDuration, setAccessDuration] = useState('1');
-  const [seamApiKey, setSeamApiKey] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
   const [hasLock, setHasLock] = useState(false);
   const { toast } = useToast();
 
@@ -29,73 +28,23 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
 
   const checkExistingLock = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('yale_locks')
         .select('id')
         .eq('property_id', propertyId)
         .single();
-
+      
       setHasLock(!!data);
-    } catch {
+    } catch (error) {
       setHasLock(false);
     }
   };
 
-  /** Verify the Seam API key + device ID are valid before saving */
-  const handleTestConnection = async () => {
-    if (!seamApiKey || !deviceId) {
-      toast({
-        title: 'Missing fields',
-        description: 'Enter both your Seam API Key and Device ID first.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setTesting(true);
-      const res = await fetch('https://connect.getseam.com/devices/get', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${seamApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ device_id: deviceId }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error?.message || `HTTP ${res.status}`);
-      }
-
-      const json = await res.json();
-      const device = json.device;
-
-      toast({
-        title: 'Connection successful',
-        description: `Found: ${device?.properties?.name || device?.display_name || deviceId}`,
-      });
-
-      // Auto-fill lock name if empty
-      if (!lockName && (device?.properties?.name || device?.display_name)) {
-        setLockName(device.properties?.name || device.display_name);
-      }
-    } catch (err: any) {
-      toast({
-        title: 'Connection failed',
-        description: err.message || 'Could not reach lock. Check your API key and Device ID.',
-        variant: 'destructive',
-      });
-    } finally {
-      setTesting(false);
-    }
-  };
-
   const handleConnect = async () => {
-    if (!deviceId || !seamApiKey) {
+    if (!lockId || !apiKey) {
       toast({
         title: 'Missing Information',
-        description: 'Please provide both Seam Device ID and API Key.',
+        description: 'Please provide both Lock ID and API Key',
         variant: 'destructive',
       });
       return;
@@ -103,31 +52,34 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
 
     try {
       setLoading(true);
-
+      
+      // Store API key directly - it will be encrypted by the database
+      // WARNING: This is a temporary measure. In production, credentials should be
+      // encrypted before storage using proper encryption methods or Supabase Vault
       const { error } = await supabase.from('yale_locks').insert({
         property_id: propertyId,
-        lock_id: deviceId,
+        lock_id: lockId,
         lock_name: lockName || null,
         access_duration_hours: parseInt(accessDuration),
-        api_credentials: btoa(seamApiKey), // Base64 — use Supabase Vault in production
+        api_credentials: btoa(apiKey), // Base64 encoded; column restricted from client SELECT via column-level REVOKE
         is_active: true,
       });
 
       if (error) throw error;
 
       toast({
-        title: 'Smart lock connected',
-        description: 'Access codes will be generated automatically 3 days before each check-in.',
+        title: 'Success',
+        description: 'Smart lock connected successfully.',
       });
 
-      setDeviceId('');
+      setLockId('');
       setLockName('');
-      setSeamApiKey('');
+      setApiKey('');
       setHasLock(true);
-    } catch {
+    } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to connect smart lock.',
+        description: 'Failed to connect smart lock',
         variant: 'destructive',
       });
     } finally {
@@ -137,13 +89,12 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
 
   return (
     <div className="space-y-6">
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle>Powered by Seam</AlertTitle>
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Security Notice</AlertTitle>
         <AlertDescription>
-          We use <a href="https://www.seam.co" target="_blank" rel="noopener noreferrer" className="underline font-medium">Seam</a> to
-          connect to Yale, August, Schlage, and 100+ other smart lock brands.
-          Time-bound PIN codes are pushed directly to your lock — no hub required for WiFi-enabled models.
+          Yale lock API credentials are currently stored with basic encoding. 
+          For production use, implement proper encryption or use Supabase Vault for credential storage.
         </AlertDescription>
       </Alert>
 
@@ -152,46 +103,21 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lock className="h-5 w-5" />
-              Connect Smart Lock
+              Connect Yale Doorman
             </CardTitle>
             <CardDescription>
-              Link your smart lock via Seam to enable automatic access code generation for guests.
+              Link your Yale Doorman smart lock to enable automatic access code generation
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="seamApiKey">Seam API Key *</Label>
+              <Label htmlFor="lockId">Lock ID *</Label>
               <Input
-                id="seamApiKey"
-                type="password"
-                value={seamApiKey}
-                onChange={(e) => setSeamApiKey(e.target.value)}
-                placeholder="seam_apikey_..."
+                id="lockId"
+                value={lockId}
+                onChange={(e) => setLockId(e.target.value)}
+                placeholder="Enter your Yale lock device ID"
               />
-              <p className="text-sm text-muted-foreground mt-1">
-                Get your API key from{' '}
-                <a
-                  href="https://console.seam.co"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline inline-flex items-center gap-0.5"
-                >
-                  console.seam.co <ExternalLink className="w-3 h-3" />
-                </a>
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="deviceId">Seam Device ID *</Label>
-              <Input
-                id="deviceId"
-                value={deviceId}
-                onChange={(e) => setDeviceId(e.target.value)}
-                placeholder="e.g., d9a1c3f0-..."
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                Find this in the Seam Console under Devices after connecting your lock account.
-              </p>
             </div>
 
             <div>
@@ -214,29 +140,26 @@ export const SmartLockSetup = ({ propertyId }: SmartLockSetupProps) => {
                 value={accessDuration}
                 onChange={(e) => setAccessDuration(e.target.value)}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="apiKey">Yale API Key *</Label>
+              <Input
+                id="apiKey"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Enter your Yale API credentials"
+              />
               <p className="text-sm text-muted-foreground mt-1">
-                Extra time after check-out before the code is deactivated.
+                Get your API key from the Yale Access Developer Portal
               </p>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleTestConnection}
-                disabled={testing || loading}
-                className="flex-1"
-              >
-                {testing ? 'Testing...' : 'Test Connection'}
-              </Button>
-              <Button
-                onClick={handleConnect}
-                disabled={loading || testing}
-                className="flex-1"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {loading ? 'Connecting...' : 'Connect Lock'}
-              </Button>
-            </div>
+            <Button onClick={handleConnect} disabled={loading} className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              {loading ? 'Connecting...' : 'Connect Smart Lock'}
+            </Button>
           </CardContent>
         </Card>
       ) : (

@@ -1061,8 +1061,6 @@ export type Database = {
           pricing_table: Json | null
           property_timezone: string
           property_type: string | null
-          registration_number: string | null
-          requires_host_approval: boolean
           review_count: number | null
           review_rating: number | null
           special_amenities: string[] | null
@@ -1071,7 +1069,6 @@ export type Database = {
           tagline_line1: string | null
           tagline_line2: string | null
           title: string
-          transport_distances: Json | null
           updated_at: string
           video_metadata: Json | null
           video_urls: string[] | null
@@ -1125,8 +1122,6 @@ export type Database = {
           pricing_table?: Json | null
           property_timezone?: string
           property_type?: string | null
-          registration_number?: string | null
-          requires_host_approval?: boolean
           review_count?: number | null
           review_rating?: number | null
           special_amenities?: string[] | null
@@ -1135,7 +1130,6 @@ export type Database = {
           tagline_line1?: string | null
           tagline_line2?: string | null
           title: string
-          transport_distances?: Json | null
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
@@ -1189,8 +1183,6 @@ export type Database = {
           pricing_table?: Json | null
           property_timezone?: string
           property_type?: string | null
-          registration_number?: string | null
-          requires_host_approval?: boolean
           review_count?: number | null
           review_rating?: number | null
           special_amenities?: string[] | null
@@ -1199,7 +1191,6 @@ export type Database = {
           tagline_line1?: string | null
           tagline_line2?: string | null
           title?: string
-          transport_distances?: Json | null
           updated_at?: string
           video_metadata?: Json | null
           video_urls?: string[] | null
@@ -1299,9 +1290,6 @@ export type Database = {
           booking_id: string
           comment: string | null
           created_at: string | null
-          host_response: string | null
-          host_response_at: string | null
-          host_response_by: string | null
           id: string
           is_published: boolean | null
           moderated_at: string | null
@@ -1317,9 +1305,6 @@ export type Database = {
           booking_id: string
           comment?: string | null
           created_at?: string | null
-          host_response?: string | null
-          host_response_at?: string | null
-          host_response_by?: string | null
           id?: string
           is_published?: boolean | null
           moderated_at?: string | null
@@ -1335,9 +1320,6 @@ export type Database = {
           booking_id?: string
           comment?: string | null
           created_at?: string | null
-          host_response?: string | null
-          host_response_at?: string | null
-          host_response_by?: string | null
           id?: string
           is_published?: boolean | null
           moderated_at?: string | null

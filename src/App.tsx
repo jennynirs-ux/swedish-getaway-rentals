@@ -1,99 +1,44 @@
-/**
- * IMP-013: Routing System Architecture
- *
- * CURRENT PRODUCTION ROUTER (Active):
- * This file is the main entry point for the application routing system.
- * Uses React Router (client-side) with Vite as the build tool.
- *
- * Dual routing system in transition:
- * - This file (src/App.tsx): CURRENT PRODUCTION
- * - Target: app/ directory (Next.js App Router)
- *
- * TODO: Migrate to app/layout.tsx (Next.js)
- * See also: app/layout.tsx (TODO reference to this file)
- *
- * All new pages and features should be added here until migration is complete.
- * The app/ directory is prepared but not yet active.
- */
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
-import { LocaleProvider } from "@/i18n/useLocale";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
-import { lazy, Suspense } from "react";
-import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
-
-// Immediate load - critical pages
 import Index from "./pages/Index";
-import PropertyPage from "./pages/PropertyPage";
+import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
-import Auth from "./pages/Auth";
+import BookingSuccess from "./pages/BookingSuccess";
+import PropertyGuide from "./pages/PropertyGuide";
+import PropertyGuestbookPage from "./pages/PropertyGuestbookPage";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
+import HostApplication from "./pages/HostApplication";
+import HostDashboard from "./components/host/HostDashboard";
+import PropertyPage from "./pages/PropertyPage";
+import OrderSuccess from "./pages/OrderSuccess";
+import ProductDetail from "./pages/ProductDetail";
+import Gallery from "./pages/Gallery";
+import Amenities from "./pages/Amenities";
+import Contact from "./pages/Contact";
+import BookNow from "./pages/BookNow";
+import Profile from "./pages/Profile";
+import FirstTimeInSweden from "./pages/FirstTimeInSweden";
+import PricingGuide from "./pages/PricingGuide";
+import BecomeHost from "./pages/BecomeHost";
 
-// Lazy load - secondary pages
-const Shop = lazy(() => import("./pages/Shop"));
-const BookingSuccess = lazy(() => import("./pages/BookingSuccess"));
-const PropertyGuide = lazy(() => import("./pages/PropertyGuide"));
-const PropertyGuestbookPage = lazy(() => import("./pages/PropertyGuestbookPage"));
-const Admin = lazy(() => import("./pages/Admin"));
-const HostApplication = lazy(() => import("./pages/HostApplication"));
-const HostDashboard = lazy(() => import("./components/host/HostDashboard"));
-const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Gallery = lazy(() => import("./pages/Gallery"));
-const Amenities = lazy(() => import("./pages/Amenities"));
-const Contact = lazy(() => import("./pages/Contact"));
-const BookNow = lazy(() => import("./pages/BookNow"));
-const Profile = lazy(() => import("./pages/Profile"));
-const FirstTimeInSweden = lazy(() => import("./pages/FirstTimeInSweden"));
-const PricingGuide = lazy(() => import("./pages/PricingGuide"));
-const BecomeHost = lazy(() => import("./pages/BecomeHost"));
-const Destinations = lazy(() => import("./pages/Destinations"));
-const DestinationDetail = lazy(() => import("./pages/DestinationDetail"));
-const Blog = lazy(() => import("./pages/Blog"));
-const BlogPost = lazy(() => import("./pages/BlogPost"));
-
-// Optimized QueryClient configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: CACHE_STALE_TIME, // 10 minutes
-      gcTime: CACHE_GC_TIME, // 20 minutes (formerly cacheTime)
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      retry: 1,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-});
-
-// Fallback component for lazy loaded pages
-const SuspenseFallback = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-pulse text-center">
-      <div className="h-12 w-12 bg-primary rounded-full mx-auto mb-4"></div>
-      <p className="text-muted-foreground">Loading...</p>
-    </div>
-  </div>
-);
+const queryClient = new QueryClient();
 
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <LocaleProvider>
       <BrowserRouter>
         <CartProvider>
           <TooltipProvider>
             <ErrorBoundary>
               <Toaster />
-              <Suspense fallback={<SuspenseFallback />}>
-                <Routes>
+              <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/villa-hacken" element={<PropertyPage />} />
                 <Route path="/villa-hacken/guide" element={<PropertyGuide />} />
@@ -135,18 +80,12 @@ const App = () => {
                 <Route path="/first-time-in-sweden" element={<FirstTimeInSweden />} />
                 <Route path="/pricing-guide" element={<PricingGuide />} />
                 <Route path="/become-host" element={<BecomeHost />} />
-                <Route path="/destinations" element={<Destinations />} />
-                <Route path="/destinations/:slug" element={<DestinationDetail />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              </Suspense>
             </ErrorBoundary>
           </TooltipProvider>
         </CartProvider>
       </BrowserRouter>
-      </LocaleProvider>
     </QueryClientProvider>
   );
 };

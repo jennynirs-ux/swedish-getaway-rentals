@@ -1,13 +1,3 @@
-/**
- * @deprecated Use @tanstack/react-query's useQuery directly instead.
- * This hook was created before React Query was properly integrated.
- * New code should use useQuery from @tanstack/react-query.
- *
- * Migration guide:
- * - Replace useOptimizedQuery({ queryKey, queryFn, staleTime })
- *   with useQuery({ queryKey, queryFn, staleTime, gcTime })
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,7 +16,6 @@ interface QueryResult<T> {
 }
 
 // Simple cache implementation
-const MAX_CACHE_SIZE = 100;
 const queryCache = new Map<string, { data: any; timestamp: number; staleTime: number }>();
 
 export function useOptimizedQuery<T>(
@@ -45,12 +34,6 @@ export function useOptimizedQuery<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const queryFnRef = useRef(queryFn);
-
-  // Keep queryFnRef in sync
-  useEffect(() => {
-    queryFnRef.current = queryFn;
-  }, [queryFn]);
 
   const executeQuery = useCallback(async (useCache = true) => {
     // Check cache first
@@ -73,20 +56,13 @@ export function useOptimizedQuery<T>(
       }
       abortControllerRef.current = new AbortController();
 
-      const result = await queryFnRef.current();
-
+      const result = await queryFn();
+      
       if (result.error) {
         throw result.error;
       }
 
       // Cache the result
-      // Check cache size limit before adding
-      if (queryCache.size >= MAX_CACHE_SIZE) {
-        const firstKey = queryCache.keys().next().value;
-        if (firstKey) {
-          queryCache.delete(firstKey);
-        }
-      }
       queryCache.set(key, {
         data: result.data,
         timestamp: Date.now(),
@@ -101,7 +77,7 @@ export function useOptimizedQuery<T>(
     } finally {
       setLoading(false);
     }
-  }, [key, staleTime]);
+  }, [key, queryFn, staleTime]);
 
   const refetch = useCallback(() => executeQuery(false), [executeQuery]);
 

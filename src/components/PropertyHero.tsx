@@ -29,12 +29,12 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
       <div className="relative z-10 container mx-auto px-4 text-center text-white">
         <div className="max-w-4xl mx-auto">
           {/* Property Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
             {property.title}
           </h1>
-
+          
           {/* Tagline */}
-          <div className="text-lg sm:text-xl md:text-2xl mb-8 font-light leading-relaxed">
+          <div className="text-xl md:text-2xl mb-8 font-light leading-relaxed">
             <p>{property.tagline_line1 || 'Experience luxury in the heart of Swedish nature.'}</p>
             <p>{property.tagline_line2 || 'Your perfect escape awaits.'}</p>
           </div>

@@ -1,19 +1,13 @@
-// IMP-005: TODO - Add bulk actions for coupons (enable/disable multiple)
-// IMP-006: TODO - Add coupon usage analytics and detailed reports
-// IMP-008: TODO - Add export functionality for coupon data
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, Plus, Calendar, Percent, Download } from "lucide-react";
+import { Edit, Trash2, Plus, Calendar, Percent } from "lucide-react";
 import CouponForm from "@/components/CouponForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { exportToCsv } from "@/lib/exportCsv";
 
 interface Coupon {
   id: string;
@@ -42,18 +36,6 @@ const CouponsManagement = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
-  const exportColumns = [
-    { key: 'id', label: 'Coupon ID' },
-    { key: 'code', label: 'Code' },
-    { key: 'discount_type', label: 'Type' },
-    { key: 'discount_value', label: 'Value' },
-    { key: 'used_count', label: 'Used' },
-    { key: 'usage_limit', label: 'Max Uses' },
-    { key: 'is_active', label: 'Active' },
-    { key: 'valid_until', label: 'Expires' },
-  ];
 
   useEffect(() => {
     fetchCoupons();
@@ -89,8 +71,8 @@ const CouponsManagement = () => {
         throw error;
       }
       
-
-      setCoupons((data as Coupon[]) || []);
+      
+      setCoupons((data as any) || []);
     } catch (error: any) {
       console.error('Failed to load coupons:', error);
       toast.error(`Failed to load coupons: ${error.message}`);
@@ -116,6 +98,8 @@ const CouponsManagement = () => {
   };
 
   const handleDelete = async (couponId: string) => {
+    if (!confirm('Are you sure you want to delete this coupon?')) return;
+
     try {
       const { error } = await supabase
         .from('coupons')
@@ -125,7 +109,6 @@ const CouponsManagement = () => {
       if (error) throw error;
 
       toast.success('Coupon deleted successfully');
-      setDeleteConfirm(null);
       fetchCoupons();
     } catch (error: any) {
       toast.error('Failed to delete coupon');
@@ -154,18 +137,12 @@ const CouponsManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center gap-4">
+          <div className="flex justify-between items-center">
             <CardTitle>Coupons Management</CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => exportToCsv(coupons || [], exportColumns, 'coupons.csv')}>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button onClick={() => setShowForm(!showForm)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {showForm ? 'Hide Form' : 'Create Coupon'}
-              </Button>
-            </div>
+            <Button onClick={() => setShowForm(!showForm)}>
+              <Plus className="h-4 w-4 mr-2" />
+              {showForm ? 'Hide Form' : 'Create Coupon'}
+            </Button>
           </div>
         </CardHeader>
         
@@ -254,7 +231,7 @@ const CouponsManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setDeleteConfirm(coupon.id)}
+                            onClick={() => handleDelete(coupon.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -264,7 +241,7 @@ const CouponsManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-
+              
               {bookingCoupons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No booking coupons found
@@ -342,7 +319,7 @@ const CouponsManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setDeleteConfirm(coupon.id)}
+                            onClick={() => handleDelete(coupon.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -352,7 +329,7 @@ const CouponsManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-
+              
               {productCoupons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No product coupons found
@@ -436,7 +413,7 @@ const CouponsManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setDeleteConfirm(coupon.id)}
+                            onClick={() => handleDelete(coupon.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -446,7 +423,7 @@ const CouponsManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-
+              
               {propertyCoupons.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No property coupons found
@@ -456,30 +433,6 @@ const CouponsManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Coupon</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this coupon? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleteConfirm) {
-                  handleDelete(deleteConfirm);
-                }
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

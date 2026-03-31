@@ -12,16 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Next.js
-.next/
-.nextjs/
-out/
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -32,9 +22,3 @@ out/
 *.njsproj
 *.sln
 *.sw?
-coverage/
-
-# Playwright
-test-results/
-playwright-report/
-.playwright/

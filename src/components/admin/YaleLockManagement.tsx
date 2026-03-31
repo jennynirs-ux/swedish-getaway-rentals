@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Lock, Unlock, Trash2, RefreshCw } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface YaleLock {
   id: string;
@@ -44,8 +43,6 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
   const [locks, setLocks] = useState<YaleLock[]>([]);
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [lockToDelete, setLockToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -107,18 +104,22 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
 
   const handleRevokeCode = async (logId: string) => {
     try {
-      // Call edge function which revokes on Seam (physical lock) + DB
-      const { data, error } = await supabase.functions.invoke('revoke-access-code', {
-        body: { logId },
-      });
-
+      const { error } = await supabase
+        .from('lock_access_log')
+        .update({ 
+          status: 'revoked',
+          revoked_at: new Date().toISOString(),
+          revoked_by: (await supabase.auth.getUser()).data.user?.id 
+        })
+        .eq('id', logId);
+      
       if (error) throw error;
-
+      
       toast({
         title: 'Code Revoked',
-        description: 'Access code removed from lock and deactivated.',
+        description: 'Access code has been revoked successfully',
       });
-
+      
       fetchAccessLogs();
     } catch (error) {
       console.error('Error revoking code:', error);
@@ -130,22 +131,22 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
     }
   };
 
-  const handleDeleteLock = async () => {
-    if (!lockToDelete) return;
-
+  const handleDeleteLock = async (lockId: string) => {
+    if (!confirm('Are you sure you want to delete this lock?')) return;
+    
     try {
       const { error } = await supabase
         .from('yale_locks')
         .delete()
-        .eq('id', lockToDelete);
-
+        .eq('id', lockId);
+      
       if (error) throw error;
-
+      
       toast({
         title: 'Lock Deleted',
         description: 'Smart lock has been removed',
       });
-
+      
       fetchLocks();
     } catch (error) {
       console.error('Error deleting lock:', error);
@@ -154,9 +155,6 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
         description: 'Failed to delete lock',
         variant: 'destructive',
       });
-    } finally {
-      setDeleteConfirmOpen(false);
-      setLockToDelete(null);
     }
   };
 
@@ -236,10 +234,7 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => {
-                            setLockToDelete(lock.id);
-                            setDeleteConfirmOpen(true);
-                          }}
+                          onClick={() => handleDeleteLock(lock.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -298,23 +293,6 @@ export const YaleLockManagement = ({ propertyId }: YaleLockManagementProps) => {
           </CardContent>
         </Card>
       )}
-
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Smart Lock</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this smart lock? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex gap-2 justify-end">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteLock} className="bg-destructive hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

@@ -1,18 +1,14 @@
-import { useState, useMemo, useCallback, memo, Suspense, lazy, useEffect } from "react";
+import { useState, useMemo, useCallback, memo, Suspense, lazy } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/hooks/useProperties";
+import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import PropertyNavigation from "@/components/PropertyNavigation";
 import PropertyHero from "@/components/PropertyHero";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
-import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
-import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
-import { VacationRentalJsonLd } from "@/components/seo/JsonLd";
-import { useSeoMeta } from "@/hooks/useSeoMeta";
 
 // Lazy-loaded heavy components
 const PropertyGallery = lazy(() => import("@/components/PropertyGallery"));
@@ -21,7 +17,6 @@ const PropertySpecialHighlights = lazy(() => import("@/components/PropertySpecia
 const PropertyBooking = lazy(() => import("@/components/PropertyBooking"));
 const PropertyFooter = lazy(() => import("@/components/PropertyFooter"));
 const PropertyLocation = lazy(() => import("@/components/PropertyLocation"));
-const RelatedProperties = lazy(() => import("@/components/RelatedProperties"));
 const PropertyGuestbook = lazy(() => import("@/components/PropertyGuestbook"));
 const NearbyProperties = lazy(() => import("@/components/NearbyProperties"));
 
@@ -31,26 +26,26 @@ const NearbyPropertiesWrapper = memo(({ currentPropertyId, currentCoordinates }:
   currentCoordinates: { latitude: number; longitude: number };
 }) => {
   const fetchNearbyPropertiesFn = useCallback(async () => {
-    // BUG-037: N+1 query for nearby properties. In production, should use PostGIS for efficient proximity search.
-    // For now, limiting to 4 properties to reduce query overhead and payload.
     const { data, error } = await supabase
       .from("properties")
       .select("id, title, hero_image_url, latitude, longitude, location")
       .eq("active", true)
       .not("latitude", "is", null)
-      .not("longitude", "is", null)
-      .limit(4);
-
+      .not("longitude", "is", null);
+    
     if (error) throw error;
     return { data: data || [], error: null };
   }, []);
 
-  const { data: allProperties = [] } = useQuery({
-    queryKey: ["all-properties-nearby"],
-    queryFn: fetchNearbyPropertiesFn,
-    gcTime: CACHE_GC_TIME,
-    staleTime: CACHE_STALE_TIME,
-  });
+  const { data: allProperties = [] } = useOptimizedQuery(
+    "all-properties-nearby",
+    fetchNearbyPropertiesFn,
+    {
+      cacheTime: 15 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      enableRealtime: false,
+    }
+  );
 
   return (
     <NearbyProperties
@@ -69,44 +64,36 @@ const PropertyPage = memo(() => {
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
   const [guideSectionId, setGuideSectionId] = useState<string | undefined>();
 
-  /** Resolve legacy routes → actual property id (once per component) */
-  const [resolvedPropertyId, setResolvedPropertyId] = useState<string | null>(null);
-  const [resolutionError, setResolutionError] = useState<Error | null>(null);
+  /** Resolve legacy routes → actual property id */
+  const resolvePropertyId = useCallback(async (incomingId: string) => {
+    let propertyId = incomingId;
 
-  // Resolve property ID once on mount
-  useEffect(() => {
-    const resolve = async () => {
-      let propertyId = id!;
+    if (incomingId === "villa-hacken") {
+      const { data } = await supabase
+        .from("properties")
+        .select("id")
+        .ilike("title", "%villa%")
+        .eq("active", true)
+        .limit(1)
+        .single();
+      if (data) propertyId = data.id;
+    } else if (incomingId === "lakehouse-getaway") {
+      const { data } = await supabase
+        .from("properties")
+        .select("id")
+        .or("title.ilike.%lakehouse%,title.ilike.%lake%")
+        .eq("active", true)
+        .limit(1)
+        .single();
+      if (data) propertyId = data.id;
+    }
 
-      if (id === "villa-hacken") {
-        const { data } = await supabase
-          .from("properties")
-          .select("id")
-          .ilike("title", "%villa%")
-          .eq("active", true)
-          .limit(1)
-          .single();
-        if (data) propertyId = data.id;
-      } else if (id === "lakehouse-getaway") {
-        const { data } = await supabase
-          .from("properties")
-          .select("id")
-          .or("title.ilike.%lakehouse%,title.ilike.%lake%")
-          .eq("active", true)
-          .limit(1)
-          .single();
-        if (data) propertyId = data.id;
-      }
-
-      setResolvedPropertyId(propertyId);
-    };
-
-    resolve().catch(err => setResolutionError(err));
-  }, [id]);
+    return propertyId;
+  }, []);
 
   /** Light query */
   const propertyLightQueryFn = useCallback(async () => {
-    if (!resolvedPropertyId) throw new Error("Property ID not resolved");
+    let propertyId = await resolvePropertyId(id!);
 
     const { data, error } = await supabase
       .from("properties")
@@ -132,25 +119,27 @@ const PropertyPage = memo(() => {
         longitude,
         city
       `)
-      .eq("id", resolvedPropertyId)
+      .eq("id", propertyId)
       .eq("active", true)
       .single();
 
     if (error) throw error;
     return { data, error: null };
-  }, [resolvedPropertyId]);
+  }, [id, resolvePropertyId]);
 
-  const { data: lightProperty, isLoading: loading, error } = useQuery({
-    queryKey: [`property-light-${id}`],
-    queryFn: propertyLightQueryFn,
-    gcTime: 10 * 60 * 1000,
-    staleTime: 2 * 60 * 1000,
-    enabled: !!resolvedPropertyId,
-  });
+  const { data: lightProperty, loading, error } = useOptimizedQuery(
+    `property-light-${id}`,
+    propertyLightQueryFn,
+    {
+      cacheTime: 10 * 60 * 1000,
+      staleTime: 2 * 60 * 1000,
+      enableRealtime: false,
+    }
+  );
 
   /** Heavy query */
   const propertyHeavyQueryFn = useCallback(async () => {
-    if (!resolvedPropertyId) throw new Error("Property ID not resolved");
+    let propertyId = await resolvePropertyId(id!);
 
     const { data, error } = await supabase
       .from("properties")
@@ -166,25 +155,25 @@ const PropertyPage = memo(() => {
         get_in_touch_info,
         footer_quick_links,
         gallery_metadata,
-        video_metadata,
-        transport_distances,
-        registration_number
+        video_metadata
       `)
-      .eq("id", resolvedPropertyId)
+      .eq("id", propertyId)
       .eq("active", true)
       .single();
 
     if (error) throw error;
     return { data, error: null };
-  }, [resolvedPropertyId]);
+  }, [id, resolvePropertyId]);
 
-  const { data: heavyProperty } = useQuery({
-    queryKey: [`property-heavy-${id}`],
-    queryFn: propertyHeavyQueryFn,
-    gcTime: 10 * 60 * 1000,
-    staleTime: 5 * 60 * 1000,
-    enabled: !!resolvedPropertyId,
-  });
+  const { data: heavyProperty } = useOptimizedQuery(
+    `property-heavy-${id}`,
+    propertyHeavyQueryFn,
+    {
+      cacheTime: 10 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      enableRealtime: false,
+    }
+  );
 
   const handleGuideOpen = useCallback((sectionId?: string) => {
     setGuideSectionId(sectionId);
@@ -221,17 +210,6 @@ const PropertyPage = memo(() => {
       city: lightProperty.city ?? null,
     } as Property;
   }, [lightProperty, heavyProperty]);
-
-  // Dynamic SEO meta tags per property
-  useSeoMeta({
-    title: property?.title,
-    description: property?.description?.slice(0, 160) || undefined,
-    ogTitle: property?.title,
-    ogDescription: property?.description?.slice(0, 160) || undefined,
-    ogImage: property?.hero_image_url || undefined,
-    ogUrl: property ? `https://nordic-getaways.com/property/${property.id}` : undefined,
-    canonical: property ? `https://nordic-getaways.com/property/${property.id}` : undefined,
-  });
 
   // Loading
   if (loading) {
@@ -271,29 +249,7 @@ const PropertyPage = memo(() => {
   // Render
   return (
     <div className="min-h-screen bg-background">
-      <VacationRentalJsonLd
-        name={property.title}
-        description={property.description || ''}
-        image={property.hero_image_url || ''}
-        url={`https://nordic-getaways.com/property/${property.id}`}
-        address={{ locality: property.location, country: 'SE' }}
-        bedrooms={property.bedrooms}
-        bathrooms={property.bathrooms}
-        maxGuests={property.max_guests}
-        pricePerNight={property.price_per_night}
-        currency={property.currency || 'SEK'}
-        rating={property.average_rating}
-        reviewCount={property.review_count}
-        amenities={Array.isArray(property.amenities) ? property.amenities as string[] : []}
-        registrationNumber={property.registration_number}
-      />
       <PropertyNavigation />
-      <div className="container mx-auto px-4">
-        <Breadcrumbs items={[
-          { label: 'Properties', href: '/' },
-          { label: property.title },
-        ]} />
-      </div>
       <PropertyHero property={property} />
 
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
@@ -326,7 +282,6 @@ const PropertyPage = memo(() => {
           longitude={property.longitude}
           propertyTitle={property.title}
           location={property.location}
-          transportDistances={property.transport_distances as any}
         />
       </Suspense>
 
@@ -341,14 +296,6 @@ const PropertyPage = memo(() => {
           />
         </Suspense>
       )}
-
-      <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-        <RelatedProperties
-          currentPropertyId={property.id}
-          location={property.location}
-          maxGuests={property.max_guests}
-        />
-      </Suspense>
 
       <Suspense fallback={<Skeleton className="h-20 w-full" />}>
         <PropertyFooter property={property} />

@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
 import ShopFilters, { ShopFilters as ShopFiltersType } from "@/components/ShopFilters";
-import forestHeroBg from "@/assets/forest-hero-bg.webp";
+import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 
 interface ShopProduct {
   id: string;
@@ -61,7 +61,6 @@ const Shop = () => {
   };
 
   useEffect(() => {
-    document.title = 'Shop | Nordic Getaways';
     fetchProducts();
   }, []);
 
@@ -226,8 +225,6 @@ const Shop = () => {
           <img
             src={forestHeroBg}
             alt="Nordic forest background"
-            loading="lazy"
-            decoding="async"
             className="w-full h-full object-cover"
           />
         </div>
@@ -312,7 +309,6 @@ const Shop = () => {
                             src={imageUrl || "/placeholder.svg"}
                             alt={title}
                             loading="lazy"
-                            decoding="async"
                             className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>

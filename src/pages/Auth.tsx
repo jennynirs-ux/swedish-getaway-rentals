@@ -5,36 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { Mail, ArrowLeft } from 'lucide-react';
-
-// IMP-002: List of top common passwords to check against
-const commonPasswords = [
-  'password',
-  '123456',
-  '123456789',
-  'qwerty',
-  'abc123',
-  'monkey',
-  '1234567',
-  'letmein',
-  'trustno1',
-  'dragon',
-  'baseball',
-  'iloveyou',
-  'sunshine',
-  'password123',
-  '123123',
-  'welcome',
-  'login',
-  'admin',
-  'princess',
-  'qwertyuiop'
-];
 
 // Password validation schema
 const passwordSchema = z.string()
@@ -45,7 +20,6 @@ const passwordSchema = z.string()
   .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 
 const Auth = () => {
-  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
@@ -55,29 +29,7 @@ const Auth = () => {
   const [passwordStrength, setPasswordStrength] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // BUG-049: Client-side rate limiting for password reset
-  const [lastPasswordResetTime, setLastPasswordResetTime] = useState<number | null>(null);
-  // IMP-015: Track password reset email sent state
-  const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-
-  // Validate redirect URL to prevent open redirect attacks
-  const getValidatedRedirect = (redirectUrl: string | null): string => {
-    if (!redirectUrl) return '/';
-
-    // Only allow relative paths starting with '/'
-    if (!redirectUrl.startsWith('/')) return '/';
-
-    // Block protocol-relative URLs (// or http:// or https://)
-    if (redirectUrl.startsWith('//') || redirectUrl.includes('://')) {
-      return '/';
-    }
-
-    // Allow the relative path
-    return redirectUrl;
-  };
-
-  const redirectTo = getValidatedRedirect(searchParams.get('redirect'));
+  const redirectTo = searchParams.get('redirect') || '/';
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -117,13 +69,6 @@ const Auth = () => {
 
   const validatePassword = (pwd: string) => {
     try {
-      // IMP-002: Check if password is a common password (case-insensitive)
-      const lowerPwd = pwd.toLowerCase();
-      if (commonPasswords.includes(lowerPwd)) {
-        setPasswordStrength('This password is too common. Please choose a more unique password.');
-        return false;
-      }
-
       passwordSchema.parse(pwd);
       setPasswordStrength('Strong');
       return true;
@@ -143,16 +88,15 @@ const Auth = () => {
     // Validate password strength
     if (!validatePassword(password)) {
       setLoading(false);
-      toast({ title: 'Error', description: 'Password does not meet security requirements', variant: 'destructive' });
+      toast.error('Password does not meet security requirements');
       return;
     }
 
     try {
       const redirectUrl = `${window.location.origin}/`;
-      const normalizedEmail = email.toLowerCase().trim();
-
+      
       const { error } = await supabase.auth.signUp({
-        email: normalizedEmail,
+        email,
         password,
         options: {
           emailRedirectTo: redirectUrl
@@ -161,10 +105,10 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast({ title: 'Success', description: 'Check your email for the confirmation link!' });
+      toast.success('Check your email for the confirmation link!');
     } catch (error: any) {
       setError(error.message);
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -185,7 +129,7 @@ const Auth = () => {
       if (error) throw error;
     } catch (error: any) {
       setError(error.message);
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -206,7 +150,7 @@ const Auth = () => {
       if (error) throw error;
     } catch (error: any) {
       setError(error.message);
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -214,47 +158,18 @@ const Auth = () => {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      toast({ title: 'Error', description: 'Please enter your email address first', variant: 'destructive' });
+      toast.error('Please enter your email address first');
       return;
     }
-
-    // BUG-049: Client-side rate limiting (60 seconds cooldown)
-    const now = Date.now();
-    if (lastPasswordResetTime && now - lastPasswordResetTime < 60000) {
-      const secondsRemaining = Math.ceil((60000 - (now - lastPasswordResetTime)) / 1000);
-      toast({ title: 'Error', description: `Please wait ${secondsRemaining} seconds before requesting another reset`, variant: 'destructive' });
-      return;
-    }
-
     setLoading(true);
     try {
-      const normalizedEmail = email.toLowerCase().trim();
-
-      // Attempt to send password reset link
-      // Always show the same success message regardless of whether the email exists
-      // This prevents email enumeration attacks
-      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth`,
       });
-
-      // IMP-015: Show distinct "check your email" state
-      setResetEmailSent(true);
-      setResetEmail(normalizedEmail);
-
-      // Always show the generic success message
-      toast({ title: 'Success', description: 'If an account exists with this email, you will receive a password reset link shortly.' });
-
-      // Update last reset time
-      setLastPasswordResetTime(now);
-
-      // Optionally log error but don't expose it to the user
-      if (error && error.message) {
-        console.error('Password reset error:', error.message);
-      }
+      if (error) throw error;
+      toast.success('Password reset link sent! Check your email.');
     } catch (error: any) {
-      // Also show generic message on catch
-      toast({ title: 'Success', description: 'If an account exists with this email, you will receive a password reset link shortly.' });
-      console.error('Unexpected error during password reset:', error);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -266,19 +181,17 @@ const Auth = () => {
     setError(null);
 
     try {
-      const normalizedEmail = email.toLowerCase().trim();
-
       const { error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
+        email,
         password
       });
 
       if (error) throw error;
 
-      toast({ title: 'Success', description: 'Successfully signed in!' });
+      toast.success('Successfully signed in!');
     } catch (error: any) {
       setError(error.message);
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -302,55 +215,19 @@ const Auth = () => {
       
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-md mx-auto">
-          {/* IMP-015: Show distinct "check your email" state after password reset request */}
-          {resetEmailSent ? (
-            <Card>
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <Mail className="h-12 w-12 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">Check your email</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="text-center space-y-2">
-                  <p className="text-muted-foreground">
-                    We've sent a password reset link to:
-                  </p>
-                  <p className="font-semibold text-foreground break-all">
-                    {resetEmail}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-4">
-                    Click the link in the email to reset your password. If you don't see the email, check your spam folder.
-                  </p>
-                </div>
-                <Button
-                  onClick={() => {
-                    setResetEmailSent(false);
-                    setResetEmail("");
-                    setEmail("");
-                  }}
-                  variant="outline"
-                  className="w-full gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to login
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-center text-2xl">
-                  {redirectTo === '/host-dashboard' ? 'Sign in to become a Host' : 'Welcome'}
-                </CardTitle>
-                {redirectTo === '/host-dashboard' && (
-                  <p className="text-center text-muted-foreground mt-2">
-                    Create an account to access your host dashboard and start listing your property.
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="signin" className="w-full">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center text-2xl">
+                {redirectTo === '/host-dashboard' ? 'Sign in to become a Host' : 'Welcome'}
+              </CardTitle>
+              {redirectTo === '/host-dashboard' && (
+                <p className="text-center text-muted-foreground mt-2">
+                  Create an account to access your host dashboard and start listing your property.
+                </p>
+              )}
+            </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="signin" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -516,10 +393,9 @@ const Auth = () => {
                     </div>
                   </form>
                 </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          )}
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

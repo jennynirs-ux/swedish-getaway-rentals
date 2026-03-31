@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, type ElementType, lazy, Suspense } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
 import {
   Tooltip,
   TooltipContent,
@@ -151,17 +152,51 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     }
   };
 
-  const exportToPDF = async () => {
-    const { generateGuidebookPdf } = await import("@/lib/generateGuidePdf");
-    await generateGuidebookPdf(
-      property.title,
-      allSections.map((s) => ({
-        title: s.title,
-        content: s.content,
-        items: s.items,
-        blocks: s.blocks,
-      }))
-    );
+  const exportToPDF = () => {
+    const pdf = new jsPDF();
+    let yPosition = 20;
+
+    // Cover page
+    pdf.setFontSize(24);
+    pdf.text(property.title, 20, yPosition);
+    yPosition += 10;
+    pdf.setFontSize(12);
+    pdf.text("Guest Guidebook", 20, yPosition);
+    yPosition += 20;
+
+    // Add sections
+    allSections.forEach((section) => {
+      if (yPosition > 270) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+
+      pdf.setFontSize(16);
+      pdf.text(section.title, 20, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(10);
+      if (section.content) {
+        const lines = pdf.splitTextToSize(section.content, 170);
+        pdf.text(lines, 20, yPosition);
+        yPosition += lines.length * 5 + 10;
+      }
+
+      if (section.items) {
+        section.items.forEach((item) => {
+          if (yPosition > 270) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          const lines = pdf.splitTextToSize(`• ${item}`, 165);
+          pdf.text(lines, 25, yPosition);
+          yPosition += lines.length * 5 + 2;
+        });
+        yPosition += 5;
+      }
+    });
+
+    pdf.save(`${property.title}-guidebook.pdf`);
     toast({ title: "PDF Downloaded", description: "Guidebook saved successfully!" });
   };
 
@@ -412,36 +447,21 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     }
 
     if (section.type === "list" && section.items) {
-      return (
-        <div className="grid gap-3">
-          {section.items.map((item, idx) => (
-            <div key={idx} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
-              <div className="p-1.5 bg-primary/10 rounded-md mt-0.5">
-                <Info className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <span className="text-sm leading-relaxed">{item}</span>
-            </div>
-          ))}
-        </div>
-      );
+      return <ul className="list-disc pl-5 space-y-2">{section.items.map((item, idx) => <li key={idx}>{item}</li>)}</ul>;
     }
     if (section.type === "checkbox" && section.items) {
       return (
-        <div className="grid gap-3">
+        <ul className="space-y-2">
           {section.items.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
-              <CheckSquare className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-sm">{item}</span>
-            </div>
+            <li key={idx} className="flex items-center gap-2">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span>{item}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       );
     }
-    return (
-      <div className="p-4 bg-muted/20 rounded-lg border border-border/50">
-        <p className="text-muted-foreground leading-relaxed">{section.content}</p>
-      </div>
-    );
+    return <p className="text-muted-foreground">{section.content}</p>;
   };
 
   if (!isOpen) return null;
@@ -474,64 +494,19 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
             </nav>
           </TooltipProvider>
 
-          <div className="flex-1 overflow-y-auto relative h-full">
-            {/* Section hero image */}
-            {allSections[activeIndex].image_url && (
-              <div className="relative h-48 w-full overflow-hidden">
-                <img
-                  src={allSections[activeIndex].image_url}
-                  alt={allSections[activeIndex].title}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
-              </div>
-            )}
-
-            {/* Welcome banner for home section */}
-            {allSections[activeIndex].id === "home" && !allSections[activeIndex].image_url && property.hero_image_url && (
-              <div className="relative h-48 w-full overflow-hidden">
-                <img
-                  src={property.hero_image_url}
-                  alt={property.title}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-background/90 flex items-end p-6">
-                  <div>
-                    <p className="text-white/80 text-sm font-medium">Welcome to</p>
-                    <h2 className="text-white text-2xl font-bold">{property.title}</h2>
-                  </div>
+          <div className="flex-1 overflow-y-auto px-8 py-6 relative h-full">
+            <DialogHeader className="mb-6">
+              <div className="flex items-start justify-between">
+                <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
+                <div className="flex gap-2 mt-1">
+                  <Button variant="outline" size="icon" onClick={shareGuide}><Share2 className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" onClick={exportToPDF}><Download className="h-4 w-4" /></Button>
                 </div>
               </div>
-            )}
+            </DialogHeader>
 
-            <div className="px-8 py-6">
-              <DialogHeader className="mb-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    {(() => {
-                      const Icon = allSections[activeIndex].icon || Info;
-                      return (
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Icon className="h-5 w-5 text-primary" />
-                        </div>
-                      );
-                    })()}
-                    <DialogTitle className="text-3xl font-bold">{allSections[activeIndex].title}</DialogTitle>
-                  </div>
-                  <div className="flex gap-2 mt-1">
-                    <Button variant="outline" size="icon" onClick={shareGuide}><Share2 className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon" onClick={() => exportToPDF()}><Download className="h-4 w-4" /></Button>
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
-                {renderSectionContent(allSections[activeIndex])}
-              </div>
+            <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
+              {renderSectionContent(allSections[activeIndex])}
             </div>
           </div>
         </div>

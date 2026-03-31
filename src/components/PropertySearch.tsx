@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { Search, MapPin, Users, Calendar, SlidersHorizontal, X, Loader2, ChevronDown, Trash2 } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Search, MapPin, Users, Calendar, SlidersHorizontal, X, Loader2, ChevronDown } from "lucide-react";
 import { geocodeAddress } from "@/lib/geocoding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, addDays, subDays } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
-import { MAX_PRICE_RANGE } from "@/lib/constants";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SearchFilters {
   location: string;
@@ -33,56 +31,25 @@ interface PropertySearchProps {
 }
 
 const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySearchProps) => {
-  const isMobile = useIsMobile();
   const [showFilters, setShowFilters] = useState(false);
   const [isGeocodingLocation, setIsGeocodingLocation] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
     location: "",
     checkIn: undefined,
     checkOut: undefined,
     guests: 2,
-    priceRange: [0, MAX_PRICE_RANGE],
+    priceRange: [0, 10000],
     amenities: [],
     propertyType: "all",
     dateFlexibility: 0,
     destinationCoords: null,
   });
 
-  // IMP-003: Load search history from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('search_history');
-    if (stored) {
-      try {
-        setSearchHistory(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse search history:', e);
-      }
-    }
-  }, []);
-
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
     onFiltersChange(updatedFilters);
-  };
-
-  // IMP-003: Add location to search history and save to localStorage
-  const addToSearchHistory = (location: string) => {
-    if (!location.trim()) return;
-
-    const updated = [location, ...searchHistory.filter(l => l !== location)].slice(0, 5);
-    setSearchHistory(updated);
-    localStorage.setItem('search_history', JSON.stringify(updated));
-  };
-
-  // IMP-003: Clear search history
-  const clearSearchHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem('search_history');
-    setShowSearchHistory(false);
   };
 
   const handleSearch = useCallback(async () => {
@@ -91,8 +58,6 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       if (filters.location.trim()) {
         const result = await geocodeAddress(filters.location);
         if (result) {
-          // IMP-003: Add successful search to history
-          addToSearchHistory(filters.location);
           updateFilters({
             destinationCoords: {
               latitude: result.latitude,
@@ -107,9 +72,8 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       }
     } finally {
       setIsGeocodingLocation(false);
-      setShowSearchHistory(false);
     }
-  }, [filters.location, searchHistory, onFiltersChange]);
+  }, [filters.location]);
 
   const clearFilters = () => {
     const clearedFilters: SearchFilters = {
@@ -117,7 +81,7 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       checkIn: undefined,
       checkOut: undefined,
       guests: 2,
-      priceRange: [0, MAX_PRICE_RANGE],
+      priceRange: [0, 10000],
       amenities: [],
       propertyType: "all",
       dateFlexibility: 0,
@@ -155,54 +119,18 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
       {/* Compact Search Bar */}
       <Card className="p-3 shadow-md">
         <div className="flex flex-col sm:flex-row gap-2">
-          {/* Location with IMP-003: Search History */}
+          {/* Location */}
           <div className="flex-1 relative">
             <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="City or destination"
               value={filters.location}
               onChange={(e) => updateFilters({ location: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                } else if (e.key === 'Escape') {
-                  setShowSearchHistory(false);
-                }
-              }}
-              onFocus={() => filters.location === '' && searchHistory.length > 0 && setShowSearchHistory(true)}
-              onBlur={() => setTimeout(() => setShowSearchHistory(false), 200)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="pl-9 text-sm"
             />
             {isGeocodingLocation && (
               <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
-            )}
-
-            {/* IMP-003: Search history dropdown */}
-            {showSearchHistory && searchHistory.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10">
-                <div className="p-2 space-y-1">
-                  {searchHistory.map((location, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        updateFilters({ location });
-                        setShowSearchHistory(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-accent rounded text-sm flex items-center gap-2"
-                    >
-                      <MapPin className="h-3 w-3 text-muted-foreground" />
-                      {location}
-                    </button>
-                  ))}
-                  <button
-                    onClick={clearSearchHistory}
-                    className="w-full text-left px-3 py-2 hover:bg-accent rounded text-sm text-muted-foreground flex items-center gap-2 border-t mt-2 pt-2"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Clear history
-                  </button>
-                </div>
-              </div>
             )}
           </div>
 
@@ -236,14 +164,8 @@ const PropertySearch = ({ onFiltersChange, availableAmenities = [] }: PropertySe
                 mode="range"
                 selected={dateRange}
                 onSelect={handleDateRangeChange}
-                disabled={(date) => {
-                  // Disable past dates and dates before check-in when selecting check-out
-                  if (date < new Date()) return true;
-                  // Disable dates before check-in for the check-out selection
-                  if (dateRange?.from && date < dateRange.from) return true;
-                  return false;
-                }}
-                numberOfMonths={isMobile ? 1 : 2}
+                disabled={(date) => date < new Date()}
+                numberOfMonths={2}
                 className={cn("p-3 pointer-events-auto")}
               />
               <div className="border-t p-3 space-y-2">

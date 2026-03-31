@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, MapPin, Star, LogOut, Heart, Calendar } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/MainNavigation";
 
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useFavorites } from "@/hooks/useFavorites";
-import { VerifyIdentityButton } from "@/components/VerifyIdentityButton";
 
 interface Profile {
   user_id: string;
@@ -36,12 +34,10 @@ interface Profile {
 }
 
 const Profile = () => {
-  const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [favoriteProperties, setFavoriteProperties] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isBookingsLoading, setIsBookingsLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -52,23 +48,17 @@ const Profile = () => {
     date_of_birth: ''
   });
   const navigate = useNavigate();
-  const isMountedRef = useRef(true);
   const { getFavoriteProperties } = useFavorites(profile?.user_id);
 
   useEffect(() => {
     checkAuth();
-
-    // BUG-043: Cleanup on unmount
-    return () => {
-      isMountedRef.current = false;
-    };
   }, []);
 
   const checkAuth = async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        if (isMountedRef.current) navigate('/auth');
+        navigate('/auth');
         return;
       }
 
@@ -77,7 +67,7 @@ const Profile = () => {
       await fetchBookings(user.id);
     } catch (error) {
       console.error('Auth check error:', error);
-      if (isMountedRef.current) navigate('/auth');
+      navigate('/auth');
     }
   };
 
@@ -91,26 +81,19 @@ const Profile = () => {
 
       if (error) throw error;
 
-      // BUG-043: Check if mounted before setState
-      if (isMountedRef.current) {
-        setProfile(data);
-        setFormData({
-          full_name: data.full_name || '',
-          display_name: data.display_name || '',
-          phone: data.phone || '',
-          bio: data.bio || '',
-          location: data.location || '',
-          date_of_birth: data.date_of_birth || ''
-        });
-      }
+      setProfile(data);
+      setFormData({
+        full_name: data.full_name || '',
+        display_name: data.display_name || '',
+        phone: data.phone || '',
+        bio: data.bio || '',
+        location: data.location || '',
+        date_of_birth: data.date_of_birth || ''
+      });
     } catch (error: any) {
-      if (isMountedRef.current) {
-        toast({ title: 'Error', description: 'Failed to load profile', variant: 'destructive' });
-      }
+      toast.error('Failed to load profile');
     } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -125,8 +108,6 @@ const Profile = () => {
   };
 
   const fetchBookings = async (userId: string) => {
-    // BUG-051: Use separate loading state for bookings
-    setIsBookingsLoading(true);
     try {
       const { data, error } = await supabase
         .from('bookings')
@@ -146,8 +127,6 @@ const Profile = () => {
       setBookings(data || []);
     } catch (error: any) {
       console.error('Failed to load bookings:', error);
-    } finally {
-      setIsBookingsLoading(false);
     }
   };
 
@@ -169,16 +148,11 @@ const Profile = () => {
 
       if (error) throw error;
 
-      // BUG-048: Email change requires verification
-      // Note: To change email, use supabase.auth.updateUser({ email: newEmail })
-      // which automatically sends a verification email to the new address
-      // This is a reminder that email changes require verification through a link
-
       await fetchProfile(profile.user_id);
       setEditing(false);
-      toast({ title: 'Success', description: 'Profile updated successfully!' });
+      toast.success('Profile updated successfully!');
     } catch (error: any) {
-      toast({ title: 'Error', description: 'Failed to update profile', variant: 'destructive' });
+      toast.error('Failed to update profile');
     }
   };
 
@@ -245,7 +219,6 @@ const Profile = () => {
                   <div className="text-sm text-muted-foreground">
                     {profile.total_stays} stays
                   </div>
-                  <VerifyIdentityButton compact />
                 </div>
               </div>
             </div>
@@ -269,32 +242,7 @@ const Profile = () => {
 
             <TabsContent value="bookings">
               <div className="space-y-4">
-                {isBookingsLoading ? (
-                  // BUG-048: Loading skeleton for bookings
-                  <>
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Card key={i}>
-                        <CardContent className="p-6">
-                          <div className="flex gap-4">
-                            <Skeleton className="w-32 h-32 rounded-lg" />
-                            <div className="flex-1">
-                              <Skeleton className="h-6 w-3/4 mb-2" />
-                              <Skeleton className="h-4 w-1/2 mb-4" />
-                              <div className="grid grid-cols-2 gap-4 mt-4">
-                                {Array.from({ length: 4 }).map((_, j) => (
-                                  <div key={j}>
-                                    <Skeleton className="h-4 w-20 mb-2" />
-                                    <Skeleton className="h-5 w-24" />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </>
-                ) : bookings.length > 0 ? (
+                {bookings.length > 0 ? (
                   bookings.map((booking) => (
                     <Card key={booking.id}>
                       <CardContent className="p-6">
@@ -303,8 +251,6 @@ const Profile = () => {
                             <img
                               src={booking.property.hero_image_url}
                               alt={booking.property.title}
-                              loading="lazy"
-                              decoding="async"
                               className="w-32 h-32 object-cover rounded-lg"
                             />
                           )}
@@ -439,8 +385,6 @@ const Profile = () => {
                         <Input
                           id="date_of_birth"
                           type="date"
-                          min="1900-01-01"
-                          max={new Date().toISOString().split('T')[0]}
                           value={formData.date_of_birth}
                           onChange={(e) => setFormData(prev => ({ ...prev, date_of_birth: e.target.value }))}
                         />

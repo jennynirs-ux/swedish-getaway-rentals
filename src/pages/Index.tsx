@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback, memo, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
+import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
 import LazyImage from "@/components/LazyImage";
 import { Grid3X3 } from "lucide-react";
@@ -11,11 +11,8 @@ import PropertySearch from "@/components/PropertySearch";
 import MainNavigation from "@/components/MainNavigation";
 import BookPromotion from "@/components/BookPromotion";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
-import { CACHE_STALE_TIME, CACHE_GC_TIME } from "@/lib/constants";
-import { MobileRefreshButton } from "@/components/mobile/MobileRefreshButton";
-import { useLocalizedSeo } from "@/hooks/useLocalizedSeo";
 
-import forestHeroBg from "@/assets/forest-hero-light.webp";
+import forestHeroBg from "@/assets/forest-hero-light.jpg";
 import { addDays, subDays, differenceInCalendarDays } from "date-fns";
 
 interface PropertyFilters {
@@ -34,7 +31,6 @@ const MemoizedPropertyCard = memo(PropertyCard);
 const MemoizedHomepageProducts = memo(HomepageProducts);
 
 const HomePage = memo(() => {
-  useLocalizedSeo('/');
   /** Hämta properties från supabase */
   const propertiesQueryFn = useCallback(async () => {
     const { data, error } = await supabase
@@ -69,46 +65,19 @@ const HomePage = memo(() => {
     return { data: data || [], error: null };
   }, []);
 
-  const { data: properties = [], isLoading: loading, refetch } = useQuery({
-    queryKey: ["homepage-properties"],
-    queryFn: propertiesQueryFn,
-    gcTime: CACHE_GC_TIME,
-    staleTime: CACHE_STALE_TIME,
-  });
+  const { data: properties = [], loading } = useOptimizedQuery(
+    "homepage-properties",
+    propertiesQueryFn,
+    {
+      cacheTime: 15 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      enableRealtime: false,
+    }
+  );
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
   const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  /** Debounced filter handler - only applies debounce to location changes */
-  const handleFiltersChange = useCallback((newFilters: PropertyFilters) => {
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Check if only location changed (text-based change)
-    const isOnlyLocationChange = filters &&
-      newFilters.location !== filters.location &&
-      newFilters.checkIn === filters.checkIn &&
-      newFilters.checkOut === filters.checkOut &&
-      newFilters.guests === filters.guests &&
-      newFilters.propertyType === filters.propertyType &&
-      JSON.stringify(newFilters.amenities) === JSON.stringify(filters.amenities) &&
-      JSON.stringify(newFilters.priceRange) === JSON.stringify(filters.priceRange) &&
-      newFilters.dateFlexibility === filters.dateFlexibility;
-
-    if (isOnlyLocationChange) {
-      // Debounce location changes by 300ms
-      debounceTimeoutRef.current = setTimeout(() => {
-        setFilters(newFilters);
-      }, 300);
-    } else {
-      // Apply date/guest/amenity changes immediately
-      setFilters(newFilters);
-    }
-  }, [filters]);
 
   /** Bygg lista med amenities */
   const availableAmenities = useMemo(() => {
@@ -145,9 +114,8 @@ const HomePage = memo(() => {
         const startMax = addDays(filters.checkIn as Date, flex);
         const endMax = addDays(filters.checkOut as Date, flex);
 
-        // Normalize to UTC for consistent date comparisons
-        const startStr = new Date(startMin.getTime() - startMin.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-        const endStr = new Date(endMax.getTime() - endMax.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        const startStr = startMin.toISOString().slice(0, 10);
+        const endStr = endMax.toISOString().slice(0, 10);
 
         const { data, error } = await supabase
           .from('availability')
@@ -162,8 +130,7 @@ const HomePage = memo(() => {
         const blockMap = new Map<string, Set<string>>();
         (data || []).forEach((row: any) => {
           const pid = row.property_id as string;
-          // Database date is already in UTC format (YYYY-MM-DD)
-          const d = row.date;
+          const d = new Date(row.date).toISOString().slice(0, 10);
           if (!blockMap.has(pid)) blockMap.set(pid, new Set());
           blockMap.get(pid)!.add(d);
         });
@@ -171,16 +138,13 @@ const HomePage = memo(() => {
         const okIds = new Set<string>();
         propertyIds.forEach((pid) => {
           const blocked = blockMap.get(pid) || new Set<string>();
-          let s = new Date(startMin);
-          while (s.getTime() <= startMax.getTime()) {
+          for (let s = new Date(startMin); s <= startMax; s = addDays(s, 1)) {
             let ok = true;
             for (let i = 0; i < nights; i++) {
-              const checkDate = addDays(s, i);
-              const d = new Date(checkDate.getTime() - checkDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+              const d = addDays(s, i).toISOString().slice(0, 10);
               if (blocked.has(d)) { ok = false; break; }
             }
             if (ok) { okIds.add(pid); break; }
-            s = addDays(s, 1);
           }
         });
 
@@ -239,7 +203,7 @@ const HomePage = memo(() => {
           : [];
         const wanted = new Set(filters.amenities.map((a) => a.toLowerCase()));
         for (const w of wanted) {
-          if (!names.some((n) => n === w)) return false;
+          if (!names.some((n) => n.includes(w))) return false;
         }
       }
       
@@ -255,7 +219,7 @@ const HomePage = memo(() => {
         if (p.city && isInCityGroup(p.city, filters.location)) {
           return true;
         }
-
+        
         // Check distance-based filtering if coordinates are available
         if (filters.destinationCoords && p.latitude && p.longitude) {
           const propertyCoords: Coordinates = {
@@ -268,15 +232,7 @@ const HomePage = memo(() => {
             return true;
           }
         }
-
-        // Fallback: text matching on title, location, and city when geocoding returns null
-        const searchTerm = filters.location.toLowerCase();
-        if (p.title?.toLowerCase().includes(searchTerm) ||
-            p.location?.toLowerCase().includes(searchTerm) ||
-            p.city?.toLowerCase().includes(searchTerm)) {
-          return true;
-        }
-
+        
         // If location specified but no match, filter out
         return false;
       }
@@ -296,8 +252,8 @@ const HomePage = memo(() => {
             "@type": "LodgingBusiness",
             "name": "Nordic Getaways",
             "description": "Discover your perfect retreat in the Nordic",
-            "url": `${typeof window !== 'undefined' ? window.location.origin : ''}`,
-            "image": `${typeof window !== 'undefined' ? window.location.origin : ''}/favicon.png`,
+            "url": "https://swedish-getaway-rentals.lovable.app",
+            "image": "https://swedish-getaway-rentals.lovable.app/favicon.png",
             "address": {
               "@type": "PostalAddress",
               "addressCountry": "SE"
@@ -332,18 +288,15 @@ const HomePage = memo(() => {
 
           {/* Search bar */}
           <PropertySearch
-            onFiltersChange={handleFiltersChange}
+            onFiltersChange={setFilters}
             availableAmenities={availableAmenities}
           />
         </div>
       </header>
 
       {/* Property Cards */}
-      <main id="main-content" className="pb-12">
+      <main className="pb-12">
         <div className="container mx-auto px-4 pt-16">
-          {/* IMP-010: Mobile refresh button */}
-          <MobileRefreshButton onRefresh={refetch} isLoading={loading} />
-
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -360,19 +313,6 @@ const HomePage = memo(() => {
                   </div>
                 </div>
               ))}
-            </div>
-          ) : checkingAvailability ? (
-            // IMP-004: Show loading indicator during geocoding/availability check
-            <div className="text-center py-16">
-              <div className="max-w-md mx-auto">
-                <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Searching...
-                </h3>
-                <p className="text-muted-foreground">
-                  Checking availability for your selected dates
-                </p>
-              </div>
             </div>
           ) : filteredProperties.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">

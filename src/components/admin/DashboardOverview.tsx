@@ -90,70 +90,62 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
 
   const loadDashboardStats = async () => {
     try {
-      // Execute all independent queries in parallel
-      const [
-        statsResult,
-        productsCountResult,
-        ordersCountResult,
-        propertiesResult,
-        productsResult,
-        bookingsResult,
-        ordersResult
-      ] = await Promise.all([
-        supabase.rpc("get_dashboard_stats"),
-        supabase
-          .from("shop_products")
-          .select("*", { count: "exact", head: true })
-          .eq("visible", true),
-        supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("properties")
-          .select("id, title, hero_image_url, price_per_night, currency")
-          .eq("active", true)
-          .order("created_at", { ascending: false })
-          .limit(4),
-        supabase
-          .from("shop_products")
-          .select("id, title, title_override, image_url, main_image_override, price, price_override, currency")
-          .eq("visible", true)
-          .order("created_at", { ascending: false })
-          .limit(4),
-        supabase
-          .from("bookings")
-          .select("id, guest_name, property_id, check_in_date, total_amount, currency, status")
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("orders")
-          .select("id, customer_name, total_amount, currency, status, created_at")
-          .order("created_at", { ascending: false })
-          .limit(5)
-      ]);
-
-      // Check for errors
-      if (statsResult.error) throw statsResult.error;
-      if (productsCountResult.error) throw productsCountResult.error;
-      if (ordersCountResult.error) throw ordersCountResult.error;
-      if (propertiesResult.error) throw propertiesResult.error;
-      if (productsResult.error) throw productsResult.error;
-      if (bookingsResult.error) throw bookingsResult.error;
-      if (ordersResult.error) throw ordersResult.error;
-
-      const basicStats = statsResult.data;
-      const totalProductsCount = productsCountResult.count;
-      const totalOrdersCount = ordersCountResult.count;
-      const properties = propertiesResult.data;
-      const products = productsResult.data;
-      const bookings = bookingsResult.data;
-      const orders = ordersResult.data;
+      // Basstatistik från din RPC
+      const { data: basicStats, error: statsError } = await supabase.rpc("get_dashboard_stats");
+      if (statsError) throw statsError;
+  
+      // ✅ Count ALL products
+      const { count: totalProductsCount, error: productsCountError } = await supabase
+        .from("shop_products")
+        .select("*", { count: "exact", head: true })
+        .eq("visible", true);
+      if (productsCountError) throw productsCountError;
+  
+      // ✅ Count ALL orders
+      const { count: totalOrdersCount, error: ordersCountError } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true });
+      if (ordersCountError) throw ordersCountError;
+  
+      // ✅ Recent properties
+      const { data: properties, error: propertiesError } = await supabase
+        .from("properties")
+        .select("id, title, hero_image_url, price_per_night, currency")
+        .eq("active", true)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (propertiesError) throw propertiesError;
+  
+      // ✅ Recent products
+      const { data: products, error: productsError } = await supabase
+        .from("shop_products")
+        .select("id, title, title_override, image_url, main_image_override, price, price_override, currency")
+        .eq("visible", true)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (productsError) throw productsError;
+  
+      // ✅ Recent bookings
+      const { data: bookings, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("id, guest_name, property_id, check_in_date, total_amount, currency, status")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (bookingsError) throw bookingsError;
+  
+      // ✅ Recent orders
+      const { data: orders, error: ordersError } = await supabase
+        .from("orders")
+        .select("id, customer_name, total_amount, currency, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (ordersError) throw ordersError;
   
       // ✅ Monthly stats
       const currentMonth = new Date();
       currentMonth.setDate(1);
       const monthlyOrders = orders?.filter(order => new Date(order.created_at) >= currentMonth) || [];
-      const shopRevenue = monthlyOrders.reduce((sum, order) => sum + order.total_amount, 0);
+      const shopRevenue = orders?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
   
       const statsData = basicStats as any;
       setStats({
@@ -285,7 +277,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{formatCurrency(stats.shop_revenue)}</div>
-          <p className="text-xs text-muted-foreground">This month from shop orders</p>
+          <p className="text-xs text-muted-foreground">Total from shop orders</p>
         </CardContent>
       </Card>
     </div>
@@ -300,7 +292,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {recentProperties.map((p) => (
               <div key={p.id} className="border rounded-lg p-3">
-                <img src={p.hero_image_url || "/placeholder.svg"} alt={p.title} loading="lazy" decoding="async" className="w-full h-32 object-cover rounded-md mb-2" />
+                <img src={p.hero_image_url || "/placeholder.svg"} alt={p.title} className="w-full h-32 object-cover rounded-md mb-2" />
                 <h4 className="font-medium text-sm">{p.title}</h4>
                 <p className="text-xs text-muted-foreground">{formatCurrency(p.price_per_night * 100)} / night</p>
               </div>
@@ -320,7 +312,7 @@ const DashboardOverview = ({ onNavigateToTab, onEditProperty, onEditProduct }: D
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {recentProducts.map((prod) => (
               <div key={prod.id} className="border rounded-lg p-3">
-                <img src={prod.main_image_override || prod.image_url || "/placeholder.svg"} alt={prod.title_override || prod.title} loading="lazy" decoding="async" className="w-full h-32 object-cover rounded-md mb-2" />
+                <img src={prod.main_image_override || prod.image_url || "/placeholder.svg"} alt={prod.title_override || prod.title} className="w-full h-32 object-cover rounded-md mb-2" />
                 <h4 className="font-medium text-sm">{prod.title_override || prod.title}</h4>
                 <p className="text-xs text-muted-foreground">{formatCurrency(prod.price_override || prod.price)}</p>
               </div>

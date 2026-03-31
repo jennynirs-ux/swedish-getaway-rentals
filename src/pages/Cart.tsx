@@ -23,11 +23,7 @@ const CartPage = () => {
 
   const currency = items[0]?.currency || 'SEK';
 
-  // Check for mixed currencies
-  const hasMixedCurrencies = items.length > 0 && items.some(item => item.currency !== currency);
-
   useEffect(() => {
-    document.title = 'Cart | Nordic Getaways';
     fetchShippingSettings();
     fetchProductVariants();
   }, []);
@@ -110,28 +106,12 @@ const CartPage = () => {
       return;
     }
 
-    // Use currency-specific shipping rates
-    const itemCurrency = items[0]?.currency || 'SEK';
-    const regionMap: Record<string, string> = {
-      'SEK': 'Sweden',
-      'NOK': 'Norway',
-      'DKK': 'Denmark',
-      'EUR': 'EU',
-      'USD': 'USA',
-      'GBP': 'UK'
-    };
-
-    const region = regionMap[itemCurrency] || 'Sweden';
-    const rateForCurrency = shippingSettings.fallback_rates?.find((rate: any) => rate.region === region);
-
-    if (rateForCurrency) {
-      setShippingCost(rateForCurrency.rate);
+    // Use fallback rates (assume Sweden for now)
+    const swedenRate = shippingSettings.fallback_rates?.find((rate: any) => rate.region === 'Sweden');
+    if (swedenRate) {
+      setShippingCost(swedenRate.rate);
     } else {
-      // Default fallback in the item's currency
-      const defaultRates: Record<string, number> = {
-        'SEK': 4900, 'NOK': 4700, 'DKK': 650, 'EUR': 60, 'USD': 65, 'GBP': 55
-      };
-      setShippingCost(defaultRates[itemCurrency] || 4900);
+      setShippingCost(4900); // Default fallback
     }
   };
 
@@ -174,65 +154,22 @@ const CartPage = () => {
     setAppliedCoupon(undefined);
   };
 
-  const handleAddItem = (item: any) => {
-    // Check for currency mismatch before adding
-    if (items.length > 0 && item.currency && item.currency !== currency) {
-      toast({
-        title: 'Currency mismatch',
-        description: `Your cart uses ${currency}, but this item is in ${item.currency}. Please remove existing items or shop in a single currency.`,
-        variant: 'destructive'
-      });
-      return;
-    }
-    addItem(item);
-  };
-
   const checkout = async () => {
     if (items.length === 0 || hasIncompleteVariants) return;
     setCheckingOut(true);
     try {
-      // Get current session token for CSRF protection
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        toast({ title: 'Error', description: 'Please sign in to checkout', variant: 'destructive' });
-        setCheckingOut(false);
-        return;
-      }
-
-      // Fetch the authenticated user's email
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user?.email) {
-        toast({ title: 'Error', description: 'Unable to retrieve your email. Please try again.', variant: 'destructive' });
-        setCheckingOut(false);
-        return;
-      }
-
-      const customerEmail = userData.user.email;
-
-      // Generate a nonce for additional CSRF protection
-      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
-      const timestamp = new Date().getTime().toString();
-
       const payload = {
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
-        customerEmail: customerEmail,
+        customerEmail: '',
         shippingCost: shippingCost,
         couponId: appliedCoupon?.id,
         couponCode: appliedCoupon?.code,
-        discountAmount: appliedCoupon?.discountAmount,
-        // CSRF protection - removed sessionToken from payload; Authorization header is sent automatically via supabase.functions.invoke
-        nonce: nonce,
-        timestamp: timestamp
+        discountAmount: appliedCoupon?.discountAmount
       };
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
       if (data.url) {
-        // Validate checkout URL for security before opening
-        if (typeof data.url === 'string' && data.url.startsWith('https://checkout.stripe.com')) {
-          window.open(data.url, '_blank');
-        } else {
-          throw new Error('Invalid checkout URL');
-        }
+        window.open(data.url, '_blank');
       }
     } catch (error) {
       console.error('Error creating cart payment:', error);
@@ -279,7 +216,7 @@ const CartPage = () => {
                         <TableRow key={`${i.productId}-${i.variantId || 'base'}`}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              {i.image && <img src={i.image} alt={i.title} loading="lazy" decoding="async" className="w-12 h-12 rounded object-cover" />}
+                              {i.image && <img src={i.image} alt={i.title} className="w-12 h-12 rounded object-cover" />}
                               <div>
                                 <div className="font-medium">{i.title}</div>
                                 {hasVariants && (
@@ -315,20 +252,9 @@ const CartPage = () => {
                             <Input
                               type="number"
                               min={1}
-                              max={99}
                               className="w-20"
                               value={i.quantity}
-                              onChange={(e) => {
-                                const newQty = Math.max(1, Math.min(99, parseInt(e.target.value || '1', 10)));
-                                if (newQty > 99) {
-                                  toast({
-                                    title: "Quantity limited",
-                                    description: "Maximum quantity is 99 items",
-                                    variant: "destructive"
-                                  });
-                                }
-                                updateQuantity(i.productId, i.variantId || null, newQty);
-                              }}
+                              onChange={(e) => updateQuantity(i.productId, i.variantId || null, Math.max(1, parseInt(e.target.value || '1', 10)))}
                             />
                           </TableCell>
                           <TableCell>{formatPrice(i.price * i.quantity, i.currency)}</TableCell>
@@ -392,13 +318,6 @@ const CartPage = () => {
                   appliedCoupon={appliedCoupon}
                 />
                 
-                {hasMixedCurrencies && (
-                  <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <span>Cart contains items in different currencies. Please remove items to match currencies before checkout.</span>
-                  </div>
-                )}
-
                 {hasIncompleteVariants && (
                   <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -406,7 +325,7 @@ const CartPage = () => {
                   </div>
                 )}
 
-                <Button className="w-full" disabled={checkingOut || hasIncompleteVariants || hasMixedCurrencies} onClick={checkout}>
+                <Button className="w-full" disabled={checkingOut || hasIncompleteVariants} onClick={checkout}>
                   {checkingOut ? 'Processing...' : 'Checkout'}
                 </Button>
                 <Button variant="outline" className="w-full" onClick={clear}>Clear Cart</Button>

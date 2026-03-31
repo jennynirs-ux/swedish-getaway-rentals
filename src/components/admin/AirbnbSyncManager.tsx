@@ -56,59 +56,7 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
   useEffect(() => {
     loadIcalFeeds();
     generateExportUrl();
-    // BUG-044: Load persisted sync settings from database
-    loadSyncSettings();
   }, [propertyId]);
-
-  const loadSyncSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('platform_settings')
-        .eq('id', propertyId)
-        .single();
-
-      if (error) throw error;
-
-      const settings = data?.platform_settings;
-      if (settings?.autoSync !== undefined) {
-        setAutoSync(settings.autoSync);
-      }
-      if (settings?.syncInterval !== undefined) {
-        setSyncInterval(settings.syncInterval);
-      }
-    } catch (error) {
-      console.error('Error loading sync settings:', error);
-    }
-  };
-
-  const saveSyncSettings = async () => {
-    try {
-      const { error } = await supabase
-        .from('properties')
-        .update({
-          platform_settings: {
-            autoSync,
-            syncInterval
-          }
-        })
-        .eq('id', propertyId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Settings saved",
-        description: "Sync settings have been saved successfully"
-      });
-    } catch (error) {
-      console.error('Error saving sync settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save sync settings",
-        variant: "destructive"
-      });
-    }
-  };
 
   const loadIcalFeeds = async () => {
     try {
@@ -128,7 +76,7 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
   const generateExportUrl = async () => {
     try {
       // Get the property's export secret
-      let { data: property, error } = await supabase
+      const { data: property, error } = await supabase
         .from('properties')
         .select('ical_export_secret')
         .eq('id', propertyId)
@@ -136,35 +84,15 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
 
       if (error) throw error;
 
-      // If no secret exists, generate one automatically for security
-      if (!property.ical_export_secret) {
-        // Generate a random UUID as the export secret
-        const newSecret = crypto.randomUUID();
-
-        // Save the secret to the property
-        const { error: updateError } = await supabase
-          .from('properties')
-          .update({ ical_export_secret: newSecret })
-          .eq('id', propertyId);
-
-        if (updateError) throw updateError;
-
-        property.ical_export_secret = newSecret;
-      }
-
       // Generate the export URL for this property's calendar
-      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const baseUrl = 'https://bbuutvozqfzbsnllsiai.supabase.co';
       const url = `${baseUrl}/functions/v1/export-ical/${propertyId}?secret=${property.ical_export_secret}`;
       setExportUrl(url);
     } catch (error) {
       console.error('Error generating export URL:', error);
-      // Show a warning to the user
-      toast({
-        title: "Varning",
-        description: "Kunde inte generera export-URL. Försök igen senare.",
-        variant: "destructive"
-      });
-      setExportUrl('');
+      const baseUrl = 'https://bbuutvozqfzbsnllsiai.supabase.co';
+      const url = `${baseUrl}/functions/v1/export-ical/${propertyId}`;
+      setExportUrl(url);
     }
   };
 
@@ -506,24 +434,16 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
                 Automatically sync calendars at regular intervals
               </p>
             </div>
-            <Switch checked={autoSync} onCheckedChange={(checked) => {
-              setAutoSync(checked);
-              // BUG-044: Save settings immediately when changed
-              saveSyncSettings();
-            }} />
+            <Switch checked={autoSync} onCheckedChange={setAutoSync} />
           </div>
-
+          
           {autoSync && (
             <div>
               <Label>Sync interval (minutes)</Label>
               <Input
                 type="number"
                 value={syncInterval}
-                onChange={(e) => {
-                  const newInterval = parseInt(e.target.value) || 15;
-                  setSyncInterval(newInterval);
-                }}
-                onBlur={() => saveSyncSettings()}
+                onChange={(e) => setSyncInterval(parseInt(e.target.value) || 15)}
                 min="5"
                 max="60"
                 className="w-32"

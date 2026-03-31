@@ -75,7 +75,7 @@ export const PropertySpecialPricingEnhanced = ({
 
     setLoading(true);
     try {
-      const price = parseFloat(specialPrice) || null;
+      const price = parseInt(specialPrice) || null;
 
       for (const date of selectedDates) {
         const { error } = await supabase.from("availability").upsert(

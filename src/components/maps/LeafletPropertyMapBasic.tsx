@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-// CSS is imported here to ensure it's only loaded when this map component is used
 import 'leaflet/dist/leaflet.css';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -13,18 +12,6 @@ const DefaultIcon = L.icon({
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
-
-// Utility function to escape HTML special characters
-const escapeHtml = (text: string): string => {
-  const map: { [key: string]: string } = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  };
-  return text.replace(/[&<>"']/g, (char) => map[char]);
-};
 
 interface Props {
   position: [number, number];
@@ -54,8 +41,8 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
     marker.addTo(map);
     marker.bindPopup(
       `<div style="font-size: 0.875rem;">
-        <div style="font-weight:600; margin-bottom: 0.25rem;">${escapeHtml(propertyTitle)}</div>
-        <a href="${escapeHtml(googleMapsUrl)}" target="_blank" rel="noopener noreferrer">Get directions →</a>
+        <div style="font-weight:600; margin-bottom: 0.25rem;">${propertyTitle}</div>
+        <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer">Get directions →</a>
       </div>`
     );
     markerRef.current = marker;
@@ -83,18 +70,6 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
       markerRef.current.setLatLng(position);
     }
   }, [position]);
-
-  // Update marker popup content when title changes
-  useEffect(() => {
-    if (markerRef.current) {
-      markerRef.current.setPopupContent(
-        `<div style="font-size: 0.875rem;">
-          <div style="font-weight:600; margin-bottom: 0.25rem;">${escapeHtml(propertyTitle)}</div>
-          <a href="${escapeHtml(googleMapsUrl)}" target="_blank" rel="noopener noreferrer">Get directions →</a>
-        </div>`
-      );
-    }
-  }, [propertyTitle, googleMapsUrl]);
 
   useEffect(() => {
     if (!mapRef.current) return;

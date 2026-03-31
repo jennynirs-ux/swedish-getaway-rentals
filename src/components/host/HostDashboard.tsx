@@ -17,8 +17,6 @@ import HostGuidebookDialog from "./HostGuidebookDialog";
 import { HostPropertyEditor } from "./HostPropertyEditor";
 import { HostInvitationDialog } from "./HostInvitationDialog";
 import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
-import { HostAnalytics } from "./HostAnalytics";
-import { HostTaxReport } from "./HostTaxReport";
 
 interface HostStats {
   total_properties: number;
@@ -101,7 +99,6 @@ const HostDashboard = () => {
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
-  const [hostProfileId, setHostProfileId] = useState<string | null>(null);
 
   const { properties, refetch: refetchProperties } = useHostProperties();
 
@@ -109,7 +106,7 @@ const HostDashboard = () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
-
+        
         navigate("/auth?redirect=/host-dashboard");
         return;
       }
@@ -123,22 +120,11 @@ const HostDashboard = () => {
         .single();
 
       if (!profile) return;
-      setHostProfileId(profile.id);
 
       const { count: propertiesCount } = await supabase
         .from("properties")
         .select("*", { count: "exact", head: true })
         .eq("host_id", profile.id);
-
-      // Fetch commission rate from platform_settings
-      const { data: settingsData } = await supabase
-        .from("platform_settings")
-        .select("setting_value")
-        .eq("setting_key", "commission_rate")
-        .single();
-
-      // Default to 0.9 (10% commission) if not found
-      const commissionMultiplier = settingsData?.setting_value?.rate ?? 0.9;
 
       // Use secure view for masked contact data
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -161,7 +147,7 @@ const HostDashboard = () => {
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
       const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + booking.total_amount * commissionMultiplier;
+        return sum + booking.total_amount * 0.9;
       }, 0);
 
       setStats({
@@ -223,42 +209,12 @@ const HostDashboard = () => {
   };
 
   const deleteProperty = async () => {
-    if (!deletingPropertyId || !user) return;
+    if (!deletingPropertyId) return;
     try {
-      // Get the current host's profile ID for ownership verification
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) {
-        toast.error("Unable to verify ownership. Please try again.");
-        return;
-      }
-
-      // BUG-011: Check for active or upcoming bookings before deletion
-      const { data: activeBookings } = await supabase
-        .from("bookings")
-        .select("id, status, check_out_date", { count: "exact", head: true })
-        .eq("property_id", deletingPropertyId)
-        .in("status", ["pending", "confirmed"])
-        .gte("check_out_date", new Date().toISOString());
-
-      if (activeBookings && activeBookings.length > 0) {
-        toast.error(
-          "Cannot delete property with active or upcoming bookings. Please cancel or complete all bookings first."
-        );
-        return;
-      }
-
-      // BUG-003: Add host_id ownership filter to prevent cross-host deletion
       const { error } = await supabase
-        .from("properties")
+        .from('properties')
         .delete()
-        .eq("id", deletingPropertyId)
-        .eq("host_id", profile.id);
-
+        .eq('id', deletingPropertyId);
       if (error) throw error;
       toast.success("Property deleted successfully");
       setDeletingPropertyId(null);
@@ -372,22 +328,8 @@ const HostDashboard = () => {
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="tax">Tax Report</TabsTrigger>
               <TabsTrigger value="payouts">Bank Account</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="analytics" className="space-y-6">
-              {hostProfileId ? (
-                <HostAnalytics hostId={hostProfileId} />
-              ) : (
-                <p className="text-muted-foreground">Loading analytics...</p>
-              )}
-            </TabsContent>
-
-            <TabsContent value="tax" className="space-y-6">
-              <HostTaxReport />
-            </TabsContent>
 
             <TabsContent value="payouts" className="space-y-6">
               <BankAccountSetup />
@@ -514,10 +456,7 @@ const HostDashboard = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Property</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete this property? This action cannot be undone.
-                  <br />
-                  <br />
-                  Important: Any active or upcoming bookings must be cancelled first. Availability records and reviews associated with this property will also be removed.
+                  Are you sure you want to delete this property? This action cannot be undone and will remove all associated data.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

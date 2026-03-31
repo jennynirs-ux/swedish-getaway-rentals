@@ -53,7 +53,7 @@ const RevenueDetail = ({ type, onBack }: RevenueDetailProps) => {
       setLoading(true);
       
       if (type === 'rentals') {
-        // Get booking revenue data with pagination
+        // Get booking revenue data
         const { data: bookings, error } = await supabase
           .from('bookings')
           .select(`
@@ -61,8 +61,7 @@ const RevenueDetail = ({ type, onBack }: RevenueDetailProps) => {
             properties!inner(title)
           `)
           .eq('status', 'confirmed')
-          .order('created_at', { ascending: false })
-          .limit(50);
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
 
@@ -79,13 +78,12 @@ const RevenueDetail = ({ type, onBack }: RevenueDetailProps) => {
         setTotalRevenue(bookings?.reduce((sum, b) => sum + b.total_amount, 0) || 0);
         
       } else {
-        // Get shop revenue data with pagination
+        // Get shop revenue data
         const { data: orders, error } = await supabase
           .from('orders')
           .select('*')
           .in('status', ['paid', 'completed'])
-          .order('created_at', { ascending: false })
-          .limit(50);
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
 

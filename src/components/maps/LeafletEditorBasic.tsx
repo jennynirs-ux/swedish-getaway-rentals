@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-// CSS is imported here to ensure it's only loaded when this map component is used
 import 'leaflet/dist/leaflet.css';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -26,13 +25,7 @@ const LeafletEditorBasic: React.FC<Props> = ({ center, onPositionChange }) => {
 
   useEffect(() => {
     if (!containerRef.current) return;
-
-    // Clean up old map if it exists
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-      markerRef.current = null;
-    }
+    if (mapRef.current) return; // already initialized
 
     // Initialize map
     const map = L.map(containerRef.current).setView(center, 13);
@@ -60,13 +53,21 @@ const LeafletEditorBasic: React.FC<Props> = ({ center, onPositionChange }) => {
     });
 
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        markerRef.current = null;
-      }
+      map.remove();
+      mapRef.current = null;
+      markerRef.current = null;
     };
   }, [center, onPositionChange]);
+
+  // Keep view/marker in sync when center prop changes
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.setView(center, mapRef.current.getZoom());
+    }
+    if (markerRef.current) {
+      markerRef.current.setLatLng(center);
+    }
+  }, [center]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 };

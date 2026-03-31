@@ -105,13 +105,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const clear = () => {
-    // IMP-004: Only show toast if there were actually items to clear
-    setItems((prevItems) => {
-      if (prevItems.length > 0) {
-        toast({ title: "Cart cleared" });
-      }
-      return [];
-    });
+    setItems([]);
+    toast({ title: "Cart cleared" });
   };
 
   const total = useMemo(

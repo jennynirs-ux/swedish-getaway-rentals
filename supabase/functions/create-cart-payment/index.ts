@@ -9,10 +9,6 @@ const corsHeaders = {
 
 type CartItem = { productId: string; quantity: number; variantId?: string };
 
-// Constants for VAT calculation
-const VAT_RATE_PRODUCTS = 0.25; // 25% VAT on physical products in Sweden
-const VAT_RATE_SHIPPING = 0.25; // 25% VAT on shipping in Sweden
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,7 +27,6 @@ serve(async (req) => {
     const lineItems: any[] = [];
     let currency = 'sek';
     let subtotal = 0;
-    let productSubtotal = 0; // For VAT calculation on products only
 
     for (const it of items as CartItem[]) {
       const { data: product, error } = await supabase
@@ -39,12 +34,12 @@ serve(async (req) => {
         .select('*')
         .eq('id', it.productId)
         .maybeSingle();
-
+      
       if (error) {
         console.error('Error fetching product:', error);
         throw new Error(`Error fetching product: ${error.message}`);
       }
-
+      
       if (!product) {
         console.error('Product not found:', it.productId);
         throw new Error(`Product not found: ${it.productId}`);
@@ -53,8 +48,8 @@ serve(async (req) => {
       currency = product.currency?.toLowerCase() || 'sek';
 
       // Parse printful_data if it's a string
-      const printfulData = typeof product.printful_data === 'string'
-        ? JSON.parse(product.printful_data)
+      const printfulData = typeof product.printful_data === 'string' 
+        ? JSON.parse(product.printful_data) 
         : product.printful_data;
 
       let selectedVariant: any = null;
@@ -70,9 +65,7 @@ serve(async (req) => {
         ? Math.round(parseFloat(selectedVariant.retail_price || '0') * 100)
         : (product.price_override || product.custom_price || product.price || 0);
 
-      const itemTotal = finalPrice * it.quantity;
-      subtotal += itemTotal;
-      productSubtotal += itemTotal;
+      subtotal += finalPrice * it.quantity;
 
       const finalTitle = product.title_override || product.title || 'Product';
       const finalDescription = product.description_override || product.custom_description || product.description || '';
@@ -100,29 +93,8 @@ serve(async (req) => {
       });
     }
 
-    // Calculate VAT on products (25% in Sweden)
-    const productVatAmount = Math.round(productSubtotal * VAT_RATE_PRODUCTS);
-
-    // Add VAT as a separate line item for transparency
-    lineItems.push({
-      price_data: {
-        currency,
-        product_data: {
-          name: 'VAT (25%)'
-        },
-        unit_amount: productVatAmount,
-      },
-      quantity: 1,
-    });
-
-    subtotal += productVatAmount;
-
     // Add shipping as a separate line item so total matches (admin settings)
-    // Note: Shipping also has VAT in Sweden
-    let shippingVatAmount = 0;
     if (typeof shippingCost === 'number' && shippingCost > 0) {
-      shippingVatAmount = Math.round(shippingCost * VAT_RATE_SHIPPING);
-
       lineItems.push({
         price_data: {
           currency,
@@ -131,20 +103,6 @@ serve(async (req) => {
         },
         quantity: 1,
       });
-
-      // Add shipping VAT
-      lineItems.push({
-        price_data: {
-          currency,
-          product_data: {
-            name: 'Shipping VAT (25%)'
-          },
-          unit_amount: shippingVatAmount,
-        },
-        quantity: 1,
-      });
-
-      subtotal += shippingCost + shippingVatAmount;
     }
 
     // Validate and apply coupon if provided
@@ -236,17 +194,14 @@ serve(async (req) => {
       phone_number_collection: { enabled: true },
       success_url: `${req.headers.get('origin')}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/cart`,
-      metadata: {
-        type: 'cart',
-        items: JSON.stringify(items),
-        shipping_cost: String(shippingCost || 0),
+      metadata: { 
+        type: 'cart', 
+        items: JSON.stringify(items), 
+        shipping_cost: String(shippingCost || 0), 
         currency,
         coupon_id: validatedCouponId || '',
         coupon_code: validatedCouponCode || '',
-        discount_amount: String(validatedDiscount),
-        vat_amount: String(productVatAmount),
-        shipping_vat_amount: String(shippingVatAmount || 0),
-        total_vat_amount: String(productVatAmount + (shippingVatAmount || 0))
+        discount_amount: String(validatedDiscount)
       }
     };
 

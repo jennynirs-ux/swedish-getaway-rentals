@@ -1,5 +1,4 @@
 import MainNavigation from "@/components/MainNavigation";
-import { FAQJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 import PropertyFooter from "@/components/PropertyFooter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,17 +27,6 @@ const PricingGuide = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <FAQJsonLd items={[
-        { question: "What commission does Nordic Getaways charge?", answer: "Nordic Getaways charges a 10% commission on all bookings. This covers payment processing, platform maintenance, customer support, and marketing." },
-        { question: "How should I price my Nordic vacation rental?", answer: "Research comparable properties in your area, consider seasonal demand (Midsommar and Northern Lights season are peak), factor in the 10% platform commission, and adjust for weekends and holidays. Prices are set in SEK." },
-        { question: "When do I get paid for bookings?", answer: "Payouts are processed within 24 hours of guest check-in. Funds are transferred to your registered bank account via Stripe." },
-        { question: "Can I set different prices for different seasons?", answer: "Yes, Nordic Getaways supports dynamic pricing. You can set seasonal rates, weekend premiums, and special holiday pricing through the host dashboard." },
-        { question: "What is included in the nightly rate?", answer: "Your nightly rate should cover accommodation, basic utilities, Wi-Fi, and standard amenities. Additional services like cleaning fees, airport transfers, or activity packages can be listed separately." },
-      ]} />
-      <BreadcrumbJsonLd items={[
-        { name: 'Home', url: 'https://nordic-getaways.com' },
-        { name: 'Pricing Guide', url: 'https://nordic-getaways.com/pricing-guide' },
-      ]} />
       <MainNavigation />
       
       {/* Hero Section */}

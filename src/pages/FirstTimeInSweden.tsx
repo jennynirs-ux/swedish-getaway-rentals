@@ -107,7 +107,7 @@ const FirstTimeInSweden = () => {
   // Using a dummy property for the footer
   const dummyProperty = {
     id: "sweden-guide",
-    title: "Nordic Getaways",
+    title: "Nordin Getaways",
     location: "Sweden",
     tagline_line1: "Your guide to Swedish culture and customs",
     footer_quick_links: ["The Nordic Collection", "Contact", "First time in Sweden"],
@@ -154,8 +154,6 @@ const FirstTimeInSweden = () => {
                         <img
                           src={section.image}
                           alt={section.title}
-                          loading="lazy"
-                          decoding="async"
                           className="w-full h-48 object-cover rounded-lg"
                         />
                       </div>

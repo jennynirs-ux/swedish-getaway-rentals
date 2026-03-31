@@ -48,7 +48,7 @@ const SortableImage = ({ id, image, isHero, onSetHero, onEdit, onRemove }: any) 
   return (
     <div ref={setNodeRef} style={style} className="relative group">
       <div {...attributes} {...listeners} className="cursor-move">
-        <img src={image.url} alt={image.title || ""} loading="lazy" decoding="async" className="w-full h-32 object-cover rounded-lg border" />
+        <img src={image.url} alt={image.title || ""} className="w-full h-32 object-cover rounded-lg border" />
         {isHero && (
           <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
             <Star className="h-3 w-3 fill-current" />
@@ -254,7 +254,7 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
         <CardContent>
           {heroImage.url ? (
             <div className="relative">
-              <img src={heroImage.url} alt="Hero" loading="lazy" decoding="async" className="w-full h-64 object-cover rounded-lg border" />
+              <img src={heroImage.url} alt="Hero" className="w-full h-64 object-cover rounded-lg border" />
               <input
                 type="file"
                 accept="image/*"
@@ -376,7 +376,7 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
           </DialogHeader>
           {editingImage && (
             <div className="space-y-4">
-              <img src={editingImage.image.url} alt="" loading="lazy" decoding="async" className="w-full h-48 object-cover rounded" />
+              <img src={editingImage.image.url} alt="" className="w-full h-48 object-cover rounded" />
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input

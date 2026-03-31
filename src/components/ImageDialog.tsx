@@ -26,7 +26,7 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl w-full h-fit max-h-[90dvh] p-0 bg-white overflow-y-auto">
+      <DialogContent className="max-w-7xl w-full h-fit max-h-[90vh] p-0 bg-white overflow-y-auto">
         <DialogHeader className="p-6 pb-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-2xl font-bold">{currentImage?.title}</DialogTitle>
           <Button
@@ -45,8 +45,6 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
             <img
               src={currentImage?.src}
               alt={currentImage?.alt}
-              loading="lazy"
-              decoding="async"
               className="max-w-full max-h-full w-auto h-auto object-contain"
             />
             
@@ -85,21 +83,15 @@ export const ImageDialog = ({ images, isOpen, onClose, initialIndex = 0 }: Image
                     key={index}
                     onClick={() => setCurrentIndex(index)}
                     className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      index === currentIndex
-                        ? 'border-primary ring-2 ring-primary/20'
+                      index === currentIndex 
+                        ? 'border-primary ring-2 ring-primary/20' 
                         : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <img
                       src={image.src}
                       alt={image.alt}
-                      loading="lazy"
-                      decoding="async"
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
                     />
                   </button>
                 ))}

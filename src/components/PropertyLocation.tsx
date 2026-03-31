@@ -6,31 +6,14 @@ import { getClosestMajorCity, calculateDriveTime, getDetailedDistanceText, type 
 
 const PropertyMap = lazy(() => import('./PropertyMap'));
 
-interface TransportDistance {
-  name: string;
-  distance: number;
-  type: string;
-}
-
 interface PropertyLocationProps {
   latitude: number | null;
   longitude: number | null;
   propertyTitle: string;
   location?: string;
-  transportDistances?: TransportDistance[] | null;
 }
 
-const TYPE_ICONS: Record<string, typeof Plane> = {
-  airport: Plane,
-  train_station: Train,
-  bus_station: Bus,
-  grocery: ShoppingCart,
-  theme_park: Tent,
-  custom: MapPin,
-};
-
-const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, transportDistances }: PropertyLocationProps) => {
-  const hasHostDistances = transportDistances && transportDistances.length > 0;
+const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location }: PropertyLocationProps) => {
   const distanceInfo = useMemo(() => {
     if (!latitude || !longitude) return null;
     
@@ -99,19 +82,7 @@ const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, t
                   </div>
                 </div>
                 
-                {hasHostDistances ? (
-                  <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground">
-                    {transportDistances.map((td, i) => {
-                      const Icon = TYPE_ICONS[td.type] || MapPin;
-                      return (
-                        <div key={i} className="flex items-center gap-2">
-                          <Icon className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span>{td.name}: ~{td.distance} km</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (() => {
+                {(() => {
                   const transportInfo = getNearestTransportInfo({ latitude, longitude });
                   return (
                     <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground">

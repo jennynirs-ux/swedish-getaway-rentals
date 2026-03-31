@@ -382,7 +382,6 @@ const ShopProductsManagement = ({
                     alt={title}
                     className="w-20 h-20 object-cover rounded-lg"
                     loading="lazy"
-                    decoding="async"
                   />
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
