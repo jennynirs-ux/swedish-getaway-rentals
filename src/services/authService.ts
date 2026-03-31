@@ -195,12 +195,12 @@ export async function isApprovedHost(userId: string): Promise<boolean> {
 export async function setHostApprovalStatus(userId: string, approved: boolean): Promise<UserProfile> {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update({
-        approved_host: approved,
+        host_approved: approved,
         updated_at: new Date().toISOString()
       })
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select()
       .single();
 
