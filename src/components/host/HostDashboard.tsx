@@ -20,6 +20,7 @@ import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
 import HostExpenses from "./HostExpenses";
 import HostRevenueByChannel from "./HostRevenueByChannel";
 import HostProfitability from "./HostProfitability";
+import { HostTaxReport } from "./HostTaxReport";
 
 interface HostStats {
   total_properties: number;
@@ -356,6 +357,7 @@ const HostDashboard = () => {
                   <TabsTrigger value="profitability">Profitability</TabsTrigger>
                   <TabsTrigger value="revenue">Revenue by Channel</TabsTrigger>
                   <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                  <TabsTrigger value="tax">Tax Report</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="profitability">
@@ -368,6 +370,10 @@ const HostDashboard = () => {
 
                 <TabsContent value="expenses">
                   <HostExpenses />
+                </TabsContent>
+
+                <TabsContent value="tax">
+                  <HostTaxReport />
                 </TabsContent>
               </Tabs>
             </TabsContent>
