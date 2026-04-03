@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen, Trash2 } from "lucide-react";
+import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen, Trash2, Receipt } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import HostGuidebookDialog from "./HostGuidebookDialog";
 import { HostPropertyEditor } from "./HostPropertyEditor";
 import { HostInvitationDialog } from "./HostInvitationDialog";
 import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
+import HostExpenses from "./HostExpenses";
 
 interface HostStats {
   total_properties: number;
@@ -339,9 +340,17 @@ const HostDashboard = () => {
             <TabsList>
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
+              <TabsTrigger value="financials" className="flex items-center gap-1">
+                <Receipt className="w-4 h-4" />
+                Financials
+              </TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
               <TabsTrigger value="payouts">Bank Account</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="financials" className="space-y-6">
+              <HostExpenses />
+            </TabsContent>
 
             <TabsContent value="payouts" className="space-y-6">
               <BankAccountSetup />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail, Clock, Ban } from "lucide-react";
+import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail, Clock, Ban, DollarSign } from "lucide-react";
 import DashboardOverview from "./DashboardOverview";
 import BookingsManagement from "./BookingsManagement";
 import ShopProductsManagement from "./ShopProductsManagement";
@@ -18,6 +18,7 @@ import MessagesInbox from "./MessagesInbox";
 import { BookingEmailSettings } from "./BookingEmailSettings";
 import PreArrivalSettings from "./PreArrivalSettings";
 import { CancellationPolicySettings } from "./CancellationPolicySettings";
+import ExpenseManagement from "./ExpenseManagement";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -34,7 +35,7 @@ const UnifiedAdmin = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Home className="w-4 h-4" />
             Dashboard
@@ -42,6 +43,10 @@ const UnifiedAdmin = () => {
           <TabsTrigger value="rentals" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Rentals
+          </TabsTrigger>
+          <TabsTrigger value="financials" className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4" />
+            Financials
           </TabsTrigger>
           <TabsTrigger value="shop" className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4" />
@@ -129,6 +134,18 @@ const UnifiedAdmin = () => {
             
             <TabsContent value="pricing">
               <PricingManagement />
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="financials" className="space-y-6">
+          <Tabs defaultValue="expenses" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="expenses">
+              <ExpenseManagement />
             </TabsContent>
           </Tabs>
         </TabsContent>
