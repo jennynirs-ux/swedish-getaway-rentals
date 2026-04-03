@@ -18,6 +18,8 @@ import { HostPropertyEditor } from "./HostPropertyEditor";
 import { HostInvitationDialog } from "./HostInvitationDialog";
 import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
 import HostExpenses from "./HostExpenses";
+import HostRevenueByChannel from "./HostRevenueByChannel";
+import HostProfitability from "./HostProfitability";
 
 interface HostStats {
   total_properties: number;
@@ -349,7 +351,25 @@ const HostDashboard = () => {
             </TabsList>
 
             <TabsContent value="financials" className="space-y-6">
-              <HostExpenses />
+              <Tabs defaultValue="profitability" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="profitability">Profitability</TabsTrigger>
+                  <TabsTrigger value="revenue">Revenue by Channel</TabsTrigger>
+                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="profitability">
+                  <HostProfitability />
+                </TabsContent>
+
+                <TabsContent value="revenue">
+                  <HostRevenueByChannel />
+                </TabsContent>
+
+                <TabsContent value="expenses">
+                  <HostExpenses />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             <TabsContent value="payouts" className="space-y-6">

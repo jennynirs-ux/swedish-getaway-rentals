@@ -19,6 +19,8 @@ import { BookingEmailSettings } from "./BookingEmailSettings";
 import PreArrivalSettings from "./PreArrivalSettings";
 import { CancellationPolicySettings } from "./CancellationPolicySettings";
 import ExpenseManagement from "./ExpenseManagement";
+import RevenueByChannel from "./RevenueByChannel";
+import ProfitabilityView from "./ProfitabilityView";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -139,10 +141,20 @@ const UnifiedAdmin = () => {
         </TabsContent>
 
         <TabsContent value="financials" className="space-y-6">
-          <Tabs defaultValue="expenses" className="space-y-4">
+          <Tabs defaultValue="profitability" className="space-y-4">
             <TabsList>
+              <TabsTrigger value="profitability">Profitability</TabsTrigger>
+              <TabsTrigger value="revenue">Revenue by Channel</TabsTrigger>
               <TabsTrigger value="expenses">Expenses</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="profitability">
+              <ProfitabilityView />
+            </TabsContent>
+
+            <TabsContent value="revenue">
+              <RevenueByChannel />
+            </TabsContent>
 
             <TabsContent value="expenses">
               <ExpenseManagement />
