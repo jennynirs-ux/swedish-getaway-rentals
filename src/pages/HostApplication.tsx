@@ -70,6 +70,7 @@ const HostApplication = () => {
           user_id: user.user.id,
           business_name: formData.businessName,
           contact_phone: formData.contactPhone,
+          description: formData.businessName || 'New host application',
           status: 'approved',
         })
         .select('id')
