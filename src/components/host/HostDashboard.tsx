@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen, Trash2, Receipt } from "lucide-react";
+import { Building2, DollarSign, Calendar, Plus, HelpCircle, BookOpen, Trash2, Receipt, BarChart3 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import { toast } from "sonner";
@@ -22,6 +22,8 @@ import HostRevenueByChannel from "./HostRevenueByChannel";
 import HostProfitability from "./HostProfitability";
 import { HostTaxReport } from "./HostTaxReport";
 import { HOST_PAYOUT_RATE } from "@/lib/constants";
+import OccupancyTrend from "@/components/analytics/OccupancyTrend";
+import KeyMetrics from "@/components/analytics/KeyMetrics";
 
 interface HostStats {
   total_properties: number;
@@ -344,6 +346,10 @@ const HostDashboard = () => {
             <TabsList>
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-1">
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </TabsTrigger>
               <TabsTrigger value="financials" className="flex items-center gap-1">
                 <Receipt className="w-4 h-4" />
                 Financials
@@ -351,6 +357,11 @@ const HostDashboard = () => {
               <TabsTrigger value="messages">Messages</TabsTrigger>
               <TabsTrigger value="payouts">Bank Account</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <KeyMetrics scope="host" />
+              <OccupancyTrend scope="host" />
+            </TabsContent>
 
             <TabsContent value="financials" className="space-y-6">
               <Tabs defaultValue="profitability" className="space-y-4">

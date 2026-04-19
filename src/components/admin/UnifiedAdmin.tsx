@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail, Clock, Ban, DollarSign } from "lucide-react";
+import { Home, Building2, ShoppingBag, Package, Users, Settings, FileText, Truck, Mail, Clock, Ban, DollarSign, BarChart3 } from "lucide-react";
 import DashboardOverview from "./DashboardOverview";
 import BookingsManagement from "./BookingsManagement";
 import ShopProductsManagement from "./ShopProductsManagement";
@@ -21,6 +21,8 @@ import { CancellationPolicySettings } from "./CancellationPolicySettings";
 import ExpenseManagement from "./ExpenseManagement";
 import RevenueByChannel from "./RevenueByChannel";
 import ProfitabilityView from "./ProfitabilityView";
+import OccupancyTrend from "@/components/analytics/OccupancyTrend";
+import KeyMetrics from "@/components/analytics/KeyMetrics";
 
 const UnifiedAdmin = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -37,7 +39,7 @@ const UnifiedAdmin = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Home className="w-4 h-4" />
             Dashboard
@@ -45,6 +47,10 @@ const UnifiedAdmin = () => {
           <TabsTrigger value="rentals" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Rentals
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger value="financials" className="flex items-center gap-2">
             <DollarSign className="w-4 h-4" />
@@ -138,6 +144,11 @@ const UnifiedAdmin = () => {
               <PricingManagement />
             </TabsContent>
           </Tabs>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <KeyMetrics scope="admin" />
+          <OccupancyTrend scope="admin" />
         </TabsContent>
 
         <TabsContent value="financials" className="space-y-6">
