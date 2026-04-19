@@ -25,6 +25,7 @@ import { HOST_PAYOUT_RATE } from "@/lib/constants";
 import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
+import HostOnboardingChecklist from "./HostOnboardingChecklist";
 
 interface HostStats {
   total_properties: number;
@@ -106,6 +107,7 @@ const HostDashboard = () => {
   const [pricingPropertyId, setPricingPropertyId] = useState<string | null>(null);
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("properties");
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
 
@@ -344,7 +346,12 @@ const HostDashboard = () => {
             </Card>
           </div>
 
-          <Tabs defaultValue="properties" className="space-y-6">
+          <HostOnboardingChecklist
+            onGoToTab={setActiveTab}
+            onCreateProperty={() => setWizardOpen(true)}
+          />
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList>
               <TabsTrigger value="properties">Properties</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
