@@ -27,6 +27,7 @@ import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
 import HostOnboardingChecklist from "./HostOnboardingChecklist";
 import HostPricingSuggestions from "./HostPricingSuggestions";
+import HostUnifiedInbox from "./HostUnifiedInbox";
 
 interface HostStats {
   total_properties: number;
@@ -450,7 +451,7 @@ const HostDashboard = () => {
             </TabsContent>
 
             <TabsContent value="messages" className="space-y-6">
-              <BookingChatList />
+              <HostUnifiedInbox />
             </TabsContent>
 
             <TabsContent value="bookings" className="space-y-6">
