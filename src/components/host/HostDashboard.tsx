@@ -24,6 +24,7 @@ import { HostTaxReport } from "./HostTaxReport";
 import { HOST_PAYOUT_RATE } from "@/lib/constants";
 import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
+import HostPropertyWizard from "./HostPropertyWizard";
 
 interface HostStats {
   total_properties: number;
@@ -104,6 +105,7 @@ const HostDashboard = () => {
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
   const [pricingPropertyId, setPricingPropertyId] = useState<string | null>(null);
   const [creatingProperty, setCreatingProperty] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
 
@@ -399,7 +401,7 @@ const HostDashboard = () => {
                 <h2 className="text-xl font-semibold">Your Properties</h2>
                 <div className="flex gap-2">
                   <HostInvitationDialog />
-                  <Button onClick={createNewProperty} className="flex items-center gap-2">
+                  <Button onClick={() => setWizardOpen(true)} className="flex items-center gap-2">
                     <Plus className="w-4 h-4" />
                     Add Property
                   </Button>
@@ -507,6 +509,16 @@ const HostDashboard = () => {
           <HostGuidebookDialog
             isOpen={isGuidebookOpen}
             onClose={() => setIsGuidebookOpen(false)}
+          />
+
+          <HostPropertyWizard
+            open={wizardOpen}
+            onOpenChange={setWizardOpen}
+            onCreated={(propertyId) => {
+              setEditingPropertyId(propertyId);
+              refetchProperties();
+              fetchHostStats();
+            }}
           />
 
           {/* Delete Confirmation */}
