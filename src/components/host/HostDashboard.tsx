@@ -26,6 +26,7 @@ import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
 import HostOnboardingChecklist from "./HostOnboardingChecklist";
+import HostPricingSuggestions from "./HostPricingSuggestions";
 
 interface HostStats {
   total_properties: number;
@@ -370,6 +371,7 @@ const HostDashboard = () => {
             <TabsContent value="analytics" className="space-y-6">
               <KeyMetrics scope="host" />
               <OccupancyTrend scope="host" />
+              <HostPricingSuggestions />
             </TabsContent>
 
             <TabsContent value="financials" className="space-y-6">
