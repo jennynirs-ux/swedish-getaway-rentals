@@ -28,6 +28,7 @@ import HostPropertyWizard from "./HostPropertyWizard";
 import HostOnboardingChecklist from "./HostOnboardingChecklist";
 import HostPricingSuggestions from "./HostPricingSuggestions";
 import HostUnifiedInbox from "./HostUnifiedInbox";
+import HostMessageTemplates from "./HostMessageTemplates";
 
 interface HostStats {
   total_properties: number;
@@ -452,6 +453,7 @@ const HostDashboard = () => {
 
             <TabsContent value="messages" className="space-y-6">
               <HostUnifiedInbox />
+              <HostMessageTemplates />
             </TabsContent>
 
             <TabsContent value="bookings" className="space-y-6">
