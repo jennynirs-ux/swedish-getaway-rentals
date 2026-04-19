@@ -21,6 +21,7 @@ import HostExpenses from "./HostExpenses";
 import HostRevenueByChannel from "./HostRevenueByChannel";
 import HostProfitability from "./HostProfitability";
 import { HostTaxReport } from "./HostTaxReport";
+import { HOST_PAYOUT_RATE } from "@/lib/constants";
 
 interface HostStats {
   total_properties: number;
@@ -163,7 +164,7 @@ const HostDashboard = () => {
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
       const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + booking.total_amount * 0.9;
+        return sum + booking.total_amount * HOST_PAYOUT_RATE;
       }, 0);
 
       setStats({

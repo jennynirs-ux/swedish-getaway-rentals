@@ -1,10 +1,31 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
+// Secure CORS configuration — origin whitelist pattern used across this project
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'https://bbuutvozqfzbsnllsiai.supabase.co',
+  'https://stuga-escapes.lovable.app',
+  'https://nordic-getaways.com',
+  'https://www.nordic-getaways.com',
+];
+
+const baseCorsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
+
+// Platform commission rate — shared constant (also duplicated in src/lib/constants.ts for frontend)
+const PLATFORM_COMMISSION_RATE = 0.10;
+
+// Skatteverket privatuthyrning constants (amounts in SEK)
+const SCHABLONAVDRAG_SEK = 40000;
+const ADDITIONAL_DEDUCTION_RATE = 0.20;
+const CAPITAL_INCOME_TAX_RATE = 0.30;
 
 interface TaxReportLine {
   property_title: string;
@@ -21,6 +42,14 @@ interface TaxReportLine {
 }
 
 serve(async (req) => {
+  // Origin validation
+  const origin = req.headers.get('origin');
+  const validOrigin = origin && allowedOrigins.includes(origin);
+  const corsHeaders = {
+    ...baseCorsHeaders,
+    'Access-Control-Allow-Origin': validOrigin ? origin : allowedOrigins[0],
+  };
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -98,8 +127,6 @@ serve(async (req) => {
       // expenses table may not exist yet — continue without
     }
 
-    const PLATFORM_FEE_RATE = 0.10; // 10% platform commission
-
     // Build per-property report lines
     const propertyLines: TaxReportLine[] = properties.map((prop: any) => {
       const propBookings = (bookings || []).filter((b: any) => b.property_id === prop.id);
@@ -120,7 +147,7 @@ serve(async (req) => {
         expensesByCategory[e.category] = (expensesByCategory[e.category] || 0) + e.amount;
       }
 
-      const platformFees = Math.round(totalRevenue * PLATFORM_FEE_RATE);
+      const platformFees = Math.round(totalRevenue * PLATFORM_COMMISSION_RATE);
       const netIncome = totalRevenue - platformFees - totalExpenses;
       const avgNightlyRate = totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0;
 
@@ -139,26 +166,30 @@ serve(async (req) => {
       };
     });
 
-    // Summary
+    // Summary (amounts in ore = 1/100 SEK)
     const totalGross = propertyLines.reduce((s, p) => s + p.total_revenue, 0);
     const totalFees = propertyLines.reduce((s, p) => s + p.platform_fees, 0);
-    const totalExpenses = propertyLines.reduce((s, p) => s + p.total_expenses, 0);
+    const totalExpensesSum = propertyLines.reduce((s, p) => s + p.total_expenses, 0);
     const totalNet = propertyLines.reduce((s, p) => s + p.net_income, 0);
     const totalBookingsCount = propertyLines.reduce((s, p) => s + p.total_bookings, 0);
     const totalNightsCount = propertyLines.reduce((s, p) => s + p.total_nights, 0);
 
-    // Skatteverket calculation — Privatuthyrning
-    // Swedish rental income rules:
-    //   Schablonavdrag: 40,000 SEK standard deduction per year
-    //   Plus 20% of gross rental income as additional deduction
-    //   Net taxable = gross_income - 40,000 - (20% of gross) (minimum 0)
-    //   Taxed as capital income at 30%
+    // Skatteverket calculation — Privatuthyrning (Kapital)
+    // Per Skatteverket rules for private rental income:
+    //   Taxable amount = gross_rental_income − 40,000 SEK − (20% × gross_rental_income)
+    //   Minimum taxable = 0 (cannot be negative)
+    //   Tax rate on taxable = 30% (capital income)
     //
-    // Note: amounts in the DB are stored in ore (1/100 SEK)
-    const SCHABLONAVDRAG_ORE = 40000 * 100; // 40,000 SEK in ore
-    const grossInOre = totalGross;
-    const additionalDeductionOre = Math.round(grossInOre * 0.20);
-    const taxableAmountOre = Math.max(0, totalNet - SCHABLONAVDRAG_ORE - additionalDeductionOre);
+    // NOTE: The schablonavdrag is applied against GROSS rental income, not net.
+    // Platform fees and actual expenses are NOT deductible under privatuthyrning —
+    // they are deemed to be covered by the standard deduction.
+    //
+    // All amounts stored in ore (1/100 SEK). Convert to SEK for arithmetic then back.
+    const grossSek = totalGross / 100;
+    const schablonavdragSek = SCHABLONAVDRAG_SEK;
+    const additionalDeductionSek = grossSek * ADDITIONAL_DEDUCTION_RATE;
+    const taxableAmountSek = Math.max(0, grossSek - schablonavdragSek - additionalDeductionSek);
+    const estimatedTaxSek = taxableAmountSek * CAPITAL_INCOME_TAX_RATE;
 
     const report = {
       host_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Host',
@@ -170,16 +201,18 @@ serve(async (req) => {
       summary: {
         total_gross_revenue: totalGross,
         total_platform_fees: totalFees,
-        total_expenses: totalExpenses,
+        total_expenses: totalExpensesSum,
         total_net_income: totalNet,
         total_bookings: totalBookingsCount,
         total_nights: totalNightsCount,
       },
       skatteverket: {
         inkomstslag: 'Kapital (privatuthyrning)',
-        schablonavdrag: SCHABLONAVDRAG_ORE,
-        taxable_amount: taxableAmountOre,
-        note: `Uthyrning av privatbostad beskattas som inkomst av kapital. Schablonavdrag 40 000 kr + 20% av hyresintakten (${Math.round(additionalDeductionOre / 100).toLocaleString('sv-SE')} kr). Skattesats 30% pa overskott. OBS: Detta ar en berakningshjalp — kontrollera alltid mot Skatteverkets aktuella regler.`,
+        schablonavdrag: schablonavdragSek * 100, // back to ore for frontend consistency
+        additional_deduction: Math.round(additionalDeductionSek * 100),
+        taxable_amount: Math.round(taxableAmountSek * 100),
+        estimated_tax: Math.round(estimatedTaxSek * 100),
+        note: `Uthyrning av privatbostad beskattas som inkomst av kapital. Beskattningsbart belopp = bruttointakt - 40 000 kr - 20% av bruttointakten. Skattesats 30% pa overskott. Plattformsavgifter och faktiska utgifter ar INTE avdragsgilla utover schablonavdraget. OBS: Detta ar en berakningshjalp - kontrollera alltid mot Skatteverkets aktuella regler.`,
       },
     };
 
@@ -189,7 +222,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Tax report error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to generate tax report' }),
+      JSON.stringify({ error: (error as Error).message || 'Failed to generate tax report' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
