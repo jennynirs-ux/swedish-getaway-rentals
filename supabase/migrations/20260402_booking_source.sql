@@ -14,7 +14,7 @@ BEGIN
   ) THEN
     ALTER TABLE public.bookings
       ADD CONSTRAINT chk_booking_source
-      CHECK (source IN ('airbnb', 'booking_com', 'direct', 'blocked'));
+      CHECK (source IN ('airbnb', 'booking_com', 'direct', 'blocked', 'manual'));
   END IF;
 END $$;
 
@@ -33,4 +33,4 @@ WHERE source = 'direct'
   AND b.stripe_payment_intent_id IS NULL;
 
 COMMENT ON COLUMN public.bookings.source IS
-'Booking origin channel: airbnb, booking_com, direct (our site), or blocked (manual block)';
+'Booking origin channel: airbnb, booking_com, direct (our site), blocked (manual block), or manual (legacy admin-created).';

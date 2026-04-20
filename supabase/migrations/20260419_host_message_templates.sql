@@ -48,7 +48,7 @@ CREATE POLICY "Host message templates: host owns"
 -- Admin full access
 CREATE POLICY "Host message templates: admin full"
   ON public.host_message_templates FOR ALL
-  USING (public.is_user_admin(auth.uid()));
+  USING (public.is_admin_secure_new(auth.uid()));
 
 COMMENT ON TABLE public.host_message_templates IS
 'Reusable guest message templates with triggers. Automated dispatch requires a scheduled edge function (future work).';

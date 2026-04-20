@@ -42,7 +42,7 @@ ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 -- Admin full access
 CREATE POLICY "Expenses: admin full access"
   ON public.expenses FOR ALL
-  USING (public.is_user_admin(auth.uid()));
+  USING (public.is_admin_secure_new(auth.uid()));
 
 -- Hosts can manage expenses for their own properties
 CREATE POLICY "Expenses: hosts manage own properties"
