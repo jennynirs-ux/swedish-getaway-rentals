@@ -782,6 +782,53 @@ export type Database = {
           },
         ]
       }
+      host_message_templates: {
+        Row: {
+          body: string
+          created_at: string
+          enabled: boolean
+          host_id: string
+          id: string
+          name: string
+          subject: string | null
+          trigger_days: number | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          enabled?: boolean
+          host_id: string
+          id?: string
+          name: string
+          subject?: string | null
+          trigger_days?: number | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          enabled?: boolean
+          host_id?: string
+          id?: string
+          name?: string
+          subject?: string | null
+          trigger_days?: number | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_message_templates_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       host_referrals: {
         Row: {
           completed_at: string | null
