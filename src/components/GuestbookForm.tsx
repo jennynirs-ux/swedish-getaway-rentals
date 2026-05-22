@@ -86,11 +86,9 @@ const GuestbookForm = ({
 
       if (insertError) throw insertError;
 
-      // Mark token as used
+      // Mark token as used via secure RPC (only succeeds for the exact token)
       const { error: tokenError } = await supabase
-        .from("guestbook_tokens")
-        .update({ used_at: new Date().toISOString() })
-        .eq("token", token);
+        .rpc("consume_guestbook_token", { _token: token });
 
       if (tokenError) console.error("Error marking token as used:", tokenError);
 
