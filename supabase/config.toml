@@ -28,7 +28,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-cart-payment]
-verify_jwt = false
+verify_jwt = true
 
 [functions.export-ical]
 verify_jwt = false
