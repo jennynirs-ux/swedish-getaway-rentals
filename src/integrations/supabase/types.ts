@@ -2170,6 +2170,7 @@ export type Database = {
         Returns: boolean
       }
       cleanup_rate_limits: { Args: never; Returns: undefined }
+      consume_guestbook_token: { Args: { _token: string }; Returns: boolean }
       detect_double_bookings: {
         Args: never
         Returns: {
