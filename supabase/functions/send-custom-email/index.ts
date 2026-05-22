@@ -24,9 +24,36 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authenticate caller
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
+    const callerId = userData.user.id;
+
     const { bookingId, emailType }: EmailRequest = await req.json();
 
     console.log("Processing custom email:", { bookingId, emailType });
+
+    // Authorization: caller must be admin or the property's host
+    const { data: bookingAuthz } = await supabase
+      .from("bookings")
+      .select("property_id, properties:property_id(host_id, profiles:host_id(user_id))")
+      .eq("id", bookingId)
+      .single();
+
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: callerId, _role: "admin" });
+    const hostUserId = (bookingAuthz as any)?.properties?.profiles?.user_id;
+    if (!(isAdmin === true || hostUserId === callerId)) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
 
     // Fetch booking details with property
     const { data: booking, error: bookingError } = await supabase
