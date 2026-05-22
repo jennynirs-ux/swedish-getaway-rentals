@@ -17,9 +17,46 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Authenticate caller
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userErr } = await supabaseClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401
+      });
+    }
+    const callerId = userData.user.id;
+
     const { bookingId, propertyId, checkInDate, checkOutDate } = await req.json();
 
     console.log('Generating Yale code for booking:', bookingId);
+
+    // Authorization: caller must be admin, the booking's user, or the property's host
+    const { data: bookingRow } = await supabaseClient
+      .from('bookings')
+      .select('id, user_id, property_id, properties:property_id(host_id, profiles:host_id(user_id))')
+      .eq('id', bookingId)
+      .eq('property_id', propertyId)
+      .single();
+
+    if (!bookingRow) {
+      return new Response(JSON.stringify({ error: "Booking not found" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404
+      });
+    }
+
+    const { data: isAdmin } = await supabaseClient.rpc('has_role', { _user_id: callerId, _role: 'admin' });
+    const hostUserId = (bookingRow as any)?.properties?.profiles?.user_id;
+    const authorized = isAdmin === true
+      || bookingRow.user_id === callerId
+      || hostUserId === callerId;
+
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403
+      });
+    }
 
     // Decrypt credentials helper (matches SmartLockSetup encryption)
     const decryptCredentials = (encrypted: string): string => {
