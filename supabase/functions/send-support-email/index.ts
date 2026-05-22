@@ -24,11 +24,39 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { name, email, phone, subject, message }: SupportEmailRequest = await req.json();
+    const body: SupportEmailRequest = await req.json();
+
+    // Validate + sanitize
+    const escapeHtml = (s: string) =>
+      String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    const name = (body.name || "").trim().slice(0, 100);
+    const email = (body.email || "").trim().slice(0, 255);
+    const phone = (body.phone || "").trim().slice(0, 50);
+    const subject = (body.subject || "").trim().slice(0, 200);
+    const message = (body.message || "").trim().slice(0, 2000);
+
+    if (name.length < 2 || !emailRegex.test(email) || subject.length < 2 || message.length < 5) {
+      return new Response(
+        JSON.stringify({ error: "Invalid input" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safePhone = escapeHtml(phone);
+    const safeSubject = escapeHtml(subject);
+    const safeMessageHtml = escapeHtml(message).replace(/\n/g, "<br>");
 
     console.log("Sending support email:", { name, email, subject });
 
-    // Send email to support
     const emailResponse = await resend.emails.send({
       from: "Nordic Getaways <support@mojjo.se>",
       to: ["support@mojjo.se"],
@@ -36,12 +64,12 @@ const handler = async (req: Request): Promise<Response> => {
       subject: `Support Request: ${subject}`,
       html: `
         <h2>New Support Request</h2>
-        <p><strong>From:</strong> ${name} (${email})</p>
-        ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
-        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>From:</strong> ${safeName} (${safeEmail})</p>
+        ${phone ? `<p><strong>Phone:</strong> ${safePhone}</p>` : ''}
+        <p><strong>Subject:</strong> ${safeSubject}</p>
         <hr />
         <h3>Message:</h3>
-        <p>${message.replace(/\n/g, '<br>')}</p>
+        <p>${safeMessageHtml}</p>
         <hr />
         <p><small>This message was sent via the Nordic Getaways contact form.</small></p>
       `,
@@ -55,11 +83,11 @@ const handler = async (req: Request): Promise<Response> => {
       to: [email],
       subject: "We received your message",
       html: `
-        <h1>Thank you for contacting us, ${name}!</h1>
-        <p>We have received your message and will get back to you as soon as possible at <strong>${email}</strong>.</p>
+        <h1>Thank you for contacting us, ${safeName}!</h1>
+        <p>We have received your message and will get back to you as soon as possible at <strong>${safeEmail}</strong>.</p>
         <p>Your message:</p>
         <blockquote style="border-left: 3px solid #ccc; padding-left: 15px; color: #666;">
-          ${message.replace(/\n/g, '<br>')}
+          ${safeMessageHtml}
         </blockquote>
         <p>Best regards,<br>The Nordic Getaways Team</p>
         <hr />
