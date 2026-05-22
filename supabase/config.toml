@@ -48,7 +48,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.send-booking-notifications]
-verify_jwt = false
+verify_jwt = true
+
+[functions.send-custom-email]
+verify_jwt = true
 
 [functions.send-host-invitation]
 verify_jwt = true
