@@ -1448,6 +1448,7 @@ export type Database = {
       property_private_details: {
         Row: {
           check_in_instructions: string | null
+          ical_export_secret: string
           created_at: string
           parking_info: string | null
           postal_code: string | null
@@ -1457,6 +1458,7 @@ export type Database = {
         }
         Insert: {
           check_in_instructions?: string | null
+          ical_export_secret?: string
           created_at?: string
           parking_info?: string | null
           postal_code?: string | null
@@ -1466,6 +1468,7 @@ export type Database = {
         }
         Update: {
           check_in_instructions?: string | null
+          ical_export_secret?: string
           created_at?: string
           parking_info?: string | null
           postal_code?: string | null

@@ -217,3 +217,112 @@ CREATE VIEW public.properties_public WITH (security_invoker = true) AS
         END AS get_in_touch_info
    FROM properties;
 GRANT ALL ON public.properties_public TO anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- iCal export secret: also guest-/host-only. It was readable by anon through
+-- "Active properties are publicly viewable", which exposed the booking
+-- calendar. Values are kept as-is because they are embedded in the export URLs
+-- already configured on Airbnb/Booking.com.
+-- ---------------------------------------------------------------------------
+ALTER TABLE public.property_private_details
+  ADD COLUMN IF NOT EXISTS ical_export_secret TEXT NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex');
+
+INSERT INTO public.property_private_details AS d (property_id, ical_export_secret)
+SELECT id, ical_export_secret FROM public.properties WHERE ical_export_secret IS NOT NULL
+ON CONFLICT (property_id) DO UPDATE SET ical_export_secret = EXCLUDED.ical_export_secret;
+
+-- Every property gets a private row (and so an export secret)
+INSERT INTO public.property_private_details (property_id)
+SELECT id FROM public.properties
+ON CONFLICT (property_id) DO NOTHING;
+
+ALTER TABLE public.properties ALTER COLUMN ical_export_secret DROP DEFAULT;
+UPDATE public.properties SET ical_export_secret = NULL WHERE ical_export_secret IS NOT NULL;
+COMMENT ON COLUMN public.properties.ical_export_secret IS 'DEPRECATED: moved to property_private_details (always NULL here).';
+
+CREATE OR REPLACE FUNCTION public.properties_move_private_columns_on_update()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.street IS NULL AND NEW.postal_code IS NULL AND NEW.check_in_instructions IS NULL
+     AND NEW.parking_info IS NULL AND NEW.ical_export_secret IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  PERFORM public.upsert_property_private_details_from_row(
+    NEW.id, NEW.street, NEW.postal_code, NEW.check_in_instructions, NEW.parking_info
+  );
+  IF NEW.ical_export_secret IS NOT NULL THEN
+    UPDATE public.property_private_details SET ical_export_secret = NEW.ical_export_secret
+    WHERE property_id = NEW.id;
+  END IF;
+
+  NEW.street := NULL;
+  NEW.postal_code := NULL;
+  NEW.check_in_instructions := NULL;
+  NEW.parking_info := NULL;
+  NEW.ical_export_secret := NULL;
+  RETURN NEW;
+END;
+$$;
+
+-- Always create the private row for a new property (it carries the iCal secret)
+CREATE OR REPLACE FUNCTION public.properties_move_private_columns_after_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM public.upsert_property_private_details_from_row(
+    NEW.id, NEW.street, NEW.postal_code, NEW.check_in_instructions, NEW.parking_info
+  );
+  IF NEW.ical_export_secret IS NOT NULL THEN
+    UPDATE public.property_private_details SET ical_export_secret = NEW.ical_export_secret
+    WHERE property_id = NEW.id;
+  END IF;
+
+  IF NEW.street IS NOT NULL OR NEW.postal_code IS NOT NULL OR NEW.check_in_instructions IS NOT NULL
+     OR NEW.parking_info IS NOT NULL OR NEW.ical_export_secret IS NOT NULL THEN
+    UPDATE public.properties
+    SET street = NULL, postal_code = NULL, check_in_instructions = NULL, parking_info = NULL, ical_export_secret = NULL
+    WHERE id = NEW.id;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS properties_move_private_columns_on_update ON public.properties;
+CREATE TRIGGER properties_move_private_columns_on_update
+  BEFORE UPDATE OF street, postal_code, check_in_instructions, parking_info, ical_export_secret ON public.properties
+  FOR EACH ROW
+  EXECUTE FUNCTION public.properties_move_private_columns_on_update();
+
+-- ---------------------------------------------------------------------------
+-- Public coordinates: round to 2 decimals (~1 km) so the public map, JSON-LD
+-- and API show the area, not the house. Guests get the exact address by email.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.properties_round_public_coordinates()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  NEW.latitude := round(NEW.latitude::numeric, 2);
+  NEW.longitude := round(NEW.longitude::numeric, 2);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS properties_round_public_coordinates ON public.properties;
+CREATE TRIGGER properties_round_public_coordinates
+  BEFORE INSERT OR UPDATE OF latitude, longitude ON public.properties
+  FOR EACH ROW
+  EXECUTE FUNCTION public.properties_round_public_coordinates();
+
+UPDATE public.properties
+SET latitude = round(latitude::numeric, 2), longitude = round(longitude::numeric, 2)
+WHERE latitude IS NOT NULL OR longitude IS NOT NULL;

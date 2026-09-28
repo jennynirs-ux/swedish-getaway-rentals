@@ -28,11 +28,16 @@ serve(async (req) => {
     // Verify property and secret
     const { data: property, error: propError } = await supabaseClient
       .from('properties')
-      .select('title, ical_export_secret')
+      .select('title, property_private_details(ical_export_secret)')
       .eq('id', propertyId)
       .single();
 
-    if (propError || !property || property.ical_export_secret !== secret) {
+    // One-to-one embed: PostgREST may return an object or a one-element array
+    const privateDetails = Array.isArray(property?.property_private_details)
+      ? property?.property_private_details[0]
+      : property?.property_private_details;
+
+    if (propError || !property || !privateDetails?.ical_export_secret || privateDetails.ical_export_secret !== secret) {
       return new Response("Unauthorized", { status: 401 });
     }
 

@@ -77,9 +77,9 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
     try {
       // Get the property's export secret
       const { data: property, error } = await supabase
-        .from('properties')
+        .from('property_private_details')
         .select('ical_export_secret')
-        .eq('id', propertyId)
+        .eq('property_id', propertyId)
         .single();
 
       if (error) throw error;
