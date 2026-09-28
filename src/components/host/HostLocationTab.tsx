@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { LocationEditor } from "@/components/LocationEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
 import { MapPin, Plus, Trash2 } from "lucide-react";
 
 interface LocationData {
@@ -51,18 +52,23 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
 
   const loadLocationData = async () => {
     try {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("street, postal_code, city, country, latitude, longitude")
-        .eq("id", propertyId)
-        .single();
+      // Street and postal code are private (host/admin only), so they live in
+      // property_private_details instead of the publicly readable properties row.
+      const [{ data, error }, privateDetails] = await Promise.all([
+        supabase
+          .from("properties")
+          .select("city, country, latitude, longitude")
+          .eq("id", propertyId)
+          .single(),
+        fetchPropertyPrivateDetails(propertyId),
+      ]);
 
       if (error) throw error;
 
       if (data) {
         setLocationData({
-          street: data.street || "",
-          postal_code: data.postal_code || "",
+          street: privateDetails?.street || "",
+          postal_code: privateDetails?.postal_code || "",
           city: data.city || "",
           country: data.country || "Sweden",
           latitude: data.latitude || null,
@@ -80,8 +86,6 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       const { error } = await supabase
         .from("properties")
         .update({
-          street: locationData.street,
-          postal_code: locationData.postal_code,
           city: locationData.city ? locationData.city.toLowerCase() : null,
           country: locationData.country,
           latitude: locationData.latitude,
@@ -91,6 +95,11 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
         .eq("id", propertyId);
 
       if (error) throw error;
+
+      await savePropertyPrivateDetails(propertyId, {
+        street: locationData.street || null,
+        postal_code: locationData.postal_code || null,
+      });
 
       toast({
         title: "Success",

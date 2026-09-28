@@ -57,8 +57,6 @@ export interface Property {
   preparation_days?: number;
   latitude?: number | null;
   longitude?: number | null;
-  street?: string | null;
-  postal_code?: string | null;
   city?: string | null;
   country?: string | null;
   slug?: string | null;

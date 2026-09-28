@@ -64,13 +64,15 @@ const handler = async (req: Request): Promise<Response> => {
           id,
           title,
           email_templates,
-          street,
           city,
-          postal_code,
           country,
-          check_in_instructions,
           check_in_time,
-          check_out_time
+          check_out_time,
+          property_private_details (
+            street,
+            postal_code,
+            check_in_instructions
+          )
         )
       `)
       .eq("id", bookingId)
@@ -80,7 +82,17 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Booking not found");
     }
 
-    const property = booking.properties as any;
+    // Address and check-in instructions are guest-only and live in
+    // property_private_details (service role can read it); flatten them.
+    const rawProperty = booking.properties as any;
+    const rawPrivate = rawProperty?.property_private_details;
+    const privateDetails = (Array.isArray(rawPrivate) ? rawPrivate[0] : rawPrivate) ?? {};
+    const property = {
+      ...rawProperty,
+      street: privateDetails.street ?? null,
+      postal_code: privateDetails.postal_code ?? null,
+      check_in_instructions: privateDetails.check_in_instructions ?? null,
+    };
     const templates = property.email_templates || {};
     const template = templates[emailType];
 

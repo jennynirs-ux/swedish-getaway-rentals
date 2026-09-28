@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
 import {
   Settings,
   Image,
@@ -93,11 +94,15 @@ const PropertyDetailEditor = ({
   const loadProperty = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("id", propertyId)
-        .single();
+      const [{ data, error }, privateDetails] = await Promise.all([
+        supabase
+          .from("properties")
+          .select("*")
+          .eq("id", propertyId)
+          .single(),
+        // Street and postal code are private (host/admin only).
+        fetchPropertyPrivateDetails(propertyId),
+      ]);
 
       if (error) throw error;
 
@@ -110,8 +115,8 @@ const PropertyDetailEditor = ({
         weekly_discount_percentage: (data.weekly_discount_percentage ?? 0).toString(),
         monthly_discount_percentage: (data.monthly_discount_percentage ?? 0).toString(),
         cancellation_policy: (data.cancellation_policy as "flexible" | "moderate" | "strict") || "moderate",
-        street: data.street || "",
-        postal_code: data.postal_code || "",
+        street: privateDetails?.street || "",
+        postal_code: privateDetails?.postal_code || "",
         city: data.city || "",
         country: data.country || "Sweden",
         latitude: (data.latitude ?? null) as number | null,
@@ -134,8 +139,6 @@ const PropertyDetailEditor = ({
     try {
       const updateData = {
         guidebook_sections: Array.isArray(form.guidebook_sections) ? form.guidebook_sections : [],
-        street: form.street,
-        postal_code: form.postal_code,
         city: form.city ? form.city.toLowerCase() : null,
         country: form.country,
         latitude: typeof form.latitude === "number" ? form.latitude : (form.latitude ? Number(form.latitude) : null),
@@ -152,6 +155,11 @@ const PropertyDetailEditor = ({
         .eq("id", propertyId);
 
       if (error) throw error;
+
+      await savePropertyPrivateDetails(propertyId, {
+        street: form.street || null,
+        postal_code: form.postal_code || null,
+      });
 
       try {
         const channel = supabase.channel("admin-property-updates");

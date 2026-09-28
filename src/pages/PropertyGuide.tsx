@@ -20,7 +20,9 @@ const PropertyGuide = () => {
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("*")
+        // Public page: request only what the guide renders, never select("*")
+        // (keeps any private/host-only columns out of the anonymous response).
+        .select("id, title, slug, guidebook_sections")
         .eq(/^[0-9a-f-]{36}$/i.test(propertyId) ? "id" : "slug", propertyId)
         .single();
 

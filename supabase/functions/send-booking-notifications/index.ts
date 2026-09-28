@@ -50,9 +50,7 @@ serve(async (req) => {
         properties (
           id,
           title,
-          street,
           city,
-          postal_code,
           country,
           check_in_time,
           check_out_time,
@@ -60,6 +58,10 @@ serve(async (req) => {
           guidebook_sections,
           email_templates,
           host_id,
+          property_private_details (
+            street,
+            postal_code
+          ),
           profiles (
             email,
             full_name
@@ -77,7 +79,14 @@ serve(async (req) => {
       });
     }
 
-    const property = booking.properties as any;
+    // Exact address is guest-only and lives in property_private_details
+    // (service role can read it); flatten it onto the property object.
+    const rawProperty = booking.properties as any;
+    const rawPrivate = rawProperty?.property_private_details;
+    const privateDetails = (Array.isArray(rawPrivate) ? rawPrivate[0] : rawPrivate) ?? {};
+    const property = rawProperty
+      ? { ...rawProperty, street: privateDetails.street ?? null, postal_code: privateDetails.postal_code ?? null }
+      : rawProperty;
     const hostProfile = property?.profiles as any;
     
     // Validate email format

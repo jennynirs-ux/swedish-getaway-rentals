@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
+
+type PrivateField = 'check_in_instructions' | 'parking_info';
+type Field = PrivateField | 'local_tips';
 
 export default function PreArrivalSettings() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
@@ -18,7 +22,7 @@ export default function PreArrivalSettings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
-        .select('id, title, check_in_instructions, parking_info, local_tips')
+        .select('id, title, local_tips')
         .order('title');
       
       if (error) throw error;
@@ -26,23 +30,33 @@ export default function PreArrivalSettings() {
     },
   });
 
+  // Check-in instructions and parking info are guest-only (host/admin readable),
+  // stored in property_private_details rather than the public properties row.
+  const { data: privateDetails, isLoading: privateDetailsLoading } = useQuery({
+    queryKey: ['property-private-details', selectedPropertyId],
+    queryFn: () => fetchPropertyPrivateDetails(selectedPropertyId),
+    enabled: !!selectedPropertyId,
+  });
+
   const selectedProperty = properties?.find(p => p.id === selectedPropertyId);
 
   const updateMutation = useMutation({
-    mutationFn: async (updates: { 
-      check_in_instructions?: string; 
-      parking_info?: string; 
-      local_tips?: string;
-    }) => {
-      const { error } = await supabase
-        .from('properties')
-        .update(updates)
-        .eq('id', selectedPropertyId);
-      
-      if (error) throw error;
+    mutationFn: async ({ field, value }: { field: Field; value: string }) => {
+      if (field === 'local_tips') {
+        const { error } = await supabase
+          .from('properties')
+          .update({ local_tips: value })
+          .eq('id', selectedPropertyId);
+
+        if (error) throw error;
+        return;
+      }
+
+      await savePropertyPrivateDetails(selectedPropertyId, { [field]: value });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties-pre-arrival'] });
+      queryClient.invalidateQueries({ queryKey: ['property-private-details', selectedPropertyId] });
       toast.success('Pre-arrival settings updated successfully');
     },
     onError: (error) => {
@@ -50,12 +64,12 @@ export default function PreArrivalSettings() {
     },
   });
 
-  const handleUpdate = (field: string, value: string) => {
+  const handleUpdate = (field: Field, value: string) => {
     if (!selectedPropertyId) {
       toast.error('Please select a property first');
       return;
     }
-    updateMutation.mutate({ [field]: value });
+    updateMutation.mutate({ field, value });
   };
 
   if (propertiesLoading) {
@@ -98,8 +112,14 @@ export default function PreArrivalSettings() {
         </CardContent>
       </Card>
 
-      {selectedProperty && (
-        <Tabs defaultValue="instructions" className="space-y-4">
+      {selectedProperty && privateDetailsLoading && (
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      )}
+
+      {selectedProperty && !privateDetailsLoading && (
+        <Tabs key={selectedProperty.id} defaultValue="instructions" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="instructions">Check-In Instructions</TabsTrigger>
             <TabsTrigger value="parking">Parking Info</TabsTrigger>
@@ -118,7 +138,7 @@ export default function PreArrivalSettings() {
                 <Textarea
                   placeholder="E.g., The key lockbox is located on the right side of the front door. Your access code is sent separately. Please call us if you have any trouble accessing the property."
                   rows={8}
-                  defaultValue={selectedProperty.check_in_instructions || ''}
+                  defaultValue={privateDetails?.check_in_instructions || ''}
                   onBlur={(e) => handleUpdate('check_in_instructions', e.target.value)}
                   className="resize-none"
                 />
@@ -141,7 +161,7 @@ export default function PreArrivalSettings() {
                 <Textarea
                   placeholder="E.g., Free parking available in the driveway. Street parking is also available but requires a permit during weekdays. Parking permit can be obtained from the local municipality office."
                   rows={8}
-                  defaultValue={selectedProperty.parking_info || ''}
+                  defaultValue={privateDetails?.parking_info || ''}
                   onBlur={(e) => handleUpdate('parking_info', e.target.value)}
                   className="resize-none"
                 />

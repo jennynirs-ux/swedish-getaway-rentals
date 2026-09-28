@@ -34,6 +34,29 @@ interface Booking {
   };
 }
 
+// Guest-only fields live in property_private_details (not publicly readable).
+// This function uses the service role, so it can read them; flatten them onto
+// booking.properties so the email code below can stay unchanged.
+type PrivateDetails = Pick<
+  Booking['properties'],
+  'street' | 'postal_code' | 'check_in_instructions' | 'parking_info'
+>;
+
+function withPrivateDetails(booking: any): Booking {
+  const raw = booking.properties?.property_private_details;
+  const details: Partial<PrivateDetails> = (Array.isArray(raw) ? raw[0] : raw) ?? {};
+  return {
+    ...booking,
+    properties: {
+      ...booking.properties,
+      street: details.street ?? null,
+      postal_code: details.postal_code ?? null,
+      check_in_instructions: details.check_in_instructions ?? null,
+      parking_info: details.parking_info ?? null,
+    },
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -72,14 +95,16 @@ serve(async (req) => {
           country,
           check_in_time,
           check_out_time,
-          street,
-          postal_code,
           property_timezone,
           get_in_touch_info,
-          check_in_instructions,
-          parking_info,
           local_tips,
-          email_templates
+          email_templates,
+          property_private_details (
+            street,
+            postal_code,
+            check_in_instructions,
+            parking_info
+          )
         )
       `)
       .eq('check_in_date', tomorrowStr)
@@ -102,7 +127,7 @@ serve(async (req) => {
 
     const results = [];
 
-    for (const booking of bookings as unknown as Booking[]) {
+    for (const booking of bookings.map(withPrivateDetails)) {
       try {
         // Get or calculate travel info
         let travelInfo = null;

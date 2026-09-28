@@ -1445,6 +1445,51 @@ export type Database = {
           },
         ]
       }
+      property_private_details: {
+        Row: {
+          check_in_instructions: string | null
+          created_at: string
+          parking_info: string | null
+          postal_code: string | null
+          property_id: string
+          street: string | null
+          updated_at: string
+        }
+        Insert: {
+          check_in_instructions?: string | null
+          created_at?: string
+          parking_info?: string | null
+          postal_code?: string | null
+          property_id: string
+          street?: string | null
+          updated_at?: string
+        }
+        Update: {
+          check_in_instructions?: string | null
+          created_at?: string
+          parking_info?: string | null
+          postal_code?: string | null
+          property_id?: string
+          street?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_private_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_private_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_travel_cache: {
         Row: {
           computed_at: string
@@ -1939,7 +1984,6 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           cancellation_policy: string | null
-          check_in_instructions: string | null
           check_in_time: string | null
           check_out_time: string | null
           city: string | null
@@ -1966,9 +2010,7 @@ export type Database = {
           longitude: number | null
           max_guests: number | null
           monthly_discount_percentage: number | null
-          parking_info: string | null
           pending_approval: boolean | null
-          postal_code: string | null
           pre_checkin_reminder_enabled: boolean | null
           pre_checkin_send_time: string | null
           preparation_days: number | null
@@ -1980,7 +2022,6 @@ export type Database = {
           review_rating: number | null
           special_amenities: string[] | null
           special_highlights: Json | null
-          street: string | null
           tagline_line1: string | null
           tagline_line2: string | null
           title: string | null
@@ -1999,7 +2040,6 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           cancellation_policy?: string | null
-          check_in_instructions?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
           city?: string | null
@@ -2026,9 +2066,7 @@ export type Database = {
           longitude?: number | null
           max_guests?: number | null
           monthly_discount_percentage?: number | null
-          parking_info?: string | null
           pending_approval?: boolean | null
-          postal_code?: string | null
           pre_checkin_reminder_enabled?: boolean | null
           pre_checkin_send_time?: string | null
           preparation_days?: number | null
@@ -2040,7 +2078,6 @@ export type Database = {
           review_rating?: number | null
           special_amenities?: string[] | null
           special_highlights?: Json | null
-          street?: string | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title?: string | null
@@ -2059,7 +2096,6 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           cancellation_policy?: string | null
-          check_in_instructions?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
           city?: string | null
@@ -2086,9 +2122,7 @@ export type Database = {
           longitude?: number | null
           max_guests?: number | null
           monthly_discount_percentage?: number | null
-          parking_info?: string | null
           pending_approval?: boolean | null
-          postal_code?: string | null
           pre_checkin_reminder_enabled?: boolean | null
           pre_checkin_send_time?: string | null
           preparation_days?: number | null
@@ -2100,7 +2134,6 @@ export type Database = {
           review_rating?: number | null
           special_amenities?: string[] | null
           special_highlights?: Json | null
-          street?: string | null
           tagline_line1?: string | null
           tagline_line2?: string | null
           title?: string | null
@@ -2132,6 +2165,10 @@ export type Database = {
           host_amount: number
           platform_commission: number
         }[]
+      }
+      can_manage_property_private_details: {
+        Args: { _property_id: string; _user_id: string }
+        Returns: boolean
       }
       check_booking_conflict: {
         Args: {
