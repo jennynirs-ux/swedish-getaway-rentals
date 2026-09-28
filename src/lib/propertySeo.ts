@@ -1,5 +1,6 @@
 import type { Property } from "@/hooks/useProperties";
 import { SITE_NAME, SITE_URL } from "@/hooks/usePageMeta";
+import type { PropertyContent } from "@/content/propertyContent";
 
 type SeoProperty = Pick<
   Property,
@@ -22,18 +23,18 @@ export const propertyMetaDescription = (p: SeoProperty) => {
 };
 
 /** schema.org VacationRental, read by Google and by AI assistants */
-export const buildPropertyJsonLd = (p: SeoProperty) => {
+export const buildPropertyJsonLd = (p: SeoProperty, content?: PropertyContent) => {
   const url = `${SITE_URL}${propertyPath(p)}`;
   const images = [p.hero_image_url, ...(p.gallery_images ?? [])].filter(Boolean).slice(0, 10);
   const [locality, country] = (p.location ?? "").split(",").map((s) => s.trim());
 
-  return {
+  const rental = {
     "@context": "https://schema.org",
     "@type": "VacationRental",
     "@id": url,
     url,
-    name: p.title,
-    description: p.description,
+    name: content ? `${content.nickname} – ${p.title}` : p.title,
+    description: content ? content.intro.join(" ") : p.description,
     image: images,
     brand: { "@type": "Brand", name: SITE_NAME },
     address: {
@@ -75,4 +76,19 @@ export const buildPropertyJsonLd = (p: SeoProperty) => {
         }
       : {}),
   };
+
+  if (!content) return rental;
+
+  return [
+    rental,
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: content.faq.map(({ q, a }) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: { "@type": "Answer", text: a },
+      })),
+    },
+  ];
 };

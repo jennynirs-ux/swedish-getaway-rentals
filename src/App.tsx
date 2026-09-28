@@ -25,6 +25,7 @@ import Contact from "./pages/Contact";
 import BookNow from "./pages/BookNow";
 import Profile from "./pages/Profile";
 import FirstTimeInSweden from "./pages/FirstTimeInSweden";
+import LakeGuide from "./pages/LakeGuide";
 import PricingGuide from "./pages/PricingGuide";
 import BecomeHost from "./pages/BecomeHost";
 
@@ -79,6 +80,7 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 <Route path="/first-time-in-sweden" element={<FirstTimeInSweden />} />
+                <Route path="/stora-harsjon-lerum" element={<LakeGuide />} />
                 <Route path="/pricing-guide" element={<PricingGuide />} />
                 <Route path="/become-host" element={<BecomeHost />} />
                 <Route path="*" element={<NotFound />} />

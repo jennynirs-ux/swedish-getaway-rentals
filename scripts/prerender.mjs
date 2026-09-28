@@ -18,6 +18,7 @@ const PORT = 4179;
 const STATIC_ROUTES = [
   "/",
   "/first-time-in-sweden",
+  "/stora-harsjon-lerum",
   "/amenities",
   "/gallery",
   "/book-now",
@@ -86,7 +87,7 @@ async function writeLlmsTxt(properties) {
     path.join(DIST, "llms.txt"),
     `# Nordic Getaways
 
-> Nordic Getaways rents out lakeside cabins and holiday homes in Swedish nature near Gothenburg (Lerum, Västra Götaland), booked directly with the host. Guests get lake access, rowing boats, forest trails and a digital guest guide.
+> Nordic Getaways is run by Superhosts Jenny and Jon Nirs, who rent out two lakeside homes on Stora Härsjön in Lerum, about 30 minutes from Gothenburg, Sweden: Villa Häcken (sleeps 8, hot tub, private jetty and beach) and Lakehouse Getaway (a simple cabin for up to 4 at the water's edge). Boats and paddle boards are included. Book directly with the hosts. Pets are not allowed.
 
 ## Stays
 
@@ -94,6 +95,7 @@ ${stays}
 
 ## Guides
 
+- [Stora Härsjön & Lerum guide](${SITE_URL}/stora-harsjon-lerum): things to do around the lake and near Gothenburg – 16 km lake hike, swimming, paddling, family activities, restaurants in Lerum and how to get here by car, train and bus.
 - [First time in Sweden](${SITE_URL}/first-time-in-sweden): practical tips on fika, allemansrätten (the right to roam), etiquette, payments and Swedish food.
 - [Amenities](${SITE_URL}/amenities): what is included at our cabins.
 - [Pricing guide](${SITE_URL}/pricing-guide): seasons, fees and discounts.

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import PropertyAbout from "@/components/PropertyAbout";
+import { PROPERTY_CONTENT } from "@/content/propertyContent";
 import { buildPropertyJsonLd, propertyMetaDescription, propertyPath } from "@/lib/propertySeo";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -203,13 +205,19 @@ const PropertyPage = memo(() => {
     } as Property;
   }, [lightProperty, heavyProperty]);
 
+  const content = property?.slug ? PROPERTY_CONTENT[property.slug] : undefined;
+
   usePageMeta({
     ready: !!property,
-    title: property ? `${property.title} – ${property.location ?? "Sweden"}` : "",
+    title: property
+      ? content
+        ? `${content.nickname}: ${property.title} near Gothenburg`
+        : `${property.title} – ${property.location ?? "Sweden"}`
+      : "",
     description: property ? propertyMetaDescription(property) : "",
     path: property ? propertyPath(property) : undefined,
     image: property?.hero_image_url,
-    jsonLd: property ? buildPropertyJsonLd(property) : undefined,
+    jsonLd: property ? buildPropertyJsonLd(property, content) : undefined,
   });
 
   // Loading
@@ -252,6 +260,10 @@ const PropertyPage = memo(() => {
     <div className="min-h-screen bg-background">
       <PropertyNavigation />
       <PropertyHero property={property} />
+
+      {content && (
+        <PropertyAbout content={content} rating={property.review_rating} reviewCount={property.review_count} />
+      )}
 
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
         <PropertyGallery property={property} />
