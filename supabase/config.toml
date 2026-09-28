@@ -58,3 +58,5 @@ verify_jwt = true
 
 [functions.handle-shop-payment-success]
 verify_jwt = false
+[functions.stripe-webhook]
+verify_jwt = false

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { clientIpFrom, processCheckoutSession } from "../_shared/process-checkout-session.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,274 +30,21 @@ serve(async (req) => {
     }
 
     const userAgent = req.headers.get('user-agent') || 'unknown';
-    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
-    
-    console.log(`Payment success handler called from IP: ${clientIP}, Session: ${session_id}`);
+    console.log(`Payment success handler called from IP: ${clientIpFrom(req)}, Session: ${session_id}`);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
-
-    // Retrieve and validate the session directly from Stripe
-    // This is secure because we're fetching from Stripe's API with our secret key
-    const session = await stripe.checkout.sessions.retrieve(session_id, { expand: ['line_items'] });
-    
-    if (!session) {
-      throw new Error("Session not found");
-    }
-
-    // Verify the payment was actually successful
-    if (session.payment_status !== 'paid') {
-      console.error('Payment not completed:', session.payment_status);
-      throw new Error("Payment not completed");
-    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Check for duplicate processing (idempotency)
-    const { data: existingSession } = await supabase
-      .from('processed_sessions')
-      .select('id, session_type, created_record_id')
-      .eq('session_id', session_id)
-      .single();
-    
-    if (existingSession) {
-      console.log('Session already processed:', session_id);
-      return new Response(JSON.stringify({
-        success: true,
-        type: existingSession.session_type,
-        bookingId: existingSession.created_record_id,
-        message: 'Already processed'
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    let result = { success: true, type: 'unknown', bookingId: null };
-
-    if (session.metadata?.type === 'booking') {
-      const metadata = session.metadata;
-      
-      // Verify the amount paid matches the booking amount (critical security check)
-      const paidAmount = session.amount_total || 0;
-      // metadata.totalAmount is already in öre (set by create-booking-payment-connect)
-      const expectedAmount = parseInt(metadata.totalAmount);
-      
-      if (paidAmount !== expectedAmount) {
-        console.error('Payment amount mismatch:', { paidAmount, expectedAmount });
-        throw new Error('Payment amount verification failed');
-      }
-      
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .insert({
-          property_id: metadata.propertyId,
-          user_id: metadata.userId || null,
-          guest_name: metadata.guestName,
-          guest_email: metadata.guestEmail,
-          guest_phone: metadata.guestPhone || null,
-          check_in_date: metadata.checkInDate,
-          check_out_date: metadata.checkOutDate,
-          number_of_guests: parseInt(metadata.numberOfGuests),
-          special_requests: metadata.specialRequests || null,
-          total_amount: parseInt(metadata.totalAmount),
-          currency: metadata.currency?.toUpperCase() || 'SEK',
-          status: 'confirmed',
-          stripe_payment_intent_id: session.payment_intent as string
-        })
-        .select()
-        .single();
-
-      if (bookingError) throw bookingError;
-      
-      // Record processed session to prevent replay attacks
-      await supabase.from('processed_sessions').insert({
-        session_id,
-        session_type: 'booking',
-        ip_address: clientIP,
-        user_agent: userAgent,
-        created_record_id: booking.id
-      });
-      
-      // Send notification emails
-      if (booking) {
-        result.bookingId = booking.id;
-        
-        try {
-          await supabase.functions.invoke('send-booking-notifications', {
-            body: {
-              bookingId: booking.id,
-              propertyId: metadata.propertyId,
-              propertyTitle: metadata.propertyTitle,
-              guestName: metadata.guestName,
-              guestEmail: metadata.guestEmail,
-              guestPhone: metadata.guestPhone || null,
-              numberOfGuests: parseInt(metadata.numberOfGuests),
-              checkInDate: metadata.checkInDate,
-              checkOutDate: metadata.checkOutDate,
-              totalAmount: parseInt(metadata.totalAmount),
-              currency: metadata.currency?.toUpperCase() || 'SEK',
-              hostId: metadata.hostId,
-            }
-          });
-        } catch (notificationError) {
-          console.error('Failed to send notifications:', notificationError);
-        }
-      }
-      
-      result.type = 'booking';
-
-    } else if (session.metadata?.type === 'product') {
-      const productId = session.metadata.product_id;
-      const quantity = parseInt(session.metadata.quantity || '1');
-      const printfulProductId = session.metadata.printful_product_id;
-      const printfulVariantId = session.metadata.printful_variant_id;
-      const variantName = session.metadata.variant_name || '';
-
-      const { data: product, error: productError } = await supabase
-        .from('shop_products')
-        .select('*')
-        .eq('id', productId)
-        .single();
-
-      if (productError) throw productError;
-
-      const finalTitle = product.title_override || product.title;
-      const finalDescription = product.description_override || product.custom_description || product.description;
-      const productDisplayName = variantName ? `${finalTitle} - ${variantName}` : finalTitle;
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_name: session.customer_details?.name || session.shipping_details?.name || '',
-          customer_email: session.customer_details?.email || '',
-          customer_phone: session.customer_details?.phone || '',
-          total_amount: session.amount_total,
-          currency: session.currency?.toUpperCase() || 'SEK',
-          status: 'paid',
-          product_data: {
-            name: productDisplayName,
-            description: finalDescription,
-            price: session.amount_total,
-            quantity: quantity,
-            printful_product_id: printfulProductId,
-            printful_variant_id: printfulVariantId,
-            variant_name: variantName,
-          },
-          shipping_address: session.shipping_details,
-          stripe_payment_intent_id: session.payment_intent
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-      
-      await supabase.from('processed_sessions').insert({
-        session_id,
-        session_type: 'product',
-        ip_address: clientIP,
-        user_agent: userAgent,
-        created_record_id: order.id
-      });
-
-      // Create Printful order if we have the necessary data
-      if (printfulVariantId && session.shipping_details) {
-        try {
-          const printfulToken = Deno.env.get("PRINTFUL_API_TOKEN");
-          
-          const printfulOrder = {
-            recipient: {
-              name: session.shipping_details.name || '',
-              email: session.customer_details?.email || '',
-              address1: session.shipping_details.address?.line1 || '',
-              address2: session.shipping_details.address?.line2 || '',
-              city: session.shipping_details.address?.city || '',
-              country_code: session.shipping_details.address?.country || 'SE',
-              state_code: session.shipping_details.address?.state || '',
-              zip: session.shipping_details.address?.postal_code || '',
-              phone: session.customer_details?.phone || '',
-            },
-            items: [{
-              sync_variant_id: parseInt(printfulVariantId),
-              quantity: quantity,
-              retail_price: (session.amount_total / 100).toFixed(2),
-            }],
-            external_id: order.id,
-          };
-
-          console.log('Creating Printful order:', JSON.stringify(printfulOrder, null, 2));
-
-          const printfulResponse = await fetch("https://api.printful.com/orders", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${printfulToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(printfulOrder),
-          });
-
-          if (printfulResponse.ok) {
-            const printfulResult = await printfulResponse.json();
-            console.log('Printful order created:', printfulResult.result.id);
-            
-            await supabase
-              .from('orders')
-              .update({ 
-                printful_order_id: printfulResult.result.id.toString(),
-                status: 'processing',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', order.id);
-          } else {
-            const errorText = await printfulResponse.text();
-            console.error('Printful order failed:', printfulResponse.status, errorText);
-          }
-        } catch (printfulError) {
-          console.error('Printful order failed:', printfulError);
-        }
-      }
-
-      result.type = 'product';
-    } else if (session.metadata?.type === 'cart') {
-      const lineItems = (session as any).line_items?.data || [];
-      const items = lineItems.map((li: any) => ({
-        name: li.description,
-        quantity: li.quantity,
-        amount_subtotal: li.amount_subtotal,
-        amount_total: li.amount_total,
-      }));
-
-      const { data: cartOrder, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_name: session.customer_details?.name || session.shipping_details?.name || '',
-          customer_email: session.customer_details?.email || '',
-          customer_phone: session.customer_details?.phone || '',
-          total_amount: session.amount_total,
-          currency: session.currency?.toUpperCase() || 'SEK',
-          status: 'paid',
-          product_data: items,
-          shipping_address: session.shipping_details,
-          stripe_payment_intent_id: session.payment_intent
-        })
-        .select()
-        .single();
-      if (orderError) throw orderError;
-      
-      await supabase.from('processed_sessions').insert({
-        session_id,
-        session_type: 'cart',
-        ip_address: clientIP,
-        user_agent: userAgent,
-        created_record_id: cartOrder.id
-      });
-      
-      result.type = 'cart';
-    }
+    const result = await processCheckoutSession(stripe, supabase, session_id, {
+      ip: clientIpFrom(req),
+      userAgent,
+    });
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
