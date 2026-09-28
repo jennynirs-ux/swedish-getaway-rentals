@@ -126,7 +126,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   };
 
   const nights = checkIn && checkOut
-    ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) // round, not ceil: DST days are 23h/25h
     : 0;
 
   // Determine applicable discount based on stay length

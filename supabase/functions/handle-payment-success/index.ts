@@ -83,7 +83,8 @@ serve(async (req) => {
       
       // Verify the amount paid matches the booking amount (critical security check)
       const paidAmount = session.amount_total || 0;
-      const expectedAmount = parseInt(metadata.totalAmount) * 100; // Convert to cents
+      // metadata.totalAmount is already in öre (set by create-booking-payment-connect)
+      const expectedAmount = parseInt(metadata.totalAmount);
       
       if (paidAmount !== expectedAmount) {
         console.error('Payment amount mismatch:', { paidAmount, expectedAmount });

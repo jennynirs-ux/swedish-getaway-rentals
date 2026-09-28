@@ -92,6 +92,7 @@ serve(async (req) => {
       .from("properties")
       .select(`
         id, title, currency, host_id, max_guests, price_per_night,
+        weekly_discount_percentage, monthly_discount_percentage,
         profiles!properties_host_id_fkey(stripe_connect_account_id, commission_rate)
       `)
       .eq("id", propertyId)
@@ -160,13 +161,27 @@ serve(async (req) => {
       });
     }
     
-    const subtotal = accommodationTotal + cleaningTotal + extraGuestTotal;
+    const subtotalBeforeStayDiscount = accommodationTotal + cleaningTotal + extraGuestTotal;
+
+    // Weekly/monthly stay discount - must mirror BookingForm.getApplicableDiscount
+    const monthlyPct = Number(property.monthly_discount_percentage) || 0;
+    const weeklyPct = Number(property.weekly_discount_percentage) || 0;
+    let stayDiscountPct = 0;
+    if (nightCount >= 28 && monthlyPct > 0) {
+      stayDiscountPct = monthlyPct;
+    } else if (nightCount >= 7 && weeklyPct > 0) {
+      stayDiscountPct = weeklyPct;
+    }
+    const stayDiscount = Math.round(subtotalBeforeStayDiscount * (stayDiscountPct / 100));
+    const subtotal = subtotalBeforeStayDiscount - stayDiscount;
     
     logStep("Price calculation", {
       nightCount,
       accommodationTotal,
       cleaningTotal,
       extraGuestTotal,
+      stayDiscountPct,
+      stayDiscount,
       subtotal
     });
     
@@ -175,14 +190,6 @@ serve(async (req) => {
     let validatedCoupon = null;
     
     if (couponId) {
-      // Validate coupon via RPC
-      const { data: couponValidation, error: couponError } = await supabaseClient.rpc('validate_coupon', {
-        coupon_code: '', // We have the ID, so we fetch directly
-        property_id_param: propertyId,
-        booking_amount: subtotal,
-        user_id_param: user?.id || null
-      });
-      
       // Fetch coupon directly by ID to validate
       const { data: coupon, error: fetchError } = await supabaseClient
         .from('coupons')
@@ -388,6 +395,7 @@ serve(async (req) => {
         currency: (currency || property.currency || "sek").toLowerCase(),
         totalAmount: validatedAmount.toString(),
         subtotal: subtotal.toString(),
+        stayDiscount: stayDiscount.toString(),
         discountAmount: discountAmount.toString(),
         couponId: validatedCoupon?.id || "",
         couponCode: validatedCoupon?.code || "",

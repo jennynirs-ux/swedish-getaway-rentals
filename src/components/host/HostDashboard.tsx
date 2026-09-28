@@ -173,7 +173,7 @@ const HostDashboard = () => {
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
       const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + booking.total_amount * HOST_PAYOUT_RATE;
+        return sum + (booking.total_amount / 100) * HOST_PAYOUT_RATE;
       }, 0);
 
       setStats({
@@ -479,7 +479,7 @@ const HostDashboard = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{booking.total_amount.toLocaleString()} {booking.properties.currency || 'SEK'}</p>
+                            <p className="font-semibold">{(booking.total_amount / 100).toLocaleString()} {booking.properties.currency || 'SEK'}</p>
                             <p className="text-sm text-muted-foreground capitalize">{booking.status}</p>
                           </div>
                         </div>

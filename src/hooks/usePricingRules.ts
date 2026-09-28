@@ -65,7 +65,7 @@ export const usePricingRules = (propertyId: string) => {
     availabilityPrices: Record<string, number> = {}, // seasonal prices
     selectedServices: string[] = []
   ): PricingCalculation => {
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)); // round, not ceil: DST days are 23h/25h
     
     // Calculate base accommodation cost with seasonal pricing
     let totalAccommodation = 0;

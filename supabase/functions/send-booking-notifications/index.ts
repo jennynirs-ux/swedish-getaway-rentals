@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.0.0";
 
+// bookings.total_amount is stored in öre
+const formatAmount = (ore: number) => (ore / 100).toLocaleString("sv-SE");
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -164,7 +167,7 @@ serve(async (req) => {
         "{check_in_time}": property.check_in_time || "15:00",
         "{check_out_time}": property.check_out_time || "11:00",
         "{number_of_guests}": booking.number_of_guests.toString(),
-        "{total_amount}": booking.total_amount.toString(),
+        "{total_amount}": formatAmount(booking.total_amount),
         "{currency}": booking.currency,
       };
 
@@ -298,7 +301,7 @@ serve(async (req) => {
                   </div>
                   <div class="info-row">
                     <span class="info-label">Total Amount:</span>
-                    <span class="info-value">${booking.total_amount} ${booking.currency}</span>
+                    <span class="info-value">${formatAmount(booking.total_amount)} ${booking.currency}</span>
                   </div>
                 </div>
               </div>
@@ -349,7 +352,7 @@ ${guidebookUrl}
 
 BOOKING SUMMARY:
 - Booking ID: ${booking.id}
-- Total Amount: ${booking.total_amount} ${booking.currency}
+- Total Amount: ${formatAmount(booking.total_amount)} ${booking.currency}
 
 If you have any questions, feel free to reach out to us.
 
@@ -416,7 +419,7 @@ The Nordic Getaways Team
                 <div class="info-row"><strong>Check-In:</strong> ${checkInDateTime}</div>
                 <div class="info-row"><strong>Check-Out:</strong> ${checkOutDateTime}</div>
                 <div class="info-row"><strong>Guests:</strong> ${booking.number_of_guests}</div>
-                <div class="info-row"><strong>Total:</strong> ${booking.total_amount} ${booking.currency}</div>
+                <div class="info-row"><strong>Total:</strong> ${formatAmount(booking.total_amount)} ${booking.currency}</div>
               </div>
               <p>Log in to your admin panel to view full booking details.</p>
             </div>
