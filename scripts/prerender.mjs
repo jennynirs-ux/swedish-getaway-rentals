@@ -1,0 +1,184 @@
+// Snapshot public routes to static HTML after `vite build`, so search engines
+// and AI assistants (GPTBot, ClaudeBot, PerplexityBot, ...) that don't run
+// JavaScript still see real content, titles and structured data.
+// Also regenerates sitemap.xml from the live property list.
+//
+// Usage: node scripts/prerender.mjs   (needs Chrome; set CHROME_PATH if not found)
+
+import { mkdir, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { preview, loadEnv } from "vite";
+import puppeteer from "puppeteer-core";
+
+const SITE_URL = "https://nordic-getaways.com";
+const DIST = path.resolve("dist");
+const PORT = 4179;
+
+const STATIC_ROUTES = [
+  "/",
+  "/first-time-in-sweden",
+  "/amenities",
+  "/gallery",
+  "/book-now",
+  "/contact",
+  "/pricing-guide",
+  "/become-host",
+  "/shop",
+];
+
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  "/usr/bin/google-chrome",
+  "/usr/bin/google-chrome-stable",
+  "/usr/bin/chromium-browser",
+  "/usr/bin/chromium",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+].filter(Boolean);
+
+async function fetchProperties() {
+  const env = loadEnv("production", process.cwd(), "VITE_");
+  const res = await fetch(
+    `${env.VITE_SUPABASE_URL}/rest/v1/properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at&active=eq.true`,
+    {
+      headers: {
+        apikey: env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+    },
+  );
+  if (!res.ok) throw new Error(`Fetching properties failed: ${res.status}`);
+  return res.json();
+}
+
+async function writeSitemap(routes) {
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = routes
+    .map(({ route, lastmod }) => `  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <lastmod>${lastmod ?? today}</lastmod>\n  </url>`)
+    .join("\n");
+  await writeFile(
+    path.join(DIST, "sitemap.xml"),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
+  );
+}
+
+// Old /property/<uuid> links → canonical slug URLs
+async function writeRedirects(properties) {
+  const lines = properties
+    .filter((p) => p.slug)
+    .flatMap((p) => [
+      `/property/${p.id} /property/${p.slug} 301`,
+      `/property/${p.id}/* /property/${p.slug}/:splat 301`,
+    ]);
+  await writeFile(path.join(DIST, "_redirects"), lines.join("\n") + "\n");
+}
+
+// llms.txt: a plain-text summary for AI assistants (https://llmstxt.org)
+async function writeLlmsTxt(properties) {
+  const stays = properties
+    .map((p) => {
+      const rating = p.review_rating && p.review_count ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests.` : "";
+      const summary = (p.description ?? "").replace(/\s+/g, " ").trim();
+      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${p.price_per_night} ${p.currency}/night.${rating} ${summary}`;
+    })
+    .join("\n");
+  await writeFile(
+    path.join(DIST, "llms.txt"),
+    `# Nordic Getaways
+
+> Nordic Getaways rents out lakeside cabins and holiday homes in Swedish nature near Gothenburg (Lerum, Västra Götaland), booked directly with the host. Guests get lake access, rowing boats, forest trails and a digital guest guide.
+
+## Stays
+
+${stays}
+
+## Guides
+
+- [First time in Sweden](${SITE_URL}/first-time-in-sweden): practical tips on fika, allemansrätten (the right to roam), etiquette, payments and Swedish food.
+- [Amenities](${SITE_URL}/amenities): what is included at our cabins.
+- [Pricing guide](${SITE_URL}/pricing-guide): seasons, fees and discounts.
+
+## Booking
+
+- [Book now](${SITE_URL}/book-now): book directly with secure card payment.
+- [Contact](${SITE_URL}/contact)
+`,
+  );
+}
+
+async function main() {
+  const chromePath = CHROME_CANDIDATES.find((p) => existsSync(p));
+  if (!chromePath) throw new Error("Chrome not found - set CHROME_PATH");
+
+  const properties = await fetchProperties();
+  const routes = [
+    ...STATIC_ROUTES.map((route) => ({ route })),
+    ...properties.map((p) => ({ route: `/property/${p.slug || p.id}`, lastmod: p.updated_at?.slice(0, 10) })),
+  ];
+
+  const server = await preview({ preview: { port: PORT, strictPort: true }, logLevel: "warn" });
+  const browser = await puppeteer.launch({
+    executablePath: chromePath,
+    headless: true,
+    args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  });
+
+  let failures = 0;
+  try {
+    // "/" last: dist/index.html is also the SPA fallback the other routes load from
+    const ordered = [...routes.filter((r) => r.route !== "/"), ...routes.filter((r) => r.route === "/")];
+    for (const { route } of ordered) {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1280, height: 900 });
+      try {
+        await page.goto(`http://localhost:${PORT}${route}`, { waitUntil: "networkidle0", timeout: 45000 });
+        // usePageMeta sets this once the page's data (and meta tags) are in place
+        await page.waitForSelector("html[data-meta-ready]", { timeout: 20000 });
+        // Let lazy sections below the fold mount too
+        await page.evaluate(async () => {
+          for (let y = 0; y < document.body.scrollHeight; y += 800) {
+            window.scrollTo(0, y);
+            await new Promise((r) => setTimeout(r, 100));
+          }
+          window.scrollTo(0, 0);
+        });
+        await page.waitForNetworkIdle({ idleTime: 500, timeout: 15000 }).catch(() => {});
+
+        const html = await page.evaluate(() => {
+          document.documentElement.removeAttribute("data-meta-ready");
+          // Toasts/portals are client-only UI
+          document.querySelectorAll("[data-radix-portal], ol[tabindex='-1']").forEach((el) => el.remove());
+          return "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+        });
+
+        const out = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, route, "index.html");
+        await mkdir(path.dirname(out), { recursive: true });
+        await writeFile(out, html);
+        console.log(`prerendered ${route} (${Math.round(html.length / 1024)} kB)`);
+      } catch (error) {
+        failures++;
+        console.error(`FAILED ${route}: ${error.message}`);
+      } finally {
+        await page.close();
+      }
+    }
+  } finally {
+    await browser.close();
+    await new Promise((resolve) => server.httpServer.close(resolve));
+  }
+
+  await writeSitemap(routes);
+  await writeRedirects(properties);
+  await writeLlmsTxt(properties);
+  console.log(`sitemap.xml: ${routes.length} urls`);
+
+  if (failures) {
+    console.error(`${failures} route(s) failed to prerender`);
+    process.exit(1);
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

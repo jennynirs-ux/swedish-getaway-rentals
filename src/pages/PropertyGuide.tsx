@@ -21,7 +21,7 @@ const PropertyGuide = () => {
       const { data, error } = await supabase
         .from("properties")
         .select("*")
-        .eq("id", propertyId)
+        .eq(/^[0-9a-f-]{36}$/i.test(propertyId) ? "id" : "slug", propertyId)
         .single();
 
       if (error) throw error;

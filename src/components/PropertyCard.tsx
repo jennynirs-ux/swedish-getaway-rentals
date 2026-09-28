@@ -37,8 +37,10 @@ import { useState, memo, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
+import { propertyPath } from "@/lib/propertySeo";
 
 export interface PropertyCardData {
+  slug?: string | null;
   id: string;
   title: string;
   description: string;
@@ -94,7 +96,7 @@ const PropertyCard = memo(({
   };
 
   // Always use dynamic property routes
-  const getPropertyRoute = (p: PropertyCardData) => `/property/${p.id}`;
+  const getPropertyRoute = (p: PropertyCardData) => propertyPath(p);
 
   // Dev warning for missing critical fields
   if (process.env.NODE_ENV === 'development') {

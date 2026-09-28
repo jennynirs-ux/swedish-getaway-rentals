@@ -14,8 +14,15 @@ import {
   Percent,
   Globe,
 } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const PricingGuide = () => {
+  usePageMeta({
+    title: "Pricing guide",
+    description: "Seasonal prices, cleaning fees and weekly discounts for Nordic Getaways lakeside cabins in Sweden.",
+    path: "/pricing-guide",
+  });
+
   const dummyProperty = {
     id: "pricing-guide",
     title: "Nordin Getaways",

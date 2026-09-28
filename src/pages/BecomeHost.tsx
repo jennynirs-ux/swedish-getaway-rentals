@@ -32,8 +32,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const BecomeHost = () => {
+  usePageMeta({
+    title: "Become a host",
+    description: "List your Nordic holiday home with Nordic Getaways: bookings, payments, guest communication and Swedish tax reports in one place.",
+    path: "/become-host",
+  });
+
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [showSupport, setShowSupport] = useState(false);

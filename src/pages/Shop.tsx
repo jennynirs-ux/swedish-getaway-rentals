@@ -10,6 +10,7 @@ import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
 import ShopFilters, { ShopFilters as ShopFiltersType } from "@/components/ShopFilters";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface ShopProduct {
   id: string;
@@ -35,6 +36,12 @@ interface ShopProduct {
 }
 
 const Shop = () => {
+  usePageMeta({
+    title: "Shop",
+    description: "Nordic Getaways shop: Scandinavian-inspired products and souvenirs.",
+    path: "/shop",
+  });
+
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);

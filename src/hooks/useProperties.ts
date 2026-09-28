@@ -61,6 +61,7 @@ export interface Property {
   postal_code?: string | null;
   city?: string | null;
   country?: string | null;
+  slug?: string | null;
 }
 
 export const useProperties = () => {

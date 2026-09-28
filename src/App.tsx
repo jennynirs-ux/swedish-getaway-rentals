@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
@@ -40,10 +40,11 @@ const App = () => {
               <Toaster />
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/villa-hacken" element={<PropertyPage />} />
-                <Route path="/villa-hacken/guide" element={<PropertyGuide />} />
-                <Route path="/lakehouse-getaway" element={<PropertyPage />} />
-                <Route path="/lakehouse-getaway/guide" element={<PropertyGuide />} />
+                {/* Legacy short links */}
+                <Route path="/villa-hacken" element={<Navigate to="/property/lakefront-retreat" replace />} />
+                <Route path="/villa-hacken/guide" element={<Navigate to="/property/lakefront-retreat/guide" replace />} />
+                <Route path="/lakehouse-getaway" element={<Navigate to="/property/lakehouse-getaway" replace />} />
+                <Route path="/lakehouse-getaway/guide" element={<Navigate to="/property/lakehouse-getaway/guide" replace />} />
                 <Route path="/property/:id" element={<PropertyPage />} />
                 <Route path="/property/:id/guide" element={<PropertyGuide />} />
                 <Route path="/shop" element={<Shop />} />

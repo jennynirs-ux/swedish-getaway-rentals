@@ -7,6 +7,7 @@ import {
   Bed, Bath, Users, Flame, UtensilsCrossed, Thermometer, Shield, 
   Tv, Dumbbell, PawPrint, Snowflake
 } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface AmenityContent {
   title: string;
@@ -29,6 +30,12 @@ const iconMap = {
 };
 
 const Amenities = () => {
+  usePageMeta({
+    title: "Amenities",
+    description: "What's included at Nordic Getaways cabins in Sweden: rowing boats, lake access, fire pits, hot tub, WiFi, fully equipped kitchens and more.",
+    path: "/amenities",
+  });
+
   const [content, setContent] = useState<AmenityContent>({
     title: "Premium Amenities",
     description: "Discover the luxury amenities available across our Nordic properties.",

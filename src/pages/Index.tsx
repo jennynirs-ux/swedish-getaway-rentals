@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { usePageMeta, SITE_NAME, SITE_URL } from "@/hooks/usePageMeta";
+import { propertyPath } from "@/lib/propertySeo";
 import { Button } from "@/components/ui/button";
 import PropertyCard, { PropertyCardData } from "@/components/PropertyCard";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
@@ -56,7 +58,8 @@ const HomePage = memo(() => {
         featured_amenities,
         latitude,
         longitude,
-        city
+        city,
+        slug
       `)
       .eq("active", true)
       .order("created_at", { ascending: false });
@@ -74,6 +77,44 @@ const HomePage = memo(() => {
       enableRealtime: false,
     }
   );
+
+  usePageMeta({
+    title: SITE_NAME,
+    description:
+      "Lakeside cabins and holiday homes near Gothenburg, Sweden. Rowing boats, forest trails and Swedish nature – book directly with the host.",
+    path: "/",
+    ready: !loading,
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: SITE_NAME,
+        url: SITE_URL,
+        logo: `${SITE_URL}/favicon.png`,
+        description: "Holiday rentals in Swedish nature near Gothenburg, booked directly with the host.",
+        areaServed: "Sweden",
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: SITE_URL,
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Holiday rentals in Sweden",
+        itemListElement: (properties ?? []).map((p, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          url: `${SITE_URL}${propertyPath(p)}`,
+          name: p.title,
+        })),
+      },
+    ],
+  });
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
   const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
@@ -243,25 +284,6 @@ const HomePage = memo(() => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "LodgingBusiness",
-            "name": "Nordic Getaways",
-            "description": "Discover your perfect retreat in the Nordic",
-            "url": "https://nordic-getaways.com",
-            "image": "https://nordic-getaways.com/favicon.png",
-            "address": {
-              "@type": "PostalAddress",
-              "addressCountry": "SE"
-            }
-          })
-        }}
-      />
-
       {/* Navigation */}
       <MainNavigation />
 

@@ -9,6 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { buildPropertyJsonLd, propertyMetaDescription, propertyPath } from "@/lib/propertySeo";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Lazy-loaded heavy components
 const PropertyGallery = lazy(() => import("@/components/PropertyGallery"));
@@ -64,31 +68,18 @@ const PropertyPage = memo(() => {
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
   const [guideSectionId, setGuideSectionId] = useState<string | undefined>();
 
-  /** Resolve legacy routes → actual property id */
+  /** Resolve a slug (e.g. "lakehouse-getaway") or uuid → property id */
   const resolvePropertyId = useCallback(async (incomingId: string) => {
-    let propertyId = incomingId;
+    if (UUID_REGEX.test(incomingId)) return incomingId;
 
-    if (incomingId === "villa-hacken") {
-      const { data } = await supabase
-        .from("properties")
-        .select("id")
-        .ilike("title", "%villa%")
-        .eq("active", true)
-        .limit(1)
-        .single();
-      if (data) propertyId = data.id;
-    } else if (incomingId === "lakehouse-getaway") {
-      const { data } = await supabase
-        .from("properties")
-        .select("id")
-        .or("title.ilike.%lakehouse%,title.ilike.%lake%")
-        .eq("active", true)
-        .limit(1)
-        .single();
-      if (data) propertyId = data.id;
-    }
+    const { data } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("slug", incomingId)
+      .eq("active", true)
+      .maybeSingle();
 
-    return propertyId;
+    return data?.id ?? incomingId;
   }, []);
 
   /** Light query */
@@ -117,7 +108,8 @@ const PropertyPage = memo(() => {
         active,
         latitude,
         longitude,
-        city
+        city,
+        slug
       `)
       .eq("id", propertyId)
       .eq("active", true)
@@ -210,6 +202,15 @@ const PropertyPage = memo(() => {
       city: lightProperty.city ?? null,
     } as Property;
   }, [lightProperty, heavyProperty]);
+
+  usePageMeta({
+    ready: !!property,
+    title: property ? `${property.title} – ${property.location ?? "Sweden"}` : "",
+    description: property ? propertyMetaDescription(property) : "",
+    path: property ? propertyPath(property) : undefined,
+    image: property?.hero_image_url,
+    jsonLd: property ? buildPropertyJsonLd(property) : undefined,
+  });
 
   // Loading
   if (loading) {

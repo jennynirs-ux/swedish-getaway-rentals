@@ -3,6 +3,7 @@ import MainNavigation from "@/components/MainNavigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface GalleryContent {
   title: string;
@@ -11,6 +12,12 @@ interface GalleryContent {
 }
 
 const Gallery = () => {
+  usePageMeta({
+    title: "Photo gallery",
+    description: "Photos of our lakeside cabins near Gothenburg, Sweden: lakes, forest, saunas and cosy interiors at Nordic Getaways.",
+    path: "/gallery",
+  });
+
   const [content, setContent] = useState<GalleryContent>({
     title: "Nordic Getaways Gallery",
     description: "Discover the beauty of our properties and the stunning Nordic landscapes.",

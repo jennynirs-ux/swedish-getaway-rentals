@@ -15,8 +15,15 @@ import {
   Droplet,
   Recycle,
 } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const FirstTimeInSweden = () => {
+  usePageMeta({
+    title: "First time in Sweden? A practical guide",
+    description: "Practical tips for your first trip to Sweden: fika, allemansrätten (the right to roam), etiquette, paying by card, buying alcohol, recycling and must-try Swedish food.",
+    path: "/first-time-in-sweden",
+  });
+
   const sections = [
     {
       icon: Coffee,
@@ -107,7 +114,7 @@ const FirstTimeInSweden = () => {
   // Using a dummy property for the footer
   const dummyProperty = {
     id: "sweden-guide",
-    title: "Nordin Getaways",
+    title: "Nordic Getaways",
     location: "Sweden",
     tagline_line1: "Your guide to Swedish culture and customs",
     footer_quick_links: ["The Nordic Collection", "Contact", "First time in Sweden"],

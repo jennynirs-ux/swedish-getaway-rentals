@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Mail } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface ContactContent {
   title: string;
@@ -19,6 +20,12 @@ interface ContactContent {
 }
 
 const Contact = () => {
+  usePageMeta({
+    title: "Contact us",
+    description: "Questions about staying at a Nordic Getaways cabin near Gothenburg, Sweden? Get in touch with our host team.",
+    path: "/contact",
+  });
+
   const [content, setContent] = useState<ContactContent>({
     title: "Contact Nordic Getaways",
     description: "Get in touch with us for bookings, questions, or to become a host.",

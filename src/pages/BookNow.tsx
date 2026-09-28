@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useProperties } from "@/hooks/useProperties";
 import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 interface BookNowContent {
   title: string;
@@ -14,6 +15,12 @@ interface BookNowContent {
 }
 
 const BookNow = () => {
+  usePageMeta({
+    title: "Book a cabin in Sweden",
+    description: "Book a lakeside cabin near Gothenburg directly with Nordic Getaways – secure card payment and no booking-platform service fee.",
+    path: "/book-now",
+  });
+
   const { properties, loading } = useProperties();
   const [content, setContent] = useState<BookNowContent>({
     title: "Book Your Nordic Getaway",
