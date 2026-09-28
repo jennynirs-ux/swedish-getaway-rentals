@@ -252,8 +252,8 @@ const HomePage = memo(() => {
             "@type": "LodgingBusiness",
             "name": "Nordic Getaways",
             "description": "Discover your perfect retreat in the Nordic",
-            "url": "https://swedish-getaway-rentals.lovable.app",
-            "image": "https://swedish-getaway-rentals.lovable.app/favicon.png",
+            "url": "https://nordic-getaways.com",
+            "image": "https://nordic-getaways.com/favicon.png",
             "address": {
               "@type": "PostalAddress",
               "addressCountry": "SE"
