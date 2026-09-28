@@ -1,4 +1,8 @@
-name: Build, prerender & deploy
+name: Build, prerender & publish
+
+# Builds the site, prerenders it (needs Chrome, which ubuntu-latest has) and
+# pushes the finished dist/ to the `cf-pages` branch. Cloudflare Pages is
+# connected to that branch with no build command, so no API token is needed.
 
 on:
   push:
@@ -12,12 +16,12 @@ concurrency:
   group: deploy
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -25,12 +29,12 @@ jobs:
         with:
           node-version: 20
       - run: bun install --frozen-lockfile
-      # ubuntu-latest ships Google Chrome at /usr/bin/google-chrome
       - run: bun run build:prerender
-      - name: Deploy to Cloudflare Pages
-        if: env.CLOUDFLARE_API_TOKEN != ''
-        run: |
-          # First run creates the Pages project; afterwards this is a no-op
-          npx wrangler@3 pages project list | grep -q "nordic-getaways" \
-            || npx wrangler@3 pages project create nordic-getaways --production-branch=main
-          npx wrangler@3 pages deploy dist --project-name=nordic-getaways --branch=main --commit-dirty=true
+      - name: Publish dist/ to the cf-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: cf-pages
+          force_orphan: true
+          commit_message: "Site build from ${{ github.sha }}"
