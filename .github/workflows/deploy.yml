@@ -29,4 +29,8 @@ jobs:
       - run: bun run build:prerender
       - name: Deploy to Cloudflare Pages
         if: env.CLOUDFLARE_API_TOKEN != ''
-        run: npx wrangler@3 pages deploy dist --project-name=nordic-getaways --branch=main --commit-dirty=true
+        run: |
+          # First run creates the Pages project; afterwards this is a no-op
+          npx wrangler@3 pages project list | grep -q "nordic-getaways" \
+            || npx wrangler@3 pages project create nordic-getaways --production-branch=main
+          npx wrangler@3 pages deploy dist --project-name=nordic-getaways --branch=main --commit-dirty=true
