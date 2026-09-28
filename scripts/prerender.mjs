@@ -153,7 +153,9 @@ async function main() {
           return "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
         });
 
-        const out = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, route, "index.html");
+        // "/foo" -> foo.html: Cloudflare Pages serves it at /foo without the
+        // trailing-slash redirect it adds for foo/index.html
+        const out = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, `${route}.html`);
         await mkdir(path.dirname(out), { recursive: true });
         await writeFile(out, html);
         console.log(`prerendered ${route} (${Math.round(html.length / 1024)} kB)`);
