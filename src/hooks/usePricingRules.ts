@@ -62,7 +62,7 @@ export const usePricingRules = (propertyId: string) => {
     checkInDate: Date,
     checkOutDate: Date,
     numberOfGuests: number,
-    availabilityPrices: Record<string, number> = {}, // seasonal prices
+    availabilityPrices: Record<string, number> = {}, // seasonal prices in cents, keyed "YYYY-MM-DD"
     selectedServices: string[] = []
   ): PricingCalculation => {
     const nights = Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)); // round, not ceil: DST days are 23h/25h
@@ -72,7 +72,8 @@ export const usePricingRules = (propertyId: string) => {
     const currentDate = new Date(checkInDate);
     
     for (let i = 0; i < nights; i++) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      // Local date: toISOString() would give the previous day for Swedish midnight
+      const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
       const dayPrice = availabilityPrices[dateStr] || basePrice;
       totalAccommodation += dayPrice;
       currentDate.setDate(currentDate.getDate() + 1);

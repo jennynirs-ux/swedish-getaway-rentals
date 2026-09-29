@@ -28,5 +28,9 @@
   },
   "include": [
     "src"
+  ],
+  // Tests run in vitest; some import edge-function code that only Deno resolves
+  "exclude": [
+    "src/**/*.test.ts"
   ]
 }

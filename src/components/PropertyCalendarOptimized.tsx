@@ -185,7 +185,7 @@ const PropertyCalendarOptimized = memo(({
           <div className="font-semibold text-base">{date.getDate()}</div>
           {mode === 'guest' && price !== basePrice && (
             <div className="text-xs mt-0.5 font-medium">
-              {Math.round(price / 100)} {currency}
+              {Math.round(price)} {currency}
             </div>
           )}
         </div>

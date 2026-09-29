@@ -241,10 +241,10 @@ const BecomeHost = () => {
       question: "How do cancellations and refunds work?",
       answer: (
         <>
-          Each listing has a cancellation policy — <strong>Flexible</strong>, 
-          <strong> Moderate</strong>, or <strong>Strict</strong> — shown to guests before they book.  
-          We agree on the policy with you when your listing is reviewed, and our team handles 
-          refunds according to it.
+          All stays share one cancellation policy, shown to guests before they book:{" "}
+          <strong>90% refund</strong> more than 21 days before arrival, <strong>50%</strong> 8–21 days
+          before, and <strong>no refund</strong> within 7 days. Our team handles cancellations and
+          refunds, and your payout is adjusted in proportion.
         </>
       ),
     },

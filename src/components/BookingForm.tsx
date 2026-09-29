@@ -41,7 +41,21 @@ const BookingForm: React.FC<BookingFormProps> = ({
   onOpenGuidebook
 }) => {
   const { createBooking, loading } = useBooking();
-  const { calculatePrice } = usePricingRules(propertyId);
+  const { calculatePrice, rules } = usePricingRules(propertyId);
+  // Special prices hosts set per night (availability.seasonal_price, in SEK)
+  const [seasonalPrices, setSeasonalPrices] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    supabase
+      .from('availability')
+      .select('date, seasonal_price')
+      .eq('property_id', propertyId)
+      .not('seasonal_price', 'is', null)
+      .gte('date', new Date().toISOString().slice(0, 10))
+      .then(({ data }) => {
+        setSeasonalPrices(Object.fromEntries((data || []).map((d) => [d.date, Number(d.seasonal_price) * 100])));
+      });
+  }, [propertyId]);
   const [propertyDiscounts, setPropertyDiscounts] = useState<PropertyDiscounts>({
     weekly_discount_percentage: 0,
     monthly_discount_percentage: 0
@@ -125,7 +139,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
       pricePerNight * 100,
       checkIn,
       checkOut,
-      formData.number_of_guests
+      formData.number_of_guests,
+      seasonalPrices
     );
     return calculation;
   };
@@ -298,6 +313,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           <div className="space-y-2">
             <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
+            {/* Fees are shown before the guest count is chosen, not only in the total */}
+            {rules.filter((r) => r.rule_type === 'extra_guest' || r.rule_type === 'cleaning_fee').map((r) => (
+              <p key={r.id} className="text-sm text-muted-foreground">
+                {r.rule_type === 'extra_guest'
+                  ? `The nightly price is for 1 guest; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.`
+                  : `A cleaning fee of ${(r.price / 100).toLocaleString()} ${currency} is added per stay.`}
+              </p>
+            ))}
             <Input
               id="number_of_guests"
               name="number_of_guests"

@@ -60,6 +60,10 @@ const SHARED_FAQ: PropertyFaq[] = [
     a: "The minimum stay is 2 nights, and 3 nights over Valborg (30 April), Midsummer and New Year's Eve. The person booking must be at least 25 and stay at the property.",
   },
   {
+    q: "What is the cancellation policy?",
+    a: "90% refund if you cancel more than 21 days before arrival, 50% between 21 and 8 days before, and no refund within 7 days. To cancel, e-mail support@mojjo.se or reply to your booking confirmation.",
+  },
+  {
     q: "What are check-in and check-out times?",
     a: "Check-in from 16:00, check-out by 11:00. Self check-in, with detailed arrival instructions sent before your stay.",
   },

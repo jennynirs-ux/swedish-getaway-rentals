@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.0.0";
 import { escapeHtml } from "../_shared/auth.ts";
 import { hhmm, longDate } from "../_shared/format.ts";
+import { loadCancellationPolicy, policySummary } from "../_shared/cancellation.ts";
 
 // bookings.total_amount is stored in öre
 const formatAmount = (ore: number) => (ore / 100).toLocaleString("sv-SE");
@@ -131,23 +132,12 @@ serve(async (req) => {
     const houseRules = rulesSection?.blocks?.filter((b: any) => b.type === 'list')
       .flatMap((b: any) => b.items || []) || [];
 
-    // Get cancellation policy details
-    const cancellationPolicyMap = {
-      flexible: {
-        title: "Flexible Cancellation",
-        description: "Full refund up to 1 day before check-in. Cancellations made within 24 hours are non-refundable."
-      },
-      moderate: {
-        title: "Moderate Cancellation",
-        description: "Full refund up to 5 days before check-in. Cancellations made within 5 days receive a 50% refund."
-      },
-      strict: {
-        title: "Strict Cancellation",
-        description: "50% refund up to 7 days before check-in. Cancellations made within 7 days are non-refundable."
-      }
+    // One policy for every stay, as shown in the booking form
+    const policy = await loadCancellationPolicy(supabase);
+    const cancellationPolicy = {
+      title: "Cancellation policy",
+      description: `${policySummary(policy)}. To cancel, reply to this e-mail.`,
     };
-    const policyKey = (property.cancellation_policy || 'moderate') as keyof typeof cancellationPolicyMap;
-    const cancellationPolicy = cancellationPolicyMap[policyKey];
 
     // Format check-in and check-out times
     const checkInDateTime = `${longDate(booking.check_in_date)}, from ${hhmm(property.check_in_time, '15:00')}`;
@@ -209,6 +199,7 @@ serve(async (req) => {
               ${propertyAddress ? `<p><strong>Address:</strong> ${escapeHtml(propertyAddress)}</p>` : ''}
               <p><strong>Guests:</strong> ${booking.number_of_guests}</p>
               <p><strong>Booking reference:</strong> ${booking.id.slice(0, 8).toUpperCase()}</p>
+              <p><strong>${cancellationPolicy.title}:</strong> ${escapeHtml(cancellationPolicy.description)}</p>
               <p><a href="${guidebookUrl}">Open the guest guide</a> – house rules, practical details and local tips.</p>
               <p>Questions? Reply to this e-mail or write to support@mojjo.se.</p>
             </div>

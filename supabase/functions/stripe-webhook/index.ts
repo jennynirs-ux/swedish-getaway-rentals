@@ -7,12 +7,13 @@ import { alertAdminOnce } from "../_shared/alert.ts";
 // Stripe calls this after Checkout, so bookings/orders are recorded even if the
 // guest never returns to /booking-success (closed tab, lost connection, ...).
 // Configure in Stripe: endpoint .../functions/v1/stripe-webhook with events
-// checkout.session.completed + checkout.session.async_payment_succeeded,
-// and store its signing secret as the STRIPE_WEBHOOK_SECRET function secret.
+// checkout.session.completed, checkout.session.async_payment_succeeded and
+// charge.refunded, and store its signing secret as STRIPE_WEBHOOK_SECRET.
 
 const HANDLED_EVENTS = new Set([
   "checkout.session.completed",
   "checkout.session.async_payment_succeeded",
+  "charge.refunded",
 ]);
 
 const json = (body: unknown, status = 200) =>
@@ -58,6 +59,10 @@ serve(async (req) => {
     return json({ received: true, ignored: event.type });
   }
 
+  if (event.type === "charge.refunded") {
+    return handleRefund(stripe, event.data.object as Stripe.Charge);
+  }
+
   const session = event.data.object as Stripe.Checkout.Session;
   console.log(`[STRIPE-WEBHOOK] ${event.type} for session ${session.id} (${session.payment_status})`);
 
@@ -92,3 +97,52 @@ serve(async (req) => {
     return json({ error: "Processing failed" }, 500);
   }
 });
+
+// A refund made in the Stripe dashboard: record it on the booking, and if the
+// whole payment went back, cancel the booking so its dates open up again.
+// Refunds from the admin "Avboka & återbetala" flow carry metadata.source and
+// are already recorded, so they only update the amount.
+async function handleRefund(stripe: Stripe, charge: Stripe.Charge) {
+  const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+  if (!paymentIntentId) return json({ received: true, ignored: "no payment intent" });
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  );
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("id, status, check_in_date, check_out_date, guest_name, refunded_amount, properties(title)")
+    .eq("stripe_payment_intent_id", paymentIntentId)
+    .maybeSingle();
+  if (!booking) return json({ received: true, ignored: "no booking for this payment" });
+
+  const fullyRefunded = charge.refunded === true;
+  const cancel = fullyRefunded && booking.status === "confirmed";
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      refunded_amount: charge.amount_refunded,
+      ...(cancel ? { status: "cancelled", cancelled_at: new Date().toISOString() } : {}),
+    })
+    .eq("id", booking.id);
+  if (error) {
+    console.error("[STRIPE-WEBHOOK] Recording refund failed:", error.message);
+    return json({ error: "Could not record refund" }, 500);
+  }
+
+  const { data: refunds } = await stripe.refunds.list({ charge: charge.id, limit: 1 });
+  const fromAdmin = refunds.data[0]?.metadata?.source === "nordic-getaways-admin";
+  if (!fromAdmin) {
+    const title = (booking.properties as { title?: string } | null)?.title ?? "booking";
+    await alertAdminOnce(supabase, `refund:${charge.id}:${charge.amount_refunded}`, "Refund made in Stripe", [
+      `${title}, ${booking.check_in_date} to ${booking.check_out_date}, guest ${booking.guest_name}`,
+      `Refunded so far: ${(charge.amount_refunded / 100).toLocaleString("sv-SE")} ${charge.currency.toUpperCase()}`,
+      cancel
+        ? "The whole payment is refunded, so the booking is now cancelled and its dates are open."
+        : "Partial refund: the booking is still active. Cancel it in admin if the guest isn't coming.",
+    ]).catch((alertError) => console.error("[STRIPE-WEBHOOK] Alert failed:", alertError));
+  }
+
+  return json({ received: true, refundRecorded: true, cancelled: cancel });
+}

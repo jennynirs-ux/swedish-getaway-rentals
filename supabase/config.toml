@@ -48,3 +48,6 @@ verify_jwt = true
 verify_jwt = false
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.cancel-booking]
+verify_jwt = true

@@ -35,20 +35,38 @@ const CHROME_CANDIDATES = [
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 ].filter(Boolean);
 
-async function fetchProperties() {
+async function fetchRest(query) {
   const env = loadEnv("production", process.cwd(), "VITE_");
-  const res = await fetch(
-    `${env.VITE_SUPABASE_URL}/rest/v1/properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at&active=eq.true`,
-    {
-      headers: {
-        apikey: env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
+  const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${query}`, {
+    headers: {
+      apikey: env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-  );
-  if (!res.ok) throw new Error(`Fetching properties failed: ${res.status}`);
+  });
+  if (!res.ok) throw new Error(`Fetching ${query.split("?")[0]} failed: ${res.status}`);
   return res.json();
 }
+
+async function fetchProperties() {
+  const [properties, rules] = await Promise.all([
+    fetchRest("properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at&active=eq.true"),
+    fetchRest("properties_pricing_rules?select=property_id,rule_type,price,is_per_night&is_active=eq.true"),
+  ]);
+  return properties.map((p) => ({ ...p, rules: rules.filter((r) => r.property_id === p.id) }));
+}
+
+// Fees on top of the nightly price (rule prices are in öre), so AI answers
+// don't understate the total
+const feesText = (p) =>
+  p.rules
+    .map((r) =>
+      r.rule_type === "extra_guest"
+        ? ` The price is for 1 guest; each extra guest adds ${r.price / 100} ${p.currency} per night.`
+        : r.rule_type === "cleaning_fee"
+          ? ` Cleaning fee ${r.price / 100} ${p.currency} per stay.`
+          : "",
+    )
+    .join("");
 
 async function writeSitemap(routes) {
   const today = new Date().toISOString().slice(0, 10);
@@ -80,14 +98,14 @@ async function writeLlmsTxt(properties) {
     .map((p) => {
       const rating = p.review_rating && p.review_count ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests.` : "";
       const summary = (p.description ?? "").replace(/\s+/g, " ").trim();
-      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * 1.1)} ${p.currency}/night incl. 10% service fee.${rating} ${summary}`;
+      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * 1.1)} ${p.currency}/night incl. 10% service fee.${feesText(p)}${rating} ${summary}`;
     })
     .join("\n");
   await writeFile(
     path.join(DIST, "llms.txt"),
     `# Nordic Getaways
 
-> Nordic Getaways is run by Superhosts Jenny and Jon Nirs, who rent out two lakeside homes on Stora Härsjön in Lerum, about 30 minutes from Gothenburg, Sweden: Villa Häcken (sleeps 8, hot tub, private jetty and beach) and Lakehouse Getaway (a simple cabin for up to 4 at the water's edge). Boats and paddle boards are included. Book directly with the hosts. Pets, parties and events are not allowed; the person booking must be at least 25. Minimum stay 2 nights (3 over Valborg, Midsummer and New Year's Eve). Parking: two cars at Villa Häcken, one car at Lakehouse Getaway.
+> Nordic Getaways is run by Superhosts Jenny and Jon Nirs, who rent out two lakeside homes on Stora Härsjön in Lerum, about 30 minutes from Gothenburg, Sweden: Villa Häcken (sleeps 8, hot tub, private jetty and beach) and Lakehouse Getaway (a simple cabin for up to 4 at the water's edge). Boats and paddle boards are included. Book directly with the hosts. Pets, parties and events are not allowed; the person booking must be at least 25. Minimum stay 2 nights (3 over Valborg, Midsummer and New Year's Eve). Cancellation: 90% refund more than 21 days before arrival, 50% 8–21 days before, none within 7 days. Parking: two cars at Villa Häcken, one car at Lakehouse Getaway.
 
 ## Stays
 

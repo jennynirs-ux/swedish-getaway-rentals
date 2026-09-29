@@ -179,8 +179,24 @@ serve(async (req) => {
       logStep("Error fetching pricing rules", { error: rulesError });
     }
     
-    // Calculate base accommodation cost
-    let accommodationTotal = pricePerNightCents * nightCount;
+    // Nightly prices: a host's special price for a night (availability.
+    // seasonal_price, in SEK) replaces the base price - mirrors BookingForm
+    const { data: specialNights, error: specialError } = await supabaseClient
+      .from("availability")
+      .select("date, seasonal_price")
+      .eq("property_id", propertyId)
+      .gte("date", checkInDate)
+      .lt("date", checkOutDate)
+      .not("seasonal_price", "is", null);
+    if (specialError) {
+      throw new Error(`Loading nightly prices failed: ${specialError.message}`);
+    }
+    const specialPrices = new Map((specialNights ?? []).map((n) => [n.date, Number(n.seasonal_price) * 100]));
+    let accommodationTotal = 0;
+    for (let i = 0; i < nightCount; i++) {
+      const night = new Date(checkIn.getTime() + i * 86_400_000).toISOString().slice(0, 10);
+      accommodationTotal += specialPrices.get(night) ?? pricePerNightCents;
+    }
     
     // Calculate cleaning fees (one-time fees)
     let cleaningTotal = 0;

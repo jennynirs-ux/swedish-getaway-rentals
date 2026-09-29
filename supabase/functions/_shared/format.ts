@@ -13,3 +13,7 @@ export const longDate = (isoDate: string): string =>
 /** "16:00:00" -> "16:00" */
 export const hhmm = (time: string | null | undefined, fallback: string): string =>
   (time || fallback).slice(0, 5);
+
+/** Today's date in Sweden, "YYYY-MM-DD" */
+export const stockholmToday = (): string =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm" }).format(new Date());

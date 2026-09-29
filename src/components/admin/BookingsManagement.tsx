@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Edit, Search, Calendar, User, MapPin, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
+import CancelBookingDialog from './CancelBookingDialog';
 import { sv } from 'date-fns/locale';
 
 interface Booking {
@@ -244,6 +245,14 @@ const BookingsManagement = () => {
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </>
+                      )}
+                      {booking.status === 'confirmed' && (
+                        <CancelBookingDialog
+                          bookingId={booking.id}
+                          guestName={booking.guest_name}
+                          totalAmount={booking.total_amount}
+                          onCancelled={fetchBookings}
+                        />
                       )}
                       <Dialog>
                         <DialogTrigger asChild>
