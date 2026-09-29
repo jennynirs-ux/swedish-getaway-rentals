@@ -15,6 +15,7 @@ import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDispla
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
+import { PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 
 interface BookingFormProps {
   propertyId: string;
@@ -148,7 +149,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
     : 0;
   const subtotal = subtotalBeforeDiscount - stayDiscount;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
-  const totalAmount = Math.max(0, subtotal - couponDiscount);
+  const hostTotal = Math.max(0, subtotal - couponDiscount);
+  // Fee model A: service fee on top of the host's price (mirrors the payment function)
+  const serviceFee = Math.round(hostTotal * PLATFORM_SERVICE_FEE_RATE);
+  const totalAmount = hostTotal + serviceFee;
 
   const validateForm = () => {
     try {
@@ -348,6 +352,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Coupon discount ({appliedCoupon.code})</span>
                     <span>-{(couponDiscount / 100).toLocaleString()} {currency}</span>
+                  </div>
+                )}
+
+                {serviceFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Service fee ({Math.round(PLATFORM_SERVICE_FEE_RATE * 100)}%)</span>
+                    <span>{(serviceFee / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
               </div>

@@ -81,6 +81,18 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         {/* Desktop Navigation */}
         {!isPropertyPage && (
           <div className="hidden md:flex items-center gap-3">
+            {location.pathname !== "/become-host" && (
+              <Link to="/become-host">
+                <Button
+                  variant="outline"
+                  className="text-white border-white/30 bg-white/10 
+                             hover:bg-white/20 hover:border-white/50 
+                             backdrop-blur-sm transition-all"
+                >
+                  Become a host
+                </Button>
+              </Link>
+            )}
             {!isShopPage && (
               <Link to="/shop" title="Shop">
                 <Button
@@ -138,6 +150,15 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
       {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
         <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-4 flex flex-col">
+          {location.pathname !== "/become-host" && (
+            <Link
+              to="/become-host"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <span>Become a host</span>
+            </Link>
+          )}
           {!isShopPage && (
             <Link
               to="/shop"

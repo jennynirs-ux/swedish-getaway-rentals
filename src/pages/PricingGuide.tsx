@@ -25,7 +25,7 @@ const PricingGuide = () => {
 
   const dummyProperty = {
     id: "pricing-guide",
-    title: "Nordin Getaways",
+    title: "Nordic Getaways",
     location: "Sweden",
     tagline_line1: "Host Pricing Guide - Maximize Your Revenue",
     footer_quick_links: ["The Nordic Collection", "Contact", "First time in Sweden"],
@@ -71,7 +71,7 @@ const PricingGuide = () => {
                 <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
                   <p className="font-semibold text-primary mb-2">Important: Platform Commission</p>
                   <p className="text-sm text-muted-foreground">
-                    Nordin Getaways charges a <strong>10% commission</strong> on all bookings. When you set your price,
+                    Nordic Getaways adds a <strong>10% service fee</strong> on top of your price, paid by the guest. When you set your price,
                     guests will see the total price including our commission. For example:
                   </p>
                   <div className="mt-3 space-y-1 text-sm">
@@ -80,7 +80,7 @@ const PricingGuide = () => {
                       <span className="font-semibold">2,000 SEK</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Platform commission (10%):</span>
+                      <span>Service fee paid by the guest (10%):</span>
                       <span>+ 200 SEK</span>
                     </div>
                     <div className="flex justify-between border-t pt-1 font-bold">

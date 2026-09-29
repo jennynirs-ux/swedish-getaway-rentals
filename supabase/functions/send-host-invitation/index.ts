@@ -93,11 +93,11 @@ serve(async (req: Request) => {
     console.log("Referral created:", referral.id);
 
     // Send invitation email
-    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") || "http://localhost:5173";
+    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
     const invitationLink = `${origin}/become-host?ref=${referralCode}`;
 
     const { error: emailError } = await resend.emails.send({
-      from: "Nordic Collection <onboarding@resend.dev>",
+      from: "Nordic Getaways <support@mojjo.se>",
       to: [refereeEmail],
       subject: `${referrerProfile.full_name || "A host"} invited you to become a host!`,
       html: `
@@ -120,7 +120,7 @@ serve(async (req: Request) => {
             </a>
           </p>
           <p style="color: #666; font-size: 14px;">This invitation expires in 30 days.</p>
-          <p>Best regards,<br>The Nordic Collection Team</p>
+          <p>Best regards,<br>The Nordic Getaways Team</p>
         </div>
       `,
     });

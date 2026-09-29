@@ -291,49 +291,47 @@ serve(async (req) => {
       });
     }
     
-    const serverCalculatedAmount = subtotal - discountAmount;
-    
+    // Fee model A: the host's price (after stay discount and coupon) goes to
+    // the host in full; the guest pays a platform service fee on top of it.
+    const hostAmount = subtotal - discountAmount;
+
+    const profileData = property.profiles as any;
+    const commissionRate = Number(profileData?.commission_rate ?? 10);
+    const serviceFee = Math.round(hostAmount * (commissionRate / 100));
+    const guestTotal = hostAmount + serviceFee;
+
     logStep("Final amount calculation", {
       subtotal,
       discountAmount,
-      serverCalculatedAmount
+      hostAmount,
+      commissionRate,
+      serviceFee,
+      guestTotal,
     });
-    
+
     // Allow small rounding differences (1% tolerance) but reject significant discrepancies
-    const amountDifference = Math.abs(totalAmount - serverCalculatedAmount);
-    const tolerance = serverCalculatedAmount * 0.01;
-    
+    const amountDifference = Math.abs(totalAmount - guestTotal);
+    const tolerance = guestTotal * 0.01;
+
     if (amountDifference > tolerance) {
-      logStep("Amount mismatch detected", { 
-        clientAmount: totalAmount, 
-        serverAmount: serverCalculatedAmount,
-        difference: amountDifference 
+      logStep("Amount mismatch detected", {
+        clientAmount: totalAmount,
+        serverAmount: guestTotal,
+        difference: amountDifference
       });
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         error: "Price calculation error. Please refresh and try again.",
-        serverCalculatedAmount // Return correct amount for client to update
+        serverCalculatedAmount: guestTotal // Return correct amount for client to update
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
-    
-    // Use server-calculated amount for payment
-    const validatedAmount = serverCalculatedAmount;
 
-    const profileData = property.profiles as any;
     logStep("Property found", {
       propertyTitle: property.title,
       hostConnectAccount: profileData?.stripe_connect_account_id,
-      commissionRate: profileData?.commission_rate,
     });
-
-    // Commission calculation using validated amount
-    const commissionRate = profileData?.commission_rate || 10;
-    const platformCommission = Math.ceil(validatedAmount * (commissionRate / 100));
-    const hostAmount = validatedAmount - platformCommission;
-
-    logStep("Commission calculation", { commissionRate, platformCommission, hostAmount, validatedAmount });
 
     // Stripe init
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -356,20 +354,32 @@ serve(async (req) => {
       productDescription += ` | Coupon: ${validatedCoupon.code} (-${discountAmount / 100} ${currency || property.currency || 'SEK'})`;
     }
 
-    // Stripe line item using validated amount (already in cents)
-    const lineItems = [
+    const currencyCode = (currency || property.currency || "sek").toLowerCase();
+
+    // Two line items so the guest sees the stay and the service fee separately
+    const lineItems: any[] = [
       {
         price_data: {
-          currency: (currency || property.currency || "sek").toLowerCase(),
+          currency: currencyCode,
           product_data: {
             name: `${property.title}`,
             description: productDescription,
           },
-          unit_amount: Math.round(Number(validatedAmount)),
+          unit_amount: Math.round(hostAmount),
         },
         quantity: 1,
       },
     ];
+    if (serviceFee > 0) {
+      lineItems.push({
+        price_data: {
+          currency: currencyCode,
+          product_data: { name: `Service fee (${commissionRate}%)` },
+          unit_amount: serviceFee,
+        },
+        quantity: 1,
+      });
+    }
 
     // Stripe checkout session config
     const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
@@ -392,32 +402,44 @@ serve(async (req) => {
         guestPhone: guestPhone || "",
         specialRequests: specialRequests || "",
         userId: user?.id || "",
-        currency: (currency || property.currency || "sek").toLowerCase(),
-        totalAmount: validatedAmount.toString(),
+        currency: currencyCode,
+        totalAmount: guestTotal.toString(),
         subtotal: subtotal.toString(),
         stayDiscount: stayDiscount.toString(),
         discountAmount: discountAmount.toString(),
         couponId: validatedCoupon?.id || "",
         couponCode: validatedCoupon?.code || "",
         hostAmount: hostAmount.toString(),
-        platformCommission: platformCommission.toString(),
+        serviceFee: serviceFee.toString(),
         commissionRate: commissionRate.toString(),
         hostId: property.host_id,
       },
     };
 
-    // Stripe Connect payout
-    if (profileData?.stripe_connect_account_id) {
-      sessionConfig.payment_intent_data = {
-        application_fee_amount: Math.round(Number(platformCommission)),
-        transfer_data: {
-          destination: profileData.stripe_connect_account_id,
-        },
-      };
-      logStep("Stripe Connect configured", {
-        destination: profileData.stripe_connect_account_id,
-        applicationFee: platformCommission,
-      });
+    // Stripe Connect payout: the host gets hostAmount, the platform keeps the
+    // service fee. Only route money to an account that can receive transfers;
+    // otherwise the platform holds the host's share and it is flagged for a
+    // manual payout, so guests can still book.
+    const connectAccountId = profileData?.stripe_connect_account_id;
+    if (connectAccountId) {
+      let transfersActive = false;
+      try {
+        const account = await stripe.accounts.retrieve(connectAccountId);
+        transfersActive = account.capabilities?.transfers === "active";
+      } catch (e) {
+        logStep("Could not retrieve Connect account", { connectAccountId, error: String(e) });
+      }
+
+      if (transfersActive) {
+        sessionConfig.payment_intent_data = {
+          application_fee_amount: serviceFee,
+          transfer_data: { destination: connectAccountId },
+        };
+        logStep("Stripe Connect configured", { destination: connectAccountId, applicationFee: serviceFee });
+      } else {
+        sessionConfig.metadata.hostPayoutPending = "true";
+        logStep("Connect account cannot receive transfers yet; host payout must be made manually", { connectAccountId });
+      }
     }
 
     // Skapa Stripe session

@@ -1,15 +1,25 @@
 /**
  * Platform-wide constants.
  *
- * Keep this in sync with supabase/functions/generate-tax-report/index.ts
+ * Keep PLATFORM_SERVICE_FEE_RATE in sync with profiles.commission_rate (default 10)
+ * and the Skatteverket values with supabase/functions/generate-tax-report/index.ts
  * (Deno edge functions cannot import from src/).
  */
 
-// Platform commission rate applied to host payouts (gross revenue * rate = platform fee)
-export const PLATFORM_COMMISSION_RATE = 0.10;
+// Fee model A: the guest pays the host's price plus this service fee; the host
+// keeps their whole price. Must match profiles.commission_rate (default 10) used
+// by supabase/functions/create-booking-payment-connect.
+export const PLATFORM_SERVICE_FEE_RATE = 0.10;
 
-// Host's share after commission
-export const HOST_PAYOUT_RATE = 1 - PLATFORM_COMMISSION_RATE;
+/** What the guest pays for a host price (both in the same unit) */
+export const withServiceFee = (hostPrice: number) => hostPrice * (1 + PLATFORM_SERVICE_FEE_RATE);
+
+/**
+ * The host's share of a booking, in öre. Bookings since fee model A store it in
+ * host_amount; older ones carried no service fee, so their total is the host's.
+ */
+export const hostShareOre = (b: { total_amount?: number | null; host_amount?: number | null; service_fee?: number | null }) =>
+  b.host_amount ?? (b.total_amount ?? 0) - (b.service_fee ?? 0);
 
 // Skatteverket privatuthyrning (private rental) constants
 export const SKATTEVERKET_SCHABLONAVDRAG_SEK = 40000;

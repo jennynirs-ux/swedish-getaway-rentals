@@ -274,7 +274,7 @@ serve(async (req) => {
 
         // Send email via Resend
         const { error: emailError } = await resend.emails.send({
-          from: 'Nordic Getaways <bookings@nordicgetaways.com>',
+          from: 'Nordic Getaways <support@mojjo.se>',
           to: booking.guest_email,
           subject: emailSubject,
           html: emailHTML,

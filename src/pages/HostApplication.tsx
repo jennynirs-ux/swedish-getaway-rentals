@@ -50,36 +50,19 @@ const HostApplication = () => {
         return;
       }
 
-      // Instantly approve: set is_host and host_approved on the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          is_host: true,
-          host_approved: true,
-          host_business_name: formData.businessName || null,
-          host_onboarding_completed: false,
-        })
-        .eq('user_id', user.user.id);
+      // One trusted step in the database: marks the profile as host and records
+      // the application (a direct profile update is blocked for non-admins).
+      const { data: profileId, error: signupError } = await supabase.rpc('become_host', {
+        _business_name: formData.businessName,
+        _contact_phone: formData.contactPhone || null,
+      });
 
-      if (profileError) throw profileError;
-
-      // Also save to host_applications for record-keeping
-      await supabase
-        .from('host_applications')
-        .insert({
-          user_id: user.user.id,
-          business_name: formData.businessName,
-          contact_phone: formData.contactPhone,
-          description: formData.businessName || 'New host application',
-          status: 'approved',
-        })
-        .select('id')
-        .single();
+      if (signupError) throw signupError;
 
       // Handle referral code
-      if (referralCode && profile) {
+      if (referralCode && profileId) {
         supabase.functions.invoke("complete-host-referral", {
-          body: { referralCode, newHostProfileId: profile.id },
+          body: { referralCode, newHostProfileId: profileId },
         }).catch(() => {});
       }
 
@@ -114,7 +97,7 @@ const HostApplication = () => {
               Start Hosting
             </h1>
             <p className="text-lg text-muted-foreground">
-              List your Nordic property in under 5 minutes
+              Create your host account in a minute. We review each listing before it goes live.
             </p>
           </div>
 
@@ -127,7 +110,7 @@ const HostApplication = () => {
                 <Alert className="mb-6 border-primary/20 bg-primary/5">
                   <Gift className="h-4 w-4 text-primary" />
                   <AlertDescription className="text-sm">
-                    Referral code applied! You'll both earn a reward.
+                    Referral code applied.
                   </AlertDescription>
                 </Alert>
               )}
@@ -164,7 +147,7 @@ const HostApplication = () => {
                       'Calendar sync with Airbnb & Booking.com',
                       'Automatic booking confirmations',
                       'Secure payments via Stripe',
-                      'Smart lock integration',
+                      'Digital guidebook for your guests',
                     ].map((item) => (
                       <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />

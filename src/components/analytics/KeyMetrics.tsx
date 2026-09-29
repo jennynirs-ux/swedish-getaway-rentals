@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { differenceInCalendarDays, differenceInDays } from "date-fns";
 import { resolveScope, type FinancialScope } from "@/components/financials/scope";
 import { oreToSek } from "@/lib/swedishTax";
+import { hostShareOre } from "@/lib/constants";
 
 interface Metrics {
   totalBookings: number;
@@ -52,7 +53,7 @@ const KeyMetrics = ({ scope }: Props) => {
 
       const { data: bookings } = await supabase
         .from("bookings")
-        .select("total_amount, check_in_date, check_out_date, created_at")
+        .select("total_amount, host_amount, service_fee, check_in_date, check_out_date, created_at")
         .in("property_id", propertyIds)
         .in("status", ["confirmed", "completed"])
         .gte("check_in_date", `${year}-01-01`)
@@ -76,7 +77,7 @@ const KeyMetrics = ({ scope }: Props) => {
         const checkOut = new Date(b.check_out_date);
         const nights = Math.max(1, differenceInCalendarDays(checkOut, checkIn));
         totalNights += nights;
-        totalRevenue += b.total_amount || 0;
+        totalRevenue += hostShareOre(b);
 
         const created = new Date(b.created_at);
         const lead = Math.max(0, differenceInDays(checkIn, created));

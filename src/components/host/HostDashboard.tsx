@@ -21,7 +21,7 @@ import HostExpenses from "./HostExpenses";
 import HostRevenueByChannel from "./HostRevenueByChannel";
 import HostProfitability from "./HostProfitability";
 import { HostTaxReport } from "./HostTaxReport";
-import { HOST_PAYOUT_RATE } from "@/lib/constants";
+import { hostShareOre } from "@/lib/constants";
 import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
@@ -173,7 +173,7 @@ const HostDashboard = () => {
         (b) => b.status === "confirmed" && b.created_at.startsWith(currentMonth)
       );
       const monthlyRevenue = monthlyBookings.reduce((sum, booking) => {
-        return sum + (booking.total_amount / 100) * HOST_PAYOUT_RATE;
+        return sum + hostShareOre(booking) / 100;
       }, 0);
 
       setStats({

@@ -19,8 +19,6 @@ const baseCorsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-// Platform commission rate — shared constant (also duplicated in src/lib/constants.ts for frontend)
-const PLATFORM_COMMISSION_RATE = 0.10;
 
 // Skatteverket privatuthyrning constants (amounts in SEK)
 const SCHABLONAVDRAG_SEK = 40000;
@@ -107,7 +105,7 @@ serve(async (req) => {
     // Get all completed/confirmed bookings for the tax year
     const { data: bookings } = await supabase
       .from('bookings')
-      .select('id, property_id, total_amount, check_in_date, check_out_date, status')
+      .select('id, property_id, total_amount, host_amount, service_fee, check_in_date, check_out_date, status')
       .in('property_id', propertyIds)
       .gte('check_in_date', yearStart)
       .lte('check_in_date', yearEnd)
@@ -130,7 +128,8 @@ serve(async (req) => {
     // Build per-property report lines
     const propertyLines: TaxReportLine[] = properties.map((prop: any) => {
       const propBookings = (bookings || []).filter((b: any) => b.property_id === prop.id);
-      const totalRevenue = propBookings.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0);
+      // Host's own income: host_amount (fee model A), or total minus service fee on older bookings
+      const totalRevenue = propBookings.reduce((sum: number, b: any) => sum + (b.host_amount ?? ((b.total_amount || 0) - (b.service_fee || 0))), 0);
       const totalBookings = propBookings.length;
 
       const totalNights = propBookings.reduce((sum: number, b: any) => {
@@ -147,7 +146,8 @@ serve(async (req) => {
         expensesByCategory[e.category] = (expensesByCategory[e.category] || 0) + e.amount;
       }
 
-      const platformFees = Math.round(totalRevenue * PLATFORM_COMMISSION_RATE);
+      // Fee model A: the platform's service fee is paid by the guest, not deducted from the host
+      const platformFees = 0;
       const netIncome = totalRevenue - platformFees - totalExpenses;
       const avgNightlyRate = totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0;
 

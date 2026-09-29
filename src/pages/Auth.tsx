@@ -29,7 +29,10 @@ const Auth = () => {
   const [passwordStrength, setPasswordStrength] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+  const requestedRedirect = searchParams.get('redirect') || '/';
+  // Only same-site paths, so the link in the confirmation email can't be abused
+  const redirectTo = requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//') ? requestedRedirect : '/';
+  const isHostFlow = redirectTo.startsWith('/host-dashboard') || redirectTo.startsWith('/host-application');
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -93,7 +96,8 @@ const Auth = () => {
     }
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // Bring new users back to where they were going (e.g. the host application)
+      const redirectUrl = `${window.location.origin}${redirectTo}`;
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -122,7 +126,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}${redirectTo}`
         }
       });
 
@@ -143,7 +147,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}${redirectTo}`
         }
       });
 
@@ -218,16 +222,16 @@ const Auth = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-center text-2xl">
-                {redirectTo === '/host-dashboard' ? 'Sign in to become a Host' : 'Welcome'}
+                {isHostFlow ? 'Create your host account' : 'Welcome'}
               </CardTitle>
-              {redirectTo === '/host-dashboard' && (
+              {isHostFlow && (
                 <p className="text-center text-muted-foreground mt-2">
-                  Create an account to access your host dashboard and start listing your property.
+                  Sign up (or sign in) to access your host dashboard and start listing your property.
                 </p>
               )}
             </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue={isHostFlow ? "signup" : "signin"} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>

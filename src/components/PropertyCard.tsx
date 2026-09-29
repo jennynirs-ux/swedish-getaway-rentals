@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
 import { propertyPath } from "@/lib/propertySeo";
+import { withServiceFee } from "@/lib/constants";
 
 export interface PropertyCardData {
   slug?: string | null;
@@ -304,9 +305,9 @@ const PropertyCard = memo(({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-foreground">
-                {Math.round((safeProperty.price_per_night || 0) * 1.1).toLocaleString()} {safeProperty.currency}
+                {Math.round(withServiceFee(safeProperty.price_per_night || 0)).toLocaleString()} {safeProperty.currency}
               </span>
-              <span className="text-muted-foreground text-sm ml-1">/night</span>
+              <span className="text-muted-foreground text-sm ml-1">/night incl. service fee</span>
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               View Details

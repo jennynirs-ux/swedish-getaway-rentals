@@ -61,11 +61,15 @@ serve(async (req) => {
       });
       accountId = account.id;
 
-      // Save to profile
-      await supabaseClient
+      // Save to profile. If this fails we must stop: otherwise every click
+      // creates another orphaned Stripe account and the host is never paid.
+      const { error: saveError } = await supabaseClient
         .from("profiles")
         .update({ stripe_connect_account_id: accountId })
         .eq("user_id", user.id);
+      if (saveError) {
+        throw new Error(`Could not save Stripe account ${accountId}: ${saveError.message}`);
+      }
     }
 
     // Create account link for onboarding

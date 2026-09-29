@@ -22,6 +22,7 @@ interface Property {
   currency: string;
   active: boolean;
   max_guests: number;
+  pending_approval?: boolean | null;
 }
 
 const PropertiesManagement = () => {
@@ -48,7 +49,8 @@ const PropertiesManagement = () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('id, title, location, price_per_night, currency, active, max_guests')
+        .select('id, title, location, price_per_night, currency, active, max_guests, pending_approval')
+        .order('pending_approval', { ascending: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
       setProperties(data || []);
@@ -172,8 +174,8 @@ const PropertiesManagement = () => {
                   <TableCell>{p.price_per_night.toLocaleString()} {p.currency}</TableCell>
                   <TableCell>{p.max_guests}</TableCell>
                   <TableCell>
-                    <Badge variant={p.active ? 'default' : 'secondary'}>
-                      {p.active ? 'Active' : 'Hidden'}
+                    <Badge variant={p.active ? 'default' : p.pending_approval ? 'destructive' : 'secondary'}>
+                      {p.active ? 'Active' : p.pending_approval ? 'Awaiting review' : 'Hidden'}
                     </Badge>
                   </TableCell>
                   <TableCell>

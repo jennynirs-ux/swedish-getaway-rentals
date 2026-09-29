@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 import { supabase } from "@/integrations/supabase/client";
 import { resolveScope, type FinancialScope } from "./scope";
 import { oreToSek } from "@/lib/swedishTax";
+import { hostShareOre } from "@/lib/constants";
 
 const SOURCE_COLORS: Record<string, string> = {
   airbnb: "#f43f5e",
@@ -50,7 +51,7 @@ const RevenueByChannel = ({ scope }: Props) => {
 
       const { data: bookings } = await supabase
         .from("bookings")
-        .select("source, total_amount, created_at, property_id")
+        .select("source, total_amount, host_amount, service_fee, created_at, property_id")
         .in("property_id", propertyIds)
         .in("status", ["confirmed", "completed"])
         .gte("created_at", `${year}-01-01`)
@@ -61,7 +62,7 @@ const RevenueByChannel = ({ scope }: Props) => {
       const bySource: Record<string, number> = {};
       for (const b of bookings) {
         const src = b.source || "direct";
-        bySource[src] = (bySource[src] || 0) + (b.total_amount || 0);
+        bySource[src] = (bySource[src] || 0) + hostShareOre(b);
       }
 
       setPieData(
@@ -84,7 +85,7 @@ const RevenueByChannel = ({ scope }: Props) => {
         const month = (b.created_at || "").substring(0, 7);
         const src = b.source || "direct";
         if (monthly[month] && src !== "blocked") {
-          monthly[month][src] = (monthly[month][src] || 0) + Math.round(oreToSek(b.total_amount || 0));
+          monthly[month][src] = (monthly[month][src] || 0) + Math.round(oreToSek(hostShareOre(b)));
         }
       }
 

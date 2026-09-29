@@ -190,6 +190,8 @@ export type Database = {
           status: string
           stripe_payment_intent_id: string | null
           total_amount: number
+          service_fee: number
+          host_amount: number | null
           updated_at: string
           user_id: string | null
         }
@@ -234,6 +236,8 @@ export type Database = {
           status?: string
           stripe_payment_intent_id?: string | null
           total_amount?: number
+          service_fee?: number
+          host_amount?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -2161,6 +2165,10 @@ export type Database = {
       approve_host_application: {
         Args: { application_id: string }
         Returns: undefined
+      }
+      become_host: {
+        Args: { _business_name: string; _contact_phone?: string | null }
+        Returns: string
       }
       calculate_commission_split: {
         Args: { commission_rate_param?: number; total_amount_param: number }

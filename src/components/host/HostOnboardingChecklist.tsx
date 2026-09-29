@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Check, Circle, X, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ChecklistItem {
   id: string;
@@ -49,7 +50,7 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id, stripe_connect_account_id")
+        .select("id, stripe_connect_account_id, full_name, email, host_business_name")
         .eq("user_id", userData.user.id)
         .single();
       if (!profile) return;
@@ -57,7 +58,7 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
       // Properties owned by this host
       const { data: properties } = await supabase
         .from("properties")
-        .select("id, active, hero_image_url, description, price_per_night")
+        .select("id, title, active, pending_approval, hero_image_url, description, price_per_night")
         .eq("host_id", profile.id);
 
       const hasProperty = (properties?.length ?? 0) > 0;
@@ -66,6 +67,40 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
       const hasDescription = (properties || []).some((p) => p.description && p.description.length > 30);
       const hasPricing = (properties || []).some((p) => p.price_per_night && p.price_per_night > 0);
       const hasStripe = !!profile.stripe_connect_account_id;
+      const drafts = (properties || []).filter((p) => !p.active);
+      const awaitingReview = drafts.length > 0 && drafts.every((p) => p.pending_approval);
+
+      // Publishing is reviewed: the host submits, an admin publishes
+      const submitForReview = async () => {
+        if (!hasStripe) {
+          toast.error("Connect your bank account first, so we can pay you for bookings.");
+          onGoToTab("payouts");
+          return;
+        }
+        const toSubmit = drafts.filter((p) => !p.pending_approval);
+        if (toSubmit.length === 0) return;
+        const { error } = await supabase
+          .from("properties")
+          .update({ pending_approval: true })
+          .in("id", toSubmit.map((p) => p.id));
+        if (error) {
+          toast.error("Could not submit for review. Please try again.");
+          return;
+        }
+        // Tell the team (non-blocking)
+        supabase.functions.invoke("send-support-email", {
+          body: {
+            name: profile.full_name || profile.host_business_name || "Host",
+            email: profile.email || userData.user.email,
+            subject: "Property submitted for review",
+            message: `${profile.host_business_name || profile.full_name || "A host"} submitted for review: ${toSubmit
+              .map((p) => p.title)
+              .join(", ")}. Review and publish it under Admin → Properties.`,
+          },
+        }).catch(() => {});
+        toast.success("Submitted! Our team will review your listing before it goes live.");
+        load();
+      };
 
       setItems([
         {
@@ -110,11 +145,13 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
         },
         {
           id: "publish",
-          label: "Publish your property",
-          description: "Make it visible to guests and start taking bookings.",
+          label: awaitingReview ? "Waiting for review" : "Submit for review",
+          description: awaitingReview
+            ? "Our team reviews every new listing before it goes live."
+            : "We check every new listing before it goes live, then guests can book it.",
           done: hasPublished,
-          actionLabel: "Publish",
-          action: () => onGoToTab("properties"),
+          actionLabel: awaitingReview ? "Submitted" : "Submit for review",
+          action: awaitingReview ? () => {} : submitForReview,
         },
       ]);
     } catch {

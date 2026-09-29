@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getExpenses } from "@/services/expenseService";
 import { resolveScope, type FinancialScope } from "./scope";
 import { oreToSek } from "@/lib/swedishTax";
+import { hostShareOre } from "@/lib/constants";
 
 interface PropertyProfit {
   id: string;
@@ -57,7 +58,7 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
       const [{ data: bookings }, expenses] = await Promise.all([
         supabase
           .from("bookings")
-          .select("property_id, total_amount")
+          .select("property_id, total_amount, host_amount, service_fee")
           .in("property_id", propertyIds)
           .in("status", ["confirmed", "completed"])
           .gte("created_at", `${year}-01-01`)
@@ -67,7 +68,7 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
 
       const profitData: PropertyProfit[] = properties.map((prop) => {
         const propBookings = (bookings || []).filter((b) => b.property_id === prop.id);
-        const revenue = propBookings.reduce((sum, b) => sum + (b.total_amount || 0), 0);
+        const revenue = propBookings.reduce((sum, b) => sum + hostShareOre(b), 0);
         const propExpenses = expenses.filter((e) => e.property_id === prop.id);
         const totalExpenses = propExpenses.reduce((sum, e) => sum + e.amount, 0);
         const profit = revenue - totalExpenses;

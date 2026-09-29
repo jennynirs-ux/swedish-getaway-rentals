@@ -168,7 +168,7 @@ serve(async (req) => {
         `;
 
         const { error: emailError } = await resend.emails.send({
-          from: "Nordic Getaways <bookings@resend.dev>",
+          from: "Nordic Getaways <support@mojjo.se>",
           to: [booking.guest_email],
           subject: `🌿 Share Your Experience at ${property.title}`,
           html: emailHtml,

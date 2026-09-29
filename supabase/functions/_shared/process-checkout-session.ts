@@ -92,6 +92,9 @@ export async function processCheckoutSession(
           number_of_guests: parseInt(metadata.numberOfGuests),
           special_requests: metadata.specialRequests || null,
           total_amount: parseInt(metadata.totalAmount),
+          // Fee model A split (both in öre); older sessions carry no serviceFee
+          service_fee: parseInt(metadata.serviceFee || "0"),
+          host_amount: metadata.hostAmount ? parseInt(metadata.hostAmount) : null,
           currency: metadata.currency?.toUpperCase() || 'SEK',
           status: 'confirmed',
           stripe_payment_intent_id: session.payment_intent as string

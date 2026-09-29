@@ -49,7 +49,7 @@ serve(async (req) => {
     if (!resendKey) throw new Error("RESEND_API_KEY not configured");
 
     const resend = new Resend(resendKey);
-    const siteUrl = Deno.env.get("SITE_URL") || "";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
 
     await resend.emails.send({
       from: "Nordic Getaways <support@mojjo.se>",

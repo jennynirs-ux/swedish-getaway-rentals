@@ -80,7 +80,7 @@ async function writeLlmsTxt(properties) {
     .map((p) => {
       const rating = p.review_rating && p.review_count ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests.` : "";
       const summary = (p.description ?? "").replace(/\s+/g, " ").trim();
-      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${p.price_per_night} ${p.currency}/night.${rating} ${summary}`;
+      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * 1.1)} ${p.currency}/night incl. 10% service fee.${rating} ${summary}`;
     })
     .join("\n");
   await writeFile(

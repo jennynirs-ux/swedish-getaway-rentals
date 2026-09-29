@@ -1,5 +1,6 @@
 import type { Property } from "@/hooks/useProperties";
 import { SITE_NAME, SITE_URL } from "@/hooks/usePageMeta";
+import { withServiceFee } from "@/lib/constants";
 import type { PropertyContent } from "@/content/propertyContent";
 
 type SeoProperty = Pick<
@@ -17,7 +18,7 @@ const firstSentences = (text: string, max = 155) => {
 };
 
 export const propertyMetaDescription = (p: SeoProperty) => {
-  const facts = `Sleeps ${p.max_guests}, ${p.bedrooms} bedroom${p.bedrooms === 1 ? "" : "s"}, from ${p.price_per_night} ${p.currency}/night.`;
+  const facts = `Sleeps ${p.max_guests}, ${p.bedrooms} bedroom${p.bedrooms === 1 ? "" : "s"}, from ${Math.round(withServiceFee(p.price_per_night))} ${p.currency}/night incl. service fee.`;
   const rating = p.review_rating && p.review_count ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests.` : "";
   return firstSentences(`${p.title} in ${p.location}. ${facts}${rating} ${p.description ?? ""}`);
 };
@@ -64,7 +65,7 @@ export const buildPropertyJsonLd = (p: SeoProperty, content?: PropertyContent) =
         value: true,
       })),
     },
-    priceRange: `From ${p.price_per_night} ${p.currency} per night`,
+    priceRange: `From ${Math.round(withServiceFee(p.price_per_night))} ${p.currency} per night incl. service fee`,
     ...(p.review_rating && p.review_count
       ? {
           aggregateRating: {

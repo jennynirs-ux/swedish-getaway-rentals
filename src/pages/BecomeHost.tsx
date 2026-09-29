@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import forestHeroBg from "@/assets/forest-hero-light.jpg";
 
 const BecomeHost = () => {
   usePageMeta({
@@ -61,10 +62,13 @@ const BecomeHost = () => {
   }, []);
 
   const handleHostRedirect = () => {
+    // Keep a referral code from an invitation link (/become-host?ref=...)
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    const target = ref ? `/host-application?ref=${encodeURIComponent(ref)}` : "/host-application";
     if (!user) {
-      navigate("/auth?redirect=/host-application");
+      navigate(`/auth?redirect=${encodeURIComponent(target)}`);
     } else {
-      navigate("/host-application");
+      navigate(target);
     }
   };
 
@@ -130,19 +134,19 @@ const BecomeHost = () => {
       icon: DollarSign,
       title: "You keep what you set",
       description:
-        "Set your own price. We will add a 10% fee on top of your price to cover transactions, marketing, plattform development and support.",
+        "Set your own price. We will add a 10% fee on top of your price to cover payments, marketing, platform development and support.",
     },
     {
       icon: Shield,
       title: "Simple & secure",
       description:
-        "Safe payments, verified guests, and full control over your bookings.",
+        "Secure card payments through Stripe and full control over your calendar.",
     },
     {
       icon: Calendar,
       title: "Full flexibility",
       description:
-        "Rent out on your schedule — a weekend, a month, or the whole summer. Sync with other plattforms to avoid dubble booking",
+        "Rent out on your schedule — a weekend, a month, or the whole summer. Sync your calendar with Airbnb and other platforms to avoid double bookings.",
     },
     {
       icon: TrendingUp,
@@ -227,8 +231,8 @@ const BecomeHost = () => {
       question: "What about cleaning and maintenance?",
       answer: (
         <>
-          You decide! You can handle cleaning yourself or work with a trusted local partner.  
-          We can also connect you with professional cleaning services in your area.  
+          You decide! You can handle cleaning yourself or work with a trusted local partner,  
+          and add a cleaning fee to your listing.  
           A clean and well-prepared home brings happier guests — and better reviews.
         </>
       ),
@@ -237,10 +241,10 @@ const BecomeHost = () => {
       question: "How do cancellations and refunds work?",
       answer: (
         <>
-          You can choose your preferred cancellation policy — <strong>Flexible</strong>, 
-          <strong> Moderate</strong>, or <strong>Strict</strong>.  
-          If a guest cancels within the allowed time frame, the system automatically 
-          processes the refund and updates your calendar.
+          Each listing has a cancellation policy — <strong>Flexible</strong>, 
+          <strong> Moderate</strong>, or <strong>Strict</strong> — shown to guests before they book.  
+          We agree on the policy with you when your listing is reviewed, and our team handles 
+          refunds according to it.
         </>
       ),
     },
@@ -275,8 +279,9 @@ const BecomeHost = () => {
       question: "How are guests verified?",
       answer: (
         <>
-          All guests must verify their identity and agree to our house rules before booking.  
-          You always have the right to decline a request if something doesn’t feel right.
+          Guests pay by card through Stripe when they book and must accept your house rules first.  
+          Bookings are confirmed instantly, so keep your calendar up to date and block any dates 
+          you don’t want to rent out.
         </>
       ),
     },
@@ -313,7 +318,7 @@ const BecomeHost = () => {
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "url('src/assets/forest-hero-light.jpg')",
+              `url(${forestHeroBg})`,
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-background" />
@@ -376,7 +381,7 @@ const BecomeHost = () => {
                 </div>
               </div>
               <p className="text-center text-sm text-muted-foreground mt-6">
-                The 10% covers secure payments (up to 5,5% depending on country and currency of the guest) marketing, support, and platform improvements.
+                The 10% covers secure payments (card fees of up to about 5.5%, depending on the guest's country and currency), marketing, support and platform improvements.
               </p>
             </CardContent>
           </Card>
