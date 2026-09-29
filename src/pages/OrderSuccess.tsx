@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 const OrderSuccess = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
-  const [processing, setProcessing] = useState(true);
+  const [processing, setProcessing] = useState(!!sessionId);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
@@ -19,7 +19,8 @@ const OrderSuccess = () => {
 
   const handlePaymentSuccess = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('handle-payment-success', {
+      // Shop payments run on the shop Stripe account, handled by this function
+      const { data, error } = await supabase.functions.invoke('handle-shop-payment-success', {
         body: { session_id: sessionId }
       });
 
@@ -55,11 +56,11 @@ const OrderSuccess = () => {
         <div className="max-w-2xl mx-auto text-center">
           <Card className="shadow-lg">
             <CardHeader className="pb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${success ? "bg-green-100" : "bg-muted"}`}>
+                <CheckCircle className={`w-8 h-8 ${success ? "text-green-600" : "text-muted-foreground"}`} />
               </div>
-              <CardTitle className="text-2xl text-green-600">
-                Order Confirmed!
+              <CardTitle className={`text-2xl ${success ? "text-green-600" : ""}`}>
+                {success ? "Order Confirmed!" : "We're confirming your order"}
               </CardTitle>
             </CardHeader>
             
@@ -82,7 +83,8 @@ const OrderSuccess = () => {
                 </div>
               ) : (
                 <p className="text-lg text-muted-foreground">
-                  Your payment was processed successfully. We're preparing your order.
+                  You'll receive an order confirmation email within a few minutes. If it doesn't arrive, email{" "}
+                  <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a> and we'll sort it out.
                 </p>
               )}
 

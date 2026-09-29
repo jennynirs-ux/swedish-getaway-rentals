@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { pickVariant } from "../_shared/shop-variants.ts";
+
+const siteUrl = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
+
+const splitMetadata = (key: string, value: string) =>
+  Object.fromEntries(Array.from({ length: Math.ceil(value.length / 490) }, (_, i) => [`${key}_${i}`, value.slice(i * 490, (i + 1) * 490)]));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { items, customerEmail, shippingCost, couponId, couponCode, discountAmount } = await req.json();
+    const { items, customerEmail, couponId, couponCode, discountAmount } = await req.json();
     if (!Array.isArray(items) || items.length === 0) throw new Error('No items provided');
 
     const supabase = createClient(
@@ -27,6 +33,8 @@ serve(async (req) => {
     const lineItems: any[] = [];
     let currency = 'sek';
     let subtotal = 0;
+    // The cart as the order processor needs it: every line with its Printful variant
+    const resolvedItems: { productId: string; quantity: number; variantId: string }[] = [];
 
     for (const it of items as CartItem[]) {
       const { data: product, error } = await supabase
@@ -52,18 +60,22 @@ serve(async (req) => {
         ? JSON.parse(product.printful_data) 
         : product.printful_data;
 
-      let selectedVariant: any = null;
-      if (it.variantId && printfulData?.variants) {
-        selectedVariant = printfulData.variants.find((v: any) => v.id?.toString() === it.variantId);
-        if (!selectedVariant) {
-          console.error('Variant not found:', it.variantId, 'in product:', it.productId);
-          throw new Error(`Variant ${it.variantId} not found for product ${it.productId}`);
-        }
+      // Printful can only ship a specific variant (size/colour)
+      const selectedVariant: any = pickVariant({ printful_data: printfulData }, it.variantId);
+      if (!selectedVariant) {
+        console.error('No variant for product:', it.productId, it.variantId);
+        throw new Error(`Variant: please choose a size or colour for ${product.title_override || product.title}`);
       }
+      const quantity = Math.max(1, Math.min(20, Math.floor(Number(it.quantity) || 1)));
+      it.quantity = quantity;
+      resolvedItems.push({ productId: product.id, quantity, variantId: selectedVariant.id.toString() });
 
-      const finalPrice = selectedVariant
-        ? Math.round(parseFloat(selectedVariant.retail_price || '0') * 100)
-        : (product.price_override || product.custom_price || product.price || 0);
+      // A chosen variant has its own price; otherwise the product price (with
+      // the admin's override), as the shop and cart pages show it
+      const variantPrice = Math.round(parseFloat(selectedVariant.retail_price || '0') * 100);
+      const finalPrice = it.variantId
+        ? variantPrice
+        : (product.price_override || product.custom_price || product.price || variantPrice);
 
       subtotal += finalPrice * it.quantity;
 
@@ -93,8 +105,18 @@ serve(async (req) => {
       });
     }
 
-    // Add shipping as a separate line item so total matches (admin settings)
-    if (typeof shippingCost === 'number' && shippingCost > 0) {
+    // Shipping from the shop settings, as the cart page shows it (never the
+    // browser's number): free above the threshold, else the Sweden rate
+    const { data: shippingSetting } = await supabase
+      .from('platform_settings')
+      .select('setting_value')
+      .eq('setting_key', 'shipping_settings')
+      .maybeSingle();
+    const shippingSettings = (shippingSetting?.setting_value ?? {}) as any;
+    const shippingCost = shippingSettings.free_shipping_threshold && subtotal >= shippingSettings.free_shipping_threshold
+      ? 0
+      : (shippingSettings.fallback_rates?.find((r: any) => r.region === 'Sweden')?.rate ?? 4900);
+    if (shippingCost > 0) {
       lineItems.push({
         price_data: {
           currency,
@@ -192,12 +214,13 @@ serve(async (req) => {
       mode: 'payment',
       shipping_address_collection: { allowed_countries: ['SE','NO','DK','FI','DE','GB','US','CA','NL','FR','ES','IT'] },
       phone_number_collection: { enabled: true },
-      success_url: `${req.headers.get('origin')}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/cart`,
-      metadata: { 
-        type: 'cart', 
-        items: JSON.stringify(items), 
-        shipping_cost: String(shippingCost || 0), 
+      success_url: `${siteUrl}/order-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/cart`,
+      metadata: {
+        type: 'cart',
+        // Stripe caps metadata values at 500 characters: items_0, items_1, ...
+        ...splitMetadata('items', JSON.stringify(resolvedItems)),
+        shipping_cost: String(shippingCost), 
         currency,
         coupon_id: validatedCouponId || '',
         coupon_code: validatedCouponCode || '',
