@@ -17,6 +17,10 @@ interface Property {
   price_per_night: number;
 }
 
+// Dates held by a booking or synced from another channel ("Blocked by Airbnb")
+const isLockedReason = (reason: string | null | undefined) =>
+  reason === 'booked' || reason === 'ical_sync' || !!reason?.startsWith('Blocked by ');
+
 interface AvailabilityDate {
   date: string;
   available: boolean;
@@ -37,7 +41,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
 
   useEffect(() => {
     fetchProperties();
-  }, []);
+  }, [defaultPropertyId]);
 
   useEffect(() => {
     if (selectedProperty) {
@@ -47,18 +51,16 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
 
   const fetchProperties = async () => {
     try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('id, title, price_per_night')
-        .eq('active', true);
+      // The editors pass the property being edited, which may be an
+      // unpublished draft, so don't limit that lookup to active properties
+      const query = supabase.from('properties').select('id, title, price_per_night');
+      const { data, error } = defaultPropertyId
+        ? await query.eq('id', defaultPropertyId)
+        : await query.eq('active', true);
 
       if (error) throw error;
       setProperties(data || []);
-      
-      if (data && data.length > 0) {
-        const found = defaultPropertyId && data.find(p => p.id === defaultPropertyId);
-        setSelectedProperty(found ? found.id : data[0].id);
-      }
+      setSelectedProperty(data?.[0]?.id ?? '');
     } catch (error) {
       console.error('Error fetching properties:', error);
     }
@@ -89,7 +91,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
      try {
        setLoading(true);
 
-       const filteredDates = dates.filter((d) => !isSyncedDate(d));
+       const filteredDates = dates.filter((d) => !isLockedDate(d));
        const skipped = dates.length - filteredDates.length;
 
        for (const date of filteredDates) {
@@ -109,7 +111,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
 
        toast({
          title: 'Success',
-         description: `Updated ${filteredDates.length} date(s)${skipped > 0 ? ` (skipped ${skipped} synced date(s))` : ''}`,
+         description: `Updated ${filteredDates.length} date(s)${skipped > 0 ? ` (skipped ${skipped} booked or synced date(s))` : ''}`,
        });
 
        fetchAvailability();
@@ -136,14 +138,11 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
     return date < today;
   };
 
-  const isSyncedDate = (date: Date) => {
-    const avail = getDateAvailability(date);
-    return avail?.reason === 'ical_sync';
-  };
+  const isLockedDate = (date: Date) => isLockedReason(getDateAvailability(date)?.reason);
 
   const modifiers = {
     blocked: availability
-      .filter(a => !a.available && a.reason !== 'preparation' && a.reason !== 'ical_sync')
+      .filter(a => !a.available && a.reason !== 'preparation' && !isLockedReason(a.reason))
       .map(a => new Date(a.date)),
     special: availability
       .filter(a => a.seasonal_price !== null)
@@ -152,7 +151,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
       .filter(a => a.reason === 'preparation')
       .map(a => new Date(a.date)),
     synced: availability
-      .filter(a => a.reason === 'ical_sync')
+      .filter(a => isLockedReason(a.reason))
       .map(a => new Date(a.date))
   };
 
@@ -173,7 +172,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                 <div>
                   <CardTitle>Calendar</CardTitle>
                   <CardDescription>
-                    Click on dates to select days to update. Dates synced from external calendars cannot be modified.
+                    Click on dates to select days to update. Booked dates and dates synced from other calendars cannot be modified.
                   </CardDescription>
                 </div>
               </div>
@@ -198,7 +197,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                     preparation: "bg-orange-100 text-orange-900 italic",
                     synced: "bg-orange-100 text-orange-900 cursor-not-allowed"
                   }}
-                  disabled={(date) => isCurrentOrPastDate(date) || isSyncedDate(date)}
+                  disabled={(date) => isCurrentOrPastDate(date) || isLockedDate(date)}
                   components={{
                     DayContent: ({ date }) => {
                       const avail = getDateAvailability(date);
@@ -243,7 +242,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
               
                <Button 
                  className="w-full bg-green-600 hover:bg-green-700"
-                 disabled={selectedDates.length === 0 || loading || selectedDates.some(d => isSyncedDate(d))}
+                 disabled={selectedDates.length === 0 || loading || selectedDates.some(d => isLockedDate(d))}
                  onClick={() => updateAvailability(selectedDates, true)}
                >
                 <CalendarIcon className="h-4 w-4 mr-2" />
@@ -334,7 +333,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-orange-100 rounded"></div>
-                <span className="text-sm">Synced (read-only)</span>
+                <span className="text-sm">Booked or synced (read-only)</span>
               </div>
             </CardContent>
           </Card>

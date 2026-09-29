@@ -2162,10 +2162,6 @@ export type Database = {
       }
     }
     Functions: {
-      approve_host_application: {
-        Args: { application_id: string }
-        Returns: undefined
-      }
       become_host: {
         Args: { _business_name: string; _contact_phone?: string | null }
         Returns: string
@@ -2342,6 +2338,18 @@ export type Database = {
       }
       is_admin_secure_new: { Args: { user_id_param: string }; Returns: boolean }
       is_booking_accessible: { Args: { booking_id: string }; Returns: boolean }
+      review_host_application: {
+        Args: {
+          _admin_notes?: string | null
+          _application_id: string
+          _approve: boolean
+        }
+        Returns: undefined
+      }
+      set_host_commission_rate: {
+        Args: { _profile_id: string; _rate: number }
+        Returns: undefined
+      }
       validate_coupon: {
         Args: {
           booking_amount?: number

@@ -56,9 +56,10 @@ const HostManagement = () => {
       // Fetch host applications
       const { data: applicationsData, error: applicationsError } = await supabase
         .from('host_applications')
+        // Two FKs point at profiles (user_id, reviewed_by): name the applicant's
         .select(`
           *,
-          profiles!inner(email, full_name)
+          profiles!host_applications_user_id_fkey(email, full_name)
         `)
         .order('submitted_at', { ascending: false });
 
@@ -69,7 +70,7 @@ const HostManagement = () => {
         .from('profiles')
         .select('*')
         .eq('is_host', true)
-        .order('host_application_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (hostsError) throw hostsError;
 
@@ -85,13 +86,17 @@ const HostManagement = () => {
 
   const handleApplicationReview = async (applicationId: string, action: 'approve' | 'reject') => {
     try {
-      const { error } = await supabase.rpc('approve_host_application', {
-        application_id: applicationId
+      const { error } = await supabase.rpc('review_host_application', {
+        _application_id: applicationId,
+        _approve: action === 'approve',
+        _admin_notes: adminNotes.trim() || null,
       });
 
       if (error) throw error;
 
-      toast.success(`Application ${action}d successfully`);
+      const status = action === 'approve' ? 'approved' : 'rejected';
+      toast.success(`Application ${status}`);
+      setSelectedApplication((current) => current && { ...current, status });
       fetchData();
     } catch (error) {
       console.error('Error reviewing application:', error);
@@ -101,10 +106,11 @@ const HostManagement = () => {
 
   const updateHostCommission = async (hostId: string, commissionRate: number) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ commission_rate: commissionRate })
-        .eq('id', hostId);
+      // RLS has no admin UPDATE on other profiles; the function checks the role
+      const { error } = await supabase.rpc('set_host_commission_rate', {
+        _profile_id: hostId,
+        _rate: commissionRate,
+      });
 
       if (error) throw error;
 
