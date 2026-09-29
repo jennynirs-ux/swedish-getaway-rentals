@@ -4,8 +4,6 @@ project_id = "bbuutvozqfzbsnllsiai"
 [functions.complete-host-referral]
 verify_jwt = true
 
-[functions.fetch-printful-products]
-verify_jwt = true
 
 [functions.sync-printful-products]
 verify_jwt = true

@@ -21,4 +21,5 @@ bun run build      # production build
 ```
 
 Edge functions: `supabase functions deploy <name> --project-ref bbuutvozqfzbsnllsiai --use-api`.
-Database changes live in `supabase/migrations/`.
+Database changes: add a file `supabase/migrations/<yyyymmddhhmmss>_<name>.sql` and run
+`supabase db push --linked` (the migration history matches the database since 2026-09-29).
