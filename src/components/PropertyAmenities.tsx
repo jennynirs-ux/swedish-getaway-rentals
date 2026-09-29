@@ -125,7 +125,7 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
   }
 
   return (
-    <section className="py-16 bg-muted/30">
+    <section id="amenities" className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}

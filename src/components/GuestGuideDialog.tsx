@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, type ElementType, lazy, Suspense } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from "jspdf";
 import {
   Tooltip,
   TooltipContent,
@@ -152,7 +151,9 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
+    // Loaded on demand: jsPDF (with html2canvas) is ~400 kB
+    const { default: jsPDF } = await import("jspdf");
     const pdf = new jsPDF();
     let yPosition = 20;
 

@@ -14,7 +14,7 @@ interface GalleryContent {
 const Gallery = () => {
   usePageMeta({
     title: "Photo gallery",
-    description: "Photos of our lakeside cabins near Gothenburg, Sweden: lakes, forest, saunas and cosy interiors at Nordic Getaways.",
+    description: "Photos of our lakeside cabins near Gothenburg, Sweden: the lake, the forest, the hot tub and cosy interiors at Nordic Getaways.",
     path: "/gallery",
   });
 

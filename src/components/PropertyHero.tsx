@@ -3,25 +3,29 @@ import { Button } from "@/components/ui/button";
 import LazyImage from "@/components/LazyImage";
 import { Property } from "@/hooks/useProperties";
 import { memo } from 'react';
+import { PROPERTY_CONTENT } from "@/content/propertyContent";
 
 interface PropertyHeroProps {
   property: Property;
 }
 
 const PropertyHero = memo(({ property }: PropertyHeroProps) => {
+  const nickname = property.slug ? PROPERTY_CONTENT[property.slug]?.nickname : undefined;
+
   const scrollToBooking = () => {
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Hero Background Image - Use hero_image_url first */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url(${property.hero_image_url || property.gallery_images?.[0] || ''})`
-        }}
-      >
+      {/* Hero image: an <img> rather than a CSS background so phones get the 800 px copy */}
+      <div className="absolute inset-0">
+        <LazyImage
+          src={property.hero_image_url || property.gallery_images?.[0] || undefined}
+          alt={property.title}
+          className="w-full h-full object-cover"
+          priority={true}
+        />
         <div className="absolute inset-0 bg-black/40"></div>
       </div>
 
@@ -29,9 +33,13 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
       <div className="relative z-10 container mx-auto px-4 text-center text-white">
         <div className="max-w-4xl mx-auto">
           {/* Property Title */}
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            {property.title}
+          {/* The cabin's name (Villa Häcken), with the listing title under it */}
+          <h1 className="text-5xl md:text-7xl font-bold mb-3 leading-tight">
+            {nickname ?? property.title}
           </h1>
+          {nickname && (
+            <p className="text-xl md:text-2xl text-white/90 mb-6">{property.title}</p>
+          )}
           
           {/* Tagline */}
           <div className="text-xl md:text-2xl mb-8 font-light leading-relaxed">
@@ -49,10 +57,13 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
               <Users className="h-5 w-5" />
               <span>Up to {property.max_guests} guests</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              <span>{property.availability_text || 'Available year-round'}</span>
-            </div>
+            {/* No default: a made-up "year-round" was wrong for Lakehouse */}
+            {property.availability_text && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                <span>{property.availability_text}</span>
+              </div>
+            )}
           </div>
 
           {/* CTA Buttons */}

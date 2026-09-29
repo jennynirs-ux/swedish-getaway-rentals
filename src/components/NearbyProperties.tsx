@@ -60,7 +60,8 @@ const NearbyProperties = memo(({ currentPropertyId, currentCoordinates, allPrope
                 <div className="bg-card rounded-lg overflow-hidden border border-border hover:border-primary transition-colors">
                   <div className="relative h-48">
                     <LazyImage
-                      src={property.hero_image_url || '/placeholder.jpg'}
+                      sizes="(max-width: 768px) 100vw, 420px"
+                      src={property.hero_image_url || '/placeholder.svg'}
                       alt={property.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -71,7 +72,7 @@ const NearbyProperties = memo(({ currentPropertyId, currentCoordinates, allPrope
                     </h3>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {Math.round(property.distance)} km away
+                      {property.distance < 1 ? "Next door" : `${Math.round(property.distance)} km away`}
                     </p>
                   </div>
                 </div>

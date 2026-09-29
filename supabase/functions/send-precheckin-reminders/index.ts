@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
 import { Resend } from "npm:resend@2.0.0";
+import { hhmm, longDate } from "../_shared/format.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -211,10 +212,10 @@ serve(async (req) => {
           const replacements: Record<string, string> = {
             "{guest_name}": booking.guest_name,
             "{property_name}": booking.properties.title,
-            "{check_in_date}": checkInDate,
-            "{check_out_date}": checkOutDate,
-            "{check_in_time}": booking.properties.check_in_time || "15:00",
-            "{check_out_time}": booking.properties.check_out_time || "11:00",
+            "{check_in_date}": longDate(booking.check_in_date),
+            "{check_out_date}": longDate(booking.check_out_date),
+            "{check_in_time}": hhmm(booking.properties.check_in_time, "15:00"),
+            "{check_out_time}": hhmm(booking.properties.check_out_time, "11:00"),
             "{property_address}": address,
             "{check_in_instructions}": booking.properties.check_in_instructions || "Check-in instructions will be provided.",
           };
@@ -250,8 +251,8 @@ serve(async (req) => {
           guestName: booking.guest_name,
           propertyTitle: booking.properties.title,
           city: booking.properties.city || booking.properties.country,
-          checkInDate: `${dayNames[checkInDate.getDay()]}, ${checkInDate.toLocaleDateString()}`,
-          checkOutDate: `${dayNames[checkOutDate.getDay()]}, ${checkOutDate.toLocaleDateString()}`,
+          checkInDate: longDate(booking.check_in_date),
+          checkOutDate: longDate(booking.check_out_date),
           checkInTime: booking.properties.check_in_time || '15:00',
           checkOutTime: booking.properties.check_out_time || '11:00',
           googleMapsUrl,

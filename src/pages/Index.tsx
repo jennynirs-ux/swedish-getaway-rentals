@@ -14,7 +14,8 @@ import MainNavigation from "@/components/MainNavigation";
 import BookPromotion from "@/components/BookPromotion";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
 
-import forestHeroBg from "@/assets/forest-hero-light.jpg";
+import forestHeroBg from "@/assets/forest-hero-light.webp";
+import forestHeroBgSmall from "@/assets/forest-hero-light-800.webp";
 import { addDays, subDays, differenceInCalendarDays } from "date-fns";
 
 interface PropertyFilters {
@@ -79,7 +80,7 @@ const HomePage = memo(() => {
   );
 
   usePageMeta({
-    title: SITE_NAME,
+    title: "Lakeside cabins near Gothenburg",
     description:
       "Lakeside cabins and holiday homes near Gothenburg, Sweden. Rowing boats, forest trails and Swedish nature – book directly with the host.",
     path: "/",
@@ -91,7 +92,7 @@ const HomePage = memo(() => {
         "@id": `${SITE_URL}/#organization`,
         name: SITE_NAME,
         url: SITE_URL,
-        logo: `${SITE_URL}/favicon.png`,
+        logo: `${SITE_URL}/logo-512.png`,
         description: "Holiday rentals in Swedish nature near Gothenburg, booked directly with the host.",
         areaServed: "Sweden",
       },
@@ -292,6 +293,8 @@ const HomePage = memo(() => {
         <div className="absolute inset-0">
           <LazyImage
             src={forestHeroBg}
+            srcSet={`${forestHeroBgSmall} 800w, ${forestHeroBg} 1600w`}
+            sizes="100vw"
             alt="Swedish forest background with sunlight through trees"
             className="w-full h-full object-cover"
             priority={true}
@@ -305,19 +308,28 @@ const HomePage = memo(() => {
             Nordic Getaways
           </h1>
           <p className="text-xl md:text-2xl text-white/90 mb-10">
-            Discover your perfect retreat in the Nordic
+            Two lakeside cabins on Stora Härsjön, 30 minutes from Gothenburg
           </p>
 
-          {/* Search bar */}
-          <PropertySearch
-            onFiltersChange={setFilters}
-            availableAmenities={availableAmenities}
-          />
+          {/* Search bar: on phones it filled the whole first screen, so there
+              the cabins are one tap away instead */}
+          <div className="hidden md:block">
+            <PropertySearch
+              onFiltersChange={setFilters}
+              availableAmenities={availableAmenities}
+            />
+          </div>
+          <a
+            href="#cabins"
+            className="md:hidden inline-block rounded-full bg-white/95 px-6 py-3 font-semibold text-foreground shadow-lg"
+          >
+            See the cabins
+          </a>
         </div>
       </header>
 
       {/* Property Cards */}
-      <main className="pb-12">
+      <main id="cabins" className="pb-12 scroll-mt-4">
         <div className="container mx-auto px-4 pt-16">
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
@@ -343,7 +355,7 @@ const HomePage = memo(() => {
                   key={p.id}
                   property={{
                     ...p,
-                    hero_image_url: p.hero_image_url || "/placeholder.jpg",
+                    hero_image_url: p.hero_image_url || "/placeholder.svg",
                     description: p.description || "",
                     currency: p.currency || "SEK",
                     amenities: Array.isArray(p.amenities) ? p.amenities : [],
@@ -369,6 +381,18 @@ const HomePage = memo(() => {
           )}
         </div>
       </main>
+
+      {/* The hosts: guests book people, not just a cabin */}
+      <section className="container mx-auto px-4 pb-16">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-foreground mb-4">Your hosts, Jenny &amp; Jon</h2>
+          <p className="text-lg text-muted-foreground">
+            We are Airbnb Superhosts and look after both cabins on Stora Härsjön ourselves. Guests have rated
+            Villa Häcken 4.98 and Lakehouse Getaway 4.85 on Airbnb. Book directly here and you deal with us –
+            questions go to <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a>.
+          </p>
+        </div>
+      </section>
 
       {/* Book Promotion Section */}
       <BookPromotion />
@@ -404,7 +428,7 @@ const HomePage = memo(() => {
             <div>
               <h4 className="font-semibold text-foreground mb-4">For Guests</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/pricing-guide" className="hover:text-foreground">Pricing Guide</Link></li>
+                <li><Link to="/pricing-guide" className="hover:text-foreground">Pricing guide for hosts</Link></li>
                 <li><Link to="/auth" className="hover:text-foreground">Sign In / Register</Link></li>
                 <li><Link to="/profile" className="hover:text-foreground">My Bookings</Link></li>
               </ul>

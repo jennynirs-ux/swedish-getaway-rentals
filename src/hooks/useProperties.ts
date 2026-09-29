@@ -74,7 +74,7 @@ export const useProperties = () => {
       const { data, error } = await supabase
         .from('properties')
         .select(`
-          id, title, description, location, price_per_night, currency,
+          id, slug, title, description, location, price_per_night, currency,
           max_guests, bedrooms, bathrooms, hero_image_url, amenities, 
           active, review_rating, review_count, property_type, 
           special_amenities, featured_amenities, host_id, 

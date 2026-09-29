@@ -44,7 +44,7 @@ const BookPromotion = () => {
       <div className="container mx-auto px-4">
         {/* Title */}
         <h2 className="text-2xl sm:text-3xl font-bold text-left mb-8">
-          Looking for Vacation Read?
+          Looking for a holiday read?
         </h2>
 
         <div className="max-w-6xl mx-auto flex flex-row gap-6 items-start">

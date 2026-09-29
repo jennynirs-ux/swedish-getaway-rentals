@@ -72,7 +72,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         {/* Logo always links to Home */}
         <Link to="/" className="flex items-center">
           <img
-            src="/favicon.png"
+            src="/apple-touch-icon.png"
             alt="Nordic Getaways logo"
             className="h-8 w-auto filter invert brightness-0"
           />

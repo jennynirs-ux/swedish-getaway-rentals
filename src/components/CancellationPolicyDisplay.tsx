@@ -49,7 +49,7 @@ export const CancellationPolicyDisplay = () => {
       <Info className="h-4 w-4" />
       <AlertDescription>
         <div className="space-y-3">
-          <div className="font-semibold text-foreground">Cancellation Policy – Nordic Getaway</div>
+          <div className="font-semibold text-foreground">Cancellation policy</div>
           <div className="space-y-2">
             {policy.tiers.map((tier, index) => (
               <div key={index} className="flex justify-between items-center text-sm">

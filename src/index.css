@@ -72,8 +72,9 @@
     --glow-shadow: 0 0 30px hsl(120 20% 50% / 0.3);
 
     /* Typography Scale */
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'Inter', sans-serif;
+    /* Self-hosted (src/main.tsx): Google Fonts sent visitors' IP addresses to Google */
+    --font-display: 'Playfair Display Variable', 'Playfair Display', serif;
+    --font-body: 'Inter Variable', 'Inter', sans-serif;
     
     /* Animations */
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);

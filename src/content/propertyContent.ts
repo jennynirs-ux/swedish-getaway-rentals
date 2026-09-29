@@ -17,12 +17,22 @@ export interface GuestQuote {
 export interface PropertyContent {
   /** Name guests and hosts actually use */
   nickname: string;
+  /** Short page title after the name (the listing titles run ~95 characters) */
+  seoTitle: string;
   intro: string[];
   highlights: string[];
   goodToKnow: string[];
   faq: PropertyFaq[];
   quotes: GuestQuote[];
+  /** Verified travel facts for the location box (see /stora-harsjon-lerum) */
+  gettingHere: string[];
 }
+
+const STORA_HARSJON_GETTING_HERE = [
+  "Central Gothenburg: about 30 minutes by car. The last 3 km is a narrow gravel road.",
+  "Public transport: commuter train to Aspen station in Lerum, then bus 530 to Häckenvägen and a 3 km walk. Weekend buses must be pre-booked with Västtrafik.",
+  "Groceries: ICA Kvantum Lerum is the nearest large supermarket – stock up on the way.",
+];
 
 const SHARED_FAQ: PropertyFaq[] = [
   {
@@ -62,6 +72,7 @@ const SHARED_FAQ: PropertyFaq[] = [
 export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
   "lakefront-retreat": {
     nickname: "Villa Häcken",
+    seoTitle: "lake house with hot tub near Gothenburg",
     intro: [
       "Villa Häcken is a light-filled lake house right on the water of Stora Härsjön, surrounded by forest yet only half an hour from Gothenburg. Large windows put the lake in view from almost every room, and guests often describe it as a mix of a luxury spa and a classic Swedish summer house.",
       "The house sleeps up to 8 guests across 4 bedrooms with 2.5 bathrooms, making it a favourite for families and friends looking for a quiet stay. Wake up to birdsong, have your morning coffee on the private jetty, swim from the small sandy beach and end the day in the hot tub as the sky changes colour over the lake.",
@@ -105,6 +116,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       },
       ...SHARED_FAQ,
     ],
+    gettingHere: STORA_HARSJON_GETTING_HERE,
     quotes: [
       { text: "A spectacular setting – you instantly relax. The hot tub is the finishing touch.", name: "Nick", from: "United Kingdom" },
       { text: "Like a luxury spa mixed with a cabin by the lake. We loved it!", name: "Daniel", from: "Gothenburg" },
@@ -114,6 +126,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
 
   "lakehouse-getaway": {
     nickname: "Lakehouse Getaway",
+    seoTitle: "cabin at the water's edge near Gothenburg",
     intro: [
       "Lakehouse Getaway is a small, characterful cabin on the shore of Stora Härsjön with the lake as its nearest neighbour. It is a simple, off-grid-feeling escape: wake up to the water just outside the window, read in the hammock, paddle out to the small islands and cook dinner over the fire pit.",
       "The cabin sleeps up to 4 (a queen bed and a sofa bed) and is ideal for couples or a small family. It has a cosy, well-equipped kitchen, heating for the colder months, board games and books, and a balcony and terrace facing the lake. A rowing boat and stand-up paddle boards are included, and a 16 km hiking trail circles the lake right from the door.",
@@ -153,6 +166,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       },
       ...SHARED_FAQ,
     ],
+    gettingHere: STORA_HARSJON_GETTING_HERE,
     quotes: [
       { text: "Exploring the calm lake on a SUP, paddling through blooming water lilies and morning swims to the nearby islands were unforgettable.", name: "Anil", from: "Switzerland" },
       { text: "Exactly what we wished for: time out, nature, relaxation. The rowing boat, SUP, jukebox and fire pit stood out.", name: "Jannis", from: "Germany" },

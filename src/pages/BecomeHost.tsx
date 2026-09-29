@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import forestHeroBg from "@/assets/forest-hero-light.jpg";
+import forestHeroBg from "@/assets/forest-hero-light.webp";
 
 const BecomeHost = () => {
   usePageMeta({

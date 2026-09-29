@@ -61,6 +61,10 @@ const PropertyCalendarOptimized = memo(({
   };
 
   const isDateAvailable = (date: Date) => {
+    // Past days render and behave like booked ones (they used to look free)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date < today) return false;
     const avail = getDateAvailability(date);
     return avail ? avail.available : true; // Default to available if no specific entry
   };

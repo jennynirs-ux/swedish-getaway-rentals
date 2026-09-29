@@ -17,7 +17,7 @@ interface BookNowContent {
 const BookNow = () => {
   usePageMeta({
     title: "Book a cabin in Sweden",
-    description: "Book a lakeside cabin near Gothenburg directly with Nordic Getaways – secure card payment and no booking-platform service fee.",
+    description: "Book a lakeside cabin near Gothenburg directly with Nordic Getaways – secure card payment, and the 10% service fee shown before you pay.",
     path: "/book-now",
   });
 

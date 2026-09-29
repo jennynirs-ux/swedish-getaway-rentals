@@ -79,6 +79,7 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
                   <div key={`image-${index}`} className="relative group overflow-hidden rounded-lg h-48">
                     <div onClick={() => handleImageClick(index)} className="relative h-full">
                       <LazyImage
+                        sizes="(max-width: 768px) 50vw, 420px"
                         src={image}
                         alt={metadata?.alt || `Gallery image ${index + 1}`}
                         className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
@@ -99,6 +100,7 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
               <div className="relative group overflow-hidden rounded-lg h-96">
                 <div onClick={() => handleImageClick(3)} className="relative h-full">
                   <LazyImage
+                    sizes="(max-width: 768px) 50vw, 420px"
                     src={property.gallery_images[3]}
                     alt={property.gallery_metadata?.[3]?.alt || 'Gallery image 4'}
                     className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"

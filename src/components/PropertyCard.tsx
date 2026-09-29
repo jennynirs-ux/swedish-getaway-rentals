@@ -31,13 +31,15 @@ import {
   HeartHandshake,
   Cigarette,
   Sun,
-  Wind
+  Wind,
+  Star
 } from "lucide-react";
 import { useState, memo, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
 import { propertyPath } from "@/lib/propertySeo";
+import { PROPERTY_CONTENT } from "@/content/propertyContent";
 import { withServiceFee } from "@/lib/constants";
 
 export interface PropertyCardData {
@@ -84,6 +86,8 @@ const PropertyCard = memo(({
   const { toast } = useToast();
   const [selectedAmenity, setSelectedAmenity] = useState<any>(null);
   const [isAmenityDialogOpen, setIsAmenityDialogOpen] = useState(false);
+
+  const nickname = property.slug ? PROPERTY_CONTENT[property.slug]?.nickname : undefined;
 
   // Defensive data normalization
   const safeProperty = {
@@ -197,6 +201,7 @@ const PropertyCard = memo(({
         <div className={`relative ${cardHeight}`}>
           {/* Image with LazyImage for performance */}
           <LazyImage
+            sizes="(max-width: 768px) 100vw, 420px"
             src={safeProperty.hero_image_url}
             alt={safeProperty.title}
             fallbackSrc="/placeholder.jpg"
@@ -243,9 +248,20 @@ const PropertyCard = memo(({
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
+              {/* The name guests and hosts use (Villa Häcken), then the listing title */}
               <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors">
-                {safeProperty.title}
+                {nickname ?? safeProperty.title}
               </h3>
+              {nickname && (
+                <p className="text-sm text-muted-foreground leading-snug mt-0.5">{safeProperty.title}</p>
+              )}
+              {safeProperty.review_rating && safeProperty.review_count ? (
+                <div className="flex items-center gap-1 text-sm mt-1">
+                  <Star className="w-4 h-4 fill-current text-amber-500" />
+                  <span className="font-medium">{Number(safeProperty.review_rating).toFixed(2)}</span>
+                  <span className="text-muted-foreground">· {safeProperty.review_count} reviews on Airbnb</span>
+                </div>
+              ) : null}
               <div className="flex items-center text-muted-foreground text-sm mt-1">
                 <MapPin className="w-4 h-4 mr-1" />
                 {safeProperty.city 
@@ -274,12 +290,15 @@ const PropertyCard = memo(({
             </div>
             <div className="flex items-center">
               <Bed className="w-4 h-4 mr-1" />
-              {safeProperty.bedrooms} bedrooms
+              {safeProperty.bedrooms} {safeProperty.bedrooms === 1 ? "bedroom" : "bedrooms"}
             </div>
-            <div className="flex items-center">
-              <Bath className="w-4 h-4 mr-1" />
-              {safeProperty.bathrooms} bathrooms
-            </div>
+            {/* Lakehouse has 0: a dry toilet and an outdoor shower, no bathroom */}
+            {safeProperty.bathrooms > 0 && (
+              <div className="flex items-center">
+                <Bath className="w-4 h-4 mr-1" />
+                {safeProperty.bathrooms} {safeProperty.bathrooms === 1 ? "bathroom" : "bathrooms"}
+              </div>
+            )}
           </div>
 
           {/* Featured Amenities - Just title, not clickable */}

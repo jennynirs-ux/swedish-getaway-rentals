@@ -33,6 +33,7 @@ export const buildPropertyJsonLd = (p: SeoProperty, content?: PropertyContent) =
     "@context": "https://schema.org",
     "@type": "VacationRental",
     "@id": url,
+    identifier: p.id,
     url,
     name: content ? `${content.nickname} – ${p.title}` : p.title,
     description: content ? content.intro.join(" ") : p.description,
@@ -66,16 +67,12 @@ export const buildPropertyJsonLd = (p: SeoProperty, content?: PropertyContent) =
       })),
     },
     priceRange: `From ${Math.round(withServiceFee(p.price_per_night))} ${p.currency} per night incl. service fee`,
-    ...(p.review_rating && p.review_count
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: Number(p.review_rating),
-            reviewCount: p.review_count,
-            bestRating: 5,
-          },
-        }
-      : {}),
+    // House rules (see the FAQ)
+    checkinTime: "16:00",
+    checkoutTime: "11:00",
+    petsAllowed: false,
+    // No aggregateRating: the ratings are Airbnb's, and Google's review
+    // snippet rules don't allow marking up reviews collected elsewhere
   };
 
   if (!content) return rental;

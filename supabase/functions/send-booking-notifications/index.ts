@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.0.0";
+import { escapeHtml } from "../_shared/auth.ts";
+import { hhmm, longDate } from "../_shared/format.ts";
 
 // bookings.total_amount is stored in öre
 const formatAmount = (ore: number) => (ore / 100).toLocaleString("sv-SE");
@@ -49,6 +51,7 @@ serve(async (req) => {
         currency,
         properties (
           id,
+          slug,
           title,
           city,
           country,
@@ -111,13 +114,14 @@ serve(async (req) => {
     const resend = new Resend(resendApiKey);
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const baseUrl = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
-    const guidebookUrl = `${baseUrl}/property/${property.id}/guide`;
+    const guidebookUrl = `${baseUrl}/property/${property.slug || property.id}/guide`;
     
     // Format property address
     const propertyAddress = [
       property?.street,
       property?.postal_code,
-      property?.city,
+      // stored lower-case ("lerum")
+      property?.city ? property.city.charAt(0).toUpperCase() + property.city.slice(1) : null,
       property?.country
     ].filter(Boolean).join(", ");
 
@@ -146,14 +150,8 @@ serve(async (req) => {
     const cancellationPolicy = cancellationPolicyMap[policyKey];
 
     // Format check-in and check-out times
-    const formatDateTime = (date: string, time: string) => {
-      const d = new Date(date);
-      const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      return `${dateStr} at ${time}`;
-    };
-
-    const checkInDateTime = formatDateTime(booking.check_in_date, property.check_in_time || '15:00');
-    const checkOutDateTime = formatDateTime(booking.check_out_date, property.check_out_time || '11:00');
+    const checkInDateTime = `${longDate(booking.check_in_date)}, from ${hhmm(property.check_in_time, '15:00')}`;
+    const checkOutDateTime = `${longDate(booking.check_out_date)}, by ${hhmm(property.check_out_time, '11:00')}`;
 
     // Create email open tracking pixel
     const trackingId = `${bookingId}-${Date.now()}`;
@@ -169,12 +167,12 @@ serve(async (req) => {
     if (bookingTemplate && bookingTemplate.enabled) {
       // Use custom template with placeholders
       const replacements: Record<string, string> = {
-        "{guest_name}": booking.guest_name,
+        "{guest_name}": escapeHtml(booking.guest_name),
         "{property_name}": property.title,
-        "{check_in_date}": new Date(booking.check_in_date).toLocaleDateString(),
-        "{check_out_date}": new Date(booking.check_out_date).toLocaleDateString(),
-        "{check_in_time}": property.check_in_time || "15:00",
-        "{check_out_time}": property.check_out_time || "11:00",
+        "{check_in_date}": longDate(booking.check_in_date),
+        "{check_out_date}": longDate(booking.check_out_date),
+        "{check_in_time}": hhmm(property.check_in_time, "15:00"),
+        "{check_out_time}": hhmm(property.check_out_time, "11:00"),
         "{number_of_guests}": booking.number_of_guests.toString(),
         "{total_amount}": formatAmount(booking.total_amount),
         "{currency}": booking.currency,
@@ -203,7 +201,17 @@ serve(async (req) => {
         </head>
         <body>
           <div class="container">
-            ${message.split('\n').map(line => `<p>${line}</p>`).join('')}
+            ${message.split('\n').map((line: string) => `<p>${line}</p>`).join('')}
+            <!-- The facts every confirmation needs, whatever the host's template says -->
+            <div style="margin-top: 24px; padding: 16px 20px; background: #f8f9fa; border-radius: 8px;">
+              <p><strong>Check-in:</strong> ${checkInDateTime}</p>
+              <p><strong>Check-out:</strong> ${checkOutDateTime}</p>
+              ${propertyAddress ? `<p><strong>Address:</strong> ${escapeHtml(propertyAddress)}</p>` : ''}
+              <p><strong>Guests:</strong> ${booking.number_of_guests}</p>
+              <p><strong>Booking reference:</strong> ${booking.id.slice(0, 8).toUpperCase()}</p>
+              <p><a href="${guidebookUrl}">Open the guest guide</a> – house rules, practical details and local tips.</p>
+              <p>Questions? Reply to this e-mail or write to support@mojjo.se.</p>
+            </div>
           </div>
           <img src="${trackingPixel}" width="1" height="1" alt="" style="display:none;" />
         </body>

@@ -19,8 +19,6 @@ const STATIC_ROUTES = [
   "/",
   "/first-time-in-sweden",
   "/stora-harsjon-lerum",
-  "/amenities",
-  "/gallery",
   "/book-now",
   "/contact",
   "/pricing-guide",
@@ -65,12 +63,14 @@ async function writeSitemap(routes) {
 
 // Old /property/<uuid> links → canonical slug URLs
 async function writeRedirects(properties) {
-  const lines = properties
+  // /gallery and /amenities were empty pages; photos and amenities live on
+  // each property page
+  const lines = ["/gallery / 301", "/amenities / 301"].concat(properties
     .filter((p) => p.slug)
     .flatMap((p) => [
       `/property/${p.id} /property/${p.slug} 301`,
       `/property/${p.id}/* /property/${p.slug}/:splat 301`,
-    ]);
+    ]));
   await writeFile(path.join(DIST, "_redirects"), lines.join("\n") + "\n");
 }
 
@@ -97,8 +97,11 @@ ${stays}
 
 - [Stora Härsjön & Lerum guide](${SITE_URL}/stora-harsjon-lerum): things to do around the lake and near Gothenburg – 16 km lake hike, swimming, paddling, family activities, restaurants in Lerum and how to get here by car, train and bus.
 - [First time in Sweden](${SITE_URL}/first-time-in-sweden): practical tips on fika, allemansrätten (the right to roam), etiquette, payments and Swedish food.
-- [Amenities](${SITE_URL}/amenities): what is included at our cabins.
-- [Pricing guide](${SITE_URL}/pricing-guide): seasons, fees and discounts.
+
+## For hosts
+
+- [Become a host](${SITE_URL}/become-host): list your holiday home on Nordic Getaways. Guests pay a 10% service fee; hosts keep their full nightly price.
+- [Pricing guide for hosts](${SITE_URL}/pricing-guide): how to set nightly prices.
 
 ## Booking
 

@@ -31,7 +31,11 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
                   const linkMap: Record<string, string> = {
                     'The Nordic Collection': '/shop',
                     'First time in Sweden?': '/first-time-in-sweden',
-                    'Contact': '/contact'
+                    'Contact': '/contact',
+                    // Sections on this page
+                    'Photo Gallery': '#gallery-section',
+                    'Amenities': '#amenities',
+                    'Book Now': '#booking-section',
                   };
                   return (
                     <li key={index}>
@@ -63,7 +67,7 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
 
           <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center">
             <p className="text-primary-foreground/80">
-              © 2025 Nordic Getaways. Created with love for Nordic experiences.
+              © {new Date().getFullYear()} Nordic Getaways. Created with love for Nordic experiences.
             </p>
           </div>
         </div>

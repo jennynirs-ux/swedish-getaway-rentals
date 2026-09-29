@@ -104,6 +104,7 @@ const PropertyPage = memo(() => {
         amenities,
         hero_image_url,
         tagline_line1,
+        availability_text,
         tagline_line2,
         review_rating,
         review_count,
@@ -211,7 +212,7 @@ const PropertyPage = memo(() => {
     ready: !!property,
     title: property
       ? content
-        ? `${content.nickname}: ${property.title} near Gothenburg`
+        ? `${content.nickname}: ${content.seoTitle}`
         : `${property.title} – ${property.location ?? "Sweden"}`
       : "",
     description: property ? propertyMetaDescription(property) : "",
@@ -280,9 +281,8 @@ const PropertyPage = memo(() => {
 
       {/* Guestbook Section */}
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-        <section className="container mx-auto px-4 py-16">
-          <PropertyGuestbook propertyId={property.id} />
-        </section>
+        {/* Renders nothing until there are entries */}
+        <PropertyGuestbook propertyId={property.id} />
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
@@ -291,6 +291,7 @@ const PropertyPage = memo(() => {
 
       <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
         <PropertyLocation
+          gettingHere={PROPERTY_CONTENT[property.slug ?? ""]?.gettingHere}
           latitude={property.latitude}
           longitude={property.longitude}
           propertyTitle={property.title}

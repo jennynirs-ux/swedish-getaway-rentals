@@ -12,6 +12,21 @@ const NotFound = () => {
     }
   }, [location.pathname]);
 
+  // The host serves the app for every path with status 200, so tell search
+  // engines this one isn't a real page
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "Page not found | Nordic Getaways";
+    const robots = document.createElement("meta");
+    robots.name = "robots";
+    robots.content = "noindex";
+    document.head.appendChild(robots);
+    return () => {
+      document.title = previousTitle;
+      robots.remove();
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
