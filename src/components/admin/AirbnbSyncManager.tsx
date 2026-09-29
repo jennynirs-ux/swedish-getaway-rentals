@@ -198,10 +198,11 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
 
       toast({
         title: "Sync completed",
-        description: `Calendar synchronized successfully. ${data.eventsProcessed} events processed, ${data.datesUpdated} dates updated.`
+        description: `Calendar synchronized. ${data.datesUpdated} date(s) blocked, ${data.datesReleased ?? 0} released after cancellations.`
       });
     } catch (error) {
       console.error('Error syncing feed:', error);
+      await loadIcalFeeds(); // Shows the feed's error message
       toast({
         title: "Sync failed",
         description: "Failed to synchronize calendar",
