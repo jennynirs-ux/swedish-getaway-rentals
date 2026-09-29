@@ -46,6 +46,10 @@ const SHARED_FAQ: PropertyFaq[] = [
     a: "No. Parties and events are not allowed – the cabins are for quiet stays.",
   },
   {
+    q: "Is there a minimum stay or age requirement?",
+    a: "The minimum stay is 2 nights, and 3 nights over Valborg (30 April), Midsummer and New Year's Eve. The person booking must be at least 25 and stay at the property.",
+  },
+  {
     q: "What are check-in and check-out times?",
     a: "Check-in from 16:00, check-out by 11:00. Self check-in, with detailed arrival instructions sent before your stay.",
   },

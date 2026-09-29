@@ -192,6 +192,7 @@ export type Database = {
           total_amount: number
           service_fee: number
           host_amount: number | null
+          rules_confirmed_at: string | null
           updated_at: string
           user_id: string | null
         }
@@ -214,6 +215,9 @@ export type Database = {
           status?: string
           stripe_payment_intent_id?: string | null
           total_amount: number
+          service_fee?: number
+          host_amount?: number | null
+          rules_confirmed_at?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -238,6 +242,7 @@ export type Database = {
           total_amount?: number
           service_fee?: number
           host_amount?: number | null
+          rules_confirmed_at?: string | null
           updated_at?: string
           user_id?: string | null
         }

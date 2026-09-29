@@ -13,6 +13,8 @@ export interface BookingData {
   special_requests?: string;
   total_amount: number;
   coupon_id?: string;
+  /** Guest confirmed: lead guest 25 or older, no parties or events */
+  rules_confirmed: boolean;
 }
 
 export const useBooking = () => {
@@ -72,7 +74,8 @@ export const useBooking = () => {
           specialRequests: bookingData.special_requests,
           totalAmount: bookingData.total_amount,
           currency: bookingData.currency,
-          couponId: bookingData.coupon_id
+          couponId: bookingData.coupon_id,
+          rulesConfirmed: bookingData.rules_confirmed
         }
       });
 
@@ -105,9 +108,16 @@ export const useBooking = () => {
       return { success: true, data };
     } catch (error) {
       console.error('Error creating booking payment:', error);
+      // Show the payment function's reason (house rules, dates taken, price changed)
+      let description = "Could not create payment. Please try again.";
+      const response = (error as { context?: Response })?.context;
+      if (response && typeof response.json === 'function') {
+        const body = await response.json().catch(() => null);
+        if (typeof body?.error === 'string') description = body.error;
+      }
       toast({
         title: "Error",
-        description: "Could not create payment. Please try again.",
+        description,
         variant: "destructive",
       });
       return { success: false, error };

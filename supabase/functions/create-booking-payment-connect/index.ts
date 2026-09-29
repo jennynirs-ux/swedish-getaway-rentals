@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { stayRuleError } from "../_shared/stay-rules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,7 +35,8 @@ serve(async (req) => {
       specialRequests,
       totalAmount,
       currency,
-      couponId
+      couponId,
+      rulesConfirmed
     } = requestData;
     
     // Validate UUID format
@@ -44,6 +46,10 @@ serve(async (req) => {
     }
     
     // Validate dates
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(checkInDate ?? "") || !dateRegex.test(checkOutDate ?? "")) {
+      throw new Error('Invalid date format');
+    }
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
     if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
@@ -67,6 +73,18 @@ serve(async (req) => {
     // Validate required fields
     if (!guestName || guestName.length < 2) {
       throw new Error('Guest name is required');
+    }
+
+    // House rules: minimum stay, and the guest confirms age 25+ and no parties
+    const houseRuleError = stayRuleError(checkInDate, checkOutDate) ?? (rulesConfirmed === true
+      ? null
+      : "Please confirm the house rules (lead guest 25 or older, no parties or events) and try again.");
+    if (houseRuleError) {
+      logStep("House rules not met", { checkInDate, checkOutDate, rulesConfirmed });
+      return new Response(JSON.stringify({ error: houseRuleError }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     logStep("Request data validated", { propertyId, checkInDate, checkOutDate, numberOfGuests, couponId });
@@ -116,6 +134,32 @@ serve(async (req) => {
       });
     }
     
+    // The calendar hides unavailable dates, but check again here: channel
+    // bookings (Airbnb, Booking...) and host blocks live in availability
+    const { data: blockedNights, error: blockedError } = await supabaseClient
+      .from("availability")
+      .select("date")
+      .eq("property_id", propertyId)
+      .eq("available", false)
+      .gte("date", checkInDate)
+      .lt("date", checkOutDate)
+      .limit(1);
+    const { data: hasConflict, error: conflictError } = await supabaseClient.rpc("check_booking_conflict", {
+      property_id_param: propertyId,
+      check_in_param: checkInDate,
+      check_out_param: checkOutDate,
+    });
+    if (blockedError || conflictError) {
+      throw new Error(`Availability check failed: ${(blockedError ?? conflictError)?.message}`);
+    }
+    if ((blockedNights?.length ?? 0) > 0 || hasConflict) {
+      logStep("Dates not available", { checkInDate, checkOutDate, blocked: blockedNights?.length, hasConflict });
+      return new Response(JSON.stringify({ error: "Some of the selected dates are no longer available. Please choose different dates." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 409,
+      });
+    }
+
     // CRITICAL: Recalculate total amount server-side - never trust client-supplied amounts
     const nightCount = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -401,6 +445,8 @@ serve(async (req) => {
         guestEmail,
         guestPhone: guestPhone || "",
         specialRequests: specialRequests || "",
+        // Guest confirmed: lead guest 25+, no parties or events
+        rulesConfirmedAt: new Date().toISOString(),
         userId: user?.id || "",
         currency: currencyCode,
         totalAmount: guestTotal.toString(),

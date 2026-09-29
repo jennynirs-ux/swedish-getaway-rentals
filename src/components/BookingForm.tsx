@@ -16,6 +16,7 @@ import { z } from "zod";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
+import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
 
 interface BookingFormProps {
   propertyId: string;
@@ -107,6 +108,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
   const [houseRulesAccepted, setHouseRulesAccepted] = useState(false);
+  const [partyRulesAccepted, setPartyRulesAccepted] = useState(false);
   
   const [appliedCoupon, setAppliedCoupon] = useState<{
     id: string;
@@ -129,6 +131,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const nights = checkIn && checkOut
     ? Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) // round, not ceil: DST days are 23h/25h
     : 0;
+
+  const toDateString = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // Minimum stay (checked again by the payment function)
+  const stayError = checkIn && checkOut ? stayRuleError(toDateString(checkIn), toDateString(checkOut)) : null;
 
   // Determine applicable discount based on stay length
   const getApplicableDiscount = () => {
@@ -185,8 +192,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
     e.preventDefault();
     if (totalAmount <= 0) return;
 
+    if (stayError) return;
+
     if (!houseRulesAccepted) {
       setValidationErrors({ houseRules: "You must accept the house rules to proceed" });
+      return;
+    }
+
+    if (!partyRulesAccepted) {
+      setValidationErrors({ partyRules: "Please confirm to proceed" });
       return;
     }
 
@@ -210,14 +224,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
         property_id: propertyId,
         total_amount: totalAmount,
         currency,
-        check_in_date: `${checkIn.getFullYear()}-${String(checkIn.getMonth() + 1).padStart(2, '0')}-${String(checkIn.getDate()).padStart(2, '0')}`,
-        check_out_date: `${checkOut.getFullYear()}-${String(checkOut.getMonth() + 1).padStart(2, '0')}-${String(checkOut.getDate()).padStart(2, '0')}`,
+        check_in_date: toDateString(checkIn),
+        check_out_date: toDateString(checkOut),
         guest_name: validatedData.guest_name,
         guest_email: validatedData.guest_email,
         guest_phone: validatedData.guest_phone,
         number_of_guests: validatedData.number_of_guests,
         special_requests: validatedData.special_requests,
-        coupon_id: appliedCoupon?.id
+        coupon_id: appliedCoupon?.id,
+        rules_confirmed: partyRulesAccepted
       });
   
       // Reset form
@@ -308,6 +323,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 <span>Number of nights:</span>
                 <span className="font-medium">{nights}</span>
               </div>
+              {stayError && (
+                <p className="text-destructive text-sm">{stayError}</p>
+              )}
               
               {/* Price Breakdown */}
               <div className="border-t pt-3 space-y-2">
@@ -499,13 +517,45 @@ const BookingForm: React.FC<BookingFormProps> = ({
             </div>
           </div>
 
+          {/* No parties: the lead guest confirms age and presence */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="partyRules"
+                checked={partyRulesAccepted}
+                onCheckedChange={(checked) => {
+                  setPartyRulesAccepted(checked as boolean);
+                  if (validationErrors.partyRules) {
+                    setValidationErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.partyRules;
+                      return newErrors;
+                    });
+                  }
+                }}
+                className={validationErrors.partyRules ? "border-destructive" : ""}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label htmlFor="partyRules" className="text-sm font-medium leading-snug cursor-pointer">
+                  I am {MIN_LEAD_GUEST_AGE} or older and will be staying at the property myself. There will be no parties or events.
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  Our cabins are for quiet stays.
+                </p>
+                {validationErrors.partyRules && (
+                  <p className="text-destructive text-sm">{validationErrors.partyRules}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Cancellation Policy */}
           <CancellationPolicyDisplay />
 
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || totalAmount <= 0 || !houseRulesAccepted}
+            disabled={loading || totalAmount <= 0 || !!stayError || !houseRulesAccepted || !partyRulesAccepted}
           >
             {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
           </Button>

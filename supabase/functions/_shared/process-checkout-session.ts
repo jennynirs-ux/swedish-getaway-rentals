@@ -95,6 +95,7 @@ export async function processCheckoutSession(
           // Fee model A split (both in öre); older sessions carry no serviceFee
           service_fee: parseInt(metadata.serviceFee || "0"),
           host_amount: metadata.hostAmount ? parseInt(metadata.hostAmount) : null,
+          rules_confirmed_at: metadata.rulesConfirmedAt || null,
           currency: metadata.currency?.toUpperCase() || 'SEK',
           status: 'confirmed',
           stripe_payment_intent_id: session.payment_intent as string
