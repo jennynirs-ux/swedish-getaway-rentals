@@ -87,7 +87,7 @@ async function writeLlmsTxt(properties) {
     path.join(DIST, "llms.txt"),
     `# Nordic Getaways
 
-> Nordic Getaways is run by Superhosts Jenny and Jon Nirs, who rent out two lakeside homes on Stora Härsjön in Lerum, about 30 minutes from Gothenburg, Sweden: Villa Häcken (sleeps 8, hot tub, private jetty and beach) and Lakehouse Getaway (a simple cabin for up to 4 at the water's edge). Boats and paddle boards are included. Book directly with the hosts. Pets are not allowed.
+> Nordic Getaways is run by Superhosts Jenny and Jon Nirs, who rent out two lakeside homes on Stora Härsjön in Lerum, about 30 minutes from Gothenburg, Sweden: Villa Häcken (sleeps 8, hot tub, private jetty and beach) and Lakehouse Getaway (a simple cabin for up to 4 at the water's edge). Boats and paddle boards are included. Book directly with the hosts. Pets, parties and events are not allowed; parking is limited to two cars.
 
 ## Stays
 

@@ -42,6 +42,14 @@ const SHARED_FAQ: PropertyFaq[] = [
     a: "No, pets are not allowed.",
   },
   {
+    q: "Can we host a party or event?",
+    a: "No. Parties and events are not allowed – the cabins are for quiet stays, and parking is limited to two cars.",
+  },
+  {
+    q: "Is there parking?",
+    a: "Yes, but parking is limited to two cars.",
+  },
+  {
     q: "What are check-in and check-out times?",
     a: "Check-in from 16:00, check-out by 11:00. Self check-in, with detailed arrival instructions sent before your stay.",
   },
@@ -56,7 +64,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
     nickname: "Villa Häcken",
     intro: [
       "Villa Häcken is a light-filled lake house right on the water of Stora Härsjön, surrounded by forest yet only half an hour from Gothenburg. Large windows put the lake in view from almost every room, and guests often describe it as a mix of a luxury spa and a classic Swedish summer house.",
-      "The house sleeps up to 8 guests across 4 bedrooms with 2.5 bathrooms, making it a favourite for families, friends and celebrations. Wake up to birdsong, have your morning coffee on the private jetty, swim from the small sandy beach and end the day in the hot tub as the sky changes colour over the lake.",
+      "The house sleeps up to 8 guests across 4 bedrooms with 2.5 bathrooms, making it a favourite for families and friends looking for a quiet stay. Wake up to birdsong, have your morning coffee on the private jetty, swim from the small sandy beach and end the day in the hot tub as the sky changes colour over the lake.",
       "Everything for life on the water is included: boats, stand-up paddle boards and life jackets. Outside there is an outdoor kitchen with gas grill, a paella pan and a pizza oven, fire pit, trampoline, slide and toys for children. Inside you'll find a fully equipped kitchen with dishwasher and espresso machine, fireplace, bathtub with a view, washer and dryer, a workspace and streaming TV.",
     ],
     highlights: [
@@ -72,6 +80,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       "The last 3 km is a narrow gravel road with passing places – drive slowly.",
       "An indoor spiral staircase and the open lakefront mean small children need supervision.",
       "No sauna, and pets are not allowed.",
+      "No parties or events – this is a place for quiet stays. Parking is limited to two cars.",
     ],
     faq: [
       {
@@ -119,6 +128,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       "The toilet is a dry separating toilet, similar to one in a camper.",
       "No hot tub (that's at Villa Häcken), no sauna, and pets are not allowed. Barbecuing on the balcony is not allowed – use the fire pit behind the cabin.",
       "Mobile and wifi signal can be patchy – part of the charm for many guests.",
+      "No parties or events. Parking is limited to two cars.",
     ],
     faq: [
       {
