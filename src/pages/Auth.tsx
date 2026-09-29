@@ -30,8 +30,9 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedRedirect = searchParams.get('redirect') || '/';
-  // Only same-site paths, so the link in the confirmation email can't be abused
-  const redirectTo = requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//') ? requestedRedirect : '/';
+  // Only same-site paths, so the link in the confirmation email can't be
+  // abused ("//host" and "/\\host" both leave the site in a browser)
+  const redirectTo = /^\/(?![/\\])/.test(requestedRedirect) && !requestedRedirect.includes('\\') ? requestedRedirect : '/';
   const isHostFlow = redirectTo.startsWith('/host-dashboard') || redirectTo.startsWith('/host-application');
 
   useEffect(() => {

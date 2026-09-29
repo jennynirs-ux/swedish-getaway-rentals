@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Settings, DollarSign, Lock, Clock, MapPin, Image } from "lucide-react";
-import { SmartLockSetup } from "@/components/host/SmartLockSetup";
+import { Calendar, Settings, DollarSign, Clock, MapPin, Image } from "lucide-react";
 import { CheckInOutTimes } from "@/components/admin/CheckInOutTimes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -126,7 +125,7 @@ export const HostPropertyEditor = ({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-1 mb-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-1 mb-2">
           <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Basic</span>
@@ -158,10 +157,6 @@ export const HostPropertyEditor = ({
           <TabsTrigger value="emails" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Emails</span>
-          </TabsTrigger>
-          <TabsTrigger value="smartlock" className="flex items-center gap-2 text-xs sm:text-sm">
-            <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Smart Lock</span>
           </TabsTrigger>
         </TabsList>
 
@@ -324,21 +319,7 @@ export const HostPropertyEditor = ({
           />
         </TabsContent>
 
-        <TabsContent value="smartlock" className="mt-6 space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold mb-1">Smart Lock</h2>
-            <p className="text-muted-foreground">Connect Yale Doorman for automatic access codes</p>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Yale Doorman Lock Integration</CardTitle>
-              <CardDescription>Automatic access code management for your guests</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SmartLockSetup propertyId={propertyId} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* Smart lock (Yale) tab removed: the integration only generated random codes */}
       </Tabs>
     </div>
   );

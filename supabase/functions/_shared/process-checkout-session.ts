@@ -161,12 +161,23 @@ export async function processCheckoutSession(
           rules_confirmed_at: metadata.rulesConfirmedAt || null,
           currency: metadata.currency?.toUpperCase() || 'SEK',
           status: 'confirmed',
+          source: 'direct',
           stripe_payment_intent_id: session.payment_intent as string
         })
         .select()
         .single();
 
       if (bookingError) throw bookingError;
+
+      // Count the coupon use so usage_limit holds; the booking stands regardless
+      if (booking && metadata.couponId) {
+        const { error: couponError } = await supabase.rpc('record_coupon_use', {
+          _coupon_id: metadata.couponId,
+          _booking_id: booking.id,
+          _discount_amount: parseInt(metadata.discountAmount || '0'),
+        });
+        if (couponError) console.error('Failed to record coupon use:', couponError);
+      }
     
       // Send notification emails
       if (booking) {

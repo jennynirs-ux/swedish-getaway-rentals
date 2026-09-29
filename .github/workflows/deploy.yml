@@ -29,6 +29,11 @@ jobs:
         with:
           node-version: 20
       - run: bun install --frozen-lockfile
+      # A failing check stops the deploy; the live site stays as it was
+      - name: Type-check
+        run: bunx tsc --noEmit -p tsconfig.app.json
+      - name: Unit tests
+        run: bun run test
       - run: bun run build:prerender
       - name: Publish dist/ to the cf-pages branch
         uses: peaceiris/actions-gh-pages@v4

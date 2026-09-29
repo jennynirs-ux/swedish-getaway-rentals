@@ -7,7 +7,6 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:8080',
   'https://bbuutvozqfzbsnllsiai.supabase.co',
-  'https://stuga-escapes.lovable.app',
   'https://nordic-getaways.com',
   'https://www.nordic-getaways.com',
 ];

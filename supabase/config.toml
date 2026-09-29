@@ -1,7 +1,5 @@
 project_id = "bbuutvozqfzbsnllsiai"
 
-[functions.generate-yale-code]
-verify_jwt = true
 
 [functions.complete-host-referral]
 verify_jwt = true
@@ -12,11 +10,7 @@ verify_jwt = true
 [functions.sync-printful-products]
 verify_jwt = true
 
-[functions.create-product-payment]
-verify_jwt = false
 
-[functions.create-booking-payment]
-verify_jwt = false
 
 [functions.create-booking-payment-connect]
 verify_jwt = false
@@ -38,8 +32,6 @@ verify_jwt = false
 [functions.sync-ical]
 verify_jwt = true
 
-[functions.auto-sync-ical]
-verify_jwt = true
 
 [functions.create-connect-account]
 verify_jwt = true
@@ -50,8 +42,6 @@ verify_jwt = true
 [functions.send-booking-notifications]
 verify_jwt = true
 
-[functions.send-custom-email]
-verify_jwt = true
 
 [functions.send-host-invitation]
 verify_jwt = true

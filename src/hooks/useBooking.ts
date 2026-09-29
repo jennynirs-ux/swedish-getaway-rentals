@@ -83,23 +83,6 @@ export const useBooking = () => {
         throw error;
       }
 
-      // Generate Yale access code if property has smart lock configured
-      if (data?.bookingId) {
-        try {
-          await supabase.functions.invoke('generate-yale-code', {
-            body: {
-              bookingId: data.bookingId,
-              propertyId: bookingData.property_id,
-              checkInDate: bookingData.check_in_date,
-              checkOutDate: bookingData.check_out_date,
-            }
-          });
-        } catch (codeError) {
-          console.error('Failed to generate Yale code:', codeError);
-          // Don't fail the booking if code generation fails
-        }
-      }
-
       if (data?.url) {
         // Redirect to Stripe Checkout in the same window to avoid popup blockers
         window.location.href = data.url;

@@ -1,73 +1,24 @@
-# Welcome to your Lovable project
+# Nordic Getaways
 
-## Project info
+Direct-booking site for two lakeside holiday homes on Stora Härsjön near
+Gothenburg (https://nordic-getaways.com), plus self-service signup for other hosts.
 
-**URL**: https://lovable.dev/projects/42520b9b-02e0-4bf4-a8b7-37a39ff1a927
+- Frontend: Vite + React + TypeScript (`src/`), hosted on Cloudflare Pages.
+  `.github/workflows/deploy.yml` runs `bun run build:prerender` and publishes
+  `dist/` to the `cf-pages` branch on every push to `main` and nightly.
+- Backend: Supabase project `bbuutvozqfzbsnllsiai` (Postgres with RLS, edge
+  functions in `supabase/functions/`), Stripe Checkout with Connect.
+- Scheduled jobs (pg_cron): calendar sync every 15 min, pre-check-in reminders,
+  daily health check (mails support@mojjo.se when something needs a person).
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/42520b9b-02e0-4bf4-a8b7-37a39ff1a927) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Develop
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+bun install
+bun run dev        # http://localhost:8080
+bun run test       # unit tests (vitest)
+bun run build      # production build
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/42520b9b-02e0-4bf4-a8b7-37a39ff1a927) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Edge functions: `supabase functions deploy <name> --project-ref bbuutvozqfzbsnllsiai --use-api`.
+Database changes live in `supabase/migrations/`.
