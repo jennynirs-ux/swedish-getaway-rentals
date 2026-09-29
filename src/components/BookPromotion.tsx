@@ -82,7 +82,8 @@ const BookPromotion = () => {
 
               <div className="bg-muted/30 p-4 rounded-lg shadow-md flex-1">
                 <p className="text-sm text-muted-foreground italic mb-2">
-                  "{review.text}"
+                  {/* Some review texts already carry their own quote marks */}
+                  "{review.text.replace(/^["“]+|["”]+$/g, "")}"
                 </p>
                 <div className="flex items-center gap-1 mb-1">
                   {Array.from({ length: 5 }).map((_, i) => (
