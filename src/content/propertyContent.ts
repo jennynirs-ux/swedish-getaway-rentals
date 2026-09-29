@@ -43,11 +43,7 @@ const SHARED_FAQ: PropertyFaq[] = [
   },
   {
     q: "Can we host a party or event?",
-    a: "No. Parties and events are not allowed – the cabins are for quiet stays, and parking is limited to two cars.",
-  },
-  {
-    q: "Is there parking?",
-    a: "Yes, but parking is limited to two cars.",
+    a: "No. Parties and events are not allowed – the cabins are for quiet stays.",
   },
   {
     q: "What are check-in and check-out times?",
@@ -80,7 +76,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       "The last 3 km is a narrow gravel road with passing places – drive slowly.",
       "An indoor spiral staircase and the open lakefront mean small children need supervision.",
       "No sauna, and pets are not allowed.",
-      "No parties or events – this is a place for quiet stays. Parking is limited to two cars.",
+      "No parties or events – this is a place for quiet stays. Parking for two cars.",
     ],
     faq: [
       {
@@ -94,6 +90,10 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       {
         q: "Are boats and paddle boards included?",
         a: "Yes – boats, stand-up paddle boards and life jackets are free for guests to borrow.",
+      },
+      {
+        q: "Is there parking at Villa Häcken?",
+        a: "Yes, for two cars.",
       },
       {
         q: "Is Villa Häcken good for families with children?",
@@ -128,7 +128,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       "The toilet is a dry separating toilet, similar to one in a camper.",
       "No hot tub (that's at Villa Häcken), no sauna, and pets are not allowed. Barbecuing on the balcony is not allowed – use the fire pit behind the cabin.",
       "Mobile and wifi signal can be patchy – part of the charm for many guests.",
-      "No parties or events. Parking is limited to two cars.",
+      "No parties or events. Parking for one car.",
     ],
     faq: [
       {
@@ -142,6 +142,10 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       {
         q: "Are boats included?",
         a: "Yes – a rowing boat and stand-up paddle boards are included.",
+      },
+      {
+        q: "Is there parking at Lakehouse Getaway?",
+        a: "Yes, for one car.",
       },
       ...SHARED_FAQ,
     ],
