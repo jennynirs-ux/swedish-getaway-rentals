@@ -85,6 +85,7 @@ const UnifiedAdmin = () => {
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
               <TabsTrigger value="guestbook">Guestbook</TabsTrigger>
               <TabsTrigger value="coupons">Coupons</TabsTrigger>
+              <TabsTrigger value="messages">Messages</TabsTrigger>
               <TabsTrigger value="email">
                 <Mail className="w-4 h-4 mr-2" />
                 Booking Emails

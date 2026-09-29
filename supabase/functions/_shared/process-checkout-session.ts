@@ -1,5 +1,7 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { alertAdmin, sendEmail, SUPPORT_EMAIL } from "./alert.ts";
+import { escapeHtml } from "./auth.ts";
 
 // Shared by handle-payment-success (guest redirect) and stripe-webhook, which
 // can both fire for the same Checkout session, often at the same moment.
@@ -9,6 +11,25 @@ export interface ProcessResult {
   type: string;
   bookingId: string | null;
   message?: string;
+}
+
+// Nights already taken: another booking, a channel block (Airbnb...), a host block
+async function datesTaken(supabase: SupabaseClient, propertyId: string, checkIn: string, checkOut: string) {
+  const { data: blocked, error: blockedError } = await supabase
+    .from('availability')
+    .select('date')
+    .eq('property_id', propertyId)
+    .eq('available', false)
+    .gte('date', checkIn)
+    .lt('date', checkOut)
+    .limit(1);
+  const { data: overlap, error: overlapError } = await supabase.rpc('check_booking_conflict', {
+    property_id_param: propertyId,
+    check_in_param: checkIn,
+    check_out_param: checkOut,
+  });
+  if (blockedError || overlapError) throw blockedError ?? overlapError;
+  return (blocked?.length ?? 0) > 0 || overlap === true;
 }
 
 // processed_sessions.ip_address is inet: keep the first forwarded address, or null
@@ -54,6 +75,9 @@ export async function processCheckoutSession(
       .eq('session_id', sessionId)
       .single();
     console.log('Session already processed:', sessionId);
+    if (existing?.session_type === 'booking_refunded_dates_taken') {
+      return { success: false, type: 'booking', bookingId: null, message: 'dates_taken_refunded' };
+    }
     return {
       success: true,
       type: existing?.session_type ?? sessionType,
@@ -77,6 +101,45 @@ export async function processCheckoutSession(
       if (paidAmount !== expectedAmount) {
         console.error('Payment amount mismatch:', { paidAmount, expectedAmount });
         throw new Error('Payment amount verification failed');
+      }
+
+      // The dates were free when checkout opened, but it stays open for up to
+      // 30 minutes: another guest or a channel booking may have taken them.
+      // Refund in full rather than save a double booking.
+      if (await datesTaken(supabase, metadata.propertyId, metadata.checkInDate, metadata.checkOutDate)) {
+        const paymentIntentId = session.payment_intent as string;
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        await stripe.refunds.create(
+          {
+            payment_intent: paymentIntentId,
+            reason: 'duplicate',
+            // A Connect host payout and the service fee go back too
+            ...(paymentIntent.transfer_data ? { reverse_transfer: true, refund_application_fee: true } : {}),
+          },
+          { idempotencyKey: `dates-taken-refund-${sessionId}` },
+        );
+        await supabase
+          .from('processed_sessions')
+          .update({ session_type: 'booking_refunded_dates_taken' })
+          .eq('id', claim.id);
+
+        const stay = `${metadata.propertyTitle || 'the cabin'}, ${metadata.checkInDate} to ${metadata.checkOutDate}`;
+        await sendEmail(
+          metadata.guestEmail,
+          'Your booking could not be completed – full refund issued',
+          `<p>Hi ${escapeHtml(metadata.guestName)},</p>
+           <p>We're sorry: the dates you paid for (${escapeHtml(stay)}) were booked by someone else while you were checking out.
+           We have refunded your payment in full. It usually shows on your card within 5–10 business days.</p>
+           <p>If you'd like other dates, just reply to this e-mail or write to ${SUPPORT_EMAIL}.</p>
+           <p>Jenny &amp; Jon, Nordic Getaways</p>`,
+        );
+        await alertAdmin('Double booking prevented – guest refunded', [
+          `Stay: ${stay}`,
+          `Guest: ${metadata.guestName} <${metadata.guestEmail}>`,
+          `Amount refunded: ${(paidAmount / 100).toLocaleString('sv-SE')} ${(metadata.currency || 'SEK').toUpperCase()}`,
+          `Stripe session: ${sessionId}`,
+        ]);
+        return { success: false, type: 'booking', bookingId: null, message: 'dates_taken_refunded' };
       }
     
       const { data: booking, error: bookingError } = await supabase

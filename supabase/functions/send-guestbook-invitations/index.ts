@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { isAdminOrService } from "../_shared/auth.ts";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -27,6 +28,13 @@ serve(async (req) => {
         },
       }
     );
+
+    // Every call re-sends yesterday's invitations: admins or scheduled jobs only
+    if (!(await isAdminOrService(req, supabaseClient))) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Find bookings that checked out yesterday and haven't received guestbook invitation
     const yesterday = new Date();

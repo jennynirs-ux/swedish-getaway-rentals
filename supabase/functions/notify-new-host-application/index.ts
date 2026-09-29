@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.0.0";
+import { escapeHtml, getCallerUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,45 +14,50 @@ serve(async (req) => {
   }
 
   try {
-    const { applicationId, userId } = await req.json();
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    let hostName = "Unknown";
-    let hostEmail = "N/A";
-    let businessName = "N/A";
-    let phone = "N/A";
-
-    if (userId) {
-      const { data: user } = await supabase.auth.admin.getUserById(userId);
-      hostEmail = user?.user?.email || "N/A";
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, host_business_name")
-        .eq("user_id", userId)
-        .single();
-      hostName = profile?.full_name || "Unknown";
-      businessName = profile?.host_business_name || "N/A";
-    } else if (applicationId) {
-      const { data: app } = await supabase
-        .from("host_applications")
-        .select("*, profiles!inner(full_name, email)")
-        .eq("id", applicationId)
-        .single();
-      hostName = app?.profiles?.full_name || "Unknown";
-      hostEmail = app?.profiles?.email || "N/A";
-      businessName = app?.business_name || "N/A";
-      phone = app?.contact_phone || "N/A";
+    // Sent by the new host's own browser right after signup: describe the
+    // caller, never an id from the request, and only once per signup
+    const caller = await getCallerUser(req, supabase);
+    if (!caller) {
+      return new Response(JSON.stringify({ error: "Not signed in" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, full_name, host_business_name, is_host")
+      .eq("user_id", caller.id)
+      .single();
+    const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { data: app } = await supabase
+      .from("host_applications")
+      .select("business_name, contact_phone")
+      .eq("user_id", profile?.id ?? "")
+      .gte("submitted_at", since)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!profile?.is_host || !app) {
+      return new Response(JSON.stringify({ error: "No recent host signup" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const hostName = escapeHtml(profile.full_name || "Unknown");
+    const hostEmail = escapeHtml(caller.email || "N/A");
+    const businessName = escapeHtml(app.business_name || profile.host_business_name || "N/A");
+    const phone = app.contact_phone ? escapeHtml(app.contact_phone) : "N/A";
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (!resendKey) throw new Error("RESEND_API_KEY not configured");
 
     const resend = new Resend(resendKey);
-    const siteUrl = Deno.env.get("SITE_URL") || "";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
 
     await resend.emails.send({
       from: "Nordic Getaways <support@mojjo.se>",

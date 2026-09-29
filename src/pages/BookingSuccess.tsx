@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { CheckCircle, Home, Calendar } from "lucide-react";
+import { CheckCircle, Home, Calendar, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,8 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 const BookingSuccess = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
-  const [processing, setProcessing] = useState(true);
+  const [processing, setProcessing] = useState(!!sessionId);
   const [success, setSuccess] = useState(false);
+  // The dates were taken while the guest was paying; the payment was refunded
+  const [refunded, setRefunded] = useState(false);
 
   useEffect(() => {
     if (sessionId) {
@@ -27,6 +29,8 @@ const BookingSuccess = () => {
       
       if (data.success) {
         setSuccess(true);
+      } else if (data.message === 'dates_taken_refunded') {
+        setRefunded(true);
       }
     } catch (error) {
       console.error('Error processing payment:', error);
@@ -55,11 +59,11 @@ const BookingSuccess = () => {
         <div className="max-w-2xl mx-auto text-center">
           <Card className="shadow-lg">
             <CardHeader className="pb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${success ? "bg-green-100" : "bg-muted"}`}>
+                {success ? <CheckCircle className="w-8 h-8 text-green-600" /> : <Info className="w-8 h-8 text-muted-foreground" />}
               </div>
-              <CardTitle className="text-2xl text-green-600">
-                {success ? "Booking Confirmed!" : "Payment Successful!"}
+              <CardTitle className={`text-2xl ${success ? "text-green-600" : ""}`}>
+                {success ? "Booking Confirmed!" : refunded ? "These dates were just booked" : "We're confirming your booking"}
               </CardTitle>
             </CardHeader>
             
@@ -75,13 +79,20 @@ const BookingSuccess = () => {
                     <ul className="text-sm text-muted-foreground space-y-1">
                       <li>• You will receive a confirmation email shortly</li>
                       <li>• We will contact you with check-in details before your arrival</li>
-                      <li>• If you have any questions, please use the contact form on the property page</li>
+                      <li>• Questions? Email us at <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a></li>
                     </ul>
                   </div>
                 </div>
+              ) : refunded ? (
+                <p className="text-lg text-muted-foreground">
+                  Someone else booked these dates while you were paying. We have refunded your payment in full and sent you an email.
+                  The refund usually shows on your card within 5–10 business days. Sorry about that – please pick other dates or email{" "}
+                  <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a>.
+                </p>
               ) : (
                 <p className="text-lg text-muted-foreground">
-                  Your payment was processed successfully. We're confirming your booking details.
+                  You'll receive a confirmation email within a few minutes. If it doesn't arrive, email{" "}
+                  <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a> and we'll sort it out.
                 </p>
               )}
 

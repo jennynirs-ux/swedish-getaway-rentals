@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+import { Resend } from "npm:resend@4.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -49,6 +50,35 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // At most 5 messages an hour per sender IP (stored hashed), so the form
+    // can't be used to flood support or anyone else's inbox
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const ip = (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for") ?? "unknown")
+      .split(",")[0].trim();
+    const ipHash = Array.from(
+      new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip))),
+    ).slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+    const identifier = `support-email:${ipHash}`;
+    const { data: allowed } = await supabase.rpc("check_rate_limit", {
+      identifier,
+      max_requests: 5,
+      window_minutes: 60,
+    });
+    if (allowed === false) {
+      return new Response(
+        JSON.stringify({ error: "Too many messages. Please try again later or email support@mojjo.se." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    await supabase.from("security_audit_log").insert({
+      action: "support_email",
+      table_name: "contact",
+      user_agent: identifier,
+    });
+
     const safeName = escapeHtml(name);
     const safeEmail = escapeHtml(email);
     const safePhone = escapeHtml(phone);
@@ -75,21 +105,22 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
+    // Resend reports failures in the result instead of throwing
+    if (emailResponse.error) {
+      throw new Error(`Resend: ${emailResponse.error.message}`);
+    }
     console.log("Support email sent successfully:", emailResponse);
 
-    // Send confirmation to user
+    // Confirmation to the sender: fixed text only, so nobody can use the form
+    // to send their own words to someone else's address
     await resend.emails.send({
       from: "Nordic Getaways <support@mojjo.se>",
       to: [email],
       subject: "We received your message",
       html: `
-        <h1>Thank you for contacting us, ${safeName}!</h1>
-        <p>We have received your message and will get back to you as soon as possible at <strong>${safeEmail}</strong>.</p>
-        <p>Your message:</p>
-        <blockquote style="border-left: 3px solid #ccc; padding-left: 15px; color: #666;">
-          ${safeMessageHtml}
-        </blockquote>
-        <p>Best regards,<br>The Nordic Getaways Team</p>
+        <h1>Thank you for contacting Nordic Getaways</h1>
+        <p>We have received your message and will reply to this address as soon as we can.</p>
+        <p>Best regards,<br>Jenny &amp; Jon, Nordic Getaways</p>
         <hr />
         <p style="font-size: 12px; color: #999;">
           If you need urgent assistance, please contact us at support@mojjo.se

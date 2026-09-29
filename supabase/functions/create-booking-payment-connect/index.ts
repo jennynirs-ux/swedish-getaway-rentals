@@ -65,7 +65,9 @@ serve(async (req) => {
     }
     
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Same rule as the bookings.guest_email CHECK constraint, so a paid
+    // booking can never fail to save on the address
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     if (!guestEmail || !emailRegex.test(guestEmail)) {
       throw new Error('Invalid email format');
     }
@@ -432,6 +434,8 @@ serve(async (req) => {
       customer_email: customerId ? undefined : guestEmail,
       line_items: lineItems,
       mode: "payment",
+      // Stripe's default is 24 h; keep the window for a clash short (minimum 30 min)
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       success_url: `${origin}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/property/${propertyId}`,
       metadata: {

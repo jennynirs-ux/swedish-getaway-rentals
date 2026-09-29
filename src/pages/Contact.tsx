@@ -27,12 +27,14 @@ const Contact = () => {
   });
 
   const [content, setContent] = useState<ContactContent>({
+    // Shown until platform_settings.contact_content loads (and in the
+    // prerendered page), so keep these real
     title: "Contact Nordic Getaways",
     description: "Get in touch with us for bookings, questions, or to become a host.",
-    email: "info@nordicgetaways.com",
-    phone: "+46 123 456 789",
-    address: "Stockholm, Sweden",
-    hours: "Monday - Friday: 9:00 AM - 6:00 PM"
+    email: "support@mojjo.se",
+    phone: "",
+    address: "Lerum, Sweden",
+    hours: ""
   });
   
   const [formData, setFormData] = useState({
@@ -87,6 +89,18 @@ const Contact = () => {
 
       if (error) throw error;
 
+      // guest_messages is only the archive; this puts it in the support inbox
+      const { error: emailError } = await supabase.functions.invoke('send-support-email', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject || "Message from the contact page",
+          message: formData.message,
+        }
+      });
+      if (emailError) throw emailError;
+
       toast({
         title: "Message sent!",
         description: "We'll get back to you as soon as possible."
@@ -137,17 +151,19 @@ const Contact = () => {
                   <Mail className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-muted-foreground">{content.email}</p>
+                    <a className="text-muted-foreground hover:underline" href={`mailto:${content.email}`}>{content.email}</a>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium">Phone</p>
-                    <p className="text-muted-foreground">{content.phone}</p>
+                {content.phone && (
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">Phone</p>
+                      <p className="text-muted-foreground">{content.phone}</p>
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-primary" />
@@ -157,10 +173,12 @@ const Contact = () => {
                   </div>
                 </div>
                 
-                <div className="pt-4 border-t">
-                  <p className="font-medium mb-2">Business Hours</p>
-                  <p className="text-muted-foreground">{content.hours}</p>
-                </div>
+                {content.hours && (
+                  <div className="pt-4 border-t">
+                    <p className="font-medium mb-2">Business Hours</p>
+                    <p className="text-muted-foreground">{content.hours}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

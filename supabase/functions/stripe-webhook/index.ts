@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { clientIpFrom, processCheckoutSession } from "../_shared/process-checkout-session.ts";
+import { alertAdminOnce } from "../_shared/alert.ts";
 
 // Stripe calls this after Checkout, so bookings/orders are recorded even if the
 // guest never returns to /booking-success (closed tab, lost connection, ...).
@@ -65,11 +66,12 @@ serve(async (req) => {
     return json({ received: true, pending: session.payment_status });
   }
 
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  );
+
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
     const result = await processCheckoutSession(stripe, supabase, session.id, {
       ip: clientIpFrom(req),
       userAgent: req.headers.get("user-agent") || "stripe-webhook",
@@ -77,10 +79,15 @@ serve(async (req) => {
     console.log("[STRIPE-WEBHOOK] Processed", result);
     return json({ received: true, ...result });
   } catch (error) {
-    console.error("[STRIPE-WEBHOOK] Processing failed:", {
-      sessionId: session.id,
-      message: error instanceof Error ? error.message : String(error),
-    });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[STRIPE-WEBHOOK] Processing failed:", { sessionId: session.id, message });
+    // The guest has paid but nothing was saved: a person must look (once per session)
+    await alertAdminOnce(supabase, `payment-failed:${session.id}`, "Paid checkout could not be saved", [
+      `Stripe session: ${session.id} (${session.metadata?.type ?? "unknown"})`,
+      `Property: ${session.metadata?.propertyTitle ?? "-"}, ${session.metadata?.checkInDate ?? ""} to ${session.metadata?.checkOutDate ?? ""}`,
+      `Error: ${message}`,
+      "Stripe keeps retrying for 3 days. Fix the cause, or refund the payment in Stripe.",
+    ]).catch((alertError) => console.error("[STRIPE-WEBHOOK] Alert failed:", alertError));
     // Non-2xx so Stripe retries with backoff
     return json({ error: "Processing failed" }, 500);
   }

@@ -83,6 +83,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
       .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Name contains invalid characters"),
     guest_email: z.string()
       .email("Invalid email address")
+      // Same rule as the bookings table and the payment function
+      .regex(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, "Please use an email address with only letters, digits and . _ % + -")
       .max(255, "Email must be less than 255 characters"),
     guest_phone: z.string()
       .optional()

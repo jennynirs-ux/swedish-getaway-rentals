@@ -41,12 +41,16 @@ serve(async (req) => {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    // Get all bookings for this property
+    // Only what other channels still need: stays that haven't ended and
+    // blocked dates from today on. The API returns at most 1000 rows per
+    // query, and the full history had passed 500 rows for Lakehouse.
+    const today = new Date().toISOString().slice(0, 10);
     const { data: bookings, error: bookingsError } = await supabaseClient
       .from('bookings')
-      .select('*')
+      .select('id, check_in_date, check_out_date')
       .eq('property_id', propertyId)
-      .eq('status', 'confirmed');
+      .eq('status', 'confirmed')
+      .gte('check_out_date', today);
 
     if (bookingsError) {
       throw bookingsError;
@@ -55,9 +59,12 @@ serve(async (req) => {
     // Get blocked dates from availability
     const { data: availability, error: availError } = await supabaseClient
       .from('availability')
-      .select('*')
+      .select('date, reason')
       .eq('property_id', propertyId)
-      .eq('available', false);
+      .eq('available', false)
+      .gte('date', today)
+      .order('date')
+      .range(0, 999);
 
     if (availError) {
       throw availError;
@@ -74,6 +81,9 @@ serve(async (req) => {
       'X-WR-TIMEZONE:Europe/Stockholm',
     ];
 
+    // Required on every VEVENT (RFC 5545)
+    const dtstamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
     // Add bookings as events
     bookings?.forEach((booking: any) => {
       const startDate = new Date(booking.check_in_date);
@@ -83,6 +93,7 @@ serve(async (req) => {
       icalContent.push(
         'BEGIN:VEVENT',
         `UID:${uid}`,
+        `DTSTAMP:${dtstamp}`,
         `DTSTART;VALUE=DATE:${startDate.toISOString().split('T')[0].replace(/-/g, '')}`,
         `DTEND;VALUE=DATE:${endDate.toISOString().split('T')[0].replace(/-/g, '')}`,
         `SUMMARY:Reserved`,
@@ -103,6 +114,7 @@ serve(async (req) => {
       icalContent.push(
         'BEGIN:VEVENT',
         `UID:${uid}`,
+        `DTSTAMP:${dtstamp}`,
         `DTSTART;VALUE=DATE:${date.toISOString().split('T')[0].replace(/-/g, '')}`,
         `DTEND;VALUE=DATE:${nextDay.toISOString().split('T')[0].replace(/-/g, '')}`,
         `SUMMARY:Blocked - ${block.reason || 'Unavailable'}`,
