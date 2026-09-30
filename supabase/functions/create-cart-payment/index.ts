@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { pickVariant } from "../_shared/shop-variants.ts";
+import { SHIP_COUNTRIES, shippingCost as shippingFor } from "../_shared/shop-shipping.ts";
 
 const siteUrl = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
 
@@ -21,7 +22,10 @@ serve(async (req) => {
   }
 
   try {
-    const { items, customerEmail, couponId, couponCode, discountAmount } = await req.json();
+    const { items, customerEmail, couponId, couponCode, discountAmount, shippingCountry: requestedCountry } = await req.json();
+    // The customer picks the country in the cart; checkout is locked to it so
+    // the shipping charged matches the address
+    const shippingCountry = typeof requestedCountry === 'string' && SHIP_COUNTRIES[requestedCountry] ? requestedCountry : 'SE';
     if (!Array.isArray(items) || items.length === 0) throw new Error('No items provided');
 
     const supabase = createClient(
@@ -105,22 +109,19 @@ serve(async (req) => {
       });
     }
 
-    // Shipping from the shop settings, as the cart page shows it (never the
-    // browser's number): free above the threshold, else the Sweden rate
+    // Shipping from the shop settings for the chosen country, as the cart page
+    // shows it (never the browser's number)
     const { data: shippingSetting } = await supabase
       .from('platform_settings')
       .select('setting_value')
       .eq('setting_key', 'shipping_settings')
       .maybeSingle();
-    const shippingSettings = (shippingSetting?.setting_value ?? {}) as any;
-    const shippingCost = shippingSettings.free_shipping_threshold && subtotal >= shippingSettings.free_shipping_threshold
-      ? 0
-      : (shippingSettings.fallback_rates?.find((r: any) => r.region === 'Sweden')?.rate ?? 4900);
+    const shippingCost = shippingFor(shippingSetting?.setting_value as any, shippingCountry, subtotal);
     if (shippingCost > 0) {
       lineItems.push({
         price_data: {
           currency,
-          product_data: { name: 'Shipping' },
+          product_data: { name: `Shipping to ${SHIP_COUNTRIES[shippingCountry]}` },
           unit_amount: shippingCost,
         },
         quantity: 1,
@@ -212,7 +213,7 @@ serve(async (req) => {
       customer_email: customerEmail || undefined,
       line_items: lineItems,
       mode: 'payment',
-      shipping_address_collection: { allowed_countries: ['SE','NO','DK','FI','DE','GB','US','CA','NL','FR','ES','IT'] },
+      shipping_address_collection: { allowed_countries: [shippingCountry] },
       phone_number_collection: { enabled: true },
       success_url: `${siteUrl}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/cart`,
@@ -220,7 +221,8 @@ serve(async (req) => {
         type: 'cart',
         // Stripe caps metadata values at 500 characters: items_0, items_1, ...
         ...splitMetadata('items', JSON.stringify(resolvedItems)),
-        shipping_cost: String(shippingCost), 
+        shipping_cost: String(shippingCost),
+        shipping_country: shippingCountry, 
         currency,
         coupon_id: validatedCouponId || '',
         coupon_code: validatedCouponCode || '',

@@ -10,12 +10,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import MainNavigation from '@/components/MainNavigation';
 import CouponInput from '@/components/CouponInput';
+import { SHIP_COUNTRIES, regionFor, shippingCost as shippingFor } from '../../supabase/functions/_shared/shop-shipping';
 
 const CartPage = () => {
   const { items, total, updateQuantity, removeItem, clear, addItem } = useCart();
   const [checkingOut, setCheckingOut] = useState(false);
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingSettings, setShippingSettings] = useState<any>(null);
+  // Checkout only accepts an address in this country, so the shipping shown is what's charged
+  const [shippingCountry, setShippingCountry] = useState('SE');
   const [productVariants, setProductVariants] = useState<Map<string, any[]>>(new Map());
   const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; code: string; discountAmount: number } | undefined>();
 
@@ -30,7 +33,7 @@ const CartPage = () => {
 
   useEffect(() => {
     calculateShipping();
-  }, [shippingSettings, items, total]);
+  }, [shippingSettings, items, total, shippingCountry]);
 
   const fetchShippingSettings = async () => {
     try {
@@ -100,19 +103,8 @@ const CartPage = () => {
       return;
     }
 
-    // Check for free shipping threshold
-    if (shippingSettings.free_shipping_threshold && total >= shippingSettings.free_shipping_threshold) {
-      setShippingCost(0);
-      return;
-    }
-
-    // Use fallback rates (assume Sweden for now)
-    const swedenRate = shippingSettings.fallback_rates?.find((rate: any) => rate.region === 'Sweden');
-    if (swedenRate) {
-      setShippingCost(swedenRate.rate);
-    } else {
-      setShippingCost(4900); // Default fallback
-    }
+    // Same rule as the payment function (supabase/functions/_shared/shop-shipping.ts)
+    setShippingCost(shippingFor(shippingSettings, shippingCountry, total));
   };
 
   const discountAmount = appliedCoupon?.discountAmount || 0;
@@ -161,7 +153,7 @@ const CartPage = () => {
       const payload = {
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, variantId: i.variantId })),
         customerEmail: '',
-        shippingCost: shippingCost,
+        shippingCountry,
         couponId: appliedCoupon?.id,
         couponCode: appliedCoupon?.code,
         discountAmount: appliedCoupon?.discountAmount
@@ -169,7 +161,8 @@ const CartPage = () => {
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
       if (data.url) {
-        window.open(data.url, '_blank');
+        // Same tab: a new window gets blocked, and Stripe returns to /order-success
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error('Error creating cart payment:', error);
@@ -281,6 +274,20 @@ const CartPage = () => {
                   <span className="font-semibold">{formatPrice(total, currency)}</span>
                 </div>
                 
+                <div className="flex items-center justify-between gap-2">
+                  <span>Ship to</span>
+                  <Select value={shippingCountry} onValueChange={setShippingCountry}>
+                    <SelectTrigger className="w-44" aria-label="Ship to country">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(SHIP_COUNTRIES).map(([code, name]) => (
+                        <SelectItem key={code} value={code}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4" />
@@ -291,7 +298,7 @@ const CartPage = () => {
                   </span>
                 </div>
 
-                {shippingSettings?.free_shipping_threshold && total < shippingSettings.free_shipping_threshold && (
+                {regionFor(shippingCountry) === 'Sweden' && shippingSettings?.free_shipping_threshold && total < shippingSettings.free_shipping_threshold && (
                   <div className="text-sm text-muted-foreground">
                     Add {formatPrice(shippingSettings.free_shipping_threshold - total, currency)} more for free shipping
                   </div>
