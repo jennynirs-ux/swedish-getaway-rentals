@@ -8,10 +8,12 @@ import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import { supabase } from "@/integrations/supabase/client";
 import LazyImage from "@/components/LazyImage";
 import { Grid3X3 } from "lucide-react";
-import HomepageProducts from "@/components/HomepageProducts";
 import PropertySearch from "@/components/PropertySearch";
 import MainNavigation from "@/components/MainNavigation";
-import BookPromotion from "@/components/BookPromotion";
+import GuestQuotes from "@/components/home/GuestQuotes";
+import WhyBookDirect from "@/components/home/WhyBookDirect";
+import AreaCards from "@/components/home/AreaCards";
+import ShopStrip from "@/components/home/ShopStrip";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
 
 import forestHeroBg from "@/assets/forest-hero-light.webp";
@@ -31,7 +33,9 @@ interface PropertyFilters {
 }
 
 const MemoizedPropertyCard = memo(PropertyCard);
-const MemoizedHomepageProducts = memo(HomepageProducts);
+
+// Cabins shown before "Show all"; keeps the page short as more hosts join
+const HOME_CABIN_LIMIT = 6;
 
 const HomePage = memo(() => {
   /** Hämta properties från supabase */
@@ -118,6 +122,7 @@ const HomePage = memo(() => {
   });
 
   const [filters, setFilters] = useState<PropertyFilters | null>(null);
+  const [showAllCabins, setShowAllCabins] = useState(false);
   const [availablePropertyIds, setAvailablePropertyIds] = useState<Set<string> | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
@@ -328,109 +333,147 @@ const HomePage = memo(() => {
         </div>
       </header>
 
-      {/* Property Cards */}
-      <main id="cabins" className="pb-12 scroll-mt-4">
-        <div className="container mx-auto px-4 pt-16">
-          {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-muted rounded-lg h-64 mb-4"></div>
-                  <div className="space-y-2">
-                    <div className="bg-muted h-6 rounded w-3/4"></div>
-                    <div className="bg-muted h-4 rounded w-1/2"></div>
-                    <div className="bg-muted h-16 rounded"></div>
-                    <div className="flex justify-between items-end">
-                      <div className="bg-muted h-8 rounded w-1/3"></div>
-                      <div className="bg-muted h-10 rounded w-24"></div>
+      <main>
+        {/* Property Cards */}
+        <section id="cabins" className="pb-16 scroll-mt-4">
+          <div className="container mx-auto px-4 pt-16">
+            <h2 className="text-3xl font-bold text-foreground text-center mb-10">The cabins</h2>
+            {loading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="bg-muted rounded-lg h-64 mb-4"></div>
+                    <div className="space-y-2">
+                      <div className="bg-muted h-6 rounded w-3/4"></div>
+                      <div className="bg-muted h-4 rounded w-1/2"></div>
+                      <div className="bg-muted h-16 rounded"></div>
+                      <div className="flex justify-between items-end">
+                        <div className="bg-muted h-8 rounded w-1/3"></div>
+                        <div className="bg-muted h-10 rounded w-24"></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredProperties.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {filteredProperties.map((p: any) => (
-                <MemoizedPropertyCard
-                  key={p.id}
-                  property={{
-                    ...p,
-                    hero_image_url: p.hero_image_url || "/placeholder.svg",
-                    description: p.description || "",
-                    currency: p.currency || "SEK",
-                    amenities: Array.isArray(p.amenities) ? p.amenities : [],
-                    featured_amenities: Array.isArray(p.featured_amenities) ? p.featured_amenities : [],
-                    special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
-                    amenities_data: Array.isArray(p.amenities_data) ? p.amenities_data : [],
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="max-w-md mx-auto">
-                <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  No properties found
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Try adjusting your filters to see more results.
-                </p>
+                ))}
               </div>
+            ) : filteredProperties.length > 0 ? (
+              <>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                  {(showAllCabins ? filteredProperties : filteredProperties.slice(0, HOME_CABIN_LIMIT)).map((p: any) => (
+                    <MemoizedPropertyCard
+                      key={p.id}
+                      property={{
+                        ...p,
+                        hero_image_url: p.hero_image_url || "/placeholder.svg",
+                        description: p.description || "",
+                        currency: p.currency || "SEK",
+                        amenities: Array.isArray(p.amenities) ? p.amenities : [],
+                        featured_amenities: Array.isArray(p.featured_amenities) ? p.featured_amenities : [],
+                        special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
+                        amenities_data: Array.isArray(p.amenities_data) ? p.amenities_data : [],
+                      }}
+                    />
+                  ))}
+                </div>
+                {!showAllCabins && filteredProperties.length > HOME_CABIN_LIMIT && (
+                  <div className="text-center mt-10">
+                    <Button variant="outline" size="lg" onClick={() => setShowAllCabins(true)}>
+                      Show all {filteredProperties.length} cabins
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-16">
+                <div className="max-w-md mx-auto">
+                  <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    No properties found
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Try adjusting your filters to see more results.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <GuestQuotes properties={(properties ?? []) as any[]} />
+
+        <WhyBookDirect />
+
+        <AreaCards properties={(properties ?? []) as any[]} />
+
+        {/* Who runs the site */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-3xl text-center">
+            <h2 className="text-3xl font-bold text-foreground mb-4">About Nordic Getaways</h2>
+            <p className="text-lg text-muted-foreground">
+              Nordic Getaways is run by Jenny &amp; Jon. We are Airbnb Superhosts and look after Villa Häcken and
+              Lakehouse Getaway on Stora Härsjön ourselves. Questions about a stay, the area or the shop go to{" "}
+              <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a>.
+            </p>
+          </div>
+        </section>
+
+        <ShopStrip />
+
+        {/* For people with a cabin of their own */}
+        <section className="py-12 bg-primary/5 border-t border-border">
+          <div className="container mx-auto px-4 max-w-6xl flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Have a holiday home in Sweden?</h2>
+              <p className="text-muted-foreground mt-2 max-w-2xl">
+                List it on Nordic Getaways. You set the price and we add 10% for the guest. Calendar sync with
+                Airbnb and other sites keeps you free of double bookings.
+              </p>
             </div>
-          )}
-        </div>
+            <div className="flex flex-wrap gap-3 shrink-0">
+              <Button asChild>
+                <Link to="/become-host">Become a host</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/pricing-guide">Pricing guide</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
-
-      {/* The hosts: guests book people, not just a cabin */}
-      <section className="container mx-auto px-4 pb-16">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Your hosts, Jenny &amp; Jon</h2>
-          <p className="text-lg text-muted-foreground">
-            We are Airbnb Superhosts and look after both cabins on Stora Härsjön ourselves. Guests have rated
-            Villa Häcken 4.98 and Lakehouse Getaway 4.85 on Airbnb. Book directly here and you deal with us –
-            questions go to <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a>.
-          </p>
-        </div>
-      </section>
-
-      {/* Book Promotion Section */}
-      <BookPromotion />
-
-      {/* Featured Products Section */}
-      <MemoizedHomepageProducts />
 
       {/* Footer */}
       <footer className="py-16 border-t border-border bg-card">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h3 className="text-xl font-semibold text-foreground mb-4">Nordic Getaways</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground">
                 Discover authentic Nordic experiences in our handpicked properties.
               </p>
-              <div className="flex gap-2">
-                <Link to="/become-host">
-                  <Button variant="outline">Become a Host</Button>
-                </Link>
-              </div>
             </div>
 
             <div>
-              <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
+              <h4 className="font-semibold text-foreground mb-4">Explore</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/shop" className="hover:text-foreground">The Nordic Collection</Link></li>
+                <li><Link to="/stora-harsjon-lerum" className="hover:text-foreground">Stora Härsjön &amp; Lerum</Link></li>
                 <li><Link to="/first-time-in-sweden" className="hover:text-foreground">First time in Sweden?</Link></li>
+                <li><Link to="/shop" className="hover:text-foreground">The Nordic Collection</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">For guests</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/profile" className="hover:text-foreground">My bookings</Link></li>
+                <li><Link to="/auth" className="hover:text-foreground">Sign in / Register</Link></li>
                 <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-foreground mb-4">For Guests</h4>
+              <h4 className="font-semibold text-foreground mb-4">For hosts</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/pricing-guide" className="hover:text-foreground">Pricing guide for hosts</Link></li>
-                <li><Link to="/auth" className="hover:text-foreground">Sign In / Register</Link></li>
-                <li><Link to="/profile" className="hover:text-foreground">My Bookings</Link></li>
+                <li><Link to="/become-host" className="hover:text-foreground">Become a host</Link></li>
+                <li><Link to="/pricing-guide" className="hover:text-foreground">Pricing guide</Link></li>
               </ul>
             </div>
           </div>
