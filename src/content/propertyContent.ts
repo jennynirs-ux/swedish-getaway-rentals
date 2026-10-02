@@ -79,7 +79,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
     seoTitle: "lake house with hot tub near Gothenburg",
     intro: [
       "Villa Häcken is a light-filled lake house right on the water of Stora Härsjön, surrounded by forest yet only half an hour from Gothenburg. Large windows put the lake in view from almost every room, and guests often describe it as a mix of a luxury spa and a classic Swedish summer house.",
-      "The house sleeps up to 8 guests across 4 bedrooms with 2.5 bathrooms, making it a favourite for families and friends looking for a quiet stay. Wake up to birdsong, have your morning coffee on the private jetty, swim from the small sandy beach and end the day in the hot tub as the sky changes colour over the lake.",
+      "The house sleeps up to 8 guests in 3 bedrooms plus 4 beds in the living room, with 2.5 bathrooms, making it a favourite for families and friends looking for a quiet stay. Wake up to birdsong, have your morning coffee on the private jetty, swim from the small sandy beach and end the day in the hot tub as the sky changes colour over the lake.",
       "Everything for life on the water is included: boats, stand-up paddle boards and life jackets. Outside there is an outdoor kitchen with gas grill, a paella pan and a pizza oven, fire pit, trampoline, slide and toys for children. Inside you'll find a fully equipped kitchen with dishwasher and espresso machine, fireplace, bathtub with a view, washer and dryer, a workspace and streaming TV.",
     ],
     highlights: [
@@ -87,7 +87,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
       "Hot tub (badtunna) with lake views",
       "Boats and SUP boards included",
       "Outdoor kitchen with gas grill, paella pan and pizza oven",
-      "4 bedrooms, 2.5 bathrooms – sleeps 8",
+      "3 bedrooms plus 4 beds in the living room – sleeps 8",
       "Great for families: trampoline, slide, toys and forest trails",
       "30 minutes by car to central Gothenburg",
     ],
@@ -100,7 +100,7 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
     faq: [
       {
         q: "How many people does Villa Häcken sleep?",
-        a: "Up to 8 guests in 4 bedrooms, with 2.5 bathrooms.",
+        a: "Up to 8 guests: 3 bedrooms plus 4 beds in the living room, and 2.5 bathrooms.",
       },
       {
         q: "Is there a hot tub or sauna?",
