@@ -58,7 +58,7 @@ const Terms = () => {
           </li>
           <li>The person booking must be at least {MIN_LEAD_GUEST_AGE} and stay at the property.</li>
           <li>No more guests than booked, and never more than the property sleeps.</li>
-          <li>No parties or events, and no pets.</li>
+          <li>No parties or events, no pets and no smoking.</li>
           <li>Check-in is from 16:00 and check-out by 11:00.</li>
           <li>The rules on each property's page also apply.</li>
           <li>

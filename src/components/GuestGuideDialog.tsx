@@ -81,6 +81,9 @@ interface GuestGuideDialogProps {
   initialSectionId?: string;
 }
 
+// Shown even when the host hasn't written them: true for any stay in Sweden
+const GENERAL_SECTION_IDS = ["waste", "customs", "ratings"];
+
 const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: GuestGuideDialogProps) => {
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -107,18 +110,27 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
 
   const customSections = (property.guidebook_sections as any[]) || [];
 
+  // Only sections the host has filled in, plus the general ones that hold for
+  // every Swedish stay; the placeholder defaults are not shown to guests
   const allSections = useMemo(() => {
-    return defaultSections.map((section) => {
+    // Block types renderSectionContent can show (the editor also saves e.g. "custom-recycling")
+    const hasContent = (custom: any) =>
+      (custom.blocks || []).some((b: any) =>
+        ["text", "list", "checkbox", "map"].includes(b.type) &&
+        (b.content?.trim() || b.items?.some((i: string) => i?.trim()) || b.mapPins?.length)) ||
+      custom.content?.trim() ||
+      custom.items?.some((i: string) => i?.trim());
+    return defaultSections.flatMap((section) => {
       const custom = customSections.find((s: any) => s.id === section.id);
-      if (custom) {
-        return {
+      if (custom && hasContent(custom)) {
+        return [{
           ...section,
           ...custom,
           icon: section.icon,
           blocks: custom.blocks || undefined,
-        };
+        }];
       }
-      return section;
+      return GENERAL_SECTION_IDS.includes(section.id) ? [section] : [];
     });
   }, [customSections]);
 
