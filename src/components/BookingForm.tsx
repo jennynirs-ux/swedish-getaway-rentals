@@ -17,7 +17,7 @@ import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
-import { applicableStayDiscount, stayDiscountAmount } from "../../supabase/functions/_shared/stay-discount";
+import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
 
 interface BookingFormProps {
   propertyId: string;
@@ -168,7 +168,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const hostTotal = Math.max(0, subtotal - couponDiscount);
   // Fee model A: service fee on top of the host's price (mirrors the payment function)
-  const serviceFee = Math.round(hostTotal * PLATFORM_SERVICE_FEE_RATE);
+  const serviceFee = serviceFeeAmount(hostTotal, Math.round(PLATFORM_SERVICE_FEE_RATE * 100)); // exactly 10, as on the server
   const totalAmount = hostTotal + serviceFee;
 
   const validateForm = () => {

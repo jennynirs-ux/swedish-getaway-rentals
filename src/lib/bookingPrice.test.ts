@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applicableStayDiscount, stayDiscountAmount } from "../../supabase/functions/_shared/stay-discount";
+import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
 
 describe("applicableStayDiscount", () => {
   it.each([
@@ -23,5 +23,12 @@ describe("stayDiscountAmount", () => {
 
   it("is zero without a discount", () => {
     expect(stayDiscountAmount(500000, null)).toBe(0);
+  });
+});
+
+describe("serviceFeeAmount", () => {
+  it("rounds to whole kronor", () => {
+    // Lakehouse Getaway, a week for 2: 13 149 SEK host price -> 1 315 SEK fee, total 14 464 SEK
+    expect(serviceFeeAmount(1314900, 10)).toBe(131500);
   });
 });

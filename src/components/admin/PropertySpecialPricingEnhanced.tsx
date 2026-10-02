@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, addDays, differenceInDays, isSameDay } from "date-fns";
 import { usePricingRules } from "@/hooks/usePricingRules";
-import { applicableStayDiscount, stayDiscountAmount } from "../../../supabase/functions/_shared/stay-discount";
+import { applicableStayDiscount, stayDiscountAmount } from "../../../supabase/functions/_shared/booking-price";
 import { cn } from "@/lib/utils";
 
 interface PropertySpecialPricingEnhancedProps {

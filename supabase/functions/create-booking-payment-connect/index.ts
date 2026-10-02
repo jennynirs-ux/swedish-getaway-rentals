@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { stayRuleError } from "../_shared/stay-rules.ts";
-import { applicableStayDiscount, stayDiscountAmount } from "../_shared/stay-discount.ts";
+import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../_shared/booking-price.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -358,7 +358,7 @@ serve(async (req) => {
 
     const profileData = property.profiles as any;
     const commissionRate = Number(profileData?.commission_rate ?? 10);
-    const serviceFee = Math.round(hostAmount * (commissionRate / 100));
+    const serviceFee = serviceFeeAmount(hostAmount, commissionRate);
     const guestTotal = hostAmount + serviceFee;
 
     logStep("Final amount calculation", {
