@@ -317,7 +317,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             {rules.filter((r) => r.rule_type === 'extra_guest' || r.rule_type === 'cleaning_fee').map((r) => (
               <p key={r.id} className="text-sm text-muted-foreground">
                 {r.rule_type === 'extra_guest'
-                  ? `The nightly price is for 1 guest; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.`
+                  ? `The nightly price is for 1 guest; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}. Bed linen and towels for every guest are included.`
                   : `A cleaning fee of ${(r.price / 100).toLocaleString()} ${currency} is added per stay.`}
               </p>
             ))}

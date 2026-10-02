@@ -61,7 +61,7 @@ const feesText = (p) =>
   p.rules
     .map((r) =>
       r.rule_type === "extra_guest"
-        ? ` The price is for 1 guest; each extra guest adds ${r.price / 100} ${p.currency} per night.`
+        ? ` The price is for 1 guest; each extra guest adds ${r.price / 100} ${p.currency} per night. Bed linen and towels for every guest are included.`
         : r.rule_type === "cleaning_fee"
           ? ` Cleaning fee ${r.price / 100} ${p.currency} per stay.`
           : "",
