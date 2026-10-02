@@ -89,7 +89,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     { id: "home", title: "Welcome Home", icon: Home, type: "text", content: "Welcome to our property! We’re excited to host you." },
     { id: "directions", title: "Directions", icon: MapPin, type: "list", items: [
       "By car: Take E20 and exit at Lerum. Parking on site.",
-      "By public transport: Train to Lerum station, then bus 533."
+      "By public transport: Commuter train to Aspen station in Lerum, then bus 530 or 535 to Häckenvägen."
     ]},
     { id: "stop", title: "Stop on the way", icon: Coffee, type: "list", items: ["ICA Kvantum – groceries", "Shell – gas & snacks", "Local shop – firewood"] },
     { id: "checkin", title: "Check-in", icon: Key, type: "list", items: ["Check-in: 15:00", "Keys in lockbox", "Parking in front of house"] },

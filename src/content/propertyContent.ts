@@ -30,7 +30,7 @@ export interface PropertyContent {
 
 const STORA_HARSJON_GETTING_HERE = [
   "Central Gothenburg: about 30 minutes by car. The last 3 km is a narrow gravel road.",
-  "Public transport: commuter train to Aspen station in Lerum, then bus 530 to Häckenvägen and a 3 km walk. Weekend buses must be pre-booked with Västtrafik.",
+  "Public transport: commuter train to Aspen station in Lerum, then bus 530 or 535 to Häckenvägen and a 3 km walk. Weekend buses must be pre-booked with Västtrafik.",
   "Groceries: ICA Kvantum Lerum is the nearest large supermarket – stock up on the way.",
 ];
 
@@ -41,7 +41,7 @@ const SHARED_FAQ: PropertyFaq[] = [
   },
   {
     q: "Can I get there without a car?",
-    a: "Yes. Take the commuter train from Gothenburg Central Station to Aspen station in Lerum, then bus 530 to the Häckenvägen stop. From there it is a 3 km walk on a quiet gravel road without street lights – bring a torch and a backpack rather than a trolley. On weekends the bus must be pre-booked with Västtrafik at least an hour ahead. A taxi from Aspen or Lerum is the easy option.",
+    a: "Yes. Take the commuter train from Gothenburg Central Station to Aspen station in Lerum, then bus 530 or 535 to the Häckenvägen stop. From there it is a 3 km walk on a quiet gravel road without street lights – bring a torch and a backpack rather than a trolley. On weekends the bus must be pre-booked with Västtrafik at least an hour ahead. A taxi from Aspen or Lerum is the easy option.",
   },
   {
     q: "What is there to do nearby?",

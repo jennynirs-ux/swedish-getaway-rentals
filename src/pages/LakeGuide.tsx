@@ -60,7 +60,7 @@ const SECTIONS = [
     title: "Getting here",
     items: [
       ["By car", "About 30 minutes from central Gothenburg. The last 3 km is a narrow gravel road with passing places."],
-      ["By train and bus", "Commuter train from Gothenburg Central Station to Aspen station in Lerum, then bus 530 to Häckenvägen and a 3 km walk on an unlit gravel road. Weekend buses must be pre-booked with Västtrafik."],
+      ["By train and bus", "Commuter train from Gothenburg Central Station to Aspen station in Lerum, then bus 530 or 535 to Häckenvägen and a 3 km walk on an unlit gravel road. Weekend buses must be pre-booked with Västtrafik."],
       ["By taxi", "Easy from Aspen or Lerum station, or book through the Bolt app."],
     ],
   },
@@ -78,7 +78,7 @@ const FOOTER_PROPERTY = {
   title: "Nordic Getaways",
   location: "Lerum, Sweden",
   tagline_line1: "Lakeside stays on Stora Härsjön",
-  footer_quick_links: ["Contact", "First time in Sweden"],
+  footer_quick_links: ["Contact", "First time in Sweden?"],
   get_in_touch_info: {},
 };
 

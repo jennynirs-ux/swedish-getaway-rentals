@@ -14,6 +14,8 @@ import GuestQuotes from "@/components/home/GuestQuotes";
 import WhyBookDirect from "@/components/home/WhyBookDirect";
 import AreaCards from "@/components/home/AreaCards";
 import ShopStrip from "@/components/home/ShopStrip";
+import CompanyLine from "@/components/CompanyLine";
+import { COMPANY } from "@/content/company";
 import { calculateDistance, isInCityGroup, type Coordinates } from "@/lib/distance";
 
 import forestHeroBg from "@/assets/forest-hero-light.webp";
@@ -95,6 +97,15 @@ const HomePage = memo(() => {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
         name: SITE_NAME,
+        legalName: COMPANY.name,
+        email: COMPANY.email,
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: COMPANY.street,
+          postalCode: COMPANY.postcode,
+          addressLocality: COMPANY.city,
+          addressCountry: "SE",
+        },
         url: SITE_URL,
         logo: `${SITE_URL}/logo-512.png`,
         description: "Holiday rentals in Swedish nature near Gothenburg, booked directly with the host.",
@@ -466,6 +477,8 @@ const HomePage = memo(() => {
                 <li><Link to="/profile" className="hover:text-foreground">My bookings</Link></li>
                 <li><Link to="/auth" className="hover:text-foreground">Sign in / Register</Link></li>
                 <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
+                <li><Link to="/terms" className="hover:text-foreground">Booking terms</Link></li>
+                <li><Link to="/privacy" className="hover:text-foreground">Privacy policy</Link></li>
               </ul>
             </div>
 
@@ -479,9 +492,7 @@ const HomePage = memo(() => {
           </div>
 
           <div className="text-center pt-8 border-t border-border">
-            <p className="text-muted-foreground">
-              © {new Date().getFullYear()} Nordic Getaways. Created with love for Nordic experiences.
-            </p>
+            <CompanyLine className="text-muted-foreground" />
           </div>
         </div>
       </footer>

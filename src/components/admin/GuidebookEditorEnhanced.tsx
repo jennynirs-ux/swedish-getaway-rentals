@@ -90,7 +90,7 @@ const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
   ],
   directions: [
     { id: "d1", type: "text", title: "Get here by car", content: "Take the E20 and exit at Lerum. Parking is available on site." },
-    { id: "d2", type: "text", title: "Get here by public transport", content: "Take the commuter train to Lerum station, then bus 533 to Häckenvägen." },
+    { id: "d2", type: "text", title: "Get here by public transport", content: "Take the commuter train to Aspen station in Lerum, then bus 530 or 535 to Häckenvägen." },
     { id: "d3", type: "map", title: "Route Map", mapPins: [] },
   ],
   stop: [

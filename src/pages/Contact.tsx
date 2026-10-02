@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { COMPANY } from "@/content/company";
 import MainNavigation from "@/components/MainNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -165,11 +166,16 @@ const Contact = () => {
                   </div>
                 )}
                 
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-primary" />
+                {/* The company's registered details (not the contact_content address) */}
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="font-medium">Address</p>
-                    <p className="text-muted-foreground">{content.address}</p>
+                    <p className="font-medium">Company</p>
+                    <p className="text-muted-foreground">
+                      {COMPANY.name}, org. no. {COMPANY.orgNumber}
+                      <br />
+                      {COMPANY.street}, {COMPANY.postcode} {COMPANY.city}, {COMPANY.country}
+                    </p>
                   </div>
                 </div>
                 

@@ -335,6 +335,12 @@ const CartPage = () => {
                 <Button className="w-full" disabled={checkingOut || hasIncompleteVariants} onClick={checkout}>
                   {checkingOut ? 'Processing...' : 'Checkout'}
                 </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  By checking out you accept our{" "}
+                  <a href="/terms" target="_blank" rel="noopener" className="underline hover:text-foreground">terms</a>{" "}
+                  and{" "}
+                  <a href="/privacy" target="_blank" rel="noopener" className="underline hover:text-foreground">privacy policy</a>.
+                </p>
                 <Button variant="outline" className="w-full" onClick={clear}>Clear Cart</Button>
               </CardContent>
             </Card>

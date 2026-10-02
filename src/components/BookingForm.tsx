@@ -570,6 +570,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {/* Cancellation Policy */}
           <CancellationPolicyDisplay />
 
+          {/* New tab, so the filled-in form stays */}
+          <p className="text-xs text-muted-foreground text-center">
+            By booking you accept our{" "}
+            <a href="/terms" target="_blank" rel="noopener" className="underline hover:text-foreground">booking terms</a>{" "}
+            and{" "}
+            <a href="/privacy" target="_blank" rel="noopener" className="underline hover:text-foreground">privacy policy</a>.
+          </p>
+
           <Button 
             type="submit" 
             className="w-full" 

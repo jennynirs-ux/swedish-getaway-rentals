@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react";
+import CompanyLine from "@/components/CompanyLine";
 import { Property } from "@/hooks/useProperties";
 
 interface PropertyFooterProps {
@@ -66,9 +67,7 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
           </div>
 
           <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center">
-            <p className="text-primary-foreground/80">
-              © {new Date().getFullYear()} Nordic Getaways. Created with love for Nordic experiences.
-            </p>
+            <CompanyLine className="text-primary-foreground/80" />
           </div>
         </div>
       </div>

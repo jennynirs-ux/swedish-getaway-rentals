@@ -24,6 +24,8 @@ const STATIC_ROUTES = [
   "/pricing-guide",
   "/become-host",
   "/shop",
+  "/privacy",
+  "/terms",
 ];
 
 const CHROME_CANDIDATES = [

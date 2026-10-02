@@ -30,6 +30,8 @@ const FirstTimeInSweden = lazy(() => import("./pages/FirstTimeInSweden"));
 const LakeGuide = lazy(() => import("./pages/LakeGuide"));
 const PricingGuide = lazy(() => import("./pages/PricingGuide"));
 const BecomeHost = lazy(() => import("./pages/BecomeHost"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 const queryClient = new QueryClient();
 
@@ -87,6 +89,8 @@ const App = () => {
                 <Route path="/stora-harsjon-lerum" element={<LakeGuide />} />
                 <Route path="/pricing-guide" element={<PricingGuide />} />
                 <Route path="/become-host" element={<BecomeHost />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
