@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { stayRuleError } from "../_shared/stay-rules.ts";
+import { applicableStayDiscount, stayDiscountAmount } from "../_shared/stay-discount.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -225,16 +226,14 @@ serve(async (req) => {
     
     const subtotalBeforeStayDiscount = accommodationTotal + cleaningTotal + extraGuestTotal;
 
-    // Weekly/monthly stay discount - must mirror BookingForm.getApplicableDiscount
-    const monthlyPct = Number(property.monthly_discount_percentage) || 0;
-    const weeklyPct = Number(property.weekly_discount_percentage) || 0;
-    let stayDiscountPct = 0;
-    if (nightCount >= 28 && monthlyPct > 0) {
-      stayDiscountPct = monthlyPct;
-    } else if (nightCount >= 7 && weeklyPct > 0) {
-      stayDiscountPct = weeklyPct;
-    }
-    const stayDiscount = Math.round(subtotalBeforeStayDiscount * (stayDiscountPct / 100));
+    // Weekly/monthly stay discount on the nightly price only (shared with BookingForm)
+    const discount = applicableStayDiscount(
+      nightCount,
+      Number(property.weekly_discount_percentage) || 0,
+      Number(property.monthly_discount_percentage) || 0,
+    );
+    const stayDiscountPct = discount?.percentage ?? 0;
+    const stayDiscount = stayDiscountAmount(accommodationTotal, discount);
     const subtotal = subtotalBeforeStayDiscount - stayDiscount;
     
     logStep("Price calculation", {

@@ -17,6 +17,7 @@ import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
+import { applicableStayDiscount, stayDiscountAmount } from "../../supabase/functions/_shared/stay-discount";
 
 interface BookingFormProps {
   propertyId: string;
@@ -154,23 +155,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Minimum stay (checked again by the payment function)
   const stayError = checkIn && checkOut ? stayRuleError(toDateString(checkIn), toDateString(checkOut)) : null;
 
-  // Determine applicable discount based on stay length
-  const getApplicableDiscount = () => {
-    if (nights >= 28 && propertyDiscounts.monthly_discount_percentage > 0) {
-      return { type: 'monthly', percentage: propertyDiscounts.monthly_discount_percentage };
-    }
-    if (nights >= 7 && propertyDiscounts.weekly_discount_percentage > 0) {
-      return { type: 'weekly', percentage: propertyDiscounts.weekly_discount_percentage };
-    }
-    return null;
-  };
-
   const priceCalculation = calculateTotalAmount();
   const subtotalBeforeDiscount = priceCalculation?.total || 0;
-  const applicableDiscount = getApplicableDiscount();
-  const stayDiscount = applicableDiscount 
-    ? Math.round(subtotalBeforeDiscount * (applicableDiscount.percentage / 100))
-    : 0;
+  // Weekly/monthly discount on the nightly price only (same as the payment function)
+  const applicableDiscount = applicableStayDiscount(
+    nights,
+    propertyDiscounts.weekly_discount_percentage,
+    propertyDiscounts.monthly_discount_percentage
+  );
+  const stayDiscount = stayDiscountAmount(priceCalculation?.breakdown.accommodation || 0, applicableDiscount);
   const subtotal = subtotalBeforeDiscount - stayDiscount;
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const hostTotal = Math.max(0, subtotal - couponDiscount);
@@ -385,7 +378,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   <div className="flex justify-between text-sm text-green-600">
                     <span className="flex items-center gap-1">
                       <Tag className="h-3 w-3" />
-                      {applicableDiscount.type === 'monthly' ? 'Monthly' : 'Weekly'} discount ({applicableDiscount.percentage}%)
+                      {applicableDiscount.type === 'monthly' ? 'Monthly' : 'Weekly'} discount ({applicableDiscount.percentage}% off the nightly price)
                     </span>
                     <span>-{(stayDiscount / 100).toLocaleString()} {currency}</span>
                   </div>

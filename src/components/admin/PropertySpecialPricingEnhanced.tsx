@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, addDays, differenceInDays, isSameDay } from "date-fns";
 import { usePricingRules } from "@/hooks/usePricingRules";
+import { applicableStayDiscount, stayDiscountAmount } from "../../../supabase/functions/_shared/stay-discount";
 import { cn } from "@/lib/utils";
 
 interface PropertySpecialPricingEnhancedProps {
@@ -138,23 +139,17 @@ export const PropertySpecialPricingEnhanced = ({
       []
     );
 
-    // Apply discounts
-    let totalAfterDiscount = calculation.total;
-    
-    if (nights >= 30 && monthlyDiscount > 0) {
-      const discount = (calculation.total * monthlyDiscount) / 100;
-      totalAfterDiscount -= discount;
-    } else if (nights >= 7 && weeklyDiscount > 0) {
-      const discount = (calculation.total * weeklyDiscount) / 100;
-      totalAfterDiscount -= discount;
-    }
+    // Same discount as the booking form and payment function: nightly price only
+    const discount = applicableStayDiscount(nights, weeklyDiscount, monthlyDiscount);
+    const discountAmount = stayDiscountAmount(calculation.breakdown.accommodation, discount);
 
     return {
       nights,
       subtotal: calculation.total,
-      weeklyDiscount: nights >= 7 ? weeklyDiscount : 0,
-      monthlyDiscount: nights >= 30 ? monthlyDiscount : 0,
-      total: totalAfterDiscount,
+      weeklyDiscount: discount?.type === "weekly" ? discount.percentage : 0,
+      monthlyDiscount: discount?.type === "monthly" ? discount.percentage : 0,
+      discountAmount,
+      total: calculation.total - discountAmount,
     };
   };
 
@@ -286,18 +281,18 @@ export const PropertySpecialPricingEnhanced = ({
             </div>
             {calculation.weeklyDiscount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>Weekly Discount ({calculation.weeklyDiscount}%):</span>
+                <span>Weekly Discount ({calculation.weeklyDiscount}% of nightly price):</span>
                 <span>
-                  -{Math.round((calculation.subtotal * calculation.weeklyDiscount) / 100)}{" "}
+                  -{calculation.discountAmount}{" "}
                   {currency}
                 </span>
               </div>
             )}
             {calculation.monthlyDiscount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>Monthly Discount ({calculation.monthlyDiscount}%):</span>
+                <span>Monthly Discount ({calculation.monthlyDiscount}% of nightly price):</span>
                 <span>
-                  -{Math.round((calculation.subtotal * calculation.monthlyDiscount) / 100)}{" "}
+                  -{calculation.discountAmount}{" "}
                   {currency}
                 </span>
               </div>
