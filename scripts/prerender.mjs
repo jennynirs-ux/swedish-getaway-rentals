@@ -57,6 +57,74 @@ async function fetchProperties() {
   return properties.map((p) => ({ ...p, rules: rules.filter((r) => r.property_id === p.id) }));
 }
 
+// Shop products for the product pages and the Merchant Center feed
+async function fetchProducts() {
+  return fetchRest(
+    "shop_products?select=id,title,title_override,description,description_override,custom_description,price,price_override,custom_price,currency,image_url,main_image_override,additional_images_override,all_images:printful_data->all_images,updated_at&visible=eq.true&is_visible_shop=eq.true&order=sort_order.asc.nullslast",
+  );
+}
+
+// Same fields as the product page shows (ProductDetail getDisplayData) and the
+// same description fallback and brand as src/lib/productSeo.ts
+const SHOP_BRAND = "The Nordic Collection";
+const productView = (p) => {
+  const title = p.title_override || p.title;
+  const own = (p.description_override || p.custom_description || p.description || "").trim();
+  const images = [p.main_image_override || p.image_url, ...(p.additional_images_override || []), ...(p.all_images || [])]
+    .filter((img, i, all) => img && all.indexOf(img) === i);
+  return {
+    title,
+    description: own && own !== title.trim() ? own : `${title} from ${SHOP_BRAND}, printed to order.`,
+    price: p.price_override || p.custom_price || p.price,
+    currency: p.currency || "SEK",
+    images,
+  };
+};
+
+const xml = (value) =>
+  String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+// Google Merchant Center product feed (RSS 2.0), fetched from
+// https://nordic-getaways.com/merchant-feed.xml. One item per product at the
+// price the page shows before a variant is picked, so the prices always match.
+// Print-on-demand items have no GTIN. Shipping and returns are set in Merchant Center.
+async function writeMerchantFeed(products) {
+  const items = products
+    .map((p) => {
+      const v = productView(p);
+      if (!v.images.length || !v.price) return "";
+      return `    <item>
+      <g:id>${xml(p.id)}</g:id>
+      <title>${xml(v.title)}</title>
+      <description>${xml(v.description)}</description>
+      <link>${SITE_URL}/product/${xml(p.id)}</link>
+      <g:image_link>${xml(v.images[0])}</g:image_link>
+${v.images.slice(1, 11).map((img) => `      <g:additional_image_link>${xml(img)}</g:additional_image_link>`).join("\n")}
+      <g:availability>in_stock</g:availability>
+      <g:price>${(v.price / 100).toFixed(2)} ${xml(v.currency)}</g:price>
+      <g:brand>${SHOP_BRAND}</g:brand>
+      <g:condition>new</g:condition>
+      <g:identifier_exists>no</g:identifier_exists>
+    </item>`;
+    })
+    .filter(Boolean)
+    .map((item) => item.replace(/\n\n/g, "\n"));
+  await writeFile(
+    path.join(DIST, "merchant-feed.xml"),
+    `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>${SHOP_BRAND} – Nordic Getaways</title>
+    <link>${SITE_URL}/shop</link>
+    <description>Nordic designs printed to order</description>
+${items.join("\n")}
+  </channel>
+</rss>
+`,
+  );
+  return items.length;
+}
+
 // Fees on top of the nightly price (rule prices are in öre), so AI answers
 // don't understate the total
 const feesText = (p) =>
@@ -123,6 +191,10 @@ ${stays}
 - [Become a host](${SITE_URL}/become-host): list your holiday home on Nordic Getaways. Guests pay a 10% service fee; hosts keep their full nightly price.
 - [Pricing guide for hosts](${SITE_URL}/pricing-guide): how to set nightly prices.
 
+## Shop
+
+- [The Nordic Collection](${SITE_URL}/shop): Nordic-design clothing, bags and home textiles, printed to order by Printful and shipped to the Nordics, much of Europe, the US and Canada.
+
 ## Booking
 
 - [Book now](${SITE_URL}/book-now): book directly with secure card payment.
@@ -135,10 +207,11 @@ async function main() {
   const chromePath = CHROME_CANDIDATES.find((p) => existsSync(p));
   if (!chromePath) throw new Error("Chrome not found - set CHROME_PATH");
 
-  const properties = await fetchProperties();
+  const [properties, products] = await Promise.all([fetchProperties(), fetchProducts()]);
   const routes = [
     ...STATIC_ROUTES.map((route) => ({ route })),
     ...properties.map((p) => ({ route: `/property/${p.slug || p.id}`, lastmod: p.updated_at?.slice(0, 10) })),
+    ...products.map((p) => ({ route: `/product/${p.id}`, lastmod: p.updated_at?.slice(0, 10) })),
   ];
 
   const server = await preview({ preview: { port: PORT, strictPort: true }, logLevel: "warn" });
@@ -197,7 +270,8 @@ async function main() {
   await writeSitemap(routes);
   await writeRedirects(properties);
   await writeLlmsTxt(properties);
-  console.log(`sitemap.xml: ${routes.length} urls`);
+  const feedItems = await writeMerchantFeed(products);
+  console.log(`sitemap.xml: ${routes.length} urls, merchant-feed.xml: ${feedItems} products`);
 
   if (failures) {
     console.error(`${failures} route(s) failed to prerender`);

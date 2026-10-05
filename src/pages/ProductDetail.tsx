@@ -9,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/MainNavigation";
 import { useCart } from "@/context/CartContext";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { buildProductJsonLd, productDescription, productPath, SHOP_BRAND } from "@/lib/productSeo";
+import type { ShippingSettings } from "../../supabase/functions/_shared/shop-shipping";
 
 interface ShopProduct {
   id: string;
@@ -44,12 +47,27 @@ const ProductDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  // For the shipping price in the product data Google reads (same rates as the cart)
+  const [shipping, setShipping] = useState<ShippingSettings | null>(null);
+  const [shippingLoaded, setShippingLoaded] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchProduct();
     }
   }, [id]);
+
+  useEffect(() => {
+    supabase
+      .from('platform_settings')
+      .select('setting_value')
+      .eq('setting_key', 'shipping_settings')
+      .maybeSingle()
+      .then(({ data }) => {
+        setShipping((data?.setting_value as ShippingSettings | undefined) ?? null);
+        setShippingLoaded(true);
+      });
+  }, []);
 
   const fetchProduct = async () => {
     try {
@@ -161,6 +179,23 @@ const ProductDetail = () => {
     const { allImages } = getDisplayData(product);
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
+
+  const seo = product ? getDisplayData(product) : null;
+  usePageMeta({
+    title: seo ? `${seo.title} – ${SHOP_BRAND}` : SHOP_BRAND,
+    description: seo
+      ? productDescription({ title: seo.title, description: seo.description })
+      : `Nordic designs from ${SHOP_BRAND}, printed to order.`,
+    path: productPath(id ?? ""),
+    image: seo?.allImages[0],
+    jsonLd: product && seo
+      ? buildProductJsonLd(
+          { id: product.id, title: seo.title, description: seo.description, price: seo.price, currency: product.currency, images: seo.allImages },
+          shipping,
+        )
+      : undefined,
+    ready: !loading && shippingLoaded,
+  });
 
   if (loading) {
     return (
