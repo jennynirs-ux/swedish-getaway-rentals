@@ -7,7 +7,7 @@ import { LocationEditor } from "@/components/LocationEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
-import { MapPin, Plus, Trash2 } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 interface LocationData {
   street?: string;
@@ -16,12 +16,6 @@ interface LocationData {
   country?: string;
   latitude?: number | null;
   longitude?: number | null;
-}
-
-interface NearbyLocation {
-  name: string;
-  distance: number;
-  type: string;
 }
 
 interface HostLocationTabProps {
@@ -38,12 +32,8 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
     latitude: null,
     longitude: null,
   });
-  const [nearbyLocations, setNearbyLocations] = useState<NearbyLocation[]>([
-    { name: "Airport", distance: 0, type: "airport" },
-    { name: "Bus Station", distance: 0, type: "bus_station" },
-    { name: "Train Station", distance: 0, type: "train_station" },
-    { name: "Grocery Store", distance: 0, type: "grocery" },
-  ]);
+  // The area guests see on the listing, e.g. "Lerum, Sweden"
+  const [publicLocation, setPublicLocation] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -57,7 +47,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       const [{ data, error }, privateDetails] = await Promise.all([
         supabase
           .from("properties")
-          .select("city, country, latitude, longitude")
+          .select("location, city, country, latitude, longitude")
           .eq("id", propertyId)
           .single(),
         fetchPropertyPrivateDetails(propertyId),
@@ -66,6 +56,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       if (error) throw error;
 
       if (data) {
+        setPublicLocation(data.location || "");
         setLocationData({
           street: privateDetails?.street || "",
           postal_code: privateDetails?.postal_code || "",
@@ -86,6 +77,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       const { error } = await supabase
         .from("properties")
         .update({
+          ...(publicLocation.trim() && { location: publicLocation.trim() }),
           city: locationData.city ? locationData.city.toLowerCase() : null,
           country: locationData.country,
           latitude: locationData.latitude,
@@ -103,7 +95,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
 
       toast({
         title: "Success",
-        description: "Location and nearby distances updated successfully",
+        description: "Location updated",
       });
       onUpdate?.();
     } catch (error) {
@@ -116,20 +108,6 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
     } finally {
       setSaving(false);
     }
-  };
-
-  const updateNearbyLocation = (index: number, field: keyof NearbyLocation, value: string | number) => {
-    const updated = [...nearbyLocations];
-    updated[index] = { ...updated[index], [field]: value };
-    setNearbyLocations(updated);
-  };
-
-  const addNearbyLocation = () => {
-    setNearbyLocations([...nearbyLocations, { name: "", distance: 0, type: "custom" }]);
-  };
-
-  const removeNearbyLocation = (index: number) => {
-    setNearbyLocations(nearbyLocations.filter((_, i) => i !== index));
   };
 
   return (
@@ -152,53 +130,21 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="w-5 h-5" />
-            Nearby Locations & Distances
+            Area shown to guests
           </CardTitle>
           <CardDescription>
-            Enter distances to key locations (in kilometers)
+            Shown on your listing and in search, e.g. "Lerum, Sweden". Your street address stays private: guests
+            get it in their booking confirmation.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {nearbyLocations.map((location, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 border rounded-lg">
-              <div className="space-y-2">
-                <Label htmlFor={`location-name-${index}`}>Location Name</Label>
-                <Input
-                  id={`location-name-${index}`}
-                  value={location.name}
-                  onChange={(e) => updateNearbyLocation(index, "name", e.target.value)}
-                  placeholder="e.g., Gothenburg Airport"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`location-distance-${index}`}>Distance (km)</Label>
-                <Input
-                  id={`location-distance-${index}`}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={location.distance}
-                  onChange={(e) => updateNearbyLocation(index, "distance", parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeNearbyLocation(index)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-
-          <Button variant="outline" onClick={addNearbyLocation} className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Location
-          </Button>
+        <CardContent>
+          <Label htmlFor="public-location" className="sr-only">Area shown to guests</Label>
+          <Input
+            id="public-location"
+            value={publicLocation}
+            onChange={(e) => setPublicLocation(e.target.value)}
+            placeholder="Lerum, Sweden"
+          />
         </CardContent>
       </Card>
 

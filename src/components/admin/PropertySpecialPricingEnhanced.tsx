@@ -78,23 +78,42 @@ export const PropertySpecialPricingEnhanced = ({
     try {
       const price = parseInt(specialPrice) || null;
 
+      // Booked and synced dates belong to the booking or the other channel:
+      // skip them (the database refuses hosts' writes to them anyway). Dates
+      // that already have a row only get the price, so a blocked date stays
+      // blocked; new dates are open.
+      const isLocked = (reason: string | null | undefined) =>
+        reason === "booked" || reason === "ical_sync" || !!reason?.startsWith("Blocked by ");
+      const existing: string[] = [];
+      const fresh: string[] = [];
+      let skipped = 0;
       for (const date of selectedDates) {
-        const { error } = await supabase.from("availability").upsert(
-          {
-            property_id: propertyId,
-            date: format(date, "yyyy-MM-dd"),
-            available: true,
-            seasonal_price: price,
-          },
-          { onConflict: "property_id,date" }
-        );
+        const row = getDateAvailability(date);
+        const day = format(date, "yyyy-MM-dd");
+        if (isLocked(row?.reason)) skipped++;
+        else if (row) existing.push(day);
+        else fresh.push(day);
+      }
 
+      if (existing.length > 0) {
+        const { error } = await supabase
+          .from("availability")
+          .update({ seasonal_price: price })
+          .eq("property_id", propertyId)
+          .in("date", existing);
+        if (error) throw error;
+      }
+      if (fresh.length > 0) {
+        const { error } = await supabase
+          .from("availability")
+          .insert(fresh.map((date) => ({ property_id: propertyId, date, available: true, seasonal_price: price })));
         if (error) throw error;
       }
 
+      const saved = existing.length + fresh.length;
       toast({
         title: "Success",
-        description: `Special price set for ${selectedDates.length} date(s)`,
+        description: `Special price set for ${saved} date(s)${skipped > 0 ? ` (skipped ${skipped} booked or synced date(s))` : ""}`,
       });
 
       loadAvailability();

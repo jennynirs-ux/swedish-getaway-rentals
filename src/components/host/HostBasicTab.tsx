@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { BankAccountSetup } from "@/components/admin/BankAccountSetup";
@@ -12,6 +13,8 @@ interface HostBasicTabProps {
   propertyId: string;
   onUpdate?: () => void;
 }
+
+const PROPERTY_TYPES = ["Cabin", "Cottage", "Apartment", "House", "Villa", "Studio", "Loft", "Chalet"];
 
 const toCount = (value: string) => {
   const n = parseInt(value, 10);
@@ -29,7 +32,12 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
   const [formData, setFormData] = useState({
     title: "",
     tagline_line1: "",
+    tagline_line2: "",
+    property_type: "",
     description: "",
+    availability_text: "",
+    contact_response_time: "",
+    registration_number: "",
     introduction_text: "",
     max_guests: "",
     bedrooms: "",
@@ -46,7 +54,7 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('title, tagline_line1, description, introduction_text, max_guests, bedrooms, bathrooms, get_in_touch_info')
+        .select('title, tagline_line1, tagline_line2, property_type, description, introduction_text, max_guests, bedrooms, bathrooms, availability_text, contact_response_time, registration_number, get_in_touch_info')
         .eq('id', propertyId)
         .single();
 
@@ -57,7 +65,12 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
         setFormData({
           title: data.title || "",
           tagline_line1: data.tagline_line1 || "",
+          tagline_line2: data.tagline_line2 || "",
+          property_type: data.property_type || "",
           description: data.description || "",
+          availability_text: data.availability_text || "",
+          contact_response_time: data.contact_response_time || "",
+          registration_number: data.registration_number || "",
           introduction_text: data.introduction_text || "",
           max_guests: data.max_guests?.toString() ?? "",
           bedrooms: data.bedrooms?.toString() ?? "",
@@ -79,7 +92,12 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
         .update({
           title: formData.title,
           tagline_line1: formData.tagline_line1,
+          tagline_line2: formData.tagline_line2 || null,
+          ...(formData.property_type && { property_type: formData.property_type }),
           description: formData.description,
+          availability_text: formData.availability_text || null,
+          contact_response_time: formData.contact_response_time || null,
+          registration_number: formData.registration_number || null,
           introduction_text: formData.introduction_text,
           // Empty boxes keep the saved number
           ...(toCount(formData.max_guests) !== null && { max_guests: toCount(formData.max_guests) }),
@@ -132,12 +150,34 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="property_type">Property type</Label>
+            <Select
+              value={formData.property_type}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, property_type: v }))}
+            >
+              <SelectTrigger id="property_type"><SelectValue placeholder="Choose a type" /></SelectTrigger>
+              <SelectContent>
+                {[...new Set([...PROPERTY_TYPES, formData.property_type].filter(Boolean))].map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="tagline">Tagline</Label>
             <Input
               id="tagline"
               value={formData.tagline_line1}
               onChange={(e) => setFormData(prev => ({ ...prev, tagline_line1: e.target.value }))}
               placeholder="A catchy tagline for your property"
+            />
+            <Input
+              id="tagline2"
+              aria-label="Second tagline line"
+              value={formData.tagline_line2}
+              onChange={(e) => setFormData(prev => ({ ...prev, tagline_line2: e.target.value }))}
+              placeholder="Second line (optional)"
             />
           </div>
 
@@ -195,6 +235,37 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, introduction_text: e.target.value }))}
               placeholder="Describe what makes your property special..."
               rows={4}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="availability_text">Availability note</Label>
+              <Input
+                id="availability_text"
+                value={formData.availability_text}
+                onChange={(e) => setFormData(prev => ({ ...prev, availability_text: e.target.value }))}
+                placeholder="e.g. Open all year"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contact_response_time">Response time</Label>
+              <Input
+                id="contact_response_time"
+                value={formData.contact_response_time}
+                onChange={(e) => setFormData(prev => ({ ...prev, contact_response_time: e.target.value }))}
+                placeholder="e.g. Usually within a few hours"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="registration_number">Registration number (optional)</Label>
+            <Input
+              id="registration_number"
+              value={formData.registration_number}
+              onChange={(e) => setFormData(prev => ({ ...prev, registration_number: e.target.value }))}
+              placeholder="If your municipality requires one"
             />
           </div>
 

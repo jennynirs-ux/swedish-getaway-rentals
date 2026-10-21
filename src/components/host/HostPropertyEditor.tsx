@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Settings, DollarSign, Clock, MapPin, Image } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Settings, DollarSign, Clock, MapPin, Image, KeyRound } from "lucide-react";
 import { CheckInOutTimes } from "@/components/admin/CheckInOutTimes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -23,6 +24,7 @@ import CouponForm from "@/components/CouponForm";
 import { PropertyCouponsList } from "@/components/PropertyCouponsList";
 import { GuidebookEditor } from "@/components/admin/GuidebookEditorEnhanced";
 import { AirbnbSyncManager } from "@/components/admin/AirbnbSyncManager";
+import PreArrivalSettings from "@/components/admin/PreArrivalSettings";
 
 interface HostPropertyEditorProps {
   propertyId: string;
@@ -46,6 +48,7 @@ export const HostPropertyEditor = ({
   const [saving, setSaving] = useState(false);
   const [savingPrice, setSavingPrice] = useState(false);
   const [nightlyPrice, setNightlyPrice] = useState<number>(basePrice);
+  const [priceCurrency, setPriceCurrency] = useState<string>(currency || "SEK");
 
   useEffect(() => {
     loadPropertyData();
@@ -108,10 +111,15 @@ export const HostPropertyEditor = ({
          .from('properties')
          .update({
            price_per_night: nightlyPrice,
+           currency: priceCurrency,
            updated_at: new Date().toISOString()
          })
          .eq('id', propertyId);
        if (error) throw error;
+       // Extra fees are charged in the property's currency; keep their label in step
+       if (priceCurrency !== currency) {
+         await supabase.from('properties_pricing_rules').update({ currency: priceCurrency }).eq('property_id', propertyId);
+       }
        toast({ title: 'Success', description: 'Nightly price updated' });
        onUpdate?.();
      } catch (error) {
@@ -125,7 +133,7 @@ export const HostPropertyEditor = ({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-1 mb-2">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-1 mb-2">
           <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Basic</span>
@@ -153,6 +161,10 @@ export const HostPropertyEditor = ({
           <TabsTrigger value="guide" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Guide</span>
+          </TabsTrigger>
+          <TabsTrigger value="arrival" className="flex items-center gap-2 text-xs sm:text-sm">
+            <KeyRound className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Arrival</span>
           </TabsTrigger>
           <TabsTrigger value="emails" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -247,10 +259,21 @@ export const HostPropertyEditor = ({
               <CardDescription>Set your standard nightly rate</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2 sm:col-span-2">
+              <div className="space-y-2">
                 <Label htmlFor="nightly-price">Price per night</Label>
                 <Input id="nightly-price" type="number" value={nightlyPrice}
                   onChange={(e) => setNightlyPrice(parseInt(e.target.value) || 0)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price-currency">Currency</Label>
+                <Select value={priceCurrency} onValueChange={setPriceCurrency}>
+                  <SelectTrigger id="price-currency"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SEK">SEK</SelectItem>
+                    <SelectItem value="NOK">NOK</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-end">
                 <Button onClick={handleSaveNightlyPrice} disabled={savingPrice}>
@@ -298,6 +321,10 @@ export const HostPropertyEditor = ({
           <div>
             <h2 className="text-2xl font-bold mb-1">Guest Guide</h2>
             <p className="text-muted-foreground">Create helpful information for your guests</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Anyone can read the guide, so keep door codes and the Wi-Fi password in the Arrival tab: only booked
+              guests get those.
+            </p>
           </div>
           <GuidebookEditor
             sections={guidebookSections}
@@ -306,6 +333,10 @@ export const HostPropertyEditor = ({
             saving={saving}
             propertyTitle={propertyTitle}
           />
+        </TabsContent>
+
+        <TabsContent value="arrival" className="mt-6 space-y-4">
+          <PreArrivalSettings propertyId={propertyId} />
         </TabsContent>
 
         <TabsContent value="emails" className="mt-6 space-y-4">

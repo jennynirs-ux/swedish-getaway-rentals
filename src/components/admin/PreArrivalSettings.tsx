@@ -13,17 +13,20 @@ import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/p
 type PrivateField = 'check_in_instructions' | 'parking_info';
 type Field = PrivateField | 'local_tips';
 
-export default function PreArrivalSettings() {
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
+/** Admin: pick any property. Host editor: pass propertyId for that one only. */
+export default function PreArrivalSettings({ propertyId }: { propertyId?: string } = {}) {
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(propertyId ?? "");
   const queryClient = useQueryClient();
 
   const { data: properties, isLoading: propertiesLoading } = useQuery({
-    queryKey: ['properties-pre-arrival'],
+    queryKey: ['properties-pre-arrival', propertyId ?? 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
         .select('id, title, local_tips')
         .order('title');
+      if (propertyId) query = query.eq('id', propertyId);
+      const { data, error } = await query;
       
       if (error) throw error;
       return data;
@@ -87,8 +90,13 @@ export default function PreArrivalSettings() {
         <p className="text-muted-foreground mt-1">
           Configure check-in instructions, parking info, and local tips sent 24-48 hours before guest arrival
         </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Only booked guests see this. Put door codes and the Wi-Fi password here, never in the guest guide: the
+          guide is public.
+        </p>
       </div>
 
+      {!propertyId && (
       <Card>
         <CardHeader>
           <CardTitle>Select Property</CardTitle>
@@ -111,6 +119,7 @@ export default function PreArrivalSettings() {
           </Select>
         </CardContent>
       </Card>
+      )}
 
       {selectedProperty && privateDetailsLoading && (
         <div className="flex items-center justify-center p-8">
