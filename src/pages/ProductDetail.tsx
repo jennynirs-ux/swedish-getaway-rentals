@@ -12,6 +12,7 @@ import { useCart } from "@/context/CartContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { buildProductJsonLd, productDescription, productPath, SHOP_BRAND } from "@/lib/productSeo";
 import type { ShippingSettings } from "../../supabase/functions/_shared/shop-shipping";
+import { listedPrice } from "../../supabase/functions/_shared/shop-variants";
 
 interface ShopProduct {
   id: string;
@@ -25,6 +26,7 @@ interface ShopProduct {
   title_override?: string;
   description_override?: string;
   price_override?: number;
+  price_max?: number | null;
   main_image_override?: string;
   additional_images_override?: string[];
   printful_data?: any;
@@ -95,7 +97,7 @@ const ProductDetail = () => {
   const getDisplayData = (product: ShopProduct) => {
     const title = product.title_override || product.title;
     const description = product.description_override || product.custom_description || product.description;
-    const price = product.price_override || product.custom_price || product.price;
+    const { price, from } = listedPrice(product);
     const imageUrl = product.main_image_override || product.image_url;
     
     // Get all available images
@@ -111,7 +113,7 @@ const ProductDetail = () => {
       });
     }
     
-    return { title, description, price, allImages: allImages.filter(Boolean) };
+    return { title, description, price, from, allImages: allImages.filter(Boolean) };
   };
 
   const formatPrice = (price: number, currency: string) => {
@@ -229,7 +231,7 @@ const ProductDetail = () => {
     );
   }
 
-  const { title, description, allImages } = getDisplayData(product);
+  const { title, description, from, allImages } = getDisplayData(product);
   const currentPrice = getCurrentPrice();
   const variants = (product.printful_data?.variants && Array.isArray(product.printful_data.variants)) ? product.printful_data.variants : [];
 
@@ -317,6 +319,7 @@ const ProductDetail = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
               <div className="text-3xl font-bold text-primary mb-4">
+                {from && !selectedVariant && <span className="text-lg font-normal text-muted-foreground">From </span>}
                 {formatPrice(currentPrice, product.currency)}
               </div>
               <Badge variant="secondary" className="mb-4">
@@ -384,7 +387,8 @@ const ProductDetail = () => {
                   ) : (
                     <>
                       <ShoppingCart className="w-5 h-5 mr-2" />
-                      Add to Cart - {formatPrice(currentPrice * quantity, product.currency)}
+                      Add to Cart
+                      {(variants.length <= 1 || selectedVariant) && ` - ${formatPrice(currentPrice * quantity, product.currency)}`}
                     </>
                   )}
                 </Button>

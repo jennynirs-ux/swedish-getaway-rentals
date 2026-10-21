@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { isAdminOrService } from "../_shared/auth.ts";
+import { variantPriceRange } from "../_shared/shop-variants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -124,8 +125,10 @@ logStep("Fetched products from Printful", { count: printfulProducts.length });
       const detailData = await detailResponse.json();
       const productDetail = detailData.result;
       
-      // Use the first variant for pricing and main product data
-      const mainVariant = productDetail.sync_variants?.[0];
+      // List the product at its cheapest variant ("From …" when sizes cost
+      // different amounts; price_max holds the dearest)
+      const range = variantPriceRange(productDetail.sync_variants ?? []);
+      const mainVariant = range?.cheapest ?? productDetail.sync_variants?.[0];
       if (!mainVariant) {
         logStep("No variants found for product", { productId: printfulProduct.id });
         continue;
@@ -157,7 +160,8 @@ logStep("Fetched products from Printful", { count: printfulProducts.length });
         printful_sync_variant_id: mainVariant.id?.toString(),
         title: existing?.title_override || printfulProduct.name,
         description: existing?.description_override || productDetail.product?.description || printfulProduct.name,
-        price: Math.round(parseFloat(mainVariant.retail_price || '0') * 100), // Convert to cents from Printful retail_price
+        price: range?.min ?? 0, // öre
+        price_max: range?.max ?? null,
         currency: mainVariant.currency || 'SEK',
         image_url: allImages[0] || printfulProduct.thumbnail_url,
         additional_images_override: allImages.slice(1),
@@ -190,6 +194,7 @@ logStep("Fetched products from Printful", { count: printfulProducts.length });
         if (!existing.title_override) updateData.title = productData.title;
         if (!existing.description_override) updateData.description = productData.description;
         if (!existing.price_override) updateData.price = productData.price; // Always sync with Printful retail_price unless overridden
+        updateData.price_max = productData.price_max;
         if (!existing.main_image_override) updateData.image_url = productData.image_url;
         
         // Always update additional images and currency

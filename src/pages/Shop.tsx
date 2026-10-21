@@ -11,12 +11,14 @@ import { useCart } from "@/context/CartContext";
 import ShopFilters, { ShopFilters as ShopFiltersType } from "@/components/ShopFilters";
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { listedPrice } from "../../supabase/functions/_shared/shop-variants";
 
 interface ShopProduct {
   id: string;
   title: string;
   description: string;
   price: number;
+  price_max?: number | null;
   currency: string;
   image_url: string;
   custom_description?: string;
@@ -60,11 +62,12 @@ const Shop = () => {
       product.description_override ||
       product.custom_description ||
       product.description || "";
-    const price =
-      product.price_override || product.custom_price || product.price;
+    const { price, from } = listedPrice(product);
     const imageUrl = product.main_image_override || product.image_url;
+    // Sizes or colours are picked on the product page
+    const hasOptions = (product.printful_data?.variants?.length ?? 0) > 1;
 
-    return { title, description, price, imageUrl };
+    return { title, description, price, from, hasOptions, imageUrl };
   };
 
   useEffect(() => {
@@ -302,7 +305,7 @@ const Shop = () => {
 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {filteredAndSortedProducts.map((product) => {
-                  const { title, description, price, imageUrl } =
+                  const { title, description, price, from, hasOptions, imageUrl } =
                     getDisplayData(product);
 
                   return (
@@ -336,22 +339,29 @@ const Shop = () => {
 
                         <div className="flex items-center justify-between">
                           <div className="text-base font-bold text-primary">
+                            {from && <span className="text-xs font-normal text-muted-foreground">From </span>}
                             {formatPrice(price, product.currency)}
                           </div>
 
-                          <Button
-                            onClick={() => handleAddToCart(product)}
-                            disabled={purchasing === product.id}
-                            size="sm"
-                            className="text-xs px-2"
-                          >
-                            {purchasing === product.id ? (
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                            ) : (
-                              <ShoppingCart className="w-3 h-3 mr-1" />
-                            )}
-                            Add
-                          </Button>
+                          {hasOptions ? (
+                            <Button asChild size="sm" className="text-xs px-2">
+                              <Link to={`/product/${product.id}`}>Choose</Link>
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleAddToCart(product)}
+                              disabled={purchasing === product.id}
+                              size="sm"
+                              className="text-xs px-2"
+                            >
+                              {purchasing === product.id ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <ShoppingCart className="w-3 h-3 mr-1" />
+                              )}
+                              Add
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

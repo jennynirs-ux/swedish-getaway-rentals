@@ -1555,6 +1555,7 @@ export type Database = {
           is_visible_shop: boolean | null
           main_image_override: string | null
           price: number
+          price_max: number | null
           price_override: number | null
           printful_data: Json | null
           printful_product_id: string
@@ -1582,6 +1583,7 @@ export type Database = {
           is_visible_shop?: boolean | null
           main_image_override?: string | null
           price: number
+          price_max?: number | null
           price_override?: number | null
           printful_data?: Json | null
           printful_product_id: string
@@ -1609,6 +1611,7 @@ export type Database = {
           is_visible_shop?: boolean | null
           main_image_override?: string | null
           price?: number
+          price_max?: number | null
           price_override?: number | null
           printful_data?: Json | null
           printful_product_id?: string

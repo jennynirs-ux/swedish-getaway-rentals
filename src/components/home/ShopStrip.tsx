@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { listedPrice } from "../../../supabase/functions/_shared/shop-variants";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import LazyImage from "@/components/LazyImage";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +18,7 @@ interface StripProduct {
   currency: string;
   image_url: string | null;
   title_override: string | null;
+  price_max: number | null;
   price_override: number | null;
   custom_price: number | null;
   main_image_override: string | null;
@@ -29,7 +31,7 @@ const ShopStrip = () => {
   const productsQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from("shop_products")
-      .select("id, title, price, currency, image_url, title_override, price_override, custom_price, main_image_override")
+      .select("id, title, price, price_max, currency, image_url, title_override, price_override, custom_price, main_image_override")
       .eq("is_visible_home", true)
       .eq("visible", true)
       .order("sort_order", { ascending: true, nullsFirst: false })
@@ -63,7 +65,7 @@ const ShopStrip = () => {
             ? [1, 2, 3].map((i) => <Skeleton key={i} className="aspect-[3/4] w-full rounded-lg" />)
             : products.map((p) => {
                 const title = p.title_override || p.title;
-                const price = p.price_override || p.custom_price || p.price;
+                const { price, from } = listedPrice(p);
                 return (
                   <Link
                     key={p.id}
@@ -79,7 +81,10 @@ const ShopStrip = () => {
                     </div>
                     <div className="p-3">
                       <h3 className="text-sm font-medium text-foreground line-clamp-2">{title}</h3>
-                      <p className="text-sm font-semibold text-primary mt-1">{formatPrice(price, p.currency)}</p>
+                      <p className="text-sm font-semibold text-primary mt-1">
+                        {from && "From "}
+                        {formatPrice(price, p.currency)}
+                      </p>
                     </div>
                   </Link>
                 );
