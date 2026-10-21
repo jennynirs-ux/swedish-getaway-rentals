@@ -25,13 +25,21 @@ interface LocationEditorProps {
 }
 
 
+// Mid-Sweden: where the map opens for a place that has no pin yet, zoomed
+// out to show the whole country
+const SWEDEN_CENTER: [number, number] = [62.4, 16.5];
+
+// Nominatim may name the country in the browser's language ("Sverige")
+const normaliseCountry = (country?: string) =>
+  country && /^(sverige|se|swe)$/i.test(country.trim()) ? 'Sweden' : country;
+
 export function LocationEditor({ value, onChange }: LocationEditorProps) {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [mapPosition, setMapPosition] = useState<[number, number]>([
-    value.latitude || 57.7089,
-    value.longitude || 11.9746
-  ]);
+  const hasPin = Number.isFinite(value.latitude) && Number.isFinite(value.longitude);
+  const [mapPosition, setMapPosition] = useState<[number, number]>(
+    hasPin ? [value.latitude as number, value.longitude as number] : SWEDEN_CENTER
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -77,8 +85,10 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
           ...value,
           latitude: result.latitude,
           longitude: result.longitude,
-          city: result.city || value.city,
-          country: result.country || value.country
+          // The host's own city is kept: for a rural address the lookup often
+          // names a nearby village instead
+          city: value.city || result.city,
+          country: normaliseCountry(value.country || result.country)
         });
         setMapPosition([result.latitude, result.longitude]);
         toast({
@@ -150,7 +160,7 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
               id="city"
               value={value.city || ''}
               onChange={(e) => handleFieldChange('city', e.target.value)}
-              placeholder="Gothenburg"
+              placeholder="Åre"
             />
           </div>
           <div className="space-y-2">
@@ -179,12 +189,19 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
           <div className="space-y-2">
             <Label>Map Preview</Label>
             <p className="text-sm text-muted-foreground mb-2">
-              Drag the pin to adjust the exact location. Click anywhere on the map to move the pin.
+              {hasPin
+                ? "Drag the pin to adjust the exact location. Click anywhere on the map to move the pin."
+                : "No pin yet. Find your address above, or click the map where your place is."}
             </p>
             <div className="h-[400px] rounded-lg overflow-hidden border">
               <ErrorBoundary>
                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
-                  <EditorMap center={mapPosition} onPositionChange={handleMarkerMove} />
+                  <EditorMap
+                    center={mapPosition}
+                    zoom={hasPin ? 13 : 5}
+                    showMarker={hasPin}
+                    onPositionChange={handleMarkerMove}
+                  />
                 </Suspense>
               </ErrorBoundary>
             </div>

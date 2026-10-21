@@ -18,8 +18,8 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 
 const PricingGuide = () => {
   usePageMeta({
-    title: "Pricing guide",
-    description: "Seasonal prices, cleaning fees and weekly discounts for Nordic Getaways lakeside cabins in Sweden.",
+    title: "Pricing guide for hosts",
+    description: "How to price a holiday home in Sweden: seasonal and weekend prices, cleaning fees, weekly discounts and what guests pay once the service fee is added.",
     path: "/pricing-guide",
   });
 

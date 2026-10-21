@@ -154,7 +154,7 @@ const LakeGuide = () => {
             <div className="text-center pt-4">
               <p className="text-lg mb-4">New to Sweden? Read our <Link to="/first-time-in-sweden" className="text-primary underline">first-timer's guide</Link> too.</p>
               <Button asChild size="lg">
-                <Link to="/book-now">See the stays and book directly</Link>
+                <Link to="/cabins">See the stays and book directly</Link>
               </Button>
             </div>
           </div>

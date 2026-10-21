@@ -1,6 +1,6 @@
 import { usePageMeta } from "@/hooks/usePageMeta";
 import LegalPage from "@/components/LegalPage";
-import { COMPANY, COMPANY_ADDRESS } from "@/content/company";
+import { COMPANY, COMPANY_ADDRESS, PRIVACY_UPDATED } from "@/content/company";
 
 // Keep in line with what the site actually collects and who it shares it
 // with (booking, shop, contact form, accounts, guestbook, providers below).
@@ -69,6 +69,7 @@ const PrivacyPolicy = () => {
     <LegalPage
       title="Privacy policy"
       lead="What personal data Nordic Getaways collects, why, who we share it with and what rights you have."
+      updated={PRIVACY_UPDATED}
     >
       <section>
         <h2>Who is responsible</h2>

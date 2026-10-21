@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import LegalPage from "@/components/LegalPage";
-import { COMPANY, COMPANY_ADDRESS } from "@/content/company";
+import { COMPANY, COMPANY_ADDRESS, TERMS_UPDATED } from "@/content/company";
 import { MIN_LEAD_GUEST_AGE, MIN_NIGHTS, PARTY_NIGHT_MIN_NIGHTS } from "@/lib/stayRules";
 import { FOUNDING_HOST_FEE_PCT, PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 
@@ -26,6 +26,7 @@ const Terms = () => {
     <LegalPage
       title="Booking terms"
       lead="These terms apply when you book a stay or buy from the shop on nordic-getaways.com."
+      updated={TERMS_UPDATED}
     >
       <section>
         <h2>Who we are</h2>
@@ -43,10 +44,10 @@ const Terms = () => {
           <li>You pay the full amount when you book, by card through Stripe. Prices are in Swedish kronor (SEK).</li>
           <li>
             The total shown before you pay is the full price: the nightly price, any extra-guest and cleaning fees,
-            and a {fee}% service fee ({FOUNDING_HOST_FEE_PCT}% on listings from new hosts during their first year). A
-            weekly or monthly discount is taken off the nightly price.
+            and a service fee of up to {fee}% ({FOUNDING_HOST_FEE_PCT}% on listings from founding hosts in their first
+            year). A weekly or monthly discount is taken off the nightly price.
           </li>
-          <li>Bed linen and towels for every guest are included.</li>
+          <li>Bed linen and towels are included when the cabin's listing says so.</li>
         </ul>
       </section>
 
@@ -59,8 +60,8 @@ const Terms = () => {
           </li>
           <li>The person booking must be at least {MIN_LEAD_GUEST_AGE} and stay at the property.</li>
           <li>No more guests than booked, and never more than the property sleeps.</li>
-          <li>No parties or events, no pets and no smoking.</li>
-          <li>Check-in is from 16:00 and check-out by 11:00.</li>
+          <li>No parties or events. Pets and smoking: see each cabin's listing.</li>
+          <li>Check-in and check-out times are on each cabin's page and in your booking confirmation.</li>
           <li>The rules on each property's page also apply.</li>
           <li>
             If the rules are seriously broken, for example a party or more guests than booked, the host may end the
@@ -111,12 +112,18 @@ const Terms = () => {
         <h2>During your stay</h2>
         <ul>
           <li>Treat the property and its equipment with care and leave it as you found it.</li>
-          <li>Tell us straight away if something breaks or stops working, so we can fix it.</li>
+          <li>
+            Tell the host straight away (and us at <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> if you
+            can't reach them) if something breaks or stops working.
+          </li>
           <li>
             You are responsible for damage caused by you or your group beyond normal wear, and may be asked to pay for
             repairs or extra cleaning.
           </li>
-          <li>Boats and paddle boards come with life jackets. Children must always be supervised near the water.</li>
+          <li>
+            If the cabin has boats or paddle boards, use the life jackets provided; children must always be supervised
+            near the water.
+          </li>
         </ul>
       </section>
 
@@ -145,8 +152,9 @@ const Terms = () => {
       <section>
         <h2>Complaints and disputes</h2>
         <p>
-          Contact us first at <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>; during a stay, as soon as
-          possible so we can put it right. If we cannot agree, you can turn to the National Board for Consumer
+          During a stay, tell the host first (and us at <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> if
+          you can't reach them); otherwise contact us at <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
+          If we cannot agree, you can turn to the National Board for Consumer
           Disputes (ARN) at{" "}
           <a href="https://www.arn.se" target="_blank" rel="noopener noreferrer">arn.se</a>. Swedish law applies.
         </p>

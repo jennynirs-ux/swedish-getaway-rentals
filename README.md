@@ -1,7 +1,9 @@
 # Nordic Getaways
 
-Direct-booking site for two lakeside holiday homes on Stora Härsjön near
-Gothenburg (https://nordic-getaways.com), plus self-service signup for other hosts.
+Direct-booking marketplace for holiday cabins and homes in Sweden
+(https://nordic-getaways.com), run by Mojjo AB. It started with the owners' two
+lakeside homes on Stora Härsjön (Villa Häcken and Lakehouse Getaway); other hosts
+now sign up and list their own cabins.
 
 - Frontend: Vite + React + TypeScript (`src/`), hosted on Cloudflare Pages.
   `.github/workflows/deploy.yml` runs `bun run build:prerender` and publishes

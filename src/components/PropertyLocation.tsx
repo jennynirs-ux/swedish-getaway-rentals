@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Navigation } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { AREAS } from '@/content/areas';
 
 const PropertyMap = lazy(() => import('./PropertyMap'));
 
@@ -13,9 +14,15 @@ interface PropertyLocationProps {
   location?: string;
   /** Verified travel facts; without them only the map and directions show */
   gettingHere?: string[];
+  /** properties.city; the area-guide link shows only when a guide covers it */
+  city?: string | null;
 }
 
-const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, gettingHere }: PropertyLocationProps) => {
+const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, gettingHere, city }: PropertyLocationProps) => {
+  // Without a city, the town is the first part of the public location ("Lerum, Sweden")
+  const town = (city ?? location?.split(',')[0])?.trim().toLowerCase();
+  const area = AREAS.find((a) => a.city === town);
+
   if (!latitude || !longitude) {
     return (
       <section className="py-12 bg-muted/30">
@@ -52,23 +59,24 @@ const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, g
                 longitude={longitude}
                 propertyTitle={propertyTitle}
                 className="h-[400px]"
-                showRoute={false}
               />
             </Suspense>
             
             {latitude && longitude && (
               <div className="p-4 bg-card border-t border-border space-y-4">
                 {/* Hand-checked facts only: the old box estimated distances from generic lists */}
-                {gettingHere && gettingHere.length > 0 && (
+                {((gettingHere && gettingHere.length > 0) || area) && (
                   <div className="flex items-start gap-3">
                     <Navigation className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div className="flex-1 space-y-2 text-sm text-muted-foreground">
-                      {gettingHere.map((fact) => (
+                      {gettingHere?.map((fact) => (
                         <p key={fact}>{fact}</p>
                       ))}
-                      <Link to="/stora-harsjon-lerum" className="inline-block font-medium text-primary hover:underline">
-                        How to get here and what to do nearby →
-                      </Link>
+                      {area && (
+                        <Link to={area.path} className="inline-block font-medium text-primary hover:underline">
+                          How to get here and what to do nearby →
+                        </Link>
+                      )}
                     </div>
                   </div>
                 )}

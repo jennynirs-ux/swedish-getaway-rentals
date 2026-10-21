@@ -7,6 +7,9 @@ export interface Property {
   description: string;
   location: string;
   price_per_night: number;
+  /** "16:00:00"; loaded on the property page */
+  check_in_time?: string | null;
+  check_out_time?: string | null;
   /** Guest service fee in percent (computed field; 5 during the founding-host offer) */
   service_fee_rate?: number | null;
   currency: string;
@@ -62,6 +65,8 @@ export interface Property {
   city?: string | null;
   country?: string | null;
   slug?: string | null;
+  /** For the "New" badge on the cards */
+  created_at?: string;
 }
 
 export const useProperties = () => {
@@ -81,7 +86,8 @@ export const useProperties = () => {
           active, review_rating, review_count, property_type, 
           special_amenities, featured_amenities, host_id, 
           weekly_discount_percentage, monthly_discount_percentage,
-          cancellation_policy, preparation_days, latitude, longitude, city
+          cancellation_policy, preparation_days, latitude, longitude, city,
+          created_at
         `)
         .eq('active', true)
         .order('created_at', { ascending: false });

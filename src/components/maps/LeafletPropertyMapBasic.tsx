@@ -39,12 +39,21 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
 
     const marker = L.marker(position);
     marker.addTo(map);
-    marker.bindPopup(
-      `<div style="font-size: 0.875rem;">
-        <div style="font-weight:600; margin-bottom: 0.25rem;">${propertyTitle}</div>
-        <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer">Get directions →</a>
-      </div>`
-    );
+    // Hosts publish their own titles (and guide pin names) unreviewed, so the
+    // popup is built from DOM nodes: an HTML string would run their markup
+    const popup = document.createElement('div');
+    popup.style.fontSize = '0.875rem';
+    const title = document.createElement('div');
+    title.style.fontWeight = '600';
+    title.style.marginBottom = '0.25rem';
+    title.textContent = propertyTitle;
+    const directions = document.createElement('a');
+    directions.href = googleMapsUrl;
+    directions.target = '_blank';
+    directions.rel = 'noopener noreferrer';
+    directions.textContent = 'Get directions →';
+    popup.append(title, directions);
+    marker.bindPopup(popup);
     markerRef.current = marker;
 
     if (routePositions.length > 0) {

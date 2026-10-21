@@ -112,6 +112,9 @@ const PropertyPage = memo(() => {
         latitude,
         longitude,
         city,
+        country,
+        check_in_time,
+        check_out_time,
         slug
       `)
       .eq("id", propertyId)
@@ -205,7 +208,11 @@ const PropertyPage = memo(() => {
       latitude: lightProperty.latitude ?? null,
       longitude: lightProperty.longitude ?? null,
       city: lightProperty.city ?? null,
-    } as Property;
+      // For the structured data (addressCountry, checkinTime, checkoutTime)
+      country: lightProperty.country ?? null,
+      check_in_time: lightProperty.check_in_time ?? null,
+      check_out_time: lightProperty.check_out_time ?? null,
+    } as Property & { check_in_time: string | null; check_out_time: string | null };
   }, [lightProperty, heavyProperty]);
 
   const content = property?.slug ? PROPERTY_CONTENT[property.slug] : undefined;
@@ -217,7 +224,7 @@ const PropertyPage = memo(() => {
         ? `${content.nickname}: ${content.seoTitle}`
         : `${property.title} – ${property.location ?? "Sweden"}`
       : "",
-    description: property ? propertyMetaDescription(property) : "",
+    description: property ? propertyMetaDescription(property, content) : "",
     path: property ? propertyPath(property) : undefined,
     image: property?.hero_image_url,
     jsonLd: property ? buildPropertyJsonLd(property, content) : undefined,
@@ -265,7 +272,12 @@ const PropertyPage = memo(() => {
       <PropertyHero property={property} />
 
       {content && (
-        <PropertyAbout content={content} rating={property.review_rating} reviewCount={property.review_count} />
+        <PropertyAbout
+          content={content}
+          rating={property.review_rating}
+          reviewCount={property.review_count}
+          city={property.city}
+        />
       )}
 
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
@@ -298,6 +310,7 @@ const PropertyPage = memo(() => {
           longitude={property.longitude}
           propertyTitle={property.title}
           location={property.location}
+          city={property.city}
         />
       </Suspense>
 

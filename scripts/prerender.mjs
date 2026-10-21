@@ -1,7 +1,7 @@
 // Snapshot public routes to static HTML after `vite build`, so search engines
 // and AI assistants (GPTBot, ClaudeBot, PerplexityBot, ...) that don't run
 // JavaScript still see real content, titles and structured data.
-// Also regenerates sitemap.xml from the live property list.
+// Also writes sitemap.xml from the live property list (there is no copy in public/).
 //
 // Usage: node scripts/prerender.mjs   (needs Chrome; set CHROME_PATH if not found)
 
@@ -19,7 +19,7 @@ const STATIC_ROUTES = [
   "/",
   "/first-time-in-sweden",
   "/stora-harsjon-lerum",
-  "/book-now",
+  "/cabins",
   "/contact",
   "/pricing-guide",
   "/become-host",
@@ -131,13 +131,20 @@ ${items.join("\n")}
   return items.length;
 }
 
+// Only the owners' cabins promise linen; other hosts say so in their own
+// listing. Same ids as LINEN_INCLUDED_PROPERTY_IDS in src/content/propertyContent.ts
+const LINEN_INCLUDED_PROPERTY_IDS = new Set([
+  "6618e8ae-e1ff-4a3b-8f6b-b3287c881d12", // Villa Häcken
+  "3f0002c9-7564-46f3-af63-8c1c0aa9a162", // Lakehouse Getaway
+]);
+
 // Fees on top of the nightly price (rule prices are in öre), so AI answers
 // don't understate the total
 const feesText = (p) =>
   p.rules
     .map((r) =>
       r.rule_type === "extra_guest"
-        ? ` The price is for 1 guest; each extra guest adds ${r.price / 100} ${p.currency} per night. Bed linen and towels for every guest are included.`
+        ? ` The price is for 1 guest; each extra guest adds ${r.price / 100} ${p.currency} per night.${LINEN_INCLUDED_PROPERTY_IDS.has(p.id) ? " Bed linen and towels for every guest are included." : ""}`
         : r.rule_type === "cleaning_fee"
           ? ` Cleaning fee ${r.price / 100} ${p.currency} per stay.`
           : "",
@@ -157,9 +164,9 @@ async function writeSitemap(routes) {
 
 // Old /property/<uuid> links → canonical slug URLs
 async function writeRedirects(properties) {
-  // /gallery and /amenities were empty pages; photos and amenities live on
-  // each property page
-  const lines = ["/gallery / 301", "/amenities / 301"].concat(properties
+  // /book-now was renamed to /cabins. /gallery and /amenities were empty
+  // pages; photos and amenities live on each property page
+  const lines = ["/book-now /cabins 301", "/gallery / 301", "/amenities / 301"].concat(properties
     .filter((p) => p.slug)
     .flatMap((p) => [
       `/property/${p.id} /property/${p.slug} 301`,
@@ -169,32 +176,60 @@ async function writeRedirects(properties) {
 }
 
 // llms.txt: a plain-text summary for AI assistants (https://llmstxt.org)
+
+// House facts for the owners' cabins that aren't columns yet
+const CABIN_FACTS = {
+  "lakefront-retreat": " Boats and paddle boards included. No pets. Parking for 2 cars.",
+  "lakehouse-getaway": " Rowing boat and paddle boards included. No pets. Parking for 1 car.",
+};
+
+// The owners' cabins, whose ratings are Airbnb's. Same slugs as PROPERTY_CONTENT
+// in src/content/propertyContent.ts (as in propertyMetaDescription); nothing
+// records where other listings' ratings come from, so they get no source
+const AIRBNB_RATED_SLUGS = new Set(["lakefront-retreat", "lakehouse-getaway"]);
+
+// Same cut-off as foundingHostOfferOpen() in src/lib/constants.ts; the first
+// build of 2027 drops the offer line
+const FOUNDING_HOST_OFFER_OPEN = new Date() < new Date("2027-01-01T00:00:00+01:00");
+
 async function writeLlmsTxt(properties) {
-  const stays = properties
+  const cabins = properties
     .map((p) => {
-      const rating = p.review_rating && p.review_count ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests.` : "";
+      const rating = p.review_rating && p.review_count
+        ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests${AIRBNB_RATED_SLUGS.has(p.slug) ? " on Airbnb" : ""}.`
+        : "";
       const summary = (p.description ?? "").replace(/\s+/g, " ").trim();
-      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * (1 + (p.service_fee_rate ?? 10) / 100))} ${p.currency}/night incl. ${p.service_fee_rate ?? 10}% service fee.${feesText(p)}${rating} ${summary}`;
+      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * (1 + (p.service_fee_rate ?? 10) / 100))} ${p.currency}/night incl. ${p.service_fee_rate ?? 10}% service fee.${feesText(p)}${CABIN_FACTS[p.slug] ?? ""}${rating} ${summary}`;
     })
     .join("\n");
+  const foundingOffer = FOUNDING_HOST_OFFER_OPEN
+    ? " Founding-host offer: hosts who sign up by 31 December 2026 get a 5% guest fee for their first 12 months."
+    : "";
   await writeFile(
     path.join(DIST, "llms.txt"),
     `# Nordic Getaways
 
-> Nordic Getaways is run by Superhosts Jenny and Jon Nirs, who rent out two lakeside homes on Stora Härsjön in Lerum, about 30 minutes from Gothenburg, Sweden: Villa Häcken (sleeps 8, hot tub, private jetty and beach) and Lakehouse Getaway (a simple cabin for up to 4 at the water's edge). Boats and paddle boards are included. Book directly with the hosts. Pets, parties and events are not allowed; the person booking must be at least 25. Minimum stay 2 nights (3 over Valborg, Midsummer and New Year's Eve). Cancellation: 90% refund more than 21 days before arrival, 50% 8–21 days before, none within 7 days. Parking: two cars at Villa Häcken, one car at Lakehouse Getaway.
+> Nordic Getaways (nordic-getaways.com) is a Swedish booking site for holiday cabins and holiday homes (stugor). Each cabin is listed and run by its own host; guests book and pay by card on the site and talk to the host directly. Guests pay the host's nightly price plus a service fee – 10% or less (5% on listings from founding hosts in their first 12 months) – and the total is shown before payment. The site is run by Mojjo AB in Lerum, Sweden, founded by Jenny and Jon Nirs, who also host the first two cabins: Villa Häcken and Lakehouse Getaway on lake Stora Härsjön near Gothenburg.
 
-## Stays
+## Rules for every stay booked on the site
 
-${stays}
+- Minimum stay 2 nights; 3 nights over Valborg (30 April), Midsummer Eve and New Year's Eve.
+- The person booking must be at least 25 and stay at the property. No parties or events.
+- Cancellation: 90% refund more than 21 days before arrival, 50% 8–21 days before, none within 7 days.
+- Pets, parking, check-in times and other house rules vary by cabin – see each listing.
+
+## Cabins
+
+${cabins}
 
 ## Guides
 
-- [Stora Härsjön & Lerum guide](${SITE_URL}/stora-harsjon-lerum): things to do around the lake and near Gothenburg – 16 km lake hike, swimming, paddling, family activities, restaurants in Lerum and how to get here by car, train and bus.
+- [Area guide: Stora Härsjön & Lerum, near Gothenburg](${SITE_URL}/stora-harsjon-lerum): for guests at Villa Häcken and Lakehouse Getaway – 16 km lake hike, swimming, paddling, family activities, restaurants in Lerum and how to get there by car, train and bus.
 - [First time in Sweden](${SITE_URL}/first-time-in-sweden): practical tips on fika, allemansrätten (the right to roam), etiquette, payments and Swedish food.
 
 ## For hosts
 
-- [Become a host](${SITE_URL}/become-host): list your holiday home on Nordic Getaways. Guests pay a 10% service fee; hosts keep their full nightly price. Founding-host offer: hosts who join by 31 December 2026 get a 5% guest fee for their first 12 months.
+- [Become a host](${SITE_URL}/become-host): list a cabin or holiday home anywhere in Sweden. Hosts set their own nightly price and keep all of it; guests pay a 10% service fee on top. Hosts publish and manage their own listings, get paid through Stripe and can sync calendars with Airbnb, Booking.com and other sites.${foundingOffer}
 - [Pricing guide for hosts](${SITE_URL}/pricing-guide): how to set nightly prices.
 
 ## Shop
@@ -203,8 +238,8 @@ ${stays}
 
 ## Booking
 
-- [Book now](${SITE_URL}/book-now): book directly with secure card payment.
-- [Contact](${SITE_URL}/contact)
+- [Find a cabin](${SITE_URL}/cabins): pick a cabin, check dates and pay securely by card; the full price including the service fee is shown before payment.
+- [Contact](${SITE_URL}/contact): support@mojjo.se for bookings, hosting and the shop.
 `,
   );
 }

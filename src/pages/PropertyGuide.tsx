@@ -4,11 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
 import { Property } from "@/hooks/useProperties";
 import MainNavigation from "@/components/MainNavigation";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const PropertyGuide = () => {
   const { id } = useParams();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Meant for booked guests, so kept out of search results
+  usePageMeta({
+    title: property ? `${property.title} – guest guide` : "Guest guide",
+    noindex: true,
+    ready: !loading,
+  });
 
   useEffect(() => {
     if (id) {

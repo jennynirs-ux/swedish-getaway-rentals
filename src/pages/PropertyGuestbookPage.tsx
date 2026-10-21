@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import GuestbookForm from "@/components/GuestbookForm";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const PropertyGuestbookPage = () => {
   const { id } = useParams();
@@ -15,6 +16,13 @@ const PropertyGuestbookPage = () => {
   const [validToken, setValidToken] = useState(false);
   const [bookingData, setBookingData] = useState<any>(null);
   const [propertyData, setPropertyData] = useState<any>(null);
+
+  // Reached only from an emailed invitation link, so kept out of search results
+  usePageMeta({
+    title: propertyData ? `${propertyData.title} – guestbook` : "Guestbook",
+    noindex: true,
+    ready: !loading,
+  });
 
   useEffect(() => {
     validateToken();

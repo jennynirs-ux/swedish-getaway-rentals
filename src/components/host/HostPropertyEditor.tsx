@@ -26,12 +26,17 @@ import { GuidebookEditor } from "@/components/admin/GuidebookEditorEnhanced";
 import { AirbnbSyncManager } from "@/components/admin/AirbnbSyncManager";
 import PreArrivalSettings from "@/components/admin/PreArrivalSettings";
 
+const toMapCenter = (row: { latitude: number | null; longitude: number | null }) =>
+  row.latitude != null && row.longitude != null ? { lat: row.latitude, lng: row.longitude } : null;
+
 interface HostPropertyEditorProps {
   propertyId: string;
   propertyTitle: string;
   preparationDays: number;
   basePrice: number;
   currency: string;
+  /** The tab to open on, e.g. "location" when publishing still needs a pin */
+  initialTab?: string;
   onUpdate?: () => void;
 }
 
@@ -41,9 +46,12 @@ export const HostPropertyEditor = ({
   preparationDays,
   basePrice,
   currency,
+  initialTab = "basic",
   onUpdate 
 }: HostPropertyEditorProps) => {
   const [guidebookSections, setGuidebookSections] = useState([]);
+  // The property's map pin: where new guide pins start
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [emailTemplates, setEmailTemplates] = useState({});
   const [saving, setSaving] = useState(false);
   const [savingPrice, setSavingPrice] = useState(false);
@@ -58,11 +66,12 @@ export const HostPropertyEditor = ({
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('guidebook_sections, email_templates')
+        .select('guidebook_sections, email_templates, latitude, longitude')
         .eq('id', propertyId)
         .single();
 
       if (error) throw error;
+      setMapCenter(toMapCenter(data));
       if (data?.guidebook_sections) {
         setGuidebookSections(Array.isArray(data.guidebook_sections) ? data.guidebook_sections : []);
       }
@@ -72,6 +81,17 @@ export const HostPropertyEditor = ({
     } catch (error) {
       console.error('Error loading property data:', error);
     }
+  };
+
+  // After a Location save, so new guide pins start at the new pin. Only the
+  // coordinates: reloading the guide would drop its unsaved edits
+  const refreshMapCenter = async () => {
+    const { data } = await supabase
+      .from('properties')
+      .select('latitude, longitude')
+      .eq('id', propertyId)
+      .single();
+    if (data) setMapCenter(toMapCenter(data));
   };
 
    const handleSaveGuidebook = async () => {
@@ -132,7 +152,7 @@ export const HostPropertyEditor = ({
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="basic" className="w-full">
+      <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-1 mb-2">
           <TabsTrigger value="basic" className="flex items-center gap-2 text-xs sm:text-sm">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -201,7 +221,13 @@ export const HostPropertyEditor = ({
             <h2 className="text-2xl font-bold mb-1">Location</h2>
             <p className="text-muted-foreground">Set location and nearby points of interest</p>
           </div>
-          <HostLocationTab propertyId={propertyId} onUpdate={onUpdate} />
+          <HostLocationTab
+            propertyId={propertyId}
+            onUpdate={() => {
+              refreshMapCenter();
+              onUpdate?.();
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-6 space-y-4">
@@ -270,8 +296,6 @@ export const HostPropertyEditor = ({
                   <SelectTrigger id="price-currency"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SEK">SEK</SelectItem>
-                    <SelectItem value="NOK">NOK</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -332,6 +356,7 @@ export const HostPropertyEditor = ({
             onSave={handleSaveGuidebook}
             saving={saving}
             propertyTitle={propertyTitle}
+            center={mapCenter}
           />
         </TabsContent>
 

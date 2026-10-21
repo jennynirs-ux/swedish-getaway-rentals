@@ -1,35 +1,9 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-
-interface PolicyTier {
-  min_days: number;
-  max_days?: number;
-  refund_percentage: number;
-  label: string;
-}
-
-interface CancellationPolicyData {
-  tiers: PolicyTier[];
-  footer_note: string;
-}
+import { useCancellationPolicy } from "@/hooks/useCancellationPolicy";
 
 export const CancellationPolicyDisplay = () => {
-  const { data: policy, isLoading } = useQuery({
-    queryKey: ["cancellation-policy"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("platform_settings")
-        .select("setting_value")
-        .eq("setting_key", "cancellation_policy")
-        .single();
-      
-      if (error) throw error;
-      return data?.setting_value as unknown as CancellationPolicyData;
-    },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  });
+  const { data: policy, isLoading } = useCancellationPolicy();
 
   if (isLoading) {
     return (

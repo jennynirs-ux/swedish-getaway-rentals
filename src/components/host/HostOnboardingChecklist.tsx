@@ -58,7 +58,7 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
       // Properties owned by this host
       const { data: properties } = await supabase
         .from("properties")
-        .select("id, title, active, pending_approval, hero_image_url, description, price_per_night")
+        .select("id, title, active, pending_approval, hero_image_url, description, price_per_night, latitude, longitude, county")
         .eq("host_id", profile.id);
 
       const hasProperty = (properties?.length ?? 0) > 0;
@@ -66,6 +66,10 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
       const hasHero = (properties || []).some((p) => p.hero_image_url);
       const hasDescription = (properties || []).some((p) => p.description && p.description.length > 30);
       const hasPricing = (properties || []).some((p) => p.price_per_night && p.price_per_night > 0);
+      // Same rule as the database's publish check (prevent_self_publish)
+      const isPlaced = (p) => p.latitude != null && p.longitude != null && !!p.county;
+      const hasLocation = (properties || []).some(isPlaced);
+      const placeFirst = "Pin your place on the map and choose its county first: edit the property and open the Location tab.";
       // Set from Stripe when the Bank Account tab checks the payout status
       const hasStripe = !!profile.stripe_connect_ready;
       const drafts = (properties || []).filter((p) => !p.active);
@@ -77,9 +81,14 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
           onGoToTab("payouts");
           return;
         }
-        const ready = drafts.filter((p) => p.hero_image_url && p.price_per_night > 0);
+        const complete = drafts.filter((p) => p.hero_image_url && p.price_per_night > 0);
+        const ready = complete.filter(isPlaced);
         if (ready.length === 0) {
-          toast.error("Add a photo and a nightly rate first.");
+          toast.error(
+            complete.length > 0
+              ? placeFirst
+              : "Add a photo and a nightly rate first.",
+          );
           onGoToTab("properties");
           return;
         }
@@ -88,7 +97,15 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
           .update({ active: true })
           .in("id", ready.map((p) => p.id));
         if (error) {
-          toast.error("Could not publish. Please try again.");
+          if (/bank account/i.test(error.message)) {
+            toast.error("Connect your bank account first, so we can pay you for bookings.");
+            onGoToTab("payouts");
+          } else if (/county|on the map/i.test(error.message)) {
+            toast.error(placeFirst);
+            onGoToTab("properties");
+          } else {
+            toast.error("Could not publish. Please try again.");
+          }
           return;
         }
         // Let the team know a new listing is live (non-blocking)
@@ -137,6 +154,14 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
           description: "Base price that shows in search results.",
           done: hasPricing,
           actionLabel: "Set pricing",
+          action: () => onGoToTab("properties"),
+        },
+        {
+          id: "location",
+          label: "Pin your location",
+          description: "So your place appears in the right region.",
+          done: hasLocation,
+          actionLabel: "Set location",
           action: () => onGoToTab("properties"),
         },
         {

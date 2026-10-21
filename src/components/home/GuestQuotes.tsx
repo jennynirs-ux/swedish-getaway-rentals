@@ -7,12 +7,18 @@ interface QuoteProperty {
   id: string;
   slug: string | null;
   title: string;
+  city: string | null;
 }
 
 interface PickedQuote extends GuestQuote {
   property: QuoteProperty;
   nickname: string;
+  /** Where the quote comes from, shown in the caption */
+  source: string;
 }
+
+// The quotes in PROPERTY_CONTENT are shortened Airbnb reviews of the two original cabins
+const CONTENT_QUOTE_SOURCE = "Airbnb review";
 
 /** One quote from each cabin in turn, so every cabin is represented */
 export function pickQuotes(properties: QuoteProperty[], count = 3): PickedQuote[] {
@@ -26,11 +32,13 @@ export function pickQuotes(properties: QuoteProperty[], count = 3): PickedQuote[
     if (round.length === 0) break;
     for (const { property, content } of round) {
       if (picked.length === count) break;
-      picked.push({ ...content!.quotes[i], property, nickname: content!.nickname });
+      picked.push({ ...content!.quotes[i], property, nickname: content!.nickname, source: CONTENT_QUOTE_SOURCE });
     }
   }
   return picked;
 }
+
+const town = (city: string | null) => (city ? city.charAt(0).toUpperCase() + city.slice(1) : null);
 
 const GuestQuotes = ({ properties }: { properties: QuoteProperty[] }) => {
   const quotes = pickQuotes(properties);
@@ -50,6 +58,7 @@ const GuestQuotes = ({ properties }: { properties: QuoteProperty[] }) => {
                 <Link to={propertyPath(q.property)} className="text-primary hover:underline">
                   {q.nickname}
                 </Link>
+                {town(q.property.city) && `, ${town(q.property.city)}`} · {q.source}
               </figcaption>
             </figure>
           ))}

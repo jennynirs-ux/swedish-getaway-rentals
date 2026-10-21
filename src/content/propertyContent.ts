@@ -178,3 +178,16 @@ export const PROPERTY_CONTENT: Record<string, PropertyContent> = {
     ],
   },
 };
+
+/**
+ * Cabins whose hosts include bed linen and towels for every guest: the owners'
+ * two (Villa Häcken / lakefront-retreat, Lakehouse Getaway / lakehouse-getaway).
+ * The Terms promise linen only "when the cabin's listing says so", so the
+ * booking form says it only for these. Keyed by id, not by slug like
+ * PROPERTY_CONTENT, because BookingForm only receives the property id.
+ * scripts/prerender.mjs keeps a copy of these ids; change both together.
+ */
+export const LINEN_INCLUDED_PROPERTY_IDS: readonly string[] = [
+  "6618e8ae-e1ff-4a3b-8f6b-b3287c881d12",
+  "3f0002c9-7564-46f3-af63-8c1c0aa9a162",
+];

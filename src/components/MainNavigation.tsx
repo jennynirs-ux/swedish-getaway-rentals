@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Menu, X, ShoppingCart } from "lucide-react";
+import { ShoppingBag, User, Menu, X, ShoppingCart, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,6 +23,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
   const isHomePage = location.pathname === "/";
   const isShopPage = location.pathname.startsWith("/shop");
   const isCartPage = location.pathname.startsWith("/cart");
+  const isCabinsPage = location.pathname.startsWith("/cabins");
 
   const [isHost, setIsHost] = useState(false);
 
@@ -81,17 +82,28 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         {/* Desktop Navigation */}
         {!isPropertyPage && (
           <div className="hidden md:flex items-center gap-3">
+            {/* asChild: one link, not a button inside a link */}
+            {!isCabinsPage && (
+              <Button
+                asChild
+                variant="outline"
+                className="text-white border-white/30 bg-white/10 
+                           hover:bg-white/20 hover:border-white/50 
+                           backdrop-blur-sm transition-all"
+              >
+                <Link to="/cabins">Find a cabin</Link>
+              </Button>
+            )}
             {location.pathname !== "/become-host" && (
-              <Link to="/become-host">
-                <Button
-                  variant="outline"
-                  className="text-white border-white/30 bg-white/10 
-                             hover:bg-white/20 hover:border-white/50 
-                             backdrop-blur-sm transition-all"
-                >
-                  Become a host
-                </Button>
-              </Link>
+              <Button
+                asChild
+                variant="outline"
+                className="text-white border-white/30 bg-white/10 
+                           hover:bg-white/20 hover:border-white/50 
+                           backdrop-blur-sm transition-all"
+              >
+                <Link to="/become-host">Become a host</Link>
+              </Button>
             )}
             {!isShopPage && (
               <Link to="/shop" title="Shop">
@@ -150,6 +162,16 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
       {/* Mobile Dropdown */}
       {menuOpen && !isPropertyPage && (
         <div className="md:hidden bg-black/90 text-white mt-3 rounded-lg mx-4 p-4 space-y-4 flex flex-col">
+          {!isCabinsPage && (
+            <Link
+              to="/cabins"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2"
+            >
+              <Search className="w-5 h-5" />
+              <span>Find a cabin</span>
+            </Link>
+          )}
           {location.pathname !== "/become-host" && (
             <Link
               to="/become-host"

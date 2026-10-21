@@ -23,7 +23,7 @@ interface ContactContent {
 const Contact = () => {
   usePageMeta({
     title: "Contact us",
-    description: "Questions about staying at a Nordic Getaways cabin near Gothenburg, Sweden? Get in touch with our host team.",
+    description: "Questions about a booking, a cabin or listing your holiday home on Nordic Getaways? Email support@mojjo.se or use the form.",
     path: "/contact",
   });
 
@@ -34,7 +34,7 @@ const Contact = () => {
     description: "Get in touch with us for bookings, questions, or to become a host.",
     email: "support@mojjo.se",
     phone: "",
-    address: "Lerum, Sweden",
+    address: "Sweden",
     hours: ""
   });
   

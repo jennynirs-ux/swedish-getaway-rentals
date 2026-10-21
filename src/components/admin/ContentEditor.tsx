@@ -62,10 +62,11 @@ export const ContentEditor = () => {
       address: "Stockholm, Sweden",
       hours: "Monday - Friday: 9:00 AM - 6:00 PM"
     },
+    // Same defaults as the /cabins page (src/pages/Cabins.tsx)
     book_now_content: {
-      title: "Book Your Nordic Getaway",
-      description: "Choose from our collection of premium properties and start planning your perfect Nordic retreat.",
-      cta_text: "Ready to book? Select a property below and check availability."
+      title: "Find a cabin in Sweden",
+      description: "Every cabin is listed by its own host. Pick a cabin, check the dates and pay securely by card – the full price, service fee included, is shown before you pay.",
+      cta_text: "Select a cabin below to see availability."
     }
   });
 
@@ -158,7 +159,7 @@ export const ContentEditor = () => {
           <TabsTrigger value="gallery">Gallery</TabsTrigger>
           <TabsTrigger value="amenities">Amenities</TabsTrigger>
           <TabsTrigger value="contact">Contact</TabsTrigger>
-          <TabsTrigger value="booking">Book Now</TabsTrigger>
+          <TabsTrigger value="booking">Cabins</TabsTrigger>
         </TabsList>
 
         <TabsContent value="gallery">
@@ -279,7 +280,7 @@ export const ContentEditor = () => {
         <TabsContent value="booking">
           <Card>
             <CardHeader>
-              <CardTitle>Book Now Page Content</CardTitle>
+              <CardTitle>Cabins Page Content (/cabins)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -312,7 +313,7 @@ export const ContentEditor = () => {
                 disabled={saving === 'book_now_content'}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {saving === 'book_now_content' ? 'Saving...' : 'Save Book Now Content'}
+                {saving === 'book_now_content' ? 'Saving...' : 'Save Cabins Page Content'}
               </Button>
             </CardContent>
           </Card>

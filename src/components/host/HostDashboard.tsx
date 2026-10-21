@@ -131,6 +131,8 @@ const HostDashboard = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  // The editor tab to open on, e.g. Location when publishing needs a pin and county
+  const [editingTab, setEditingTab] = useState("basic");
   const [pricingPropertyId, setPricingPropertyId] = useState<string | null>(null);
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -286,13 +288,17 @@ const HostDashboard = () => {
     }
   };
 
-  // Hosts publish their own listings; the database requires working payouts
+  // Hosts publish their own listings; the database requires working payouts, a map pin and a county
   const togglePublish = async (id: string, publish: boolean) => {
     const { error } = await supabase.from("properties").update({ active: publish }).eq("id", id);
     if (error) {
       if (/bank account/i.test(error.message)) {
         toast.error("Connect your bank account before publishing, so you can be paid for bookings.");
         setActiveTab("payouts");
+      } else if (/county|on the map/i.test(error.message)) {
+        toast.error("Pin your place on the map and choose its county before publishing: open the Location tab.");
+        setEditingTab("location");
+        setEditingPropertyId(id);
       } else {
         toast.error(publish ? "Could not publish. Please try again." : "Could not unpublish. Please try again.");
       }
@@ -550,13 +556,14 @@ const HostDashboard = () => {
               <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-y-auto">
                 <div className="container mx-auto py-8">
                   <div className="flex justify-end mb-4">
-                    <Button variant="outline" onClick={() => setEditingPropertyId(null)}>
+                    <Button variant="outline" onClick={() => { setEditingPropertyId(null); setEditingTab("basic"); }}>
                       Close
                     </Button>
                   </div>
                   <HostPropertyEditor
                     propertyId={editingPropertyId}
                     propertyTitle={property.title}
+                    initialTab={editingTab}
                     preparationDays={property.preparation_days || 0}
                     basePrice={property.price_per_night}
                     currency={property.currency || 'SEK'}

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Check, Home, MapPin, Users as UsersIcon, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { REGIONS_BY_NAME } from "@/content/regions";
 
 interface Props {
   open: boolean;
@@ -22,6 +23,8 @@ interface WizardState {
   property_type: string;
   description: string;
   location: string;
+  /** ISO 3166-2:SE code; the listing can't be published without it */
+  county: string;
   bedrooms: number;
   bathrooms: number;
   max_guests: number;
@@ -63,6 +66,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
     property_type: "Cabin",
     description: "",
     location: "",
+    county: "",
     bedrooms: 1,
     bathrooms: 1,
     max_guests: 2,
@@ -75,7 +79,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
 
   const canAdvance = () => {
     if (step === 0) return state.title.trim().length >= 3 && state.property_type;
-    if (step === 1) return state.location.trim().length >= 2;
+    if (step === 1) return state.location.trim().length >= 2 && !!state.county;
     if (step === 2) return state.bedrooms > 0 && state.bathrooms > 0 && state.max_guests > 0;
     if (step === 3) return state.price_per_night > 0;
     return true;
@@ -100,6 +104,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
           title: state.title.trim(),
           description: state.description.trim(),
           location: state.location.trim(),
+          county: state.county,
           property_type: state.property_type,
           bedrooms: state.bedrooms,
           bathrooms: state.bathrooms,
@@ -133,6 +138,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
       property_type: "Cabin",
       description: "",
       location: "",
+      county: "",
       bedrooms: 1,
       bathrooms: 1,
       max_guests: 2,
@@ -215,12 +221,24 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
                 <Input
                   value={state.location}
                   onChange={(e) => update("location", e.target.value)}
-                  placeholder="e.g., Are, Jamtland"
+                  placeholder="e.g. Åre, Sweden"
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  You'll pin the exact location on a map in the next step (after saving).
+                  After saving, pin the exact spot on the map in the Location tab.
                 </p>
+              </div>
+              <div>
+                <Label htmlFor="wizard-county">County *</Label>
+                <Select value={state.county} onValueChange={(v) => update("county", v)}>
+                  <SelectTrigger id="wizard-county"><SelectValue placeholder="Choose a county" /></SelectTrigger>
+                  <SelectContent>
+                    {REGIONS_BY_NAME.map((r) => (
+                      <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">So your place appears in the right region.</p>
               </div>
             </>
           )}
@@ -272,14 +290,10 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
                     onChange={(e) => update("price_per_night", Math.max(0, Number(e.target.value) || 0))}
                     className="flex-1"
                   />
-                  <Select value={state.currency} onValueChange={(v) => update("currency", v)}>
-                    <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SEK">SEK</SelectItem>
-                      <SelectItem value="NOK">NOK</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {/* SEK only: guests see, filter and pay every price on the site in kronor */}
+                  <span className="flex w-28 items-center justify-center rounded-md border bg-muted text-sm text-muted-foreground">
+                    SEK
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Tip: Swedish cabins typically range 1,200-3,500 SEK/night. You can add seasonal pricing later.
@@ -289,8 +303,8 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
               <div className="rounded-lg bg-muted p-3 text-sm">
                 <p className="font-medium mb-1">Ready to create</p>
                 <p className="text-muted-foreground">
-                  Your property will be saved as a <strong>draft</strong>. Add photos, amenities, and
-                  house rules in the editor, then publish when ready.
+                  Your property will be saved as a <strong>draft</strong>. Add photos, pin it on the map and add
+                  amenities and house rules in the editor, then publish when ready.
                 </p>
               </div>
             </>

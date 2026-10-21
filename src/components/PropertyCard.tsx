@@ -36,11 +36,11 @@ import {
 } from "lucide-react";
 import { useState, memo, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getClosestMajorCity, calculateDriveTime, formatDistanceText, type Coordinates } from "@/lib/distance";
 import { AmenityDetailDialog } from "./AmenityDetailDialog";
 import { propertyPath } from "@/lib/propertySeo";
 import { PROPERTY_CONTENT } from "@/content/propertyContent";
 import { withServiceFee } from "@/lib/constants";
+import { isNewListing } from "@/lib/homeListings";
 
 export interface PropertyCardData {
   slug?: string | null;
@@ -68,6 +68,7 @@ export interface PropertyCardData {
   latitude?: number | null;
   longitude?: number | null;
   city?: string | null;
+  created_at?: string;
 }
 
 interface PropertyCardProps {
@@ -239,11 +240,12 @@ const PropertyCard = memo(({
             </Button>
           </div>
 
-          {/* Property Type Badge */}
-          <div className="absolute bottom-4 left-4">
+          {/* Property Type Badge, and "New" so a listing without reviews yet doesn't look neglected */}
+          <div className="absolute bottom-4 left-4 flex gap-2">
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
               {safeProperty.property_type || "Property"}
             </Badge>
+            {isNewListing(safeProperty) && <Badge>New</Badge>}
           </div>
         </div>
 
@@ -261,7 +263,10 @@ const PropertyCard = memo(({
                 <div className="flex items-center gap-1 text-sm mt-1">
                   <Star className="w-4 h-4 fill-current text-amber-500" />
                   <span className="font-medium">{Number(safeProperty.review_rating).toFixed(2)}</span>
-                  <span className="text-muted-foreground">· {safeProperty.review_count} reviews on Airbnb</span>
+                  {/* Only the owners' cabins carry their Airbnb ratings over */}
+                  <span className="text-muted-foreground">
+                    · {safeProperty.review_count} reviews{nickname ? " on Airbnb" : ""}
+                  </span>
                 </div>
               ) : null}
               <div className="flex items-center text-muted-foreground text-sm mt-1">
@@ -323,15 +328,16 @@ const PropertyCard = memo(({
           )}
 
           {/* Price and CTA */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <span className="text-2xl font-bold text-foreground">
+              {/* Label under the amount: beside it, the price broke mid-number next to the button on phones */}
+              <span className="text-2xl font-bold text-foreground whitespace-nowrap">
                 {Math.round(withServiceFee(safeProperty.price_per_night || 0, safeProperty.service_fee_rate)).toLocaleString()} {safeProperty.currency}
               </span>
-              <span className="text-muted-foreground text-sm ml-1">/night incl. service fee</span>
+              <span className="block text-muted-foreground text-sm">/night incl. service fee</span>
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-              View Details
+              Check availability
             </Button>
           </div>
         </CardContent>

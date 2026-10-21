@@ -28,6 +28,14 @@ const PropertyBooking = ({ property, onOpenGuidebook }: PropertyBookingProps) =>
               Ready to experience the magic of {property.title}? Choose your
               dates and complete your booking below.
             </p>
+            {/* The terms point guests here for the times */}
+            {(property.check_in_time || property.check_out_time) && (
+              <p className="text-sm text-muted-foreground mt-3">
+                {property.check_in_time && <>Check-in from {property.check_in_time.slice(0, 5)}</>}
+                {property.check_in_time && property.check_out_time && " · "}
+                {property.check_out_time && <>check-out by {property.check_out_time.slice(0, 5)}</>}
+              </p>
+            )}
           </div>
 
           {/* Booking Form (includes calendar and cancellation policy inside) */}

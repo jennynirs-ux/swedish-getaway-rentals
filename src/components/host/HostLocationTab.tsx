@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LocationEditor } from "@/components/LocationEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
+import { REGIONS_BY_NAME } from "@/content/regions";
 import { MapPin } from "lucide-react";
 
 interface LocationData {
@@ -32,8 +34,10 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
     latitude: null,
     longitude: null,
   });
-  // The area guests see on the listing, e.g. "Lerum, Sweden"
+  // The area guests see on the listing, e.g. "Åre, Sweden"
   const [publicLocation, setPublicLocation] = useState("");
+  // ISO 3166-2:SE code; publishing needs it (and the pin) so guests can find the place by region
+  const [county, setCounty] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -47,7 +51,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       const [{ data, error }, privateDetails] = await Promise.all([
         supabase
           .from("properties")
-          .select("location, city, country, latitude, longitude")
+          .select("location, city, country, latitude, longitude, county")
           .eq("id", propertyId)
           .single(),
         fetchPropertyPrivateDetails(propertyId),
@@ -57,6 +61,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
 
       if (data) {
         setPublicLocation(data.location || "");
+        setCounty(data.county || "");
         setLocationData({
           street: privateDetails?.street || "",
           postal_code: privateDetails?.postal_code || "",
@@ -82,6 +87,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
           country: locationData.country,
           latitude: locationData.latitude,
           longitude: locationData.longitude,
+          ...(county && { county }),
           updated_at: new Date().toISOString(),
         })
         .eq("id", propertyId);
@@ -133,18 +139,40 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
             Area shown to guests
           </CardTitle>
           <CardDescription>
-            Shown on your listing and in search, e.g. "Lerum, Sweden". Your street address stays private: guests
-            get it in their booking confirmation.
+            Shown on your listing and in search, e.g. "Åre, Sweden" (town or village, then country). Your street
+            address stays private: guests get it in their booking confirmation.
           </CardDescription>
         </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="public-location" className="sr-only">Area shown to guests</Label>
+            <Input
+              id="public-location"
+              value={publicLocation}
+              onChange={(e) => setPublicLocation(e.target.value)}
+              placeholder="Åre, Sweden"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>County</CardTitle>
+          <CardDescription>So your place appears in the right region.</CardDescription>
+        </CardHeader>
         <CardContent>
-          <Label htmlFor="public-location" className="sr-only">Area shown to guests</Label>
-          <Input
-            id="public-location"
-            value={publicLocation}
-            onChange={(e) => setPublicLocation(e.target.value)}
-            placeholder="Lerum, Sweden"
-          />
+          <Label htmlFor="county" className="sr-only">County</Label>
+          <Select value={county} onValueChange={setCounty}>
+            <SelectTrigger id="county">
+              <SelectValue placeholder="Choose a county" />
+            </SelectTrigger>
+            <SelectContent>
+              {REGIONS_BY_NAME.map((r) => (
+                <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 

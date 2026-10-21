@@ -52,7 +52,15 @@ interface GuidebookBlock {
   title?: string;
   content?: string;
   items?: string[];
-  mapPins?: Array<{ lat: number; lng: number; label: string; address?: string }>;
+  mapPins?: GuidePin[];
+}
+
+interface GuidePin {
+  lat: number;
+  lng: number;
+  label: string;
+  address?: string;
+  geocoded?: boolean;
 }
 
 interface GuidebookSection {
@@ -84,28 +92,48 @@ interface GuestGuideDialogProps {
 // Shown even when the host hasn't written them: true for any stay in Sweden
 const GENERAL_SECTION_IDS = ["waste", "customs", "ratings"];
 
+// The editor saves blocks the host left empty (new guides start with example
+// text in the fields, not real text), so guests only get what was filled in
+const filledItems = (items?: string[]) => (items || []).filter((item) => item?.trim());
+// A new pin starts at a default point (mid-Sweden, or Gothenburg in older
+// guides) and gets its coordinates once the host's address is found
+// (`geocoded`). Guests only get pins that were placed that way, never one
+// still sitting at its starting point
+const DEFAULT_PIN_POINTS = [
+  [62.4, 16.5],
+  [57.7, 12.0],
+];
+const placedPins = (pins?: GuidePin[]) =>
+  (pins || []).filter((pin) =>
+    pin.geocoded ??
+    (!!pin.address?.trim() && !DEFAULT_PIN_POINTS.some(([lat, lng]) => pin.lat === lat && pin.lng === lng)));
+const isFilledBlock = (block: GuidebookBlock) =>
+  (block.type === "text" && !!block.content?.trim()) ||
+  ((block.type === "list" || block.type === "checkbox") && filledItems(block.items).length > 0) ||
+  (block.type === "map" && placedPins(block.mapPins).length > 0);
+const pinName = (pin: GuidePin) => pin.label?.trim() || pin.address || "";
+
 const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: GuestGuideDialogProps) => {
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // Order, titles and icons only: the text is the host's. Only the customs hold
+  // for every stay in Sweden (they used to carry the original Lerum cabins' facts)
   const defaultSections: GuideSection[] = [
-    { id: "home", title: "Welcome Home", icon: Home, type: "text", content: "Welcome to our property! We’re excited to host you." },
-    { id: "directions", title: "Directions", icon: MapPin, type: "list", items: [
-      "By car: Take E20 and exit at Lerum. Parking on site.",
-      "By public transport: Commuter train to Aspen station in Lerum, then bus 530 or 535 to Häckenvägen."
-    ]},
-    { id: "stop", title: "Stop on the way", icon: Coffee, type: "list", items: ["ICA Kvantum – groceries", "Shell – gas & snacks", "Local shop – firewood"] },
-    { id: "checkin", title: "Check-in", icon: Key, type: "list", items: ["Check-in: 15:00", "Keys in lockbox", "Parking in front of house"] },
-    { id: "wifi", title: "Wi-Fi", icon: Wifi, type: "list", items: ["Network: Guest_Wifi", "Password: Welcome2024"] },
-    { id: "kitchen", title: "Kitchen", icon: Utensils, type: "list", items: ["Oven", "Coffee machine", "Dishwasher"] },
-    { id: "howthingswork", title: "How things work", icon: Cog, type: "checkbox", items: ["Oven: press power + start", "Coffee maker: fill water + brew", "Heating: adjust thermostat"] },
+    { id: "home", title: "Welcome Home", icon: Home, type: "text" },
+    { id: "directions", title: "Directions", icon: MapPin, type: "list" },
+    { id: "stop", title: "Stop on the way", icon: Coffee, type: "list" },
+    { id: "checkin", title: "Check-in", icon: Key, type: "list" },
+    { id: "wifi", title: "Wi-Fi", icon: Wifi, type: "list" },
+    { id: "kitchen", title: "Kitchen", icon: Utensils, type: "list" },
+    { id: "howthingswork", title: "How things work", icon: Cog, type: "checkbox" },
     { id: "waste", title: "Waste & Recycling", icon: Recycle, type: "custom" },
-    { id: "places", title: "Places to visit", icon: Landmark, type: "list", items: ["Lake Aspen – swimming", "Skatås reserve", "Gothenburg – 20 min by train"] },
+    { id: "places", title: "Places to visit", icon: Landmark, type: "list" },
     { id: "customs", title: "Swedish customs", icon: BookOpen, type: "list", items: ["No shoes indoors", "Fika tradition", "Alcohol only at Systembolaget"] },
     { id: "rules", title: "House Rules", icon: Shield, type: "custom" },
-    { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox", items: ["Empty trash", "Remove linens", "Close windows & lights", "Lock doors"] },
+    { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox" },
     { id: "ratings", title: "Star Ratings", icon: Star, type: "custom" },
-    { id: "hoststory", title: "Host Story", icon: Heart, type: "text", content: "We bought Villa Häcken in 2020 and love sharing it with guests." },
+    { id: "hoststory", title: "Host Story", icon: Heart, type: "text" },
   ];
 
   const customSections = (property.guidebook_sections as any[]) || [];
@@ -113,19 +141,20 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
   // Only sections the host has filled in, plus the general ones that hold for
   // every Swedish stay; the placeholder defaults are not shown to guests
   const allSections = useMemo(() => {
-    // Block types renderSectionContent can show (the editor also saves e.g. "custom-recycling")
+    // Only block types renderSectionContent can show (the editor also saves e.g. "custom-recycling")
     const hasContent = (custom: any) =>
-      (custom.blocks || []).some((b: any) =>
-        ["text", "list", "checkbox", "map"].includes(b.type) &&
-        (b.content?.trim() || b.items?.some((i: string) => i?.trim()) || b.mapPins?.length)) ||
+      (custom.blocks || []).some(isFilledBlock) ||
       custom.content?.trim() ||
       custom.items?.some((i: string) => i?.trim());
     return defaultSections.flatMap((section) => {
       const custom = customSections.find((s: any) => s.id === section.id);
       if (custom && hasContent(custom)) {
+        // The host's text replaces the default's, even where the host left a part out
         return [{
           ...section,
           ...custom,
+          items: custom.items,
+          content: custom.content,
           icon: section.icon,
           blocks: custom.blocks || undefined,
         }];
@@ -177,66 +206,135 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     pdf.text("Guest Guidebook", 20, yPosition);
     yPosition += 20;
 
-    // Add sections
-    allSections.forEach((section) => {
+    const keepOnPage = () => {
       if (yPosition > 270) {
         pdf.addPage();
         yPosition = 20;
       }
+    };
+    // Line by line, so long host texts continue on the next page
+    const printLines = (text: string, x: number, width: number) => {
+      (pdf.splitTextToSize(text, width) as string[]).forEach((line) => {
+        keepOnPage();
+        pdf.text(line, x, yPosition);
+        yPosition += 5;
+      });
+    };
+    const printItems = (items: string[], bullet: string) => {
+      items.forEach((item) => {
+        printLines(`${bullet} ${item}`, 25, 165);
+        yPosition += 2;
+      });
+      yPosition += 5;
+    };
 
+    // Add sections: what the guide shows, including the host's blocks
+    allSections.forEach((section) => {
+      keepOnPage();
       pdf.setFontSize(16);
       pdf.text(section.title, 20, yPosition);
       yPosition += 10;
 
       pdf.setFontSize(10);
-      if (section.content) {
-        const lines = pdf.splitTextToSize(section.content, 170);
-        pdf.text(lines, 20, yPosition);
-        yPosition += lines.length * 5 + 10;
+      const blocks = (section.blocks || []).filter(isFilledBlock);
+      if (blocks.length > 0) {
+        blocks.forEach((block) => {
+          if (block.title?.trim()) {
+            keepOnPage();
+            pdf.setFontSize(12);
+            pdf.text(block.title, 20, yPosition);
+            pdf.setFontSize(10);
+            yPosition += 7;
+          }
+          if (block.type === "text") {
+            printLines(block.content || "", 20, 170);
+            yPosition += 5;
+          }
+          if (block.type === "list") printItems(filledItems(block.items), "•");
+          if (block.type === "checkbox") printItems(filledItems(block.items), "[ ]");
+          if (block.type === "map") {
+            printItems(
+              filledItems(placedPins(block.mapPins).map((pin) =>
+                pin.label?.trim() && pin.address ? `${pin.label}, ${pin.address}` : pinName(pin))),
+              "•",
+            );
+          }
+        });
+        return;
       }
 
-      if (section.items) {
-        section.items.forEach((item) => {
-          if (yPosition > 270) {
-            pdf.addPage();
-            yPosition = 20;
-          }
-          const lines = pdf.splitTextToSize(`• ${item}`, 165);
-          pdf.text(lines, 25, yPosition);
-          yPosition += lines.length * 5 + 2;
-        });
+      if (section.content) {
+        printLines(section.content, 20, 170);
         yPosition += 5;
       }
+      if (section.items) printItems(section.items, "•");
     });
 
     pdf.save(`${property.title}-guidebook.pdf`);
     toast({ title: "PDF Downloaded", description: "Guidebook saved successfully!" });
   };
 
+  const renderPinMap = (pins: GuidePin[]) => {
+    if (pins.length === 0) return null;
+    return (
+      <div className="mt-4">
+        <div className="h-[400px] rounded-lg overflow-hidden border">
+          <Suspense fallback={
+            <div className="h-full bg-muted flex items-center justify-center">
+              <p className="text-muted-foreground">Loading map...</p>
+            </div>
+          }>
+            <LeafletPropertyMapBasic
+              position={[pins[0].lat, pins[0].lng] as [number, number]}
+              propertyTitle={pinName(pins[0])}
+              googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${pins[0].lat},${pins[0].lng}`}
+              routePositions={pins.slice(1).map(pin => [pin.lat, pin.lng] as [number, number])}
+            />
+          </Suspense>
+        </div>
+        <div className="mt-4 space-y-2">
+          <h4 className="font-medium text-sm">Locations:</h4>
+          <ul className="space-y-1">
+            {pins.map((pin, idx) => (
+              <li key={idx} className="flex items-start gap-2 text-sm">
+                <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-medium">{pinName(pin)}</span>
+                  {pin.address && pin.label?.trim() && <p className="text-muted-foreground text-xs">{pin.address}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
   const renderSectionContent = (section: GuideSection) => {
     // If the section has blocks (new format from GuidebookEditorEnhanced), render those
-    if (section.blocks && section.blocks.length > 0) {
+    const blocks = (section.blocks || []).filter(isFilledBlock);
+    if (blocks.length > 0) {
       return (
         <div className="space-y-6">
-          {section.blocks.map((block) => (
+          {blocks.map((block) => (
             <div key={block.id}>
               {block.title && <h3 className="font-semibold text-lg mb-2">{block.title}</h3>}
-              
+
               {block.type === "text" && block.content && (
                 <p className="text-muted-foreground whitespace-pre-wrap">{block.content}</p>
               )}
-              
-              {block.type === "list" && block.items && block.items.length > 0 && (
+
+              {block.type === "list" && (
                 <ul className="list-disc pl-5 space-y-2">
-                  {block.items.map((item, idx) => (
+                  {filledItems(block.items).map((item, idx) => (
                     <li key={idx} className="text-muted-foreground">{item}</li>
                   ))}
                 </ul>
               )}
-              
-              {block.type === "checkbox" && block.items && block.items.length > 0 && (
+
+              {block.type === "checkbox" && (
                 <ul className="space-y-2">
-                  {block.items.map((item, idx) => (
+                  {filledItems(block.items).map((item, idx) => (
                     <li key={idx} className="flex items-center gap-2">
                       <CheckSquare className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="text-muted-foreground">{item}</span>
@@ -245,40 +343,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
                 </ul>
               )}
               
-              {block.type === "map" && block.mapPins && block.mapPins.length > 0 && (
-                <div className="mt-4">
-                  <div className="h-[400px] rounded-lg overflow-hidden border">
-                    <Suspense fallback={
-                      <div className="h-full bg-muted flex items-center justify-center">
-                        <p className="text-muted-foreground">Loading map...</p>
-                      </div>
-                    }>
-                      <LeafletPropertyMapBasic
-                        position={[block.mapPins[0].lat, block.mapPins[0].lng] as [number, number]}
-                        propertyTitle={block.mapPins[0].label}
-                        googleMapsUrl={`https://www.google.com/maps/search/?api=1&query=${block.mapPins[0].lat},${block.mapPins[0].lng}`}
-                        routePositions={block.mapPins.slice(1).map(pin => [pin.lat, pin.lng] as [number, number])}
-                      />
-                    </Suspense>
-                  </div>
-                  {block.mapPins.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <h4 className="font-medium text-sm">Locations:</h4>
-                      <ul className="space-y-1">
-                        {block.mapPins.map((pin, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm">
-                            <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                            <div>
-                              <span className="font-medium">{pin.label}</span>
-                              {pin.address && <p className="text-muted-foreground text-xs">{pin.address}</p>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
+              {block.type === "map" && renderPinMap(placedPins(block.mapPins))}
             </div>
           ))}
         </div>

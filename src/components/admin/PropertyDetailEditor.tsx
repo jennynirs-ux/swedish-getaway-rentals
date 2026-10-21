@@ -321,6 +321,12 @@ const PropertyDetailEditor = ({
                   onSave={handleSave}
                   saving={saving}
                   propertyTitle={form.title}
+                  // New guide pins start at the property's map pin
+                  center={
+                    typeof form.latitude === "number" && typeof form.longitude === "number"
+                      ? { lat: form.latitude, lng: form.longitude }
+                      : null
+                  }
                 />
               </CardContent>
             </Card>

@@ -24,7 +24,7 @@ const HostDashboard = lazy(() => import("./components/host/HostDashboard"));
 const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Contact = lazy(() => import("./pages/Contact"));
-const BookNow = lazy(() => import("./pages/BookNow"));
+const Cabins = lazy(() => import("./pages/Cabins"));
 const Profile = lazy(() => import("./pages/Profile"));
 const FirstTimeInSweden = lazy(() => import("./pages/FirstTimeInSweden"));
 const LakeGuide = lazy(() => import("./pages/LakeGuide"));
@@ -51,6 +51,9 @@ const App = () => {
                 <Route path="/villa-hacken/guide" element={<Navigate to="/property/lakefront-retreat/guide" replace />} />
                 <Route path="/lakehouse-getaway" element={<Navigate to="/property/lakehouse-getaway" replace />} />
                 <Route path="/lakehouse-getaway/guide" element={<Navigate to="/property/lakehouse-getaway/guide" replace />} />
+                {/* Old name of /cabins (renamed to leave room for /cabins/<region>); the live
+                    site 301s it through _redirects, written by scripts/prerender.mjs */}
+                <Route path="/book-now" element={<Navigate to="/cabins" replace />} />
                 <Route path="/property/:id" element={<PropertyPage />} />
                 <Route path="/property/:id/guide" element={<PropertyGuide />} />
                 <Route path="/shop" element={<Shop />} />
@@ -79,7 +82,7 @@ const App = () => {
                 <Route path="/amenities" element={<Navigate to="/" replace />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/property/:id/guestbook" element={<PropertyGuestbookPage />} />
-                <Route path="/book-now" element={<BookNow />} />
+                <Route path="/cabins" element={<Cabins />} />
                 <Route path="/profile" element={
                   <ProtectedRoute>
                     <Profile />

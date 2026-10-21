@@ -8,24 +8,26 @@ import PropertyCard from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
-interface BookNowContent {
+interface CabinsContent {
   title: string;
   description: string;
   cta_text: string;
 }
 
-const BookNow = () => {
+const Cabins = () => {
   usePageMeta({
-    title: "Book a cabin in Sweden",
-    description: "Book a lakeside cabin near Gothenburg directly with Nordic Getaways – secure card payment, and the 10% service fee shown before you pay.",
-    path: "/book-now",
+    title: "Find a cabin in Sweden",
+    description: "Find a holiday cabin in Sweden and book it directly with the host. Secure card payment, with the full price incl. service fee shown before you pay.",
+    path: "/cabins",
   });
 
   const { properties, loading } = useProperties();
-  const [content, setContent] = useState<BookNowContent>({
-    title: "Book Your Nordic Getaway",
-    description: "Choose from our collection of premium properties and start planning your perfect Nordic retreat.",
-    cta_text: "Ready to book? Select a property below and check availability."
+  // Shown until platform_settings.book_now_content loads (and in the
+  // prerendered page); the admin Content editor uses the same defaults
+  const [content, setContent] = useState<CabinsContent>({
+    title: "Find a cabin in Sweden",
+    description: "Every cabin is listed by its own host. Pick a cabin, check the dates and pay securely by card – the full price, service fee included, is shown before you pay.",
+    cta_text: "Select a cabin below to see availability."
   });
 
   useEffect(() => {
@@ -45,7 +47,7 @@ const BookNow = () => {
       }
 
       if (data?.setting_value) {
-        setContent(data.setting_value as unknown as BookNowContent);
+        setContent(data.setting_value as unknown as CabinsContent);
       }
     } catch (error) {
       console.error('Error fetching book now content:', error);
@@ -63,6 +65,9 @@ const BookNow = () => {
             <p className="text-lg text-muted-foreground mb-6">{content.description}</p>
             <p className="text-muted-foreground">{content.cta_text}</p>
           </div>
+
+          {/* The cards' titles are H3s; this keeps the heading order H1 → H2 → H3 */}
+          <h2 className="sr-only">Cabins to rent in Sweden</h2>
 
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -89,9 +94,9 @@ const BookNow = () => {
             <Card>
               <CardContent className="p-12 text-center">
                 <p className="text-muted-foreground mb-4">No properties available for booking at the moment.</p>
-                <Link to="/">
-                  <Button>Return to Homepage</Button>
-                </Link>
+                <Button asChild>
+                  <Link to="/">Return to Homepage</Link>
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -101,4 +106,4 @@ const BookNow = () => {
   );
 };
 
-export default BookNow;
+export default Cabins;

@@ -69,8 +69,8 @@ Best,
 
 Your stay at {property_title} is coming up in 3 days. Here's what you need to know:
 
-- Check-in: {check_in_date} from 15:00
-- Check-out: {check_out_date} by 11:00
+- Check-in: {check_in_date} from [your check-in time]
+- Check-out: {check_out_date} by [your check-out time]
 - Full arrival instructions will follow closer to your stay.
 
 Looking forward to welcoming you!
@@ -283,7 +283,8 @@ const HostMessageTemplates = () => {
 
       const { error } = await supabase.from("host_message_templates").insert(rows);
       if (error) throw error;
-      toast.success("4 starter templates added");
+      // "Pre-arrival info" has blanks for the times, which differ per cabin
+      toast.success("4 starter templates added. Fill in your check-in and check-out times in \"Pre-arrival info\".");
       load();
     } catch (e) {
       toast.error((e as Error).message || "Failed to seed templates");

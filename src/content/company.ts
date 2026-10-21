@@ -12,5 +12,6 @@ export const COMPANY = {
 
 export const COMPANY_ADDRESS = `${COMPANY.street}, ${COMPANY.postcode} ${COMPANY.city}, ${COMPANY.country}`;
 
-/** Date shown at the top of the privacy policy and booking terms */
-export const LEGAL_UPDATED = "2 October 2026";
+/** Dates shown at the top of the booking terms and the privacy policy; bump only the one whose text changed */
+export const TERMS_UPDATED = "21 October 2026";
+export const PRIVACY_UPDATED = "2 October 2026";

@@ -34,12 +34,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import forestHeroBg from "@/assets/forest-hero-light.webp";
-import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, foundingHostOfferOpen } from "@/lib/constants";
+import {
+  FOUNDING_HOST_DEADLINE,
+  FOUNDING_HOST_FEE_PCT,
+  PLATFORM_SERVICE_FEE_RATE,
+  foundingHostOfferOpen,
+  withServiceFee,
+} from "@/lib/constants";
+
+const FEE_PCT = Math.round(PLATFORM_SERVICE_FEE_RATE * 100);
+// "31 December 2026" → "31 Dec 2026", so the meta description stays within 155 characters
+const FOUNDING_HOST_DEADLINE_SHORT = FOUNDING_HOST_DEADLINE.replace(/([A-Za-z]{3})[a-z]+/, "$1");
+// Host price used in the fee examples below
+const EXAMPLE_PRICE = 2500;
+const sek = (amount: number) => `${Math.round(amount).toLocaleString("sv-SE")} SEK`;
 
 const BecomeHost = () => {
+  const feeTerms = foundingHostOfferOpen()
+    ? `(${FOUNDING_HOST_FEE_PCT}% if you join by ${FOUNDING_HOST_DEADLINE_SHORT})`
+    : "on top";
   usePageMeta({
-    title: "Become a host",
-    description: "List your Nordic holiday home with Nordic Getaways: bookings, payments, guest communication and Swedish tax reports in one place.",
+    title: "List your cabin in Sweden",
+    description: `List your cabin or holiday home anywhere in Sweden. You set the price and keep all of it; guests pay a ${FEE_PCT}% service fee ${feeTerms}.`,
     path: "/become-host",
   });
 
@@ -135,7 +151,7 @@ const BecomeHost = () => {
       icon: DollarSign,
       title: "You keep what you set",
       description:
-        "Set your own price. We will add a 10% fee on top of your price to cover payments, marketing, platform development and support.",
+        `Set your own price. We will add a ${FEE_PCT}% fee on top of your price to cover payments, marketing, platform development and support.`,
     },
     {
       icon: Shield,
@@ -158,6 +174,15 @@ const BecomeHost = () => {
   ];
 
   const faqs = [
+    {
+      question: "Where can my holiday home be?",
+      answer: (
+        <>
+          Anywhere in Sweden – a lakeside stuga, a summer house on the coast, a mountain cabin or a flat in town. You
+          publish and run your own listing, and guests find it on the home page and in search.
+        </>
+      ),
+    },
     {
       question: "Do I need a company to host?",
       answer: (
@@ -184,7 +209,7 @@ const BecomeHost = () => {
         <>
           Guests pay securely through our payment provider (<strong>Stripe</strong>).  
           You receive your full listed amount directly, and the guest sees a 
-          transparent 10% platform fee covering marketing, support, and payment handling.  
+          transparent {FEE_PCT}% platform fee covering marketing, support, and payment handling.
           You always see exactly what you earn before confirming your listing.
         </>
       ),
@@ -270,9 +295,9 @@ const BecomeHost = () => {
       question: "Is a digital guidebook included?",
       answer: (
         <>
-          Yes! Every host gets an automatically generated guidebook with check-in details, 
-          directions, and local tips.  
-          You can easily personalize it by adding your own recommendations, photos, and must-do’s nearby.
+          Yes. Every listing gets a guest guide with sections for check-in, directions, Wi-Fi, house rules
+          and local tips. You fill them in, with examples to start from, and general Swedish tips such as
+          recycling and customs are included.
         </>
       ),
     },
@@ -303,7 +328,7 @@ const BecomeHost = () => {
           We focus on <strong>authentic Nordic experiences</strong>, not mass tourism.  
           Our platform connects guests with real homes and local hosts who care about sustainability, 
           design, and hospitality.  
-          We celebrate the people and places that make the Nordics unique.
+          We celebrate the people and places that make Sweden special.
         </>
       ),
     },
@@ -328,7 +353,8 @@ const BecomeHost = () => {
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
           <h1 className="text-5xl md:text-6xl font-bold mb-6">Become a Host</h1>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto opacity-90">
-            Share your Nordic home — earn income on your terms. You set the price, we add 10%.
+            Share your home in Sweden and earn on your terms. You set the price; guests pay a {FEE_PCT}% service fee
+            on top.
           </p>
           {foundingHostOfferOpen() && (
             <p className="mb-8 inline-block rounded-full bg-white/15 px-5 py-2 text-base md:text-lg backdrop-blur">
@@ -374,11 +400,13 @@ const BecomeHost = () => {
               <h2 className="text-2xl md:text-3xl font-bold">Founding-host offer: {FOUNDING_HOST_FEE_PCT}% for a year</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
                 Join by {FOUNDING_HOST_DEADLINE} and guests pay only a {FOUNDING_HOST_FEE_PCT}% service fee on your
-                listing for your first 12 months, instead of 10%. With the same price as on other sites, your place
-                can cost guests less here, and you still keep 100% of your price.
+                listing for your first 12 months, instead of {FEE_PCT}%. With the same price as on other sites, your
+                place can cost guests less here, and you still keep 100% of your price.
               </p>
               <p className="font-medium">
-                Example: your price 2 500 SEK, the guest pays 2 625 SEK (instead of 2 750 SEK). You receive 2 500 SEK.
+                Example: your price {sek(EXAMPLE_PRICE)}, the guest pays{" "}
+                {sek(withServiceFee(EXAMPLE_PRICE, FOUNDING_HOST_FEE_PCT))} (instead of{" "}
+                {sek(withServiceFee(EXAMPLE_PRICE))}). You receive {sek(EXAMPLE_PRICE)}.
               </p>
               <Button size="lg" onClick={handleHostRedirect}>
                 Claim the offer
@@ -398,20 +426,20 @@ const BecomeHost = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                 <div>
-                  <div className="text-4xl font-bold text-primary mb-2">2 500 SEK</div>
+                  <div className="text-4xl font-bold text-primary mb-2">{sek(EXAMPLE_PRICE)}</div>
                   <div className="text-muted-foreground">Your Price</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-primary mb-2">+10%</div>
+                  <div className="text-4xl font-bold text-primary mb-2">+{FEE_PCT}%</div>
                   <div className="text-muted-foreground">Platform Fee</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-primary mb-2">2 750 SEK</div>
+                  <div className="text-4xl font-bold text-primary mb-2">{sek(withServiceFee(EXAMPLE_PRICE))}</div>
                   <div className="text-muted-foreground">Guest Pays</div>
                 </div>
               </div>
               <p className="text-center text-sm text-muted-foreground mt-6">
-                The 10% covers secure payments (card fees of up to about 5.5%, depending on the guest's country and currency), marketing, support and platform improvements.
+                The {FEE_PCT}% covers secure payments (card fees of up to about 5.5%, depending on the guest's country and currency), marketing, support and platform improvements.
               </p>
             </CardContent>
           </Card>

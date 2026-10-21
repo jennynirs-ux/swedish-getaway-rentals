@@ -1,4 +1,4 @@
-# Search engines and AI assistants are welcome to read and recommend our stays.
+# Search engines and AI assistants are welcome to read and recommend the cabins on this site.
 
 User-agent: *
 Allow: /
@@ -9,6 +9,7 @@ Disallow: /cart
 Disallow: /auth
 Disallow: /booking-success
 Disallow: /order-success
+Disallow: /host-application
 
 # AI search / assistant crawlers (explicitly allowed)
 User-agent: GPTBot
@@ -29,5 +30,8 @@ Disallow: /host-dashboard
 Disallow: /profile
 Disallow: /cart
 Disallow: /auth
+Disallow: /booking-success
+Disallow: /order-success
+Disallow: /host-application
 
 Sitemap: https://nordic-getaways.com/sitemap.xml

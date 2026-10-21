@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { geocodeAddress } from "@/lib/geocoding";
 
 interface GuidebookBlock {
   id: string;
@@ -33,7 +34,19 @@ interface GuidebookBlock {
   title?: string;
   content?: string;
   items?: string[];
-  mapPins?: Array<{ lat: number; lng: number; label: string; address?: string }>;
+  /** Example text shown in the empty field; never shown to guests */
+  placeholder?: string;
+  mapPins?: GuidePin[];
+}
+
+interface GuidePin {
+  lat: number;
+  lng: number;
+  label: string;
+  address?: string;
+  /** The coordinates come from the address. Until then the pin sits at a
+   * starting point and is not shown to guests */
+  geocoded?: boolean;
 }
 
 interface GuidebookSection {
@@ -50,7 +63,12 @@ interface GuidebookEditorProps {
   onSave?: () => Promise<void>;
   saving?: boolean;
   propertyTitle?: string;
+  /** The property's map pin, where new guide pins start */
+  center?: { lat: number; lng: number } | null;
 }
+
+// Mid-Sweden, for a property without a map pin yet
+const SWEDEN_CENTER = { lat: 62.4, lng: 16.5 };
 
 const SECTION_ICONS: Record<string, React.ElementType> = {
   home: Home,
@@ -84,40 +102,43 @@ const DEFAULT_SECTION_TITLES: Record<string, string> = {
   hoststory: "Host Story",
 };
 
+// Every new host starts from these, so they hold no facts about any one cabin
+// (they used to describe the original Lerum cabins): host-specific blocks start
+// empty with an example, and only the welcome and general Swedish customs are
+// filled in. Empty blocks are not shown to guests.
 const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
   home: [
     { id: "h1", type: "text", content: "Welcome to our property! We're excited to host you." },
   ],
   directions: [
-    { id: "d1", type: "text", title: "Get here by car", content: "Take the E20 and exit at Lerum. Parking is available on site." },
-    { id: "d2", type: "text", title: "Get here by public transport", content: "Take the commuter train to Aspen station in Lerum, then bus 530 or 535 to Häckenvägen." },
+    { id: "d1", type: "text", title: "Get here by car", content: "", placeholder: "Which road to take, the last turn-off and where to park." },
+    { id: "d2", type: "text", title: "Get here by public transport", content: "", placeholder: "Nearest train station or bus stop and how to get from there to the cabin." },
     { id: "d3", type: "map", title: "Route Map", mapPins: [] },
   ],
   stop: [
-    { id: "s1", type: "list", title: "Useful stops", items: ["ICA Kvantum – groceries", "Shell – gas & snacks", "Local shop – firewood"] },
+    { id: "s1", type: "list", title: "Useful stops", items: [""], placeholder: "e.g. The nearest supermarket – groceries" },
     { id: "s2", type: "map", title: "Stops on the way", mapPins: [] },
   ],
   checkin: [
-    { id: "c1", type: "text", content: "Check-in time: 15:00" },
-    { id: "c2", type: "text", content: "Keys are in the lockbox by the entrance. Code will be sent via email." },
-    { id: "c3", type: "text", content: "Parking is available in front of the house." },
+    { id: "c1", type: "text", content: "", placeholder: "When guests can arrive, e.g. from 15:00." },
+    { id: "c2", type: "text", content: "", placeholder: "How guests get in, e.g. a key box by the door. Put codes in the Arrival tab – only booked guests get those." },
+    { id: "c3", type: "text", content: "", placeholder: "Where guests can park." },
   ],
   wifi: [
-    { id: "w1", type: "text", content: "Network: Guest_Wifi\nPassword: Welcome2024" },
+    { id: "w1", type: "text", content: "", placeholder: "Where the router is and where the signal is weak. Put the network name and password in the Arrival tab – only booked guests get those." },
   ],
   kitchen: [
-    { id: "k1", type: "list", title: "Appliances", items: ["Oven", "Coffee machine", "Dishwasher"] },
+    { id: "k1", type: "list", title: "Appliances", items: [""], placeholder: "e.g. Dishwasher" },
   ],
   howthingswork: [
-    { id: "h1", type: "text", title: "Oven", content: "Press the power button, select temperature, then press start." },
-    { id: "h2", type: "text", title: "Coffee machine", content: "Fill with water, insert filter and coffee, press brew." },
+    { id: "h1", type: "text", content: "", placeholder: "e.g. Heating: the thermostat is in the hall. Turn it down when you leave." },
   ],
   waste: [
-    { id: "wa1", type: "text", content: "Follow local recycling rules. Use the correct bins for food, paper, plastic, glass, metal, and residual waste." },
+    { id: "wa1", type: "text", content: "", placeholder: "Where the bins are and how to sort. Leave it empty and guests see a general guide to Swedish recycling." },
   ],
   places: [
-    { id: "p1", type: "list", title: "Restaurants", items: ["Pizzeria Napoli", "Hamnkrogen seafood", "Sushi & Wok Lerum"] },
-    { id: "p2", type: "list", title: "Attractions", items: ["Lake Aspen – swimming", "Skatås nature reserve", "Göteborg city – 20 min by train"] },
+    { id: "p1", type: "list", title: "Restaurants", items: [""], placeholder: "e.g. The local pizzeria – 10 minutes by car" },
+    { id: "p2", type: "list", title: "Attractions", items: [""], placeholder: "e.g. Best swimming spot, a nature reserve or the nearest town" },
     { id: "p3", type: "map", title: "Places to visit", mapPins: [] },
   ],
   customs: [
@@ -125,14 +146,14 @@ const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
     { id: "cu2", type: "text", title: "Fika", content: "Take a coffee break with something sweet, like a cinnamon bun." },
   ],
   rules: [
-    { id: "r1", type: "list", title: "House rules", items: ["No smoking indoors", "Respect quiet hours 22–07", "No parties", "If you break it you buy it"] },
+    { id: "r1", type: "list", title: "House rules", items: [""], placeholder: "e.g. Quiet after 22:00" },
   ],
   checkout: [
-    { id: "co1", type: "text", content: "Check-out time: 11:00" },
-    { id: "co2", type: "checkbox", title: "Check-out checklist", items: ["Empty trash", "Remove bed linens", "Close windows & turn off lights"] },
+    { id: "co1", type: "text", content: "", placeholder: "e.g. Check-out by 11:00." },
+    { id: "co2", type: "checkbox", title: "Check-out checklist", items: [""], placeholder: "e.g. Take out the rubbish" },
   ],
   hoststory: [
-    { id: "hs1", type: "text", content: "We bought Villa Häcken in 2020 and love sharing it with guests." },
+    { id: "hs1", type: "text", content: "", placeholder: "A few sentences about you and the place." },
   ],
 };
 
@@ -142,6 +163,7 @@ export const GuidebookEditor = ({
   onSave,
   saving = false,
   propertyTitle = "Property",
+  center,
 }: GuidebookEditorProps) => {
   const { toast } = useToast();
 
@@ -157,6 +179,13 @@ export const GuidebookEditor = ({
       };
     })
   );
+  // A pin's address is geocoded after the field loses focus; the result must
+  // land on the sections as they are then, not as they were at the blur
+  const latestSections = useRef(localSections);
+  latestSections.current = localSections;
+  // Address lookups still running; Save waits for them so pins are saved
+  // with their coordinates, not their starting point
+  const [pendingGeocodes, setPendingGeocodes] = useState(0);
 
   const updateSection = (id: string, updated: Partial<GuidebookSection>) => {
     const newSections = localSections.map((s) =>
@@ -218,7 +247,13 @@ export const GuidebookEditor = ({
             ...s,
             blocks: s.blocks.map((b) =>
               b.id === blockId
-                ? { ...b, mapPins: [...(b.mapPins || []), { lat: 57.7, lng: 12.0, label: "New Pin" }] }
+                ? {
+                    ...b,
+                    mapPins: [
+                      ...(b.mapPins || []),
+                      { lat: center?.lat ?? SWEDEN_CENTER.lat, lng: center?.lng ?? SWEDEN_CENTER.lng, label: "", geocoded: false },
+                    ],
+                  }
                 : b
             ),
           }
@@ -228,8 +263,8 @@ export const GuidebookEditor = ({
     onChange(newSections);
   };
 
-  const updateMapPin = (sectionId: string, blockId: string, pinIndex: number, updates: Partial<{ lat: number; lng: number; label: string; address: string }>) => {
-    const newSections = localSections.map((s) =>
+  const updateMapPin = (sectionId: string, blockId: string, pinIndex: number, updates: Partial<GuidePin>) => {
+    const newSections = latestSections.current.map((s) =>
       s.id === sectionId
         ? {
             ...s,
@@ -246,8 +281,35 @@ export const GuidebookEditor = ({
           }
         : s
     );
+    latestSections.current = newSections;
     setLocalSections(newSections);
     onChange(newSections);
+  };
+
+  const findPin = (sectionId: string, blockId: string, pinIndex: number) =>
+    latestSections.current
+      .find((s) => s.id === sectionId)
+      ?.blocks.find((b) => b.id === blockId)
+      ?.mapPins?.[pinIndex];
+
+  // Guests see the pin on a map, so its coordinates come from the address
+  const geocodePin = async (sectionId: string, blockId: string, pinIndex: number, address: string) => {
+    const query = address.trim();
+    if (!query || findPin(sectionId, blockId, pinIndex)?.geocoded) return;
+    setPendingGeocodes((n) => n + 1);
+    try {
+      const result = await geocodeAddress(/\b(sweden|sverige)\b/i.test(query) ? query : `${query}, Sweden`);
+      // The pin may have been deleted (the next pin then has this index) or
+      // given another address while the lookup ran
+      if (findPin(sectionId, blockId, pinIndex)?.address !== address) return;
+      if (!result) {
+        toast({ title: "Address not found", description: "Check the spelling or add the town name.", variant: "destructive" });
+        return;
+      }
+      updateMapPin(sectionId, blockId, pinIndex, { lat: result.latitude, lng: result.longitude, geocoded: true });
+    } finally {
+      setPendingGeocodes((n) => n - 1);
+    }
   };
 
   const removeMapPin = (sectionId: string, blockId: string, pinIndex: number) => {
@@ -323,8 +385,9 @@ export const GuidebookEditor = ({
             <Download className="h-5 w-5 mr-2" /> Download PDF
           </Button>
           {onSave && (
-            <Button variant="default" size="sm" onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save"}
+            <Button variant="default" size="sm" onClick={handleSave} disabled={saving || pendingGeocodes > 0}>
+              <Save className="h-4 w-4 mr-2" />{" "}
+              {pendingGeocodes > 0 ? "Finding address..." : saving ? "Saving..." : "Save"}
             </Button>
           )}
         </div>
@@ -374,6 +437,7 @@ export const GuidebookEditor = ({
                     <Textarea
                       value={block.content}
                       onChange={(e) => updateBlock(section.id, block.id, { content: e.target.value })}
+                      placeholder={block.placeholder}
                       rows={3}
                     />
                   )}
@@ -391,6 +455,7 @@ export const GuidebookEditor = ({
                                 ),
                               })
                             }
+                            placeholder={block.placeholder}
                           />
                           <Button
                             size="icon"
@@ -425,6 +490,7 @@ export const GuidebookEditor = ({
                                 ),
                               })
                             }
+                            placeholder={block.placeholder}
                           />
                           <Button
                             size="icon"
@@ -465,11 +531,14 @@ export const GuidebookEditor = ({
                             />
                             <Input
                               value={pin.address || ""}
-                              onChange={(e) => updateMapPin(section.id, block.id, i, { address: e.target.value })}
-                              placeholder="Address (e.g., Storgatan 1, Gothenburg)"
+                              onChange={(e) => updateMapPin(section.id, block.id, i, { address: e.target.value, geocoded: false })}
+                              onBlur={(e) => geocodePin(section.id, block.id, i, e.target.value)}
+                              placeholder="Address (e.g. Storgatan 1, Åre)"
                             />
                             <p className="text-xs text-muted-foreground">
-                              Enter an address. Coordinates will be calculated automatically.
+                              {pin.geocoded
+                                ? "Found on the map."
+                                : "Enter an address. Guests see the pin once the address is found on the map."}
                             </p>
                           </div>
                           <Button

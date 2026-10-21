@@ -16,6 +16,7 @@ import { z } from "zod";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
+import { LINEN_INCLUDED_PROPERTY_IDS } from "@/content/propertyContent";
 import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
 
 interface BookingFormProps {
@@ -178,6 +179,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Fee model A: service fee on top of the host's price (mirrors the payment function)
   const serviceFee = serviceFeeAmount(hostTotal, feeRate ?? 10);
   const totalAmount = hostTotal + serviceFee;
+  // Only promised for cabins whose host is known to include it (the Terms leave
+  // linen to each listing); matched by id since this form has no slug
+  const linenNote = LINEN_INCLUDED_PROPERTY_IDS.includes(propertyId) ? ' Bed linen and towels for every guest are included.' : '';
 
   const validateForm = () => {
     try {
@@ -318,7 +322,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             {rules.filter((r) => r.rule_type === 'extra_guest' || r.rule_type === 'cleaning_fee').map((r) => (
               <p key={r.id} className="text-sm text-muted-foreground">
                 {r.rule_type === 'extra_guest'
-                  ? `The nightly price is for 1 guest; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}. Bed linen and towels for every guest are included.`
+                  ? `The nightly price is for 1 guest; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.${linenNote}`
                   : `A cleaning fee of ${(r.price / 100).toLocaleString()} ${currency} is added per stay.`}
               </p>
             ))}
@@ -566,7 +570,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   I am {MIN_LEAD_GUEST_AGE} or older and will be staying at the property myself. There will be no parties or events.
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  Our cabins are for quiet stays.
+                  Cabins on Nordic Getaways are for quiet stays.
                 </p>
                 {validationErrors.partyRules && (
                   <p className="text-destructive text-sm">{validationErrors.partyRules}</p>
