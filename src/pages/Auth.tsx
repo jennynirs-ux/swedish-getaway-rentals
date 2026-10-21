@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,12 +34,22 @@ const Auth = () => {
   // abused ("//host" and "/\\host" both leave the site in a browser)
   const redirectTo = /^\/(?![/\\])/.test(requestedRedirect) && !requestedRedirect.includes('\\') ? requestedRedirect : '/';
   const isHostFlow = redirectTo.startsWith('/host-dashboard') || redirectTo.startsWith('/host-application');
+  // The reset email links to /auth?reset=1: the link signs the user in, and
+  // they stay here to choose a new password instead of being sent on
+  const [recovering, setRecovering] = useState(searchParams.get('reset') === '1');
+  const recoveringRef = useRef(recovering);
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
+        if (event === 'PASSWORD_RECOVERY') {
+          recoveringRef.current = true;
+          setRecovering(true);
+        }
+        if (recoveringRef.current) return;
         setUser(session?.user ?? null);
         
         if (session?.user) {
@@ -56,6 +66,7 @@ const Auth = () => {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (recoveringRef.current) return;
       setUser(session?.user ?? null);
       
       if (session?.user) {
@@ -169,7 +180,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${window.location.origin}/auth?reset=1`,
       });
       if (error) throw error;
       toast.success('Password reset link sent! Check your email.');
@@ -201,6 +212,88 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  const handleSetNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validatePassword(newPassword)) {
+      toast.error('Password does not meet security requirements');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success('Your password is changed.');
+      recoveringRef.current = false;
+      setRecovering(false);
+      navigate(redirectTo);
+    } catch (error: any) {
+      toast.error(error.message || 'Could not change the password. Request a new reset link.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (recovering) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-md mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center text-2xl">Choose a new password</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {session ? (
+                  <form onSubmit={handleSetNewPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          validatePassword(e.target.value);
+                        }}
+                        required
+                      />
+                      {passwordStrength && (
+                        <p className={`text-xs ${passwordStrength === 'Strong' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {passwordStrength}
+                        </p>
+                      )}
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? 'Saving...' : 'Save new password'}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="space-y-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Opening your reset link… If nothing happens, the link may have expired: sign in and choose
+                      "Forgot password?" again.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        recoveringRef.current = false;
+                        setRecovering(false);
+                      }}
+                    >
+                      Back to sign in
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // If user is already logged in, show loading while redirecting
   if (user) {

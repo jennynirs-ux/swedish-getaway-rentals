@@ -1066,6 +1066,7 @@ export type Database = {
           provider: string | null
           provider_id: string | null
           stripe_connect_account_id: string | null
+          stripe_connect_ready: boolean
           total_stays: number | null
           updated_at: string
           user_id: string
@@ -1094,6 +1095,7 @@ export type Database = {
           provider?: string | null
           provider_id?: string | null
           stripe_connect_account_id?: string | null
+          stripe_connect_ready?: boolean
           total_stays?: number | null
           updated_at?: string
           user_id: string
@@ -1122,6 +1124,7 @@ export type Database = {
           provider?: string | null
           provider_id?: string | null
           stripe_connect_account_id?: string | null
+          stripe_connect_ready?: boolean
           total_stays?: number | null
           updated_at?: string
           user_id?: string

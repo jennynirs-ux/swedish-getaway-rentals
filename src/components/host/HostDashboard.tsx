@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,17 +57,41 @@ interface Booking {
 // Wrapper: använder PropertyCard men lägger till Edit-knapp
 const HostPropertyCard = ({
   property,
+  live,
   onEdit,
   onDelete,
+  onTogglePublish,
 }: {
   property: PropertyCardData;
+  live: boolean;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onTogglePublish: (id: string, publish: boolean) => void;
 }) => {
   return (
     <div className="relative">
       <PropertyCard property={property} />
+      <div className="absolute top-2 left-2">
+        <span
+          className={`rounded-full px-2 py-1 text-xs font-medium ${
+            live ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+          }`}
+        >
+          {live ? "Live" : "Draft"}
+        </span>
+      </div>
       <div className="absolute top-2 right-2 flex gap-2">
+        <Button
+          size="sm"
+          variant={live ? "secondary" : "default"}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onTogglePublish(property.id, !live);
+          }}
+        >
+          {live ? "Unpublish" : "Publish"}
+        </Button>
         <Button
           size="sm"
           variant="secondary"
@@ -110,7 +134,9 @@ const HostDashboard = () => {
   const [pricingPropertyId, setPricingPropertyId] = useState<string | null>(null);
   const [creatingProperty, setCreatingProperty] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("properties");
+  const [searchParams] = useSearchParams();
+  // ?tab=payouts: where Stripe sends the host back after onboarding
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "properties");
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
 
@@ -241,7 +267,15 @@ const HostDashboard = () => {
         .from('properties')
         .delete()
         .eq('id', deletingPropertyId);
-      if (error) throw error;
+      if (error) {
+        // Bookings keep a property from being deleted (foreign key restrict)
+        if (error.code === "23503") {
+          toast.error("This property has bookings, so it can't be deleted. Unpublish it instead.");
+          setDeletingPropertyId(null);
+          return;
+        }
+        throw error;
+      }
       toast.success("Property deleted successfully");
       setDeletingPropertyId(null);
       refetchProperties();
@@ -250,6 +284,22 @@ const HostDashboard = () => {
       console.error("Error deleting property:", error);
       toast.error("Failed to delete property");
     }
+  };
+
+  // Hosts publish their own listings; the database requires working payouts
+  const togglePublish = async (id: string, publish: boolean) => {
+    const { error } = await supabase.from("properties").update({ active: publish }).eq("id", id);
+    if (error) {
+      if (/bank account/i.test(error.message)) {
+        toast.error("Connect your bank account before publishing, so you can be paid for bookings.");
+        setActiveTab("payouts");
+      } else {
+        toast.error(publish ? "Could not publish. Please try again." : "Could not unpublish. Please try again.");
+      }
+      return;
+    }
+    toast.success(publish ? "Published! Guests can now find and book your place." : "Unpublished. Guests can no longer book it.");
+    refetchProperties();
   };
 
   useEffect(() => {
@@ -443,8 +493,10 @@ const HostDashboard = () => {
                         special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
                         amenities_data: Array.isArray(p.amenities_data) ? p.amenities_data : [],
                       }}
+                      live={!!(p as { active?: boolean }).active}
                       onEdit={setEditingPropertyId}
                       onDelete={setDeletingPropertyId}
+                      onTogglePublish={togglePublish}
                     />
                   ))
                 )}

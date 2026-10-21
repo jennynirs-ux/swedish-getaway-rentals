@@ -7,88 +7,102 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SITE_URL = "https://nordic-getaways.com";
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+// Stripe sends the host back here; only our own site (or a local dev server)
+const safeReturnUrl = (url: unknown) => {
+  if (typeof url !== "string") return `${SITE_URL}/host-dashboard`;
+  try {
+    const u = new URL(url);
+    const ok = u.origin === SITE_URL || u.hostname === "localhost" || u.hostname === "127.0.0.1";
+    return ok ? u.toString() : `${SITE_URL}/host-dashboard`;
+  } catch {
+    return `${SITE_URL}/host-dashboard`;
+  }
+};
+
+/**
+ * A host's Stripe Connect payouts.
+ *   { action: "status" } → whether the account can receive transfers yet
+ *     (also saved as profiles.stripe_connect_ready, which publishing needs)
+ *   otherwise → an onboarding link, creating the Express account on first use;
+ *     the same link finishes an onboarding the host left halfway
+ */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Auth client to verify user
     const authClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } },
     );
-
     const { data: { user }, error: authError } = await authClient.auth.getUser();
-    
-    if (authError || !user?.email) {
-      throw new Error("User not authenticated");
-    }
+    if (authError || !user?.email) return json({ error: "User not authenticated" }, 401);
 
-    // Service role client for profile updates (bypasses RLS trigger)
-    const supabaseClient = createClient(
+    // Service role: profile updates bypass the privilege trigger
+    const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
-    const { returnUrl, refreshUrl } = await req.json();
-
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-
-    // Check if user already has a Connect account
-    const { data: profile } = await supabaseClient
+    const { data: profile } = await supabase
       .from("profiles")
-      .select("stripe_connect_account_id")
+      .select("id, is_host, host_approved, stripe_connect_account_id, stripe_connect_ready")
       .eq("user_id", user.id)
       .single();
+    if (!profile?.is_host || !profile.host_approved) return json({ error: "Only hosts can set up payouts" }, 403);
 
-    let accountId = profile?.stripe_connect_account_id;
+    const body = await req.json().catch(() => ({}));
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
+    let accountId = profile.stripe_connect_account_id;
 
-    // Create Connect account if doesn't exist
+    if (body?.action === "status") {
+      if (!accountId) return json({ hasAccount: false, ready: false });
+      const account = await stripe.accounts.retrieve(accountId);
+      const ready = !!account.details_submitted && account.capabilities?.transfers === "active";
+      if (ready !== profile.stripe_connect_ready) {
+        await supabase.from("profiles").update({ stripe_connect_ready: ready }).eq("id", profile.id);
+      }
+      return json({
+        hasAccount: true,
+        ready,
+        detailsSubmitted: !!account.details_submitted,
+        payoutsEnabled: !!account.payouts_enabled,
+        requirementsDue: account.requirements?.currently_due?.length ?? 0,
+      });
+    }
+
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: "express",
         email: user.email,
-        capabilities: {
-          transfers: { requested: true },
-        },
+        capabilities: { transfers: { requested: true } },
       });
       accountId = account.id;
 
-      // Save to profile. If this fails we must stop: otherwise every click
-      // creates another orphaned Stripe account and the host is never paid.
-      const { error: saveError } = await supabaseClient
+      // If this fails we must stop: otherwise every click creates another
+      // orphaned Stripe account and the host is never paid
+      const { error: saveError } = await supabase
         .from("profiles")
         .update({ stripe_connect_account_id: accountId })
-        .eq("user_id", user.id);
-      if (saveError) {
-        throw new Error(`Could not save Stripe account ${accountId}: ${saveError.message}`);
-      }
+        .eq("id", profile.id);
+      if (saveError) throw new Error(`Could not save Stripe account ${accountId}: ${saveError.message}`);
     }
 
-    // Create account link for onboarding
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: refreshUrl || `${req.headers.get("origin")}/host-dashboard`,
-      return_url: returnUrl || `${req.headers.get("origin")}/host-dashboard`,
+      refresh_url: safeReturnUrl(body?.refreshUrl),
+      return_url: safeReturnUrl(body?.returnUrl),
       type: "account_onboarding",
     });
-
-    return new Response(
-      JSON.stringify({ url: accountLink.url }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error: any) {
+    return json({ url: accountLink.url });
+  } catch (error) {
     console.error("Error creating Connect account:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    return json({ error: error instanceof Error ? error.message : String(error) }, 500);
   }
 });

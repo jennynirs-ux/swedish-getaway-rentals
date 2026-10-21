@@ -39,7 +39,8 @@ export const useHostProperties = () => {
           property_type,
           special_amenities,
           featured_amenities,
-          amenities_data
+          amenities_data,
+          preparation_days
         `)
         .eq('host_id', profile.id)
         .order('created_at', { ascending: false });

@@ -50,7 +50,7 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id, stripe_connect_account_id, full_name, email, host_business_name")
+        .select("id, stripe_connect_ready, full_name, email, host_business_name")
         .eq("user_id", userData.user.id)
         .single();
       if (!profile) return;
@@ -66,39 +66,43 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
       const hasHero = (properties || []).some((p) => p.hero_image_url);
       const hasDescription = (properties || []).some((p) => p.description && p.description.length > 30);
       const hasPricing = (properties || []).some((p) => p.price_per_night && p.price_per_night > 0);
-      const hasStripe = !!profile.stripe_connect_account_id;
+      // Set from Stripe when the Bank Account tab checks the payout status
+      const hasStripe = !!profile.stripe_connect_ready;
       const drafts = (properties || []).filter((p) => !p.active);
-      const awaitingReview = drafts.length > 0 && drafts.every((p) => p.pending_approval);
 
-      // Publishing is reviewed: the host submits, an admin publishes
-      const submitForReview = async () => {
+      // Hosts publish their own listings once guests can book and pay them
+      const publish = async () => {
         if (!hasStripe) {
           toast.error("Connect your bank account first, so we can pay you for bookings.");
           onGoToTab("payouts");
           return;
         }
-        const toSubmit = drafts.filter((p) => !p.pending_approval);
-        if (toSubmit.length === 0) return;
-        const { error } = await supabase
-          .from("properties")
-          .update({ pending_approval: true })
-          .in("id", toSubmit.map((p) => p.id));
-        if (error) {
-          toast.error("Could not submit for review. Please try again.");
+        const ready = drafts.filter((p) => p.hero_image_url && p.price_per_night > 0);
+        if (ready.length === 0) {
+          toast.error("Add a photo and a nightly rate first.");
+          onGoToTab("properties");
           return;
         }
-        // Tell the team (non-blocking)
+        const { error } = await supabase
+          .from("properties")
+          .update({ active: true })
+          .in("id", ready.map((p) => p.id));
+        if (error) {
+          toast.error("Could not publish. Please try again.");
+          return;
+        }
+        // Let the team know a new listing is live (non-blocking)
         supabase.functions.invoke("send-support-email", {
           body: {
             name: profile.full_name || profile.host_business_name || "Host",
             email: profile.email || userData.user.email,
-            subject: "Property submitted for review",
-            message: `${profile.host_business_name || profile.full_name || "A host"} submitted for review: ${toSubmit
+            subject: "New listing published",
+            message: `${profile.host_business_name || profile.full_name || "A host"} published: ${ready
               .map((p) => p.title)
-              .join(", ")}. Review and publish it under Admin → Properties.`,
+              .join(", ")}. See it under Admin → Properties.`,
           },
         }).catch(() => {});
-        toast.success("Submitted! Our team will review your listing before it goes live.");
+        toast.success("Published! Guests can now find and book your place.");
         load();
       };
 
@@ -145,13 +149,11 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty }: Props) => {
         },
         {
           id: "publish",
-          label: awaitingReview ? "Waiting for review" : "Submit for review",
-          description: awaitingReview
-            ? "Our team reviews every new listing before it goes live."
-            : "We check every new listing before it goes live, then guests can book it.",
+          label: "Publish your listing",
+          description: "Your place goes live straight away and guests can book it.",
           done: hasPublished,
-          actionLabel: awaitingReview ? "Submitted" : "Submit for review",
-          action: awaitingReview ? () => {} : submitForReview,
+          actionLabel: "Publish",
+          action: publish,
         },
       ]);
     } catch {

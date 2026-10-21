@@ -35,7 +35,6 @@ serve(async (req) => {
       guestPhone,
       specialRequests,
       totalAmount,
-      currency,
       couponId,
       rulesConfirmed
     } = requestData;
@@ -412,10 +411,12 @@ serve(async (req) => {
     // Build product description
     let productDescription = `Check-in: ${checkInDate}, Check-out: ${checkOutDate} (${nightCount} nights)`;
     if (validatedCoupon) {
-      productDescription += ` | Coupon: ${validatedCoupon.code} (-${discountAmount / 100} ${currency || property.currency || 'SEK'})`;
+      productDescription += ` | Coupon: ${validatedCoupon.code} (-${discountAmount / 100} ${property.currency || 'SEK'})`;
     }
 
-    const currencyCode = (currency || property.currency || "sek").toLowerCase();
+    // Always the property's currency: the amounts above are in it, so a
+    // currency sent by the browser would charge the same number in another one
+    const currencyCode = (property.currency || "sek").toLowerCase();
 
     // Two line items so the guest sees the stay and the service fee separately
     const lineItems: any[] = [

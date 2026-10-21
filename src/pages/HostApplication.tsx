@@ -97,7 +97,7 @@ const HostApplication = () => {
               Start Hosting
             </h1>
             <p className="text-lg text-muted-foreground">
-              Create your host account in a minute. We review each listing before it goes live.
+              Create your host account in a minute, add your place and publish it when you're ready.
             </p>
           </div>
 

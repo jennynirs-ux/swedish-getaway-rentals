@@ -13,12 +13,21 @@ interface HostBasicTabProps {
   onUpdate?: () => void;
 }
 
+const toCount = (value: string) => {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
 export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     tagline_line1: "",
+    description: "",
     introduction_text: "",
+    max_guests: "",
+    bedrooms: "",
+    bathrooms: "",
     contact_email: "",
     contact_phone: "",
   });
@@ -31,7 +40,7 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('title, tagline_line1, introduction_text, get_in_touch_info')
+        .select('title, tagline_line1, description, introduction_text, max_guests, bedrooms, bathrooms, get_in_touch_info')
         .eq('id', propertyId)
         .single();
 
@@ -42,7 +51,11 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
         setFormData({
           title: data.title || "",
           tagline_line1: data.tagline_line1 || "",
+          description: data.description || "",
           introduction_text: data.introduction_text || "",
+          max_guests: data.max_guests?.toString() ?? "",
+          bedrooms: data.bedrooms?.toString() ?? "",
+          bathrooms: data.bathrooms?.toString() ?? "",
           contact_email: getInTouchInfo?.contact_email || "",
           contact_phone: getInTouchInfo?.contact_phone || "",
         });
@@ -60,7 +73,12 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
         .update({
           title: formData.title,
           tagline_line1: formData.tagline_line1,
+          description: formData.description,
           introduction_text: formData.introduction_text,
+          // Empty boxes keep the saved number
+          ...(toCount(formData.max_guests) !== null && { max_guests: toCount(formData.max_guests) }),
+          ...(toCount(formData.bedrooms) !== null && { bedrooms: toCount(formData.bedrooms) }),
+          ...(toCount(formData.bathrooms) !== null && { bathrooms: toCount(formData.bathrooms) }),
           get_in_touch_info: {
             type: 'custom',
             contact_email: formData.contact_email,
@@ -115,6 +133,51 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, tagline_line1: e.target.value }))}
               placeholder="A catchy tagline for your property"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="The place, the area and what guests can do there"
+              rows={5}
+            />
+            <p className="text-xs text-muted-foreground">Shown on your listing and in search results.</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="max_guests">Guests</Label>
+              <Input
+                id="max_guests"
+                type="number"
+                min={1}
+                value={formData.max_guests}
+                onChange={(e) => setFormData(prev => ({ ...prev, max_guests: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bedrooms">Bedrooms</Label>
+              <Input
+                id="bedrooms"
+                type="number"
+                min={0}
+                value={formData.bedrooms}
+                onChange={(e) => setFormData(prev => ({ ...prev, bedrooms: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bathrooms">Bathrooms</Label>
+              <Input
+                id="bathrooms"
+                type="number"
+                min={0}
+                value={formData.bathrooms}
+                onChange={(e) => setFormData(prev => ({ ...prev, bathrooms: e.target.value }))}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
