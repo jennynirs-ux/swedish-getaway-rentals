@@ -122,7 +122,7 @@ const HostManagement = () => {
       fetchData();
     } catch (error) {
       console.error('Error updating commission rate:', error);
-      toast.error('Failed to update commission rate');
+      toast.error((error as { message?: string })?.message || 'Failed to update commission rate');
     }
   };
 
@@ -308,10 +308,13 @@ const HostManagement = () => {
                               type="number"
                               value={newCommissionRate}
                               onChange={(e) => setNewCommissionRate(e.target.value)}
-                              min="0"
+                              min="3"
                               max="100"
-                              step="0.01"
+                              step="0.5"
                             />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              The guest pays this on top of the host's price. At least 3%, which covers the card fee.
+                            </p>
                           </div>
                           <Button 
                             onClick={() => editingHost && updateHostCommission(editingHost.id, parseFloat(newCommissionRate))}
