@@ -1,18 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Image as ImageIcon, Star, Trash2, Edit } from "lucide-react";
+import { Image as ImageIcon, Star, Trash2, Edit, Loader2, Check, AlertCircle, Upload } from "lucide-react";
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -25,6 +27,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { imageStorageKeys, prepareImage } from "@/lib/imageResize";
 
 interface HostGalleryTabProps {
   propertyId: string;
@@ -37,7 +40,23 @@ interface ImageMetadata {
   description?: string;
 }
 
-const SortableImage = ({ id, image, isHero, onSetHero, onEdit, onRemove }: any) => {
+interface GalleryState {
+  hero: ImageMetadata;
+  /** The first 4 show on the property page, the rest in the gallery */
+  images: ImageMetadata[];
+}
+
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+const BUCKET = "property-images";
+
+const SortableImage = ({ id, image, onSetHero, onEdit, onRemove }: {
+  id: string;
+  image: ImageMetadata;
+  onSetHero: () => void;
+  onEdit: () => void;
+  onRemove: () => void;
+}) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
@@ -48,19 +67,17 @@ const SortableImage = ({ id, image, isHero, onSetHero, onEdit, onRemove }: any) 
   return (
     <div ref={setNodeRef} style={style} className="relative group">
       <div {...attributes} {...listeners} className="cursor-move">
-        <img src={image.url} alt={image.title || ""} className="w-full h-32 object-cover rounded-lg border" />
-        {isHero && (
-          <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
-            <Star className="h-3 w-3 fill-current" />
-            Hero
-          </div>
-        )}
+        <img src={image.url} alt={image.title || ""} loading="lazy" className="w-full h-32 object-cover rounded-lg border" />
       </div>
-      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-        <Button size="sm" variant="outline" onClick={onEdit}>
+      {/* Always visible on touch screens, which have no hover */}
+      <div className="absolute bottom-2 right-2 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+        <Button size="sm" variant="outline" onClick={onSetHero} title="Use as main photo" aria-label="Use as main photo">
+          <Star className="h-3 w-3" />
+        </Button>
+        <Button size="sm" variant="outline" onClick={onEdit} title="Edit title and description" aria-label="Edit">
           <Edit className="h-3 w-3" />
         </Button>
-        <Button size="sm" variant="destructive" onClick={onRemove}>
+        <Button size="sm" variant="destructive" onClick={onRemove} title="Remove" aria-label="Remove">
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
@@ -68,15 +85,28 @@ const SortableImage = ({ id, image, isHero, onSetHero, onEdit, onRemove }: any) 
   );
 };
 
+/**
+ * Photos of a listing. Every change (upload, reorder, remove, main photo,
+ * captions) is saved straight away: uploads used to be kept only until the
+ * host clicked "Save Changes", and switching tab lost them.
+ */
 export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) => {
-  const [saving, setSaving] = useState(false);
-  const [heroImage, setHeroImage] = useState<ImageMetadata>({ url: "" });
-  const [propertyPageImages, setPropertyPageImages] = useState<ImageMetadata[]>([]);
-  const [galleryImages, setGalleryImages] = useState<ImageMetadata[]>([]);
-  const [editingImage, setEditingImage] = useState<{ image: ImageMetadata; index: number; section: string } | null>(null);
+  const [hero, setHero] = useState<ImageMetadata>({ url: "" });
+  const [images, setImages] = useState<ImageMetadata[]>([]);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [editingImage, setEditingImage] = useState<{ image: ImageMetadata; index: number } | null>(null);
+  // The latest state, for saves that run after several awaits (a batch upload)
+  const latest = useRef<GalleryState>({ hero: { url: "" }, images: [] });
+  // Saves run one after another, so an older save can never overwrite a newer one
+  const saveChain = useRef<Promise<unknown>>(Promise.resolve());
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    // Press and hold to drag on phones, so a swipe still scrolls the page
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -85,6 +115,12 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
   useEffect(() => {
     loadGalleryData();
   }, [propertyId]);
+
+  const show = (next: GalleryState) => {
+    latest.current = next;
+    setHero(next.hero);
+    setImages(next.images);
+  };
 
   const loadGalleryData = async () => {
     try {
@@ -98,173 +134,199 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
 
       if (data) {
         const metadata = Array.isArray(data.gallery_metadata) ? data.gallery_metadata : [];
-        const images = Array.isArray(data.gallery_images) ? data.gallery_images : [];
-
-        setHeroImage({ url: data.hero_image_url || "", title: "Hero Image" });
-        
-        const enrichedImages = images.map((url: string, i: number) => {
-          const meta = metadata[i] as any;
-          return {
-            url,
-            title: meta?.title || "",
-            description: meta?.description || ""
-          };
+        const urls = Array.isArray(data.gallery_images) ? data.gallery_images : [];
+        show({
+          hero: { url: data.hero_image_url || "", title: "Hero Image" },
+          images: urls.map((url: string, i: number) => {
+            const meta = metadata[i] as { title?: string; description?: string } | undefined;
+            return { url, title: meta?.title || "", description: meta?.description || "" };
+          }),
         });
-
-        setPropertyPageImages(enrichedImages.slice(0, 4));
-        setGalleryImages(enrichedImages.slice(4));
       }
     } catch (error) {
       console.error('Error loading gallery:', error);
+      toast({
+        title: 'Could not load the photos',
+        description: error instanceof Error ? error.message : 'Please reload the page.',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const allImages = [...propertyPageImages, ...galleryImages];
-      const gallery_images = allImages.map(img => img.url);
-      const gallery_metadata = allImages.map(img => ({
-        title: img.title || "",
-        description: img.description || ""
+  const writeGallery = async (next: GalleryState) => {
+    const { error } = await supabase
+      .from('properties')
+      .update({
+        hero_image_url: next.hero.url,
+        gallery_images: next.images.map((img) => img.url),
+        gallery_metadata: next.images.map((img) => ({
+          title: img.title || "",
+          description: img.description || "",
+        })),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', propertyId);
+    return error;
+  };
+
+  /** Show the new state and save it; false when saving failed (the error is shown) */
+  const persist = (next: GalleryState, notify = true): Promise<boolean> => {
+    show(next);
+    setSaveState("saving");
+    const run = saveChain.current.then(async () => {
+      const error = await writeGallery(next).catch((e: unknown) => ({
+        message: e instanceof Error ? e.message : "Network error",
       }));
+      if (error) {
+        console.error('Error saving gallery:', error);
+        setSaveState("error");
+        setSaveError(error.message);
+        toast({ title: 'Could not save the photos', description: error.message, variant: 'destructive' });
+        return false;
+      }
+      setSaveState("saved");
+      setSaveError(null);
+      if (notify) onUpdate?.();
+      return true;
+    });
+    saveChain.current = run.catch(() => false);
+    return run;
+  };
 
-      const { error } = await supabase
-        .from('properties')
-        .update({
-          hero_image_url: heroImage.url,
-          gallery_images,
-          gallery_metadata,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', propertyId);
+  /** Shrink, upload under a random name in the listing's folder, and return the public URL */
+  const uploadOne = async (file: File) => {
+    const image = await prepareImage(file, true);
+    const keys = imageStorageKeys(propertyId, image.ext);
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(keys.full, image.full, { contentType: image.contentType, cacheControl: '31536000' });
+    if (error) throw new Error(error.message);
+    if (keys.small && image.small) {
+      // Best effort: without the small copy, phones simply get the 1600 px photo
+      await supabase.storage
+        .from(BUCKET)
+        .upload(keys.small, image.small, { contentType: image.contentType, cacheControl: '31536000' })
+        .catch(() => undefined);
+    }
+    return supabase.storage.from(BUCKET).getPublicUrl(keys.full).data.publicUrl;
+  };
 
-      if (error) throw error;
+  const handleFiles = async (fileList: FileList | File[] | null, target: 'hero' | 'gallery') => {
+    const files = Array.from(fileList ?? []).filter((f) => !f.type || f.type.startsWith('image/'));
+    if (files.length === 0 || uploading) return;
 
-      toast({
-        title: 'Success',
-        description: 'Gallery updated successfully'
-      });
+    const problems: string[] = [];
+    let saved = 0;
+    setUploading({ done: 0, total: files.length });
+    for (const [i, file] of files.entries()) {
+      try {
+        const url = await uploadOne(file);
+        const current = latest.current;
+        const added: ImageMetadata = { url, title: "", description: "" };
+        const next: GalleryState =
+          target === 'hero'
+            ? { ...current, hero: { url, title: "Hero Image" } }
+            : {
+                // Without a main photo yet, the first one becomes it (the listing card needs one)
+                hero: current.hero.url ? current.hero : { url, title: "Hero Image" },
+                images: [...current.images, added],
+              };
+        if (await persist(next, false)) saved++;
+        else problems.push(`${file.name}: uploaded but not saved`);
+      } catch (error) {
+        problems.push(error instanceof Error ? error.message : `${file.name}: upload failed`);
+      }
+      setUploading({ done: i + 1, total: files.length });
+    }
+    setUploading(null);
+
+    if (saved > 0) {
       onUpdate?.();
-    } catch (error) {
-      console.error('Error saving gallery:', error);
+      toast({ title: saved === 1 ? 'Photo saved' : `${saved} photos saved` });
+    }
+    if (problems.length > 0) {
       toast({
-        title: 'Error',
-        description: 'Failed to save gallery',
-        variant: 'destructive'
+        title: problems.length === 1 ? 'One photo could not be added' : `${problems.length} photos could not be added`,
+        description: problems.slice(0, 4).join(' ') + (problems.length > 4 ? ' …' : ''),
+        variant: 'destructive',
       });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'hero' | 'property' | 'gallery') => {
-    if (!e.target.files?.length) return;
-
-    const file = e.target.files[0];
-    const filePath = `${propertyId}/${Date.now()}-${file.name}`;
-
-    try {
-      const { data, error } = await supabase.storage
-        .from('property-images')
-        .upload(filePath, file);
-
-      if (error) throw error;
-
-      const url = supabase.storage.from('property-images').getPublicUrl(filePath).data.publicUrl;
-      const newImage: ImageMetadata = { url, title: "", description: "" };
-
-      if (target === 'hero') {
-        setHeroImage(newImage);
-      } else if (target === 'property') {
-        setPropertyPageImages(prev => [...prev, newImage].slice(0, 4));
-      } else {
-        setGalleryImages(prev => [...prev, newImage]);
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Image uploaded successfully'
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to upload image',
-        variant: 'destructive'
-      });
-    }
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>, target: 'hero' | 'gallery') => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    // Let the same file be picked again after an error
+    e.target.value = "";
+    handleFiles(files, target);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
-    const allImages = [...propertyPageImages, ...galleryImages];
-    const oldIndex = allImages.findIndex((_, i) => i.toString() === active.id);
-    const newIndex = allImages.findIndex((_, i) => i.toString() === over.id);
-
-    const reordered = arrayMove(allImages, oldIndex, newIndex);
-    setPropertyPageImages(reordered.slice(0, 4));
-    setGalleryImages(reordered.slice(4));
+    const oldIndex = Number(active.id);
+    const newIndex = Number(over.id);
+    persist({ ...latest.current, images: arrayMove(latest.current.images, oldIndex, newIndex) });
   };
 
-  const handleRemoveImage = (index: number, section: 'property' | 'gallery') => {
-    if (section === 'property') {
-      const newProperty = propertyPageImages.filter((_, i) => i !== index);
-      if (galleryImages.length > 0) {
-        newProperty.push(galleryImages[0]);
-        setGalleryImages(galleryImages.slice(1));
-      }
-      setPropertyPageImages(newProperty);
-    } else {
-      setGalleryImages(galleryImages.filter((_, i) => i !== index));
-    }
+  const handleRemoveImage = (index: number) => {
+    persist({ ...latest.current, images: latest.current.images.filter((_, i) => i !== index) });
   };
 
-  const handleEditImage = (image: ImageMetadata, index: number, section: string) => {
-    setEditingImage({ image: { ...image }, index, section });
+  const handleSetHero = (index: number) => {
+    const image = latest.current.images[index];
+    if (!image) return;
+    persist({ ...latest.current, hero: { url: image.url, title: "Hero Image" } });
   };
 
   const saveEditedImage = () => {
     if (!editingImage) return;
-
-    const { image, index, section } = editingImage;
-    if (section === 'property') {
-      const updated = [...propertyPageImages];
-      updated[index] = image;
-      setPropertyPageImages(updated);
-    } else if (section === 'gallery') {
-      const updated = [...galleryImages];
-      updated[index] = image;
-      setGalleryImages(updated);
-    }
+    const { image, index } = editingImage;
+    const updated = [...latest.current.images];
+    updated[index] = image;
     setEditingImage(null);
+    persist({ ...latest.current, images: updated });
   };
 
-  const allImages = [...propertyPageImages, ...galleryImages];
+  const propertyPageImages = images.slice(0, 4);
+  const galleryImages = images.slice(4);
+  const busy = !!uploading;
+
+  const renderImage = (img: ImageMetadata, index: number) => (
+    <SortableImage
+      key={index}
+      id={index.toString()}
+      image={img}
+      onSetHero={() => handleSetHero(index)}
+      onEdit={() => setEditingImage({ image: { ...img }, index })}
+      onRemove={() => handleRemoveImage(index)}
+    />
+  );
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Hero Image</CardTitle>
-          <CardDescription>Main image for property cards (not shown in gallery)</CardDescription>
+          <CardTitle>Main photo</CardTitle>
+          <CardDescription>
+            Shown on listing cards and at the top of your page. Tip: the star on any photo below makes it the main one.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {heroImage.url ? (
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            id="hero-upload"
+            disabled={busy}
+            onChange={(e) => onPick(e, 'hero')}
+          />
+          {hero.url ? (
             <div className="relative">
-              <img src={heroImage.url} alt="Hero" className="w-full h-64 object-cover rounded-lg border" />
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                id="hero-upload"
-                onChange={(e) => handleImageUpload(e, 'hero')}
-              />
+              <img src={hero.url} alt="Main photo" className="w-full h-64 object-cover rounded-lg border" />
               <Button
                 variant="outline"
                 className="absolute bottom-4 right-4"
+                disabled={busy}
                 onClick={() => document.getElementById('hero-upload')?.click()}
               >
                 <ImageIcon className="h-4 w-4 mr-2" />
@@ -272,27 +334,21 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
               </Button>
             </div>
           ) : (
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                id="hero-upload"
-                onChange={(e) => handleImageUpload(e, 'hero')}
-              />
-              <Button onClick={() => document.getElementById('hero-upload')?.click()}>
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Upload Hero Image
-              </Button>
-            </div>
+            <Button disabled={busy} onClick={() => document.getElementById('hero-upload')?.click()}>
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Upload main photo
+            </Button>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Gallery Images</CardTitle>
-          <CardDescription>Drag to reorder between Property Page (first 4) and Gallery. Click to edit or remove.</CardDescription>
+          <CardTitle>All photos</CardTitle>
+          <CardDescription>
+            The first 4 show on your property page. Drag to reorder (on a phone: press and hold). Photos are made
+            smaller for fast loading and saved automatically.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <DndContext
@@ -301,42 +357,24 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={allImages.map((_, i) => i.toString())}
+              items={images.map((_, i) => i.toString())}
               strategy={rectSortingStrategy}
             >
               <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-semibold mb-2 block">Property Page Images (first 4)</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {propertyPageImages.map((img, index) => (
-                      <SortableImage
-                        key={index}
-                        id={index.toString()}
-                        image={img}
-                        isHero={false}
-                        onSetHero={() => {}}
-                        onEdit={() => handleEditImage(img, index, 'property')}
-                        onRemove={() => handleRemoveImage(index, 'property')}
-                      />
-                    ))}
+                {propertyPageImages.length > 0 && (
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">Property page (first 4)</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {propertyPageImages.map((img, index) => renderImage(img, index))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {galleryImages.length > 0 && (
                   <div>
-                    <Label className="text-sm font-semibold mb-2 block">Gallery Images</Label>
+                    <Label className="text-sm font-semibold mb-2 block">Gallery</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {galleryImages.map((img, index) => (
-                        <SortableImage
-                          key={propertyPageImages.length + index}
-                          id={(propertyPageImages.length + index).toString()}
-                          image={img}
-                          isHero={false}
-                          onSetHero={() => {}}
-                          onEdit={() => handleEditImage(img, index, 'gallery')}
-                          onRemove={() => handleRemoveImage(index, 'gallery')}
-                        />
-                      ))}
+                      {galleryImages.map((img, i) => renderImage(img, propertyPageImages.length + i))}
                     </div>
                   </div>
                 )}
@@ -344,35 +382,84 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
             </SortableContext>
           </DndContext>
 
-          <div className="mt-4">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              id="gallery-upload"
-              onChange={(e) => handleImageUpload(e, propertyPageImages.length < 4 ? 'property' : 'gallery')}
-            />
-            <Button
-              variant="outline"
-              onClick={() => document.getElementById('gallery-upload')?.click()}
-            >
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Add Image
-            </Button>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            id="gallery-upload"
+            disabled={busy}
+            onChange={(e) => onPick(e, 'gallery')}
+          />
+          <div
+            className={`mt-4 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+              dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              handleFiles(e.dataTransfer.files, 'gallery');
+            }}
+          >
+            {uploading ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading {Math.min(uploading.done + 1, uploading.total)} of {uploading.total}…
+                </p>
+                <Progress value={(uploading.done / uploading.total) * 100} className="h-2" />
+              </div>
+            ) : (
+              <>
+                <Upload className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  Drag photos here, or pick several at once. JPG, PNG or WebP, up to 15 MB each.
+                </p>
+                <Button variant="outline" onClick={() => document.getElementById('gallery-upload')?.click()}>
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Add photos
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
+      <div className="flex min-h-9 items-center justify-end gap-2 text-sm text-muted-foreground" aria-live="polite">
+        {saveState === "saving" && (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+          </>
+        )}
+        {saveState === "saved" && (
+          <>
+            <Check className="h-4 w-4 text-emerald-600" /> All changes saved
+          </>
+        )}
+        {saveState === "error" && (
+          <>
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <span className="text-destructive">Not saved: {saveError}</span>
+            <Button size="sm" variant="outline" onClick={() => persist(latest.current)}>
+              Try again
+            </Button>
+          </>
+        )}
+        {saveState === "idle" && <span>Changes are saved automatically.</span>}
       </div>
 
       <Dialog open={!!editingImage} onOpenChange={() => setEditingImage(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Image</DialogTitle>
+            <DialogTitle>Edit photo</DialogTitle>
           </DialogHeader>
           {editingImage && (
             <div className="space-y-4">

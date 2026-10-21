@@ -4,9 +4,25 @@ import { Resend } from "npm:resend@4.0.0";
 import { escapeHtml } from "../_shared/auth.ts";
 import { hhmm, longDate } from "../_shared/format.ts";
 import { loadCancellationPolicy, policySummary } from "../_shared/cancellation.ts";
+import { alertAdminOnce } from "../_shared/alert.ts";
+import { dayAfterCheckIn, hostShareAmount, MAX_HOLD_DAYS, payoutDueOn } from "../_shared/payout.ts";
 
 // bookings.total_amount is stored in öre
 const formatAmount = (ore: number) => (ore / 100).toLocaleString("sv-SE");
+
+// The company that takes bookings and payments on the hosts' behalf
+// (src/content/company.ts). Guests must see that the host provides the stay:
+// Mojjo AB is the intermediary, which decides how VAT applies.
+const COMPANY_NAME = "Mojjo AB";
+
+// A name fit to show in an e-mail: profiles.full_name defaults to the e-mail address
+const shownName = (...names: (string | null | undefined)[]) =>
+  names.map((n) => n?.trim()).find((n) => n && !n.includes("@")) ?? null;
+
+// booking_email_tracking.email_type of each e-mail this function sends; a
+// recorded one is never sent again, so a retry only sends what failed
+const GUEST_EMAIL_TYPE = "booking_confirmation";
+const HOST_EMAIL_TYPE = "host_new_booking";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,6 +65,11 @@ serve(async (req) => {
         check_in_date,
         check_out_date,
         total_amount,
+        host_amount,
+        service_fee,
+        host_payout_status,
+        host_payout_due_on,
+        created_at,
         currency,
         properties (
           id,
@@ -68,7 +89,9 @@ serve(async (req) => {
           ),
           profiles (
             email,
-            full_name
+            full_name,
+            display_name,
+            host_business_name
           )
         )
       `)
@@ -116,6 +139,28 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const baseUrl = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
     const guidebookUrl = `${baseUrl}/property/${property.slug || property.id}/guide`;
+    const hostDashboardUrl = `${baseUrl}/host-dashboard?tab=bookings`;
+
+    // E-mails already sent for this booking (a retry must not send them twice)
+    const { data: sentRows } = await supabase
+      .from('booking_email_tracking')
+      .select('email_type')
+      .eq('booking_id', bookingId)
+      .in('email_type', [GUEST_EMAIL_TYPE, HOST_EMAIL_TYPE]);
+    const alreadySent = new Set((sentRows ?? []).map((r: { email_type: string }) => r.email_type));
+
+    // Everything below that comes from guests or hosts is escaped before it
+    // goes into HTML: a name like "<b>" must not change the e-mail
+    const titleHtml = escapeHtml(property.title);
+    const guestNameHtml = escapeHtml(booking.guest_name);
+    const currencyHtml = escapeHtml(booking.currency);
+
+    // Who provides the stay: the host's business, else their name
+    const hostName = shownName(hostProfile?.host_business_name, hostProfile?.display_name, hostProfile?.full_name);
+    const providerText = hostName
+      ? `Your stay at ${property.title} is provided by ${hostName}, the cabin's host. ${COMPANY_NAME} (Nordic Getaways) takes the booking and payment on the host's behalf.`
+      : `Your stay at ${property.title} is provided by the cabin's host. ${COMPANY_NAME} (Nordic Getaways) takes the booking and payment on the host's behalf.`;
+    const providerHtml = escapeHtml(providerText);
     
     // Format property address
     const propertyAddress = [
@@ -132,11 +177,19 @@ serve(async (req) => {
     const houseRules = rulesSection?.blocks?.filter((b: any) => b.type === 'list')
       .flatMap((b: any) => b.items || []) || [];
 
-    // One policy for every stay, as shown in the booking form
+    // One policy for every stay, as shown in the booking form. The guest's
+    // written copy of it, so it says what the percentage applies to: the
+    // price of the stay, never the service fee (owner decision 21 Oct 2026)
     const policy = await loadCancellationPolicy(supabase);
+    const stayPrice = hostShareAmount(booking);
+    const serviceFee = booking.service_fee ?? Math.max(0, booking.total_amount - stayPrice);
     const cancellationPolicy = {
       title: "Cancellation policy",
-      description: `${policySummary(policy)}. To cancel, reply to this e-mail.`,
+      description:
+        `${policySummary(policy)}. ` +
+        `The percentage applies to the price of the stay (${formatAmount(stayPrice)} ${booking.currency}); ` +
+        `the service fee${serviceFee > 0 ? ` (${formatAmount(serviceFee)} ${booking.currency})` : ""} is not refunded when you cancel. ` +
+        "If the host or we cancel, you get everything back, service fee included. To cancel, reply to this e-mail.",
     };
 
     // Format check-in and check-out times
@@ -155,9 +208,10 @@ serve(async (req) => {
     let guestEmailSubject = "";
 
     if (bookingTemplate && bookingTemplate.enabled) {
-      // Use custom template with placeholders
+      // Use custom template with placeholders. The subject is plain text; the
+      // message is HTML, so the host's text and every value are escaped there.
       const replacements: Record<string, string> = {
-        "{guest_name}": escapeHtml(booking.guest_name),
+        "{guest_name}": booking.guest_name,
         "{property_name}": property.title,
         "{check_in_date}": longDate(booking.check_in_date),
         "{check_out_date}": longDate(booking.check_out_date),
@@ -168,13 +222,15 @@ serve(async (req) => {
         "{currency}": booking.currency,
       };
 
-      guestEmailSubject = bookingTemplate.subject;
-      let message = bookingTemplate.message;
+      guestEmailSubject = String(bookingTemplate.subject ?? "");
+      // Placeholders hold no HTML characters, so they survive the escaping
+      let message = escapeHtml(bookingTemplate.message ?? "");
 
       Object.entries(replacements).forEach(([placeholder, value]) => {
         const escapedPlaceholder = placeholder.replace(/[{}]/g, '\\$&');
-        guestEmailSubject = guestEmailSubject.replace(new RegExp(escapedPlaceholder, "g"), value);
-        message = message.replace(new RegExp(escapedPlaceholder, "g"), value);
+        // A function, so "$&" in a guest's name is not read as a pattern
+        guestEmailSubject = guestEmailSubject.replace(new RegExp(escapedPlaceholder, "g"), () => value);
+        message = message.replace(new RegExp(escapedPlaceholder, "g"), () => escapeHtml(value));
       });
 
       guestEmailHtml = `
@@ -194,6 +250,7 @@ serve(async (req) => {
             ${message.split('\n').map((line: string) => `<p>${line}</p>`).join('')}
             <!-- The facts every confirmation needs, whatever the host's template says -->
             <div style="margin-top: 24px; padding: 16px 20px; background: #f8f9fa; border-radius: 8px;">
+              <p>${providerHtml}</p>
               <p><strong>Check-in:</strong> ${checkInDateTime}</p>
               <p><strong>Check-out:</strong> ${checkOutDateTime}</p>
               ${propertyAddress ? `<p><strong>Address:</strong> ${escapeHtml(propertyAddress)}</p>` : ''}
@@ -252,8 +309,9 @@ serve(async (req) => {
             </div>
             
             <div class="content">
-              <p style="font-size: 16px; line-height: 1.6;">Hi ${booking.guest_name},</p>
-              <p style="font-size: 16px; line-height: 1.6;">Your booking for <strong>${property.title}</strong> has been confirmed! We're excited to host you.</p>
+              <p style="font-size: 16px; line-height: 1.6;">Hi ${guestNameHtml},</p>
+              <p style="font-size: 16px; line-height: 1.6;">Your booking for <strong>${titleHtml}</strong> has been confirmed!</p>
+              <p style="font-size: 16px; line-height: 1.6;">${providerHtml}</p>
               
               <div class="section">
                 <div class="section-title">Check-In & Check-Out</div>
@@ -275,14 +333,14 @@ serve(async (req) => {
 
               <div class="section">
                 <div class="section-title">Property Location</div>
-                <p style="font-size: 16px; line-height: 1.6; color: #495057;">${propertyAddress || property.title}</p>
+                <p style="font-size: 16px; line-height: 1.6; color: #495057;">${escapeHtml(propertyAddress || property.title)}</p>
               </div>
 
               ${houseRules.length > 0 ? `
               <div class="section">
                 <div class="section-title">House Rules</div>
                 <ul class="rules-list">
-                  ${houseRules.map((rule: string) => `<li>${rule}</li>`).join('')}
+                  ${houseRules.map((rule: string) => `<li>${escapeHtml(rule)}</li>`).join('')}
                 </ul>
               </div>
               ` : ''}
@@ -291,7 +349,7 @@ serve(async (req) => {
                 <div class="section-title">Cancellation Policy</div>
                 <div class="info-box">
                   <strong style="color: #2D5F5D;">${cancellationPolicy.title}</strong>
-                  <p style="margin: 10px 0 0 0; line-height: 1.6; color: #495057;">${cancellationPolicy.description}</p>
+                  <p style="margin: 10px 0 0 0; line-height: 1.6; color: #495057;">${escapeHtml(cancellationPolicy.description)}</p>
                 </div>
               </div>
 
@@ -309,7 +367,7 @@ serve(async (req) => {
                   </div>
                   <div class="info-row">
                     <span class="info-label">Total Amount:</span>
-                    <span class="info-value">${formatAmount(booking.total_amount)} ${booking.currency}</span>
+                    <span class="info-value">${formatAmount(booking.total_amount)} ${currencyHtml}</span>
                   </div>
                 </div>
               </div>
@@ -337,6 +395,8 @@ Booking Confirmed!
 Hi ${booking.guest_name},
 
 Your booking for ${property.title} has been confirmed!
+
+${providerText}
 
 CHECK-IN & CHECK-OUT:
 - Check-In: ${checkInDateTime}
@@ -368,36 +428,86 @@ Best regards,
 The Nordic Getaways Team
     `;
 
-    try {
-      const guestEmailResponse = await resend.emails.send({
-        from: "Nordic Getaways <support@mojjo.se>",
-        to: [booking.guest_email],
-        subject: guestEmailSubject,
-        html: guestEmailHtml,
-        text: guestEmailPlainText,
-      });
-
-      console.log('Guest email sent successfully:', guestEmailResponse);
-
-      // Record email tracking
-      await supabase.from('booking_email_tracking').insert({
+    // Resend reports failures in its result instead of throwing; an e-mail
+    // counts as sent (and is recorded) only when Resend accepted it
+    const send = async (to: string, subject: string, html: string, text?: string): Promise<string | null> => {
+      try {
+        const { error } = await resend.emails.send({
+          from: "Nordic Getaways <support@mojjo.se>",
+          to: [to],
+          replyTo: "support@mojjo.se",
+          subject,
+          html,
+          ...(text ? { text } : {}),
+        });
+        return error ? error.message || "Resend error" : null;
+      } catch (e) {
+        return e instanceof Error ? e.message : String(e);
+      }
+    };
+    const record = async (emailType: string, recipient: string, id: string) => {
+      const { error } = await supabase.from('booking_email_tracking').insert({
         booking_id: bookingId,
-        tracking_id: trackingId,
-        recipient_email: booking.guest_email,
-        email_type: 'booking_confirmation',
+        tracking_id: id,
+        recipient_email: recipient,
+        email_type: emailType,
         sent_at: new Date().toISOString(),
       });
+      if (error) console.error('Recording sent e-mail failed:', emailType, error.message);
+    };
+    const stay = `${property.title}, ${booking.check_in_date} to ${booking.check_out_date}`;
 
-    } catch (emailError) {
-      console.error('Failed to send guest email:', emailError);
-      throw emailError;
+    // Guest confirmation: their only copy of the address and check-in details
+    let guestError: string | null = null;
+    if (alreadySent.has(GUEST_EMAIL_TYPE)) {
+      console.log('Guest confirmation already sent for booking:', bookingId);
+    } else {
+      guestError = await send(booking.guest_email, guestEmailSubject, guestEmailHtml, guestEmailPlainText);
+      if (guestError) {
+        console.error('Failed to send guest email:', guestError);
+        // Same key as the save path uses, so one failure is one alert
+        await alertAdminOnce(supabase, `notify-failed:${bookingId}`, 'Booking confirmation e-mail not sent', [
+          `${stay}`,
+          `Guest: ${booking.guest_name} <${booking.guest_email}>`,
+          `Booking: ${bookingId}`,
+          `Error: ${guestError}`,
+          'The booking is saved and confirmed. Send the guest their confirmation (address, check-in) by hand.',
+        ]).catch((alertError) => console.error('Alert failed:', alertError));
+      } else {
+        console.log('Guest email sent for booking:', bookingId);
+        await record(GUEST_EMAIL_TYPE, booking.guest_email, trackingId);
+      }
     }
 
-    // Send notification to host
+    // Host notice: sent even if the guest's failed, as it is the host's only
+    // notification of the booking
+    let hostError: string | null = null;
     const hostEmail = hostProfile?.email;
-    if (hostEmail) {
-      console.log('Sending notification to host:', hostEmail);
-      
+    if (alreadySent.has(HOST_EMAIL_TYPE)) {
+      console.log('Host notification already sent for booking:', bookingId);
+    } else if (!hostEmail) {
+      hostError = 'The host has no e-mail address';
+    } else {
+      // What the host receives: their price, not the guest's total with our fee
+      const hostAmount = hostShareAmount(booking);
+      // Saved with the booking: the day after check-in, or for a held share
+      // 85 days after payment if that comes first (Stripe holds money for at
+      // most 90 days, and we always pay out before it would)
+      const afterStay = dayAfterCheckIn(booking.check_in_date);
+      const dueOn = booking.host_payout_due_on ||
+        (booking.host_payout_status === 'held' ? payoutDueOn(booking.check_in_date, booking.created_at) : afterStay);
+      const payoutDate = longDate(dueOn);
+      const beforeStay = booking.host_payout_status !== 'manual' && dueOn < afterStay;
+      const payoutHtml = booking.host_payout_status === 'manual'
+        ? `This payment could not be sent to your Stripe account, so we will pay you by hand on ${payoutDate}, the day after check-in. Connect your bank account under Bank Account in your host dashboard so future payouts are automatic.`
+        : beforeStay
+          ? `Paid out to your bank account on ${payoutDate}, before the stay: we pay out at the latest ${MAX_HOLD_DAYS} days after the guest's payment, because Stripe holds money for at most 90 days. If the guest cancels after that, the part of the refund that comes from your share is taken from your next payout.`
+          : `Paid out to your bank account on ${payoutDate}, the day after check-in.`;
+      const cancellationHtml =
+        "If the guest cancels, they get the cancellation policy's percentage of your price back, and that amount is taken from your payout for this booking (or from your next payout, if this one has already been paid); the guest service fee is not refunded to them and never comes out of your share. " +
+        "If you have to cancel, the guest gets everything back, you receive nothing for the booking and Stripe's card fee for the payment is deducted from a later payout.";
+      const hostGreeting = shownName(hostProfile?.display_name, hostProfile?.full_name) ?? 'there';
+
       const hostEmailHtml = `
         <!DOCTYPE html>
         <html>
@@ -412,6 +522,9 @@ The Nordic Getaways Team
             .content { padding: 40px 30px; }
             .info-box { background: #f8f9fa; border-left: 4px solid #2D5F5D; padding: 20px; margin: 15px 0; border-radius: 4px; }
             .info-row { margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+            .payout { font-size: 22px; font-weight: 600; color: #2D5F5D; margin: 0; }
+            .muted { color: #6c757d; font-size: 14px; }
+            .cta-button { display: inline-block; background: #2D5F5D; color: white !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; }
           </style>
         </head>
         <body>
@@ -420,40 +533,62 @@ The Nordic Getaways Team
               <h1>🏡 New Booking Received</h1>
             </div>
             <div class="content">
-              <p>Hi ${hostProfile.full_name || 'Host'},</p>
-              <p>You have a new booking for <strong>${property.title}</strong>.</p>
+              <p>Hi ${escapeHtml(hostGreeting)},</p>
+              <p>You have a new booking for <strong>${titleHtml}</strong>.</p>
               <div class="info-box">
-                <div class="info-row"><strong>Guest:</strong> ${booking.guest_name}</div>
+                <p class="payout">You receive ${formatAmount(hostAmount)} ${currencyHtml}</p>
+                <p class="muted">The guest paid ${formatAmount(booking.total_amount)} ${currencyHtml}${booking.service_fee ? `, including the ${formatAmount(booking.service_fee)} ${currencyHtml} guest service fee to Nordic Getaways` : ''}.</p>
+                <p>${escapeHtml(payoutHtml)}</p>
+                <p class="muted">${escapeHtml(cancellationHtml)}</p>
+              </div>
+              <div class="info-box">
+                <div class="info-row"><strong>Guest:</strong> ${guestNameHtml}</div>
                 <div class="info-row"><strong>Check-In:</strong> ${checkInDateTime}</div>
                 <div class="info-row"><strong>Check-Out:</strong> ${checkOutDateTime}</div>
                 <div class="info-row"><strong>Guests:</strong> ${booking.number_of_guests}</div>
-                <div class="info-row"><strong>Total:</strong> ${formatAmount(booking.total_amount)} ${booking.currency}</div>
+                <div class="info-row"><strong>Booking reference:</strong> ${booking.id.slice(0, 8).toUpperCase()}</div>
               </div>
-              <p>Log in to your admin panel to view full booking details.</p>
+              <p style="text-align: center; margin: 30px 0;">
+                <a href="${hostDashboardUrl}" class="cta-button">See the booking in your host dashboard</a>
+              </p>
+              <p class="muted">Questions? Reply to this e-mail or write to support@mojjo.se.</p>
             </div>
           </div>
         </body>
         </html>
       `;
 
-      try {
-        await resend.emails.send({
-          from: "Nordic Getaways <support@mojjo.se>",
-          to: [hostEmail],
-          subject: `New Booking - ${property.title}`,
-          html: hostEmailHtml,
-        });
-        console.log('Host notification sent successfully');
-      } catch (hostEmailError) {
-        console.error('Failed to send host notification:', hostEmailError);
-        // Don't throw - guest email is more critical
+      console.log('Sending notification to host for booking:', bookingId);
+      hostError = await send(hostEmail, `New Booking - ${property.title}`, hostEmailHtml);
+      if (!hostError) {
+        console.log('Host notification sent for booking:', bookingId);
+        await record(HOST_EMAIL_TYPE, hostEmail, `${bookingId}-host-${Date.now()}`);
       }
+    }
+    if (hostError) {
+      console.error('Failed to send host notification:', hostError);
+      await alertAdminOnce(supabase, `notify-failed-host:${bookingId}`, 'Host not told about a new booking', [
+        `${stay}`,
+        `Host: ${hostName ?? '-'} <${hostEmail ?? 'no e-mail'}>`,
+        `Booking: ${bookingId}`,
+        `Error: ${hostError}`,
+        'The booking is saved and confirmed. Tell the host about it.',
+      ]).catch((alertError) => console.error('Alert failed:', alertError));
+    }
+
+    // A missing guest confirmation is an error for the caller too
+    if (guestError) {
+      return new Response(JSON.stringify({ error: `Guest e-mail failed: ${guestError}`, hostEmailSent: !hostError }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     return new Response(JSON.stringify({ 
       success: true,
       message: 'Booking notification sent successfully',
-      trackingId: trackingId
+      trackingId: trackingId,
+      hostEmailSent: !hostError,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

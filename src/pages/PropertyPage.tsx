@@ -64,6 +64,35 @@ const NearbyPropertiesWrapper = memo(({ currentPropertyId, currentCoordinates }:
 
 NearbyPropertiesWrapper.displayName = "NearbyPropertiesWrapper";
 
+/**
+ * "About this place" for listings without hand-written PROPERTY_CONTENT, which
+ * is every host's listing: the host's introduction and description as they
+ * typed them, line breaks kept. Always rendered, so the prerendered page gives
+ * search engines the text too. The columns have no defaults: when the host has
+ * written neither, the section is left out.
+ */
+const ListingAbout = ({ introduction, description }: { introduction?: string | null; description?: string | null }) => {
+  const text = description?.trim();
+  // Hosts sometimes paste the same text in both boxes
+  const intro = introduction?.trim() !== text ? introduction?.trim() : undefined;
+  if (!intro && !text) return null;
+  return (
+    <section className="py-16" aria-labelledby="about-heading">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
+          <h2 id="about-heading" className="text-3xl md:text-4xl font-bold mb-6">
+            About this place
+          </h2>
+          {intro && <p className="text-xl leading-relaxed mb-6 whitespace-pre-line break-words">{intro}</p>}
+          {text && (
+            <div className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line break-words">{text}</div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const PropertyPage = memo(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -86,7 +115,7 @@ const PropertyPage = memo(() => {
 
   /** Light query */
   const propertyLightQueryFn = useCallback(async () => {
-    let propertyId = await resolvePropertyId(id!);
+    const propertyId = await resolvePropertyId(id!);
 
     const { data, error } = await supabase
       .from("properties")
@@ -95,6 +124,7 @@ const PropertyPage = memo(() => {
         host_id,
         title,
         description,
+        introduction_text,
         location,
         price_per_night,
         currency,
@@ -106,6 +136,7 @@ const PropertyPage = memo(() => {
         tagline_line1,
         availability_text,
         tagline_line2,
+        contact_response_time,
         review_rating,
         review_count,
         active,
@@ -139,7 +170,7 @@ const PropertyPage = memo(() => {
 
   /** Heavy query */
   const propertyHeavyQueryFn = useCallback(async () => {
-    let propertyId = await resolvePropertyId(id!);
+    const propertyId = await resolvePropertyId(id!);
 
     const { data, error } = await supabase
       .from("properties")
@@ -271,13 +302,15 @@ const PropertyPage = memo(() => {
       <PropertyNavigation />
       <PropertyHero property={property} />
 
-      {content && (
+      {content ? (
         <PropertyAbout
           content={content}
           rating={property.review_rating}
           reviewCount={property.review_count}
           city={property.city}
         />
+      ) : (
+        <ListingAbout introduction={property.introduction_text} description={property.description} />
       )}
 
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>

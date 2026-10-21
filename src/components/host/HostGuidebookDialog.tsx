@@ -37,7 +37,7 @@ type PriceGuideBlock =
       title: string;
       icon?: string;
       body: string;
-      commissionExample?: {
+      serviceFeeExample?: {
         base: string;
         fee: string;
         guest: string;
@@ -165,12 +165,12 @@ const sections: SectionDef[] = [
           icon: "DollarSign",
           body:
             "Setting the right price for your property is both an art and a science. Your pricing strategy can make or break your success as a host. This overview helps you understand market dynamics, guest psychology, and pricing techniques.",
-          commissionExample: {
+          serviceFeeExample: {
             base: "2,000 SEK",
             fee: "200 SEK (10%)",
             guest: "2,200 SEK / night",
             note:
-              "Nordic Getaways charges a 10% commission. Guests see the total price including the fee. You receive your base price.",
+              "Guests pay a service fee on top of your price (10%, or 5% during the founding-host offer). Guests see the total including the fee; you receive your price in full, paid out the day after check-in, or 85 days after the guest paid if that comes first. Your exact rate is in the Bank Account tab.",
           },
         },
         {
@@ -334,7 +334,7 @@ const sections: SectionDef[] = [
           ],
         },
       ],
-      formula: "Guest pays: Your price + 10% platform fee",
+      formula: "Guest pays: Your price + the guest service fee (10%, or 5% during the founding-host offer)",
       example:
         "If you set 1,000 SEK/night, guest sees 1,100 SEK/night; you receive 1,000 SEK.",
     },
@@ -462,7 +462,11 @@ const sections: SectionDef[] = [
         },
         {
           q: "Guest wants to cancel",
-          a: "Review your cancellation policy. Be flexible when possible. Document everything.",
+          a: "Ask them to contact Nordic Getaways: we handle cancellations and refunds. The guest gets back 90% of your price more than 21 days before arrival, 50% 8–21 days before, and nothing within 7 days. The refund is taken from that booking's payout; the guest service fee is not refunded.",
+        },
+        {
+          q: "You have to cancel a booking",
+          a: "Contact Nordic Getaways straight away. The guest gets everything back, including the service fee, you are paid nothing for that booking, and its card fee is taken from your next payout (you can see it in the Bank Account tab).",
         },
       ],
     },
@@ -545,25 +549,25 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
                   {block.title}
                 </h4>
                 <p className="text-muted-foreground">{block.body}</p>
-                {block.commissionExample && (
+                {block.serviceFeeExample && (
                   <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-                    <p className="font-semibold text-primary mb-2">Commission Example (10%)</p>
+                    <p className="font-semibold text-primary mb-2">Guest service fee example (10%)</p>
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
                         <span>Your nightly rate:</span>
-                        <span className="font-semibold">{block.commissionExample.base}</span>
+                        <span className="font-semibold">{block.serviceFeeExample.base}</span>
                       </div>
                       <div className="flex justify-between text-muted-foreground">
-                        <span>Platform commission:</span>
-                        <span>+ {block.commissionExample.fee}</span>
+                        <span>Guest service fee:</span>
+                        <span>+ {block.serviceFeeExample.fee}</span>
                       </div>
                       <div className="flex justify-between border-t pt-1 font-bold">
                         <span>Guest pays:</span>
-                        <span className="text-primary">{block.commissionExample.guest}</span>
+                        <span className="text-primary">{block.serviceFeeExample.guest}</span>
                       </div>
                     </div>
-                    {block.commissionExample.note && (
-                      <p className="text-xs text-muted-foreground mt-2">{block.commissionExample.note}</p>
+                    {block.serviceFeeExample.note && (
+                      <p className="text-xs text-muted-foreground mt-2">{block.serviceFeeExample.note}</p>
                     )}
                   </div>
                 )}

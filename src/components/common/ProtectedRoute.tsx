@@ -56,10 +56,16 @@ const ProtectedRoute = ({ children, requireAuth = true, requireHost = false, req
   }
 
   if (requireAuth && !authenticated) {
-    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+    // The whole address, so e.g. /host-dashboard?tab=payouts (Stripe's return) survives signing in
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   }
 
-  if ((requireHost || requireAdmin) && !authorized) {
+  // A signed-in guest opening a host page is told how to become one
+  if (requireHost && !authorized) {
+    return <Navigate to="/become-host" replace />;
+  }
+
+  if (requireAdmin && !authorized) {
     return <Navigate to="/" replace />;
   }
 

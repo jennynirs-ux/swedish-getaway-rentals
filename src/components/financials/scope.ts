@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -27,6 +26,8 @@ export interface ResolvedScope {
   error?: string;
 }
 
+const inFlight = new Map<FinancialScope, Promise<ResolvedScope>>();
+
 /**
  * Resolve a FinancialScope to concrete property metadata.
  *
@@ -36,7 +37,19 @@ export interface ResolvedScope {
  *
  * For "admin": queries all active properties. RLS still enforces actual access.
  */
-export async function resolveScope(scope: FinancialScope): Promise<ResolvedScope> {
+export function resolveScope(scope: FinancialScope): Promise<ResolvedScope> {
+  // Views that mount together (e.g. Key Metrics, Profitability and Revenue by
+  // Channel on one page) share one lookup instead of one each. Only calls in
+  // flight are shared, so a later sign-in as someone else is never served
+  // another user's listings.
+  const pending = inFlight.get(scope);
+  if (pending) return pending;
+  const lookup = lookUpScope(scope).finally(() => inFlight.delete(scope));
+  inFlight.set(scope, lookup);
+  return lookup;
+}
+
+async function lookUpScope(scope: FinancialScope): Promise<ResolvedScope> {
   if (scope === "host") {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {

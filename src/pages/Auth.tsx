@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { MailCheck } from "lucide-react";
 import MainNavigation from "@/components/MainNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
@@ -39,6 +40,11 @@ const Auth = () => {
   const [recovering, setRecovering] = useState(searchParams.get('reset') === '1');
   const recoveringRef = useRef(recovering);
   const [newPassword, setNewPassword] = useState("");
+  // The address a confirmation email went to (or should go to): stays on screen
+  // with a Resend button, since the email often lands in spam (Hotmail/Outlook)
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [tab, setTab] = useState(isHostFlow ? "signup" : "signin");
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -111,7 +117,7 @@ const Auth = () => {
       // Bring new users back to where they were going (e.g. the host application)
       const redirectUrl = `${window.location.origin}${redirectTo}`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -121,7 +127,15 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast.success('Check your email for the confirmation link!');
+      // An address that already has an account gets no email (Supabase hides
+      // whether it exists by returning a user without identities)
+      if (data.user && data.user.identities?.length === 0) {
+        setError('This email already has an account. Sign in, or use "Forgot password?" if you don\'t remember it.');
+        setTab('signin');
+        return;
+      }
+
+      setConfirmEmail(email.trim());
     } catch (error: any) {
       setError(error.message);
       toast.error(error.message);
@@ -151,24 +165,24 @@ const Auth = () => {
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    setLoading(true);
-    setError(null);
-
+  const handleResendConfirmation = async () => {
+    if (!confirmEmail) return;
+    setResending(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo: `${window.location.origin}${redirectTo}`
-        }
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: confirmEmail,
+        options: { emailRedirectTo: `${window.location.origin}${redirectTo}` },
       });
-
       if (error) throw error;
-    } catch (error: any) {
-      setError(error.message);
-      toast.error(error.message);
+      toast.success(`We sent a new confirmation link to ${confirmEmail}.`);
+    } catch (error) {
+      // e.g. "For security purposes, you can only request this after 60 seconds."
+      toast.error(
+        error instanceof Error && error.message ? error.message : 'Could not send the email. Please try again in a minute.',
+      );
     } finally {
-      setLoading(false);
+      setResending(false);
     }
   };
 
@@ -202,7 +216,14 @@ const Auth = () => {
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        // Signed up but never clicked the link: offer to send it again
+        if (error.code === 'email_not_confirmed' || /not confirmed/i.test(error.message)) {
+          setConfirmEmail(email.trim());
+          return;
+        }
+        throw error;
+      }
 
       toast.success('Successfully signed in!');
     } catch (error: any) {
@@ -325,7 +346,38 @@ const Auth = () => {
               )}
             </CardHeader>
         <CardContent>
-          <Tabs defaultValue={isHostFlow ? "signup" : "signin"} className="w-full">
+          {confirmEmail && (
+            <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3" role="status">
+              <div className="flex items-start gap-3">
+                <MailCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="min-w-0 space-y-1">
+                  <p className="font-medium">
+                    Check your inbox (and spam) for <span className="break-all">{confirmEmail}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Click the link in our email to confirm your address, then you're signed in. It can take a few
+                    minutes, and Hotmail and Outlook often put it in the junk folder.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 pl-8">
+                <Button size="sm" variant="outline" onClick={handleResendConfirmation} disabled={resending}>
+                  {resending ? 'Sending...' : 'Resend email'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setConfirmEmail(null);
+                    setError(null);
+                  }}
+                >
+                  Use a different email
+                </Button>
+              </div>
+            </div>
+          )}
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="signin">Sign In</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -384,24 +436,16 @@ const Auth = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGoogleSignIn}
-                        disabled={loading}
-                      >
-                        Google
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleFacebookSignIn}
-                        disabled={loading}
-                      >
-                        Facebook
-                      </Button>
-                    </div>
+                    {/* Google only: Facebook login is switched off in Supabase */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading}
+                    >
+                      Google
+                    </Button>
                   </form>
                 </TabsContent>
             
@@ -471,24 +515,16 @@ const Auth = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGoogleSignIn}
-                        disabled={loading}
-                      >
-                        Google
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleFacebookSignIn}
-                        disabled={loading}
-                      >
-                        Facebook
-                      </Button>
-                    </div>
+                    {/* Google only: Facebook login is switched off in Supabase */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading}
+                    >
+                      Google
+                    </Button>
                   </form>
                 </TabsContent>
               </Tabs>

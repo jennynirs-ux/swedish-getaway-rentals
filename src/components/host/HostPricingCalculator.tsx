@@ -4,66 +4,71 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { usePricingRules } from "@/hooks/usePricingRules";
 import { Calculator } from "lucide-react";
-
-interface PricingRule {
-  id: string;
-  rule_type: string;
-  name: string;
-  price: number;
-  is_per_night: boolean;
-  is_active: boolean;
-}
+import { HOST_PAYOUT_TIMING_TEXT } from "@/lib/constants";
+import {
+  applicableStayDiscount,
+  serviceFeeAmount,
+  stayDiscountAmount,
+} from "../../../supabase/functions/_shared/booking-price";
 
 interface HostPricingCalculatorProps {
   propertyId: string;
+  /** Nightly price in SEK */
   basePrice: number;
   currency: string;
 }
 
+const clampInt = (raw: string, min: number, max: number) => Math.min(max, Math.max(min, parseInt(raw, 10) || min));
+
+/**
+ * What a stay costs the guest and what the host receives, worked out like
+ * the booking form and the payment function do (the same shared helpers):
+ * pricing rules in öre, extra guests beyond the first, cleaning once, the
+ * weekly/monthly discount on the nights only, and this listing's real guest
+ * service fee (5 % during the founding-host offer).
+ */
 export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostPricingCalculatorProps) => {
-  const [guests, setGuests] = useState(2);
-  const [nights, setNights] = useState(1);
-  const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
+  // Raw text, so a field can be cleared while typing
+  const [guestsText, setGuestsText] = useState("2");
+  const [nightsText, setNightsText] = useState("3");
+  const { calculatePrice } = usePricingRules(propertyId);
+  const [feeRate, setFeeRate] = useState<number | null>(null);
+  const [discounts, setDiscounts] = useState({ weekly: 0, monthly: 0 });
 
   useEffect(() => {
-    loadPricingRules();
+    supabase.rpc("property_service_fee_rate", { _property_id: propertyId }).then(({ data, error }) => {
+      setFeeRate(error || data == null ? null : Number(data));
+    });
+    supabase
+      .from("properties")
+      .select("weekly_discount_percentage, monthly_discount_percentage")
+      .eq("id", propertyId)
+      .single()
+      .then(({ data }) => {
+        setDiscounts({
+          weekly: Number(data?.weekly_discount_percentage) || 0,
+          monthly: Number(data?.monthly_discount_percentage) || 0,
+        });
+      });
   }, [propertyId]);
 
-  const loadPricingRules = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("properties_pricing_rules")
-        .select("*")
-        .eq("property_id", propertyId)
-        .eq("is_active", true);
+  const nights = clampInt(nightsText, 1, 365);
+  const guests = clampInt(guestsText, 1, 50);
+  // Any dates: the calculator uses the base price, not per-night special prices
+  const checkIn = new Date(2026, 0, 5);
+  const checkOut = new Date(2026, 0, 5 + nights);
+  const calc = calculatePrice(Math.round((basePrice || 0) * 100), checkIn, checkOut, guests);
+  const discount = applicableStayDiscount(nights, discounts.weekly, discounts.monthly);
+  const stayDiscount = stayDiscountAmount(calc.breakdown.accommodation, discount);
+  const hostTotal = Math.max(0, calc.total - calc.breakdown.services - stayDiscount);
+  const rate = feeRate ?? 10;
+  const serviceFee = serviceFeeAmount(hostTotal, rate);
+  const guestPays = hostTotal + serviceFee;
 
-      if (error) throw error;
-      setPricingRules(data || []);
-    } catch (error) {
-      console.error("Error loading pricing rules:", error);
-    }
-  };
-
-  const calculateSubtotal = () => {
-    let subtotal = basePrice * nights;
-
-    pricingRules.forEach((rule) => {
-      if (rule.is_per_night) {
-        subtotal += rule.price * nights;
-      } else {
-        subtotal += rule.price;
-      }
-    });
-
-    return subtotal;
-  };
-
-  const subtotal = calculateSubtotal();
-  const platformFee = Math.round(subtotal * 0.1); // 10% platform fee
-  const guestPays = subtotal + platformFee;
-  const hostEarns = subtotal;
-  const commissionRate = 10;
+  const money = (ore: number) => `${Math.round(ore / 100).toLocaleString("sv-SE")} ${currency}`;
+  const nightsLabel = `${nights} night${nights > 1 ? "s" : ""}`;
 
   return (
     <Card>
@@ -73,29 +78,31 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
           Price Calculator
         </CardTitle>
         <CardDescription>
-          Calculate what guests pay and what you earn
+          See what guests pay and what you receive for a stay at your base price
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="guests">Number of Guests</Label>
+            <Label htmlFor="calc-guests">Number of Guests</Label>
             <Input
-              id="guests"
+              id="calc-guests"
               type="number"
+              inputMode="numeric"
               min="1"
-              value={guests}
-              onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+              value={guestsText}
+              onChange={(e) => setGuestsText(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="nights">Number of Nights</Label>
+            <Label htmlFor="calc-nights">Number of Nights</Label>
             <Input
-              id="nights"
+              id="calc-nights"
               type="number"
+              inputMode="numeric"
               min="1"
-              value={nights}
-              onChange={(e) => setNights(parseInt(e.target.value) || 1)}
+              value={nightsText}
+              onChange={(e) => setNightsText(e.target.value)}
             />
           </div>
         </div>
@@ -103,53 +110,56 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
         <Separator />
 
         <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span>Base Price ({nights} night{nights > 1 ? 's' : ''})</span>
-            <span>{(basePrice * nights).toLocaleString()} {currency}</span>
+          <div className="flex justify-between gap-4 text-sm">
+            <span>Your price ({nightsLabel})</span>
+            <span>{money(calc.breakdown.accommodation)}</span>
           </div>
 
-          {pricingRules.map((rule) => (
-            <div key={rule.id} className="flex justify-between text-sm text-muted-foreground">
-              <span>
-                {rule.name} {rule.is_per_night && `(${nights} night${nights > 1 ? 's' : ''})`}
-              </span>
-              <span>
-                {rule.is_per_night
-                  ? (rule.price * nights).toLocaleString()
-                  : rule.price.toLocaleString()}{' '}
-                {currency}
-              </span>
+          {calc.breakdown.extraGuests > 0 && (
+            <div className="flex justify-between gap-4 text-sm text-muted-foreground">
+              <span>Extra guests ({guests - 1})</span>
+              <span>{money(calc.breakdown.extraGuests)}</span>
             </div>
-          ))}
+          )}
+
+          {calc.breakdown.cleaning > 0 && (
+            <div className="flex justify-between gap-4 text-sm text-muted-foreground">
+              <span>Cleaning</span>
+              <span>{money(calc.breakdown.cleaning)}</span>
+            </div>
+          )}
+
+          {stayDiscount > 0 && discount && (
+            <div className="flex justify-between gap-4 text-sm text-muted-foreground">
+              <span>
+                {discount.type === "monthly" ? "Monthly" : "Weekly"} discount ({discount.percentage}%)
+              </span>
+              <span>−{money(stayDiscount)}</span>
+            </div>
+          )}
 
           <Separator />
 
-          <div className="flex justify-between font-medium">
-            <span>Subtotal</span>
-            <span>{subtotal.toLocaleString()} {currency}</span>
+          <div className="flex justify-between gap-4 text-lg font-bold text-green-600">
+            <span>You receive</span>
+            <span>{money(hostTotal)}</span>
           </div>
 
-          <div className="flex justify-between text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
-            <span>Platform Fee ({commissionRate}%)</span>
-            <span>+{platformFee.toLocaleString()} {currency}</span>
+          <div className="flex justify-between gap-4 text-sm text-muted-foreground">
+            <span>Guest service fee ({rate}%)</span>
+            <span>+{money(serviceFee)}</span>
           </div>
 
-          <Separator />
-
-          <div className="flex justify-between text-lg font-bold text-primary">
-            <span>Guest Pays</span>
-            <span>{guestPays.toLocaleString()} {currency}</span>
-          </div>
-
-          <div className="flex justify-between text-lg font-bold text-green-600">
-            <span>You Earn</span>
-            <span>{hostEarns.toLocaleString()} {currency}</span>
+          <div className="flex justify-between gap-4 font-medium">
+            <span>Guest pays</span>
+            <span>{money(guestPays)}</span>
           </div>
         </div>
 
         <div className="mt-4 p-3 bg-muted rounded-lg">
           <p className="text-xs text-muted-foreground">
-            The platform fee is automatically deducted from the total amount. You receive {hostEarns.toLocaleString()} {currency} per booking.
+            Guests pay {rate}% on top; you receive your price in full. It is paid out to your bank{" "}
+            {HOST_PAYOUT_TIMING_TEXT}.
           </p>
         </div>
       </CardContent>

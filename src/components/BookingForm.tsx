@@ -13,10 +13,10 @@ import { usePricingRules } from "@/hooks/usePricingRules";
 import CouponInput from "@/components/CouponInput";
 import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDisplay";
 import { z } from "zod";
-import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
 import { LINEN_INCLUDED_PROPERTY_IDS } from "@/content/propertyContent";
+import { PHONE_INPUT_MAX, SPECIAL_REQUESTS_MAX, isValidGuestName, isValidGuestPhone } from "@/lib/guestDetails";
 import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
 
 interface BookingFormProps {
@@ -104,7 +104,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     guest_name: z.string()
       .min(2, "Name must be at least 2 characters")
       .max(100, "Name must be less than 100 characters")
-      .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Name contains invalid characters"),
+      .refine(isValidGuestName, "Please write your name in letters (spaces, hyphens, dots and apostrophes are fine)"),
     guest_email: z.string()
       .email("Invalid email address")
       // Same rule as the bookings table and the payment function
@@ -112,12 +112,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
       .max(255, "Email must be less than 255 characters"),
     guest_phone: z.string()
       .optional()
-      .refine((val) => !val || /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val), "Invalid phone number"),
+      .refine((val) => !val || isValidGuestPhone(val), "Please enter a phone number with 7 to 15 digits, e.g. +46 70 123 45 67"),
     number_of_guests: z.number()
       .min(1, "At least 1 guest required")
       .max(maxGuests, `Maximum ${maxGuests} guests allowed`),
     special_requests: z.string()
-      .max(1000, "Special requests must be less than 1000 characters")
+      .max(SPECIAL_REQUESTS_MAX, `Special requests can be at most ${SPECIAL_REQUESTS_MAX} characters`)
       .optional()
   });
 
@@ -130,6 +130,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  // Shown under the button when the payment page could not be opened, until the
+  // guest changes something. It doesn't rely on useBooking's toast, which
+  // closes after a few seconds.
+  const [submitFailed, setSubmitFailed] = useState(false);
 
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
@@ -185,17 +189,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const validateForm = () => {
     try {
-      const sanitizedData = {
+      // Plain text, trimmed only: React escapes it wherever it is shown, and an
+      // HTML sanitiser would turn "&" into "&amp;" (longer, and saved that way)
+      const trimmedData = {
         ...formData,
-        guest_name: DOMPurify.sanitize(formData.guest_name.trim()),
-        guest_email: DOMPurify.sanitize(formData.guest_email.trim()),
-        guest_phone: formData.guest_phone ? DOMPurify.sanitize(formData.guest_phone.trim()) : '',
-        special_requests: formData.special_requests ? DOMPurify.sanitize(formData.special_requests.trim()) : ''
+        guest_name: formData.guest_name.trim(),
+        guest_email: formData.guest_email.trim(),
+        guest_phone: formData.guest_phone.trim(),
+        special_requests: formData.special_requests.trim()
       };
       
-      bookingSchema.parse(sanitizedData);
+      bookingSchema.parse(trimmedData);
       setValidationErrors({});
-      return sanitizedData;
+      return trimmedData;
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
@@ -241,8 +247,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
       return;
     }
   
+    setSubmitFailed(false);
     try {
-      await createBooking({
+      const res = await createBooking({
         property_id: propertyId,
         total_amount: totalAmount,
         currency,
@@ -256,28 +263,21 @@ const BookingForm: React.FC<BookingFormProps> = ({
         coupon_id: appliedCoupon?.id,
         rules_confirmed: partyRulesAccepted
       });
-  
-      // Reset form
-      setFormData({
-        guest_name: "",
-        guest_email: "",
-        guest_phone: "",
-        number_of_guests: 2,
-        special_requests: "",
-      });
-      setCheckIn(null);
-      setCheckOut(null);
-      setAppliedCoupon(undefined);
-      setValidationErrors({});
+      // No reset either way: on success the page is already going to Stripe,
+      // and after an error (dates taken, price changed) the guest fixes one
+      // thing and tries again instead of retyping everything
+      if (!res.success) setSubmitFailed(true);
     } catch (err) {
       console.error("Booking failed:", err);
+      setSubmitFailed(true);
     }
   };
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+    setSubmitFailed(false);
+
     // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors(prev => {
@@ -311,6 +311,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           onDateSelect={({ checkIn, checkOut }) => {
             setCheckIn(checkIn);
             setCheckOut(checkOut);
+            setSubmitFailed(false);
           }}
         />
 
@@ -442,6 +443,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               name="guest_name"
               value={formData.guest_name}
               onChange={handleChange}
+              autoComplete="name"
               maxLength={100}
               required
               className={validationErrors.guest_name ? "border-destructive" : ""}
@@ -459,6 +461,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               type="email"
               value={formData.guest_email}
               onChange={handleChange}
+              autoComplete="email"
               maxLength={255}
               required
               className={validationErrors.guest_email ? "border-destructive" : ""}
@@ -470,13 +473,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="guest_phone">Phone (optional)</Label>
+            {/* Not capped at 15: "+46 70 123 45 67" is 16 characters, and the cut-off number still passed */}
             <Input
               id="guest_phone"
               name="guest_phone"
               type="tel"
               value={formData.guest_phone}
               onChange={handleChange}
-              maxLength={15}
+              autoComplete="tel"
+              maxLength={PHONE_INPUT_MAX}
               className={validationErrors.guest_phone ? "border-destructive" : ""}
             />
             {validationErrors.guest_phone && (
@@ -491,10 +496,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
               name="special_requests"
               value={formData.special_requests}
               onChange={handleChange}
-              maxLength={1000}
+              maxLength={SPECIAL_REQUESTS_MAX}
               rows={3}
+              aria-describedby="special_requests_count"
               className={validationErrors.special_requests ? "border-destructive" : ""}
             />
+            <p id="special_requests_count" className="text-xs text-muted-foreground text-right">
+              {formData.special_requests.length}/{SPECIAL_REQUESTS_MAX}
+            </p>
             {validationErrors.special_requests && (
               <p className="text-destructive text-sm">{validationErrors.special_requests}</p>
             )}
@@ -581,6 +590,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
           {/* Cancellation Policy */}
           <CancellationPolicyDisplay />
+          {/* The policy's percentages are of the stay price: the service fee is
+              kept when the guest cancels, and refunded when the host or we do (/terms) */}
+          <p className="text-xs text-muted-foreground">
+            Refunds are a share of the price of the stay; the service fee is not refunded if you cancel. If the host
+            or we cancel, you get everything back, including the service fee.
+          </p>
 
           {/* New tab, so the filled-in form stays */}
           <p className="text-xs text-muted-foreground text-center">
@@ -597,6 +612,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
           >
             {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
           </Button>
+          {submitFailed && !loading && (
+            <p role="alert" className="text-destructive text-sm text-center">
+              Your booking was not completed and you have not been charged. Your details are still filled in, so you
+              can change your dates or details and try again.
+            </p>
+          )}
         </form>
       </CardContent>
     </Card>

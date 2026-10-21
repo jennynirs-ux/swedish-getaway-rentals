@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import React, { createContext, useContext, useId, useState } from 'react';
+import { X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { imageStorageKeys, prepareImage } from '@/lib/imageResize';
+
+/**
+ * The storage folder for uploads below it. Hosts may only upload into their
+ * own listing's folder ("<propertyId>/..."), so the host editor sets
+ * "<propertyId>/amenities" or "<propertyId>/guide" around the tabs that use
+ * this component; without it, uploads go to the admin-only "properties/".
+ */
+export const ImageUploadFolder = createContext<string | null>(null);
 
 interface ImageUploadProps {
   value?: string;
@@ -10,6 +19,8 @@ interface ImageUploadProps {
   onRemove?: () => void;
   label: string;
   className?: string;
+  /** Overrides ImageUploadFolder, e.g. "<propertyId>/amenities" */
+  folder?: string;
 }
 
 export const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -18,43 +29,45 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   onRemove,
   label,
   className = '',
+  folder,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
+  const contextFolder = useContext(ImageUploadFolder);
+  const targetFolder = folder || contextFolder || 'properties';
+  const inputId = `image-upload-${useId()}`;
 
   const uploadImage = async (file: File) => {
     try {
       setIsUploading(true);
-      
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `properties/${fileName}`;
 
-      // Upload to Supabase Storage
+      // Shrunk to 1600 px in the browser, under a random ASCII name
+      // (storage rejects names with å/ä/ö)
+      const image = await prepareImage(file, false);
+      const { full: filePath } = imageStorageKeys(targetFolder, image.ext);
+
       const { error: uploadError } = await supabase.storage
         .from('property-images')
-        .upload(filePath, file);
+        .upload(filePath, image.full, { contentType: image.contentType, cacheControl: '31536000' });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data } = supabase.storage
         .from('property-images')
         .getPublicUrl(filePath);
 
       onChange(data.publicUrl);
-      
+
       toast({
-        title: "Success",
-        description: "Image uploaded successfully",
+        title: "Image uploaded",
+        description: "Remember to save this section.",
       });
     } catch (error) {
       console.error('Upload error:', error);
       toast({
-        title: "Error",
-        description: "Failed to upload image",
+        title: "Could not upload the image",
+        description: error instanceof Error && error.message ? error.message : "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -64,6 +77,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Let the same file be picked again after an error
+    e.target.value = '';
     if (file) {
       uploadImage(file);
     }
@@ -72,7 +87,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
-    
+
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
       uploadImage(file);
@@ -92,7 +107,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <div className={`space-y-2 ${className}`}>
       <label className="text-sm font-medium">{label}</label>
-      
+
       {value ? (
         <div className="relative">
           <img
@@ -126,28 +141,28 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             accept="image/*"
             onChange={handleFileSelect}
             className="hidden"
-            id={`image-upload-${label}`}
+            id={inputId}
             disabled={isUploading}
           />
-          
+
           <div className="flex flex-col items-center space-y-2">
             {isUploading ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             ) : (
               <ImageIcon className="h-8 w-8 text-gray-400" />
             )}
-            
+
             <div>
               <label
-                htmlFor={`image-upload-${label}`}
+                htmlFor={inputId}
                 className="cursor-pointer text-primary hover:text-primary/80"
               >
                 Click to upload
               </label>
               <p className="text-sm text-gray-500">or drag and drop</p>
             </div>
-            
-            <p className="text-xs text-gray-400">PNG, JPG, WEBP up to 10MB</p>
+
+            <p className="text-xs text-gray-400">JPG, PNG or WEBP up to 15 MB</p>
           </div>
         </div>
       )}

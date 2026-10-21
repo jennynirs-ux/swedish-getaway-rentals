@@ -22,7 +22,11 @@ interface Property {
   currency: string;
   active: boolean;
   max_guests: number;
-  pending_approval?: boolean | null;
+  // The host (owners included) is paid through their own Stripe account
+  profiles: {
+    stripe_connect_ready: boolean;
+    host_terms_accepted_at: string | null;
+  } | null;
 }
 
 const PropertiesManagement = () => {
@@ -49,8 +53,7 @@ const PropertiesManagement = () => {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('id, title, location, price_per_night, currency, active, max_guests, pending_approval')
-        .order('pending_approval', { ascending: false })
+        .select('id, title, location, price_per_night, currency, active, max_guests, profiles(stripe_connect_ready, host_terms_accepted_at)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setProperties(data || []);
@@ -109,7 +112,11 @@ const PropertiesManagement = () => {
       toast({ title: 'Updated', description: 'Property visibility changed' });
     } catch (error) {
       console.error('Error toggling active:', error);
-      toast({ title: 'Error', description: 'Failed to change visibility', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: (error as { message?: string })?.message || 'Failed to change visibility',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -174,9 +181,18 @@ const PropertiesManagement = () => {
                   <TableCell>{p.price_per_night.toLocaleString()} {p.currency}</TableCell>
                   <TableCell>{p.max_guests}</TableCell>
                   <TableCell>
-                    <Badge variant={p.active ? 'default' : p.pending_approval ? 'destructive' : 'secondary'}>
-                      {p.active ? 'Active' : p.pending_approval ? 'Awaiting review' : 'Hidden'}
-                    </Badge>
+                    <Badge variant={p.active ? 'default' : 'secondary'}>{p.active ? 'Active' : 'Hidden'}</Badge>
+                    {/* Admin may publish without these, but the guest's payment then
+                        lands on the platform account ('manual') and the host has to be
+                        paid by hand */}
+                    {!p.profiles?.stripe_connect_ready && (
+                      <p className="text-xs text-amber-700 mt-1">
+                        Host payouts not connected: payments land in our account and the host is paid by hand
+                      </p>
+                    )}
+                    {p.profiles && !p.profiles.host_terms_accepted_at && (
+                      <p className="text-xs text-muted-foreground mt-1">Host terms not accepted</p>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

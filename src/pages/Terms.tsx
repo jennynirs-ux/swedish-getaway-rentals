@@ -6,12 +6,17 @@ import { MIN_LEAD_GUEST_AGE, MIN_NIGHTS, PARTY_NIGHT_MIN_NIGHTS } from "@/lib/st
 import { FOUNDING_HOST_FEE_PCT, PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 
 // Keep the refund tiers in line with platform_settings.cancellation_policy
-// (supabase/functions/_shared/cancellation.ts), which the refunds use
+// (supabase/functions/_shared/cancellation.ts), which the refunds use. They are
+// shares of the stay price (bookings.host_amount): the service fee is kept when
+// the guest cancels, and refunded when the host or we cancel.
 const REFUNDS = [
-  ["More than 21 days before arrival", "90% of the amount paid"],
-  ["21–8 days before arrival", "50% of the amount paid"],
+  ["More than 21 days before arrival", "90% of the price of the stay"],
+  ["21–8 days before arrival", "50% of the price of the stay"],
   ["7 days or less before arrival", "No refund"],
 ];
+// Stay price in the cancellation example (SEK)
+const EXAMPLE_STAY = 10000;
+const sek = (amount: number) => `${amount.toLocaleString("en-GB")} SEK`;
 
 const Terms = () => {
   usePageMeta({
@@ -21,6 +26,7 @@ const Terms = () => {
   });
 
   const fee = Math.round(PLATFORM_SERVICE_FEE_RATE * 100);
+  const exampleFee = (EXAMPLE_STAY * fee) / 100;
 
   return (
     <LegalPage
@@ -32,8 +38,13 @@ const Terms = () => {
         <h2>Who we are</h2>
         <p>
           Nordic Getaways is run by {COMPANY.name}, org. no. {COMPANY.orgNumber}, {COMPANY_ADDRESS},{" "}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>. {COMPANY.name} takes your booking and payment; the
-          stay itself is provided by the host of the property.
+          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
+        </p>
+        <p className="mt-3">
+          Each stay is provided by the cabin's host. Hosts on Nordic Getaways rent out their own place as private
+          persons, not as businesses, so EU consumer protection rules do not apply to the agreement between you and
+          the host. {COMPANY.name} takes the booking and the payment on the host's behalf and handles cancellations
+          and refunds as these terms describe.
         </p>
       </section>
 
@@ -46,6 +57,10 @@ const Terms = () => {
             The total shown before you pay is the full price: the nightly price, any extra-guest and cleaning fees,
             and a service fee of up to {fee}% ({FOUNDING_HOST_FEE_PCT}% on listings from founding hosts in their first
             year). A weekly or monthly discount is taken off the nightly price.
+          </li>
+          <li>
+            The service fee is our fee for the booking service. Everything else you pay is the price of the stay, which
+            goes to the host.
           </li>
           <li>Bed linen and towels are included when the cabin's listing says so.</li>
         </ul>
@@ -73,8 +88,9 @@ const Terms = () => {
       <section>
         <h2>If you cancel</h2>
         <p className="mb-3">
-          Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> or reply to your booking confirmation. You get
-          back:
+          Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> or reply to your booking confirmation. What you
+          get back depends on how many days before arrival your cancellation reaches us (Swedish time), and is a share
+          of the price of the stay. The service fee is not refunded when you cancel.
         </p>
         <div className="overflow-hidden rounded-lg border border-border">
           <table className="w-full text-sm">
@@ -95,16 +111,21 @@ const Terms = () => {
           </table>
         </div>
         <p className="mt-3">
+          Example: the stay costs {sek(EXAMPLE_STAY)} and the service fee is {sek(exampleFee)}, so you paid{" "}
+          {sek(EXAMPLE_STAY + exampleFee)}. If you cancel 30 days before arrival, you get {sek(EXAMPLE_STAY * 0.9)} back.
+        </p>
+        <p className="mt-3">
           The refund goes back to the card you paid with. A stay is booked for specific dates, so the 14-day right of
           withdrawal for distance purchases does not apply to stays.
         </p>
       </section>
 
       <section>
-        <h2>If we have to cancel</h2>
+        <h2>If the host or we cancel</h2>
         <p>
-          If the property cannot be used, for example after damage or a power or water failure, we tell you as soon
-          as possible and refund everything you paid.
+          If the host or we cancel your booking, or the property cannot be used (for example after damage or a power
+          or water failure), we tell you as soon as possible and refund everything you paid, including the service
+          fee. The same applies if your dates turn out to be already taken when your payment comes through.
         </p>
       </section>
 
@@ -121,8 +142,8 @@ const Terms = () => {
             repairs or extra cleaning.
           </li>
           <li>
-            If the cabin has boats or paddle boards, use the life jackets provided; children must always be supervised
-            near the water.
+            If the cabin has boats or paddle boards, wear a life jacket on the water; children must always be
+            supervised near the water.
           </li>
         </ul>
       </section>

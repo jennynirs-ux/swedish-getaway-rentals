@@ -7,6 +7,8 @@ interface PropertyFooterProps {
 }
 
 const PropertyFooter = ({ property }: PropertyFooterProps) => {
+  // The host's own tagline only (the column has no default); blank shows nothing
+  const tagline = property.tagline_line1?.trim();
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-16">
@@ -15,9 +17,7 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
             {/* Property Info */}
             <div>
               <h3 className="text-2xl font-bold mb-4">{property.title}</h3>
-              <p className="text-primary-foreground/80 mb-4">
-                {property.tagline_line1 || 'Experience luxury in the heart of Swedish nature.'}
-              </p>
+              {tagline && <p className="text-primary-foreground/80 mb-4">{tagline}</p>}
               <div className="flex items-center gap-2 text-primary-foreground/80">
                 <MapPin className="w-4 h-4" />
                 <span>{property.location}</span>

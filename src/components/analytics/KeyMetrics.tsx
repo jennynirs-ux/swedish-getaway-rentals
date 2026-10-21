@@ -1,13 +1,20 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Home, Clock, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { differenceInCalendarDays, differenceInDays } from "date-fns";
-import { resolveScope, type FinancialScope } from "@/components/financials/scope";
+import type { FinancialScope, ResolvedScope } from "@/components/financials/scope";
 import { oreToSek } from "@/lib/swedishTax";
-import { hostShareOre } from "@/lib/constants";
+import {
+  INCOME_STATUSES,
+  NORDIC_GETAWAYS_ONLY_LABEL,
+  STAY_BASIS_LABEL,
+  isStay,
+  leadDays,
+  summarizeIncome,
+  yearBounds,
+} from "@/components/financials/reporting";
+import { YearSelect } from "@/components/financials/YearSelect";
+import { useFinancialYears } from "@/components/financials/useFinancialYears";
 
 interface Metrics {
   totalBookings: number;
@@ -15,6 +22,53 @@ interface Metrics {
   avgNightlyRateOre: number;
   avgLeadTimeDays: number;
   avgStayLength: number;
+  /** Cancelled bookings the host kept money from, and how much (öre) */
+  cancellations: number;
+  cancellationIncomeOre: number;
+}
+
+const EMPTY_METRICS: Metrics = {
+  totalBookings: 0,
+  totalNights: 0,
+  avgNightlyRateOre: 0,
+  avgLeadTimeDays: 0,
+  avgStayLength: 0,
+  cancellations: 0,
+  cancellationIncomeOre: 0,
+};
+
+async function loadMetrics({ propertyIds }: ResolvedScope, year: number): Promise<Metrics> {
+  if (propertyIds.length === 0) return EMPTY_METRICS;
+
+  const { from, to } = yearBounds(year);
+  const { data: bookings, error } = await supabase
+    .from("bookings_secure")
+    .select(
+      "status, total_amount, host_amount, service_fee, refunded_amount, host_reversed_amount, stripe_payment_intent_id, check_in_date, check_out_date, created_at"
+    )
+    .in("property_id", propertyIds)
+    .in("status", INCOME_STATUSES)
+    .gte("check_in_date", from)
+    .lte("check_in_date", to);
+  if (error) throw error;
+
+  const list = bookings || [];
+  const income = summarizeIncome(list);
+  const stays = list.filter(isStay);
+  const totalLeadDays = stays.reduce(
+    (sum, b) => sum + (b.created_at && b.check_in_date ? leadDays(b.created_at, b.check_in_date) : 0),
+    0
+  );
+
+  return {
+    totalBookings: income.stays,
+    totalNights: income.nights,
+    avgNightlyRateOre: income.nights > 0 ? Math.round(income.stayIncomeOre / income.nights) : 0,
+    avgLeadTimeDays: income.stays > 0 ? Math.round(totalLeadDays / income.stays) : 0,
+    avgStayLength: income.stays > 0 ? Math.round((income.nights / income.stays) * 10) / 10 : 0,
+    cancellations: income.cancellations,
+    cancellationIncomeOre: income.cancellationIncomeOre,
+  };
 }
 
 interface Props {
@@ -24,95 +78,49 @@ interface Props {
 /**
  * Headline operational metrics: total bookings, nights, ADR (average daily rate),
  * average lead time (days between booking and check-in), average stay length.
+ *
+ * Stays (confirmed/completed) drive bookings, nights and ADR. What the host
+ * kept from cancelled bookings is income but not occupancy, so it is shown
+ * beside the stays instead of inflating the nightly rate.
  */
 const KeyMetrics = ({ scope }: Props) => {
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [metrics, setMetrics] = useState<Metrics>({
-    totalBookings: 0,
-    totalNights: 0,
-    avgNightlyRateOre: 0,
-    avgLeadTimeDays: 0,
-    avgStayLength: 0,
-  });
+  const { year, setYear, years, scope: resolved } = useFinancialYears(scope);
+  const [metrics, setMetrics] = useState<Metrics>(EMPTY_METRICS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, scope]);
-
-  const load = async () => {
+    if (!resolved) return;
+    // Drop the answer if the year or scope changed while it was loading
+    let stale = false;
     setLoading(true);
-    try {
-      const { propertyIds } = await resolveScope(scope);
-      if (propertyIds.length === 0) {
-        setMetrics({ totalBookings: 0, totalNights: 0, avgNightlyRateOre: 0, avgLeadTimeDays: 0, avgStayLength: 0 });
-        setLoading(false);
-        return;
-      }
-
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select("total_amount, host_amount, service_fee, check_in_date, check_out_date, created_at")
-        .in("property_id", propertyIds)
-        .in("status", ["confirmed", "completed"])
-        .gte("check_in_date", `${year}-01-01`)
-        .lte("check_in_date", `${year}-12-31`);
-
-      const list = bookings || [];
-      const totalBookings = list.length;
-
-      if (totalBookings === 0) {
-        setMetrics({ totalBookings: 0, totalNights: 0, avgNightlyRateOre: 0, avgLeadTimeDays: 0, avgStayLength: 0 });
-        setLoading(false);
-        return;
-      }
-
-      let totalNights = 0;
-      let totalRevenue = 0;
-      let totalLeadDays = 0;
-
-      for (const b of list) {
-        const checkIn = new Date(b.check_in_date);
-        const checkOut = new Date(b.check_out_date);
-        const nights = Math.max(1, differenceInCalendarDays(checkOut, checkIn));
-        totalNights += nights;
-        totalRevenue += hostShareOre(b);
-
-        const created = new Date(b.created_at);
-        const lead = Math.max(0, differenceInDays(checkIn, created));
-        totalLeadDays += lead;
-      }
-
-      setMetrics({
-        totalBookings,
-        totalNights,
-        avgNightlyRateOre: totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0,
-        avgLeadTimeDays: Math.round(totalLeadDays / totalBookings),
-        avgStayLength: Math.round((totalNights / totalBookings) * 10) / 10,
+    loadMetrics(resolved, year)
+      .then((result) => {
+        if (!stale) setMetrics(result);
+      })
+      .catch(() => {
+        if (!stale) setMetrics(EMPTY_METRICS);
+      })
+      .finally(() => {
+        if (!stale) setLoading(false);
       });
-    } catch {
-      // Keep zeros
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      stale = true;
+    };
+  }, [year, resolved]);
 
   const fmtSek = (ore: number) =>
     oreToSek(ore).toLocaleString("sv-SE", { maximumFractionDigits: 0 });
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Key Metrics</h3>
-        <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {[2024, 2025, 2026].map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold">Key Metrics</h3>
+          <p className="text-xs text-muted-foreground">
+            {NORDIC_GETAWAYS_ONLY_LABEL}. {STAY_BASIS_LABEL}.
+          </p>
+        </div>
+        <YearSelect years={years} value={year} onChange={setYear} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -123,7 +131,12 @@ const KeyMetrics = ({ scope }: Props) => {
               <Home className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">{loading ? "--" : metrics.totalBookings}</p>
-            <p className="text-xs text-muted-foreground mt-1">in {year}</p>
+            <p className="text-xs text-muted-foreground mt-1">stays checking in {year}</p>
+            {!loading && metrics.cancellations > 0 && (
+              <p className="text-xs text-muted-foreground">
+                + {metrics.cancellations} cancelled ({fmtSek(metrics.cancellationIncomeOre)} kr kept)
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -149,7 +162,7 @@ const KeyMetrics = ({ scope }: Props) => {
             <p className="text-2xl font-bold">
               {loading ? "--" : `${fmtSek(metrics.avgNightlyRateOre)} kr`}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">ADR across year</p>
+            <p className="text-xs text-muted-foreground mt-1">host income per night stayed</p>
           </CardContent>
         </Card>
 

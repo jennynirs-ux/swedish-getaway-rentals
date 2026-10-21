@@ -1,5 +1,7 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { getCallerUser } from '../_shared/auth.ts';
+import { hostNetAmount } from '../_shared/payout.ts';
 
 // Secure CORS configuration — origin whitelist pattern used across this project
 const allowedOrigins = [
@@ -13,23 +15,28 @@ const allowedOrigins = [
 
 const baseCorsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
 };
-
 
 // Skatteverket privatuthyrning constants (amounts in SEK)
 const SCHABLONAVDRAG_SEK = 40000;
 const ADDITIONAL_DEDUCTION_RATE = 0.20;
 const CAPITAL_INCOME_TAX_RATE = 0.30;
 
+// Every amount in the report is in öre, like the database: HostTaxReport and
+// its CSV show them divided by 100 (amounts_in says so explicitly)
 interface TaxReportLine {
   property_title: string;
   property_id: string;
   registration_number: string | null;
+  /** Stays plus cancellation income: what the host received */
   total_revenue: number;
+  /** What the host kept from cancelled bookings (late cancellations) */
+  cancellation_income: number;
   total_bookings: number;
+  cancelled_bookings: number;
   total_nights: number;
   avg_nightly_rate: number;
   platform_fees: number;
@@ -37,6 +44,28 @@ interface TaxReportLine {
   expenses_by_category: Record<string, number>;
   net_income: number;
 }
+
+interface BookingRow {
+  property_id: string;
+  status: string;
+  total_amount: number | null;
+  host_amount: number | null;
+  service_fee: number | null;
+  refunded_amount: number | null;
+  host_reversed_amount: number | null;
+  stripe_payment_intent_id: string | null;
+  check_in_date: string;
+  check_out_date: string;
+}
+
+// What the host received for a booking (öre): hostNetAmount in
+// _shared/payout.ts, the same rule as the host dashboard and the financial
+// views (share less what refunds take from it; a cancelled booking counts
+// only if it was paid on the site; a full refund leaves 0)
+const hostNet = (b: BookingRow) => hostNetAmount(b);
+
+const nights = (b: BookingRow) =>
+  Math.max(1, Math.round((Date.parse(b.check_out_date) - Date.parse(b.check_in_date)) / 86_400_000));
 
 serve(async (req) => {
   // Origin validation
@@ -46,183 +75,153 @@ serve(async (req) => {
     ...baseCorsHeaders,
     'Access-Control-Allow-Origin': validOrigin ? origin : allowedOrigins[0],
   };
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
 
-    // Verify auth
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const user = await getCallerUser(req, supabase);
+    if (!user) return json({ error: 'Please sign in again' }, 401);
+
+    const body = await req.json().catch(() => ({}));
+    const currentYear = Number(new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', year: 'numeric' }).format(new Date()));
+    const taxYear = body?.year == null ? currentYear - 1 : Number(body.year);
+    if (!Number.isInteger(taxYear) || taxYear < 2000 || taxYear > currentYear) {
+      return json({ error: `Choose a year between 2000 and ${currentYear}` }, 400);
     }
 
-    const { year } = await req.json();
-    const taxYear = year || new Date().getFullYear() - 1;
-
-    // Get host profile
-    const { data: profile } = await supabase
+    // The columns that exist: full_name, display_name, host_business_name
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, is_host')
+      .select('id, full_name, display_name, host_business_name, is_host')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+    if (profileError) throw new Error(`Could not read your profile: ${profileError.message}`);
+    if (!profile?.is_host) return json({ error: 'Only hosts can create a tax report' }, 403);
 
-    if (!profile?.is_host) {
-      return new Response(JSON.stringify({ error: 'Not a host' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Get host properties (registration_number may not exist yet - handle gracefully)
-    const { data: properties } = await supabase
+    const { data: properties, error: propertiesError } = await supabase
       .from('properties')
-      .select('id, title')
+      .select('id, title, registration_number')
       .eq('host_id', profile.id);
+    if (propertiesError) throw new Error(`Could not read your listings: ${propertiesError.message}`);
+    if (!properties || properties.length === 0) return json({ error: 'You have no listings yet' }, 404);
 
-    if (!properties || properties.length === 0) {
-      return new Response(JSON.stringify({ error: 'No properties found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const propertyIds = properties.map((p: any) => p.id);
+    const propertyIds = properties.map((p) => p.id);
     const yearStart = `${taxYear}-01-01`;
     const yearEnd = `${taxYear}-12-31`;
 
-    // Get all completed/confirmed bookings for the tax year
-    const { data: bookings } = await supabase
+    // Stays in the tax year, plus cancelled ones: after a late cancellation the
+    // host keeps part of the payment, and that is income too
+    const { data: bookingData, error: bookingsError } = await supabase
       .from('bookings')
-      .select('id, property_id, total_amount, host_amount, service_fee, check_in_date, check_out_date, status')
+      .select('property_id, status, total_amount, host_amount, service_fee, refunded_amount, host_reversed_amount, stripe_payment_intent_id, check_in_date, check_out_date')
       .in('property_id', propertyIds)
       .gte('check_in_date', yearStart)
       .lte('check_in_date', yearEnd)
-      .in('status', ['confirmed', 'completed']);
+      .in('status', ['confirmed', 'completed', 'cancelled']);
+    if (bookingsError) throw new Error(`Could not read your bookings: ${bookingsError.message}`);
+    const bookings = (bookingData ?? []) as BookingRow[];
 
-    // Fetch expenses for the tax year (may fail if table doesn't exist yet)
-    let expenses: any[] = [];
-    try {
-      const { data: expenseData } = await supabase
-        .from('expenses')
-        .select('property_id, category, amount')
-        .in('property_id', propertyIds)
-        .gte('expense_date', yearStart)
-        .lte('expense_date', yearEnd);
-      expenses = expenseData || [];
-    } catch {
-      // expenses table may not exist yet — continue without
-    }
+    const { data: expenseData, error: expensesError } = await supabase
+      .from('expenses')
+      .select('property_id, category, amount')
+      .in('property_id', propertyIds)
+      .gte('expense_date', yearStart)
+      .lte('expense_date', yearEnd);
+    if (expensesError) throw new Error(`Could not read your expenses: ${expensesError.message}`);
+    const expenses = expenseData ?? [];
 
-    // Build per-property report lines
-    const propertyLines: TaxReportLine[] = properties.map((prop: any) => {
-      const propBookings = (bookings || []).filter((b: any) => b.property_id === prop.id);
-      // Host's own income: host_amount (fee model A), or total minus service fee on older bookings
-      const totalRevenue = propBookings.reduce((sum: number, b: any) => sum + (b.host_amount ?? ((b.total_amount || 0) - (b.service_fee || 0))), 0);
-      const totalBookings = propBookings.length;
+    const propertyLines: TaxReportLine[] = properties.map((prop) => {
+      const own = bookings.filter((b) => b.property_id === prop.id);
+      const stays = own.filter((b) => b.status !== 'cancelled');
+      const cancelled = own.filter((b) => b.status === 'cancelled' && hostNet(b) > 0);
+      const stayRevenue = stays.reduce((sum, b) => sum + hostNet(b), 0);
+      const cancellationIncome = cancelled.reduce((sum, b) => sum + hostNet(b), 0);
+      const totalNights = stays.reduce((sum, b) => sum + nights(b), 0);
 
-      const totalNights = propBookings.reduce((sum: number, b: any) => {
-        const checkIn = new Date(b.check_in_date);
-        const checkOut = new Date(b.check_out_date);
-        return sum + Math.max(1, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
-      }, 0);
-
-      // Calculate expenses per property
-      const propExpenses = expenses.filter((e: any) => e.property_id === prop.id);
-      const totalExpenses = propExpenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+      const propExpenses = expenses.filter((e) => e.property_id === prop.id);
+      const totalExpenses = propExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
       const expensesByCategory: Record<string, number> = {};
       for (const e of propExpenses) {
-        expensesByCategory[e.category] = (expensesByCategory[e.category] || 0) + e.amount;
+        expensesByCategory[e.category] = (expensesByCategory[e.category] || 0) + (e.amount || 0);
       }
 
-      // Fee model A: the platform's service fee is paid by the guest, not deducted from the host
-      const platformFees = 0;
-      const netIncome = totalRevenue - platformFees - totalExpenses;
-      const avgNightlyRate = totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0;
-
+      const revenue = stayRevenue + cancellationIncome;
       return {
         property_title: prop.title,
         property_id: prop.id,
         registration_number: prop.registration_number || null,
-        total_revenue: totalRevenue,
-        total_bookings: totalBookings,
+        total_revenue: revenue,
+        cancellation_income: cancellationIncome,
+        total_bookings: stays.length,
+        cancelled_bookings: cancelled.length,
         total_nights: totalNights,
-        avg_nightly_rate: avgNightlyRate,
-        platform_fees: platformFees,
+        // Per night stayed, so cancellation income doesn't inflate it
+        avg_nightly_rate: totalNights > 0 ? Math.round(stayRevenue / totalNights) : 0,
+        // Fee model A: the platform's service fee is paid by the guest, not deducted from the host
+        platform_fees: 0,
         total_expenses: totalExpenses,
         expenses_by_category: expensesByCategory,
-        net_income: netIncome,
+        net_income: revenue - totalExpenses,
       };
     });
 
-    // Summary (amounts in ore = 1/100 SEK)
-    const totalGross = propertyLines.reduce((s, p) => s + p.total_revenue, 0);
-    const totalFees = propertyLines.reduce((s, p) => s + p.platform_fees, 0);
-    const totalExpensesSum = propertyLines.reduce((s, p) => s + p.total_expenses, 0);
-    const totalNet = propertyLines.reduce((s, p) => s + p.net_income, 0);
-    const totalBookingsCount = propertyLines.reduce((s, p) => s + p.total_bookings, 0);
-    const totalNightsCount = propertyLines.reduce((s, p) => s + p.total_nights, 0);
+    const total = (pick: (line: TaxReportLine) => number) => propertyLines.reduce((s, line) => s + pick(line), 0);
+    const totalGross = total((p) => p.total_revenue);
 
-    // Skatteverket calculation — Privatuthyrning (Kapital)
-    // Per Skatteverket rules for private rental income:
-    //   Taxable amount = gross_rental_income − 40,000 SEK − (20% × gross_rental_income)
-    //   Minimum taxable = 0 (cannot be negative)
-    //   Tax rate on taxable = 30% (capital income)
-    //
-    // NOTE: The schablonavdrag is applied against GROSS rental income, not net.
-    // Platform fees and actual expenses are NOT deductible under privatuthyrning —
-    // they are deemed to be covered by the standard deduction.
-    //
-    // All amounts stored in ore (1/100 SEK). Convert to SEK for arithmetic then back.
+    // Skatteverket — privatuthyrning (inkomst av kapital):
+    //   taxable = gross rental income − 40 000 kr − 20 % of gross rental income, at least 0
+    //   tax     = 30 % of taxable
+    // The deductions apply to GROSS income; actual costs are not deductible on
+    // top of them. Computed in whole kronor, as on the tax return.
     const grossSek = totalGross / 100;
-    const schablonavdragSek = SCHABLONAVDRAG_SEK;
     const additionalDeductionSek = grossSek * ADDITIONAL_DEDUCTION_RATE;
-    const taxableAmountSek = Math.max(0, grossSek - schablonavdragSek - additionalDeductionSek);
-    const estimatedTaxSek = taxableAmountSek * CAPITAL_INCOME_TAX_RATE;
+    const taxableAmountSek = Math.max(0, grossSek - SCHABLONAVDRAG_SEK - additionalDeductionSek);
 
     const report = {
-      host_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Host',
+      host_name: profile.full_name || profile.display_name || profile.host_business_name || 'Host',
+      business_name: profile.host_business_name || null,
       host_email: user.email || '',
       tax_year: taxYear,
       generated_at: new Date().toISOString(),
       currency: 'SEK',
+      amounts_in: 'ore',
       properties: propertyLines,
       summary: {
         total_gross_revenue: totalGross,
-        total_platform_fees: totalFees,
-        total_expenses: totalExpensesSum,
-        total_net_income: totalNet,
-        total_bookings: totalBookingsCount,
-        total_nights: totalNightsCount,
+        total_cancellation_income: total((p) => p.cancellation_income),
+        total_platform_fees: 0,
+        total_expenses: total((p) => p.total_expenses),
+        total_net_income: total((p) => p.net_income),
+        total_bookings: total((p) => p.total_bookings),
+        total_cancelled_bookings: total((p) => p.cancelled_bookings),
+        total_nights: total((p) => p.total_nights),
       },
       skatteverket: {
         inkomstslag: 'Kapital (privatuthyrning)',
-        schablonavdrag: schablonavdragSek * 100, // back to ore for frontend consistency
-        additional_deduction: Math.round(additionalDeductionSek * 100),
-        taxable_amount: Math.round(taxableAmountSek * 100),
-        estimated_tax: Math.round(estimatedTaxSek * 100),
-        note: `Uthyrning av privatbostad beskattas som inkomst av kapital. Beskattningsbart belopp = bruttointakt - 40 000 kr - 20% av bruttointakten. Skattesats 30% pa overskott. Plattformsavgifter och faktiska utgifter ar INTE avdragsgilla utover schablonavdraget. OBS: Detta ar en berakningshjalp - kontrollera alltid mot Skatteverkets aktuella regler.`,
+        schablonavdrag: SCHABLONAVDRAG_SEK * 100,
+        additional_deduction: Math.round(additionalDeductionSek) * 100,
+        taxable_amount: Math.round(taxableAmountSek) * 100,
+        estimated_tax: Math.round(taxableAmountSek * CAPITAL_INCOME_TAX_RATE) * 100,
+        note:
+          'Uthyrning av privatbostad beskattas som inkomst av kapital. Beskattningsbart belopp = hyresintäkter − 40 000 kr − 20 % av hyresintäkterna. Skattesats 30 % på överskottet. Faktiska kostnader dras inte av utöver schablonavdragen. ' +
+          'Rapporten omfattar bara bokningar via Nordic Getaways. Avdraget på 40 000 kr gäller per person och år för all uthyrning, så räkna ihop med andra kanaler (t.ex. Airbnb). Hyr du ut genom ett företag gäller inte de här reglerna. ' +
+          'Avbokningar där du fick behålla en del av betalningen räknas som intäkt. Detta är en beräkningshjälp – kontrollera alltid mot Skatteverkets regler.',
       },
     };
 
-    return new Response(JSON.stringify(report), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json(report);
   } catch (error) {
-    console.error('Tax report error:', error);
-    return new Response(
-      JSON.stringify({ error: (error as Error).message || 'Failed to generate tax report' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Tax report error:', message);
+    return json({ error: message || 'Failed to generate tax report' }, 500);
   }
 });

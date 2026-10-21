@@ -3,6 +3,8 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { stayRuleError } from "../_shared/stay-rules.ts";
 import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../_shared/booking-price.ts";
+import { stockholmToday } from "../_shared/format.ts";
+import { alertAdminOnce } from "../_shared/alert.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +15,25 @@ const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[BOOKING-PAYMENT-CONNECT] ${step}${detailsStr}`);
 };
+
+// The booking form shows this message to the guest, so say what to fix
+const badRequest = (error: string) =>
+  new Response(JSON.stringify({ error }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 400,
+  });
+
+// Stripe rejects the whole Checkout session if any metadata value is longer
+// than 500 characters (a long note or title would fail every payment).
+// Cut by code point so an emoji is never split in half.
+const STRIPE_METADATA_MAX = 500;
+const stripeMetadata = (values: Record<string, string>): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [key, Array.from(String(value ?? "")).slice(0, STRIPE_METADATA_MAX).join("")]),
+  );
+
+/** Stored in Stripe metadata, so the same 500-character limit; the form allows the same */
+const SPECIAL_REQUESTS_MAX = 500;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -42,39 +63,58 @@ serve(async (req) => {
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!propertyId || !uuidRegex.test(propertyId)) {
-      throw new Error('Invalid property ID format');
+      return badRequest("Invalid property ID format");
     }
     
     // Validate dates
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(checkInDate ?? "") || !dateRegex.test(checkOutDate ?? "")) {
-      throw new Error('Invalid date format');
+      return badRequest("Please choose your check-in and check-out dates.");
     }
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
     if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
-      throw new Error('Invalid date format');
+      return badRequest("Please choose your check-in and check-out dates.");
     }
     if (checkOut <= checkIn) {
-      throw new Error('Check-out date must be after check-in date');
+      return badRequest("Check-out must be after check-in.");
     }
     
-    // Validate guest count
-    if (!numberOfGuests || numberOfGuests < 1 || numberOfGuests > 50) {
-      throw new Error('Invalid number of guests');
+    // Today in Sweden: a stay can't start in the past (the calendar hides
+    // those dates, but a stale tab or a hand-made request could send one)
+    if (checkInDate < stockholmToday()) {
+      return badRequest("The check-in date has passed. Please choose new dates.");
+    }
+
+    // Validate guest count: whole guests, within the bookings table's limit
+    // (the listing's own maximum is checked below)
+    if (!Number.isInteger(numberOfGuests) || numberOfGuests < 1 || numberOfGuests > 50) {
+      return badRequest("Please enter a whole number of guests.");
     }
     
     // Validate email format
     // Same rule as the bookings.guest_email CHECK constraint, so a paid
     // booking can never fail to save on the address
     const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    if (!guestEmail || !emailRegex.test(guestEmail)) {
-      throw new Error('Invalid email format');
+    if (typeof guestEmail !== "string" || !emailRegex.test(guestEmail)) {
+      return badRequest("Please enter a valid e-mail address.");
     }
     
-    // Validate required fields
-    if (!guestName || guestName.length < 2) {
-      throw new Error('Guest name is required');
+    // Validate required fields. The name goes into e-mails to the host and
+    // guest (escaped there) and into Stripe, so keep it to a sensible length.
+    const trimmedName = typeof guestName === "string" ? guestName.trim() : "";
+    if (!trimmedName) {
+      return badRequest("Please enter your name.");
+    }
+    if (trimmedName.length > 100) {
+      return badRequest("Your name can be at most 100 characters.");
+    }
+
+    if (specialRequests != null && typeof specialRequests !== "string") {
+      return badRequest("Special requests must be text.");
+    }
+    if ((specialRequests ?? "").length > SPECIAL_REQUESTS_MAX) {
+      return badRequest(`Special requests can be at most ${SPECIAL_REQUESTS_MAX} characters (yours has ${specialRequests.length}). Please shorten them.`);
     }
 
     // House rules: minimum stay, and the guest confirms age 25+ and no parties
@@ -125,6 +165,13 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 404,
       });
+    }
+
+    // SEK only (owner decision 21 Oct 2026): the prices are read as SEK, and
+    // other currencies bring payment methods and payouts we don't support
+    if ((property.currency || "SEK").toUpperCase() !== "SEK") {
+      logStep("Listing is not priced in SEK", { propertyId, currency: property.currency });
+      return badRequest("This cabin can't be booked online right now. Please contact support@mojjo.se.");
     }
     
     // Validate guest count against property max
@@ -416,8 +463,8 @@ serve(async (req) => {
       productDescription += ` | Coupon: ${validatedCoupon.code} (-${discountAmount / 100} ${property.currency || 'SEK'})`;
     }
 
-    // Always the property's currency: the amounts above are in it, so a
-    // currency sent by the browser would charge the same number in another one
+    // Always the property's currency (SEK, checked above): the amounts are in
+    // it, so a currency sent by the browser would charge the same number in another one
     const currencyCode = (property.currency || "sek").toLowerCase();
 
     // Two line items so the guest sees the stay and the service fee separately
@@ -445,6 +492,46 @@ serve(async (req) => {
       });
     }
 
+    // Stripe Connect payout (destination charge): the host's share goes to the
+    // host's own Stripe account, which pays it out to their bank the day after
+    // check-in; the platform keeps the service fee. Every host rents out their
+    // own cabins, so with no account that can receive transfers the money
+    // lands on the platform account and the booking is flagged for a payout
+    // by hand when it is saved; the guest can still book.
+    const connectAccountId = profileData?.stripe_connect_account_id;
+    let hostPayoutReason = "";
+    let destination: string | null = null;
+    if (!connectAccountId) {
+      hostPayoutReason = "no_account";
+    } else {
+      const account = await connectAccount(stripe, connectAccountId);
+      const transfersActive = account === null ? null : account.capabilities?.transfers === "active";
+      if (transfersActive && account) {
+        destination = connectAccountId;
+        // Hosts are paid by release-host-payouts (the day after check-in, or 85
+        // days after payment if that comes first), which
+        // needs the account on manual payouts; on Stripe's own schedule the
+        // host would be paid days after booking. Fix it, or tell support;
+        // the guest can book either way.
+        if (account.settings?.payouts?.schedule?.interval !== "manual") {
+          try {
+            await stripe.accounts.update(connectAccountId, { settings: { payouts: { schedule: { interval: "manual" } } } });
+            logStep("Connect account switched to manual payouts", { connectAccountId });
+          } catch (updateError) {
+            const message = updateError instanceof Error ? updateError.message : String(updateError);
+            logStep("Could not switch Connect account to manual payouts", { connectAccountId, message });
+            await alertAdminOnce(supabaseClient, `connect-manual-payouts:${connectAccountId}`, "Host account not on manual payouts", [
+              `Stripe account ${connectAccountId} (host profile ${property.host_id}) is not on manual payouts and could not be switched: ${message}`,
+              "Until it is, Stripe pays this host's bookings to their bank on its own schedule instead of on our payout job's dates (the day after check-in, or 85 days after the guest paid if that comes first). Set the payout schedule to manual in the Stripe dashboard.",
+            ]).catch((alertError) => logStep("Alert failed", { error: String(alertError) }));
+          }
+        }
+      } else {
+        hostPayoutReason = transfersActive === null ? "check_failed" : "transfers_inactive";
+        logStep("Connect account cannot receive transfers; host payout must be made manually", { connectAccountId, hostPayoutReason });
+      }
+    }
+
     // Stripe checkout session config
     const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
     const sessionConfig: any = {
@@ -456,14 +543,14 @@ serve(async (req) => {
       expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       success_url: `${origin}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/property/${propertyId}`,
-      metadata: {
+      metadata: stripeMetadata({
         type: "booking",
         propertyId,
         propertyTitle: property.title,
         checkInDate,
         checkOutDate,
         numberOfGuests: numberOfGuests.toString(),
-        guestName,
+        guestName: trimmedName,
         guestEmail,
         guestPhone: guestPhone || "",
         specialRequests: specialRequests || "",
@@ -481,34 +568,18 @@ serve(async (req) => {
         serviceFee: serviceFee.toString(),
         commissionRate: commissionRate.toString(),
         hostId: property.host_id,
-      },
+        // Why the payout must be made by hand; the save path alerts with it
+        ...(hostPayoutReason ? { hostPayoutPending: "true", hostPayoutReason } : {}),
+      }),
     };
 
-    // Stripe Connect payout: the host gets hostAmount, the platform keeps the
-    // service fee. Only route money to an account that can receive transfers;
-    // otherwise the platform holds the host's share and it is flagged for a
-    // manual payout, so guests can still book.
-    const connectAccountId = profileData?.stripe_connect_account_id;
-    if (connectAccountId) {
-      let transfersActive = false;
-      try {
-        const account = await stripe.accounts.retrieve(connectAccountId);
-        transfersActive = account.capabilities?.transfers === "active";
-      } catch (e) {
-        logStep("Could not retrieve Connect account", { connectAccountId, error: String(e) });
-      }
-
-      if (transfersActive) {
-        sessionConfig.payment_intent_data = {
-          // A host on 0 % (e.g. a partner) gets the whole payment
-          ...(serviceFee > 0 && { application_fee_amount: serviceFee }),
-          transfer_data: { destination: connectAccountId },
-        };
-        logStep("Stripe Connect configured", { destination: connectAccountId, applicationFee: serviceFee });
-      } else {
-        sessionConfig.metadata.hostPayoutPending = "true";
-        logStep("Connect account cannot receive transfers yet; host payout must be made manually", { connectAccountId });
-      }
+    if (destination) {
+      sessionConfig.payment_intent_data = {
+        // A host on 0 % (e.g. a partner) gets the whole payment
+        ...(serviceFee > 0 && { application_fee_amount: serviceFee }),
+        transfer_data: { destination },
+      };
+      logStep("Stripe Connect configured", { destination, applicationFee: serviceFee });
     }
 
     // Skapa Stripe session
@@ -536,3 +607,19 @@ serve(async (req) => {
     });
   }
 });
+
+// The host's Connect account (whether it can receive the destination transfer,
+// its payout schedule), or null when Stripe could not be asked. Asked twice,
+// because a passing Stripe hiccup would otherwise leave the host's money on
+// the platform account for a payout by hand.
+async function connectAccount(stripe: Stripe, accountId: string): Promise<Stripe.Account | null> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      return await stripe.accounts.retrieve(accountId);
+    } catch (e) {
+      logStep("Could not retrieve Connect account", { accountId, attempt, error: String(e) });
+      if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+  return null;
+}

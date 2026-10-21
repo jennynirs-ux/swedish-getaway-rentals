@@ -1,22 +1,27 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getExpenses } from "@/services/expenseService";
-import { resolveScope, type FinancialScope } from "./scope";
+import type { FinancialScope, ResolvedScope } from "./scope";
 import { oreToSek } from "@/lib/swedishTax";
-import { hostShareOre } from "@/lib/constants";
+import { INCOME_STATUSES, NORDIC_GETAWAYS_ONLY_LABEL, STAY_BASIS_LABEL, summarizeIncome, yearBounds } from "./reporting";
+import { YearSelect } from "./YearSelect";
+import { useFinancialYears } from "./useFinancialYears";
 
 interface PropertyProfit {
   id: string;
   title: string;
   revenue: number;
+  /** Part of revenue the host kept from cancelled bookings */
+  cancellationIncome: number;
+  /** Expenses plus what the host owes us for the year's bookings (host_charges) */
   expenses: number;
+  /** Part of expenses that is host_charges, e.g. the card fee when the host cancelled */
+  hostCharges: number;
   profit: number;
   margin: number;
   bookings: number;
@@ -29,72 +34,116 @@ interface Props {
 }
 
 /**
+ * Per-property revenue, expenses and profit for a year. Revenue is what the
+ * host keeps (stays plus cancellations, by check-in date); expenses are the
+ * host's own (by expense date) plus what they owe us for that year's bookings
+ * (host_charges, e.g. the card fee when the host cancelled).
+ */
+async function loadProfitability({ propertyIds, properties }: ResolvedScope, year: number): Promise<PropertyProfit[]> {
+  if (propertyIds.length === 0) return [];
+
+  const { from, to } = yearBounds(year);
+  const [{ data: bookings, error }, expenses] = await Promise.all([
+    supabase
+      .from("bookings_secure")
+      .select(
+        "id, property_id, status, total_amount, host_amount, service_fee, refunded_amount, host_reversed_amount, stripe_payment_intent_id, check_in_date, check_out_date"
+      )
+      .in("property_id", propertyIds)
+      .in("status", INCOME_STATUSES)
+      .gte("check_in_date", from)
+      .lte("check_in_date", to),
+    getExpenses({ year }),
+  ]);
+  if (error) throw error;
+  const rows = bookings || [];
+
+  // Host charges only arise when the host cancels, so only cancelled bookings can carry one
+  const propertyOfBooking = new Map<string, string>();
+  for (const b of rows) {
+    if (b.status === "cancelled" && b.id && b.property_id) propertyOfBooking.set(b.id, b.property_id);
+  }
+  const chargesByProperty: Record<string, number> = {};
+  if (propertyOfBooking.size > 0) {
+    const { data: charges, error: chargesError } = await supabase
+      .from("host_charges")
+      .select("booking_id, amount")
+      .in("booking_id", [...propertyOfBooking.keys()]);
+    if (chargesError) throw chargesError;
+    for (const c of charges || []) {
+      const propertyId = c.booking_id ? propertyOfBooking.get(c.booking_id) : undefined;
+      if (propertyId) chargesByProperty[propertyId] = (chargesByProperty[propertyId] || 0) + (c.amount || 0);
+    }
+  }
+
+  return properties
+    .map((prop) => {
+      const income = summarizeIncome(rows.filter((b) => b.property_id === prop.id));
+      const revenue = income.incomeOre;
+      const hostCharges = chargesByProperty[prop.id] || 0;
+      const totalExpenses =
+        expenses.filter((e) => e.property_id === prop.id).reduce((sum, e) => sum + e.amount, 0) + hostCharges;
+      const profit = revenue - totalExpenses;
+      return {
+        id: prop.id,
+        title: prop.title,
+        revenue,
+        cancellationIncome: income.cancellationIncomeOre,
+        expenses: totalExpenses,
+        hostCharges,
+        profit,
+        margin: revenue > 0 ? Math.round((profit / revenue) * 100) : 0,
+        bookings: income.stays,
+      };
+    })
+    .sort((a, b) => b.profit - a.profit);
+}
+
+/**
  * Shared profitability view for host and admin.
  *
  * Shows per-property revenue vs expenses vs net profit with margin %.
- * Data access is scoped via the `resolveScope()` helper.
+ * Revenue is what the host keeps (host share less refunds taken back from
+ * them), including what they kept from cancelled bookings; the booking count
+ * is real stays only. Bookings are counted by check-in date, expenses by
+ * expense date; host charges (e.g. the card fee when the host cancelled) count
+ * as expenses of the booking's year. Data access is scoped via the
+ * `resolveScope()` helper, resolved once by useFinancialYears.
  */
 const Profitability = ({ scope, showMarginCard = true }: Props) => {
-  const [year, setYear] = useState(new Date().getFullYear());
+  const { year, setYear, years, scope: resolved } = useFinancialYears(scope);
   const [data, setData] = useState<PropertyProfit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, scope]);
-
-  const loadData = async () => {
+    if (!resolved) return;
+    // Drop the answer if the year or scope changed while it was loading
+    let stale = false;
     setLoading(true);
-    try {
-      const { propertyIds, properties } = await resolveScope(scope);
-
-      if (propertyIds.length === 0) {
+    setFailed(false);
+    loadProfitability(resolved, year)
+      .then((rows) => {
+        if (!stale) setData(rows);
+      })
+      .catch(() => {
+        if (stale) return;
         setData([]);
-        setLoading(false);
-        return;
-      }
-
-      const [{ data: bookings }, expenses] = await Promise.all([
-        supabase
-          .from("bookings")
-          .select("property_id, total_amount, host_amount, service_fee")
-          .in("property_id", propertyIds)
-          .in("status", ["confirmed", "completed"])
-          .gte("created_at", `${year}-01-01`)
-          .lte("created_at", `${year}-12-31`),
-        getExpenses({ year }),
-      ]);
-
-      const profitData: PropertyProfit[] = properties.map((prop) => {
-        const propBookings = (bookings || []).filter((b) => b.property_id === prop.id);
-        const revenue = propBookings.reduce((sum, b) => sum + hostShareOre(b), 0);
-        const propExpenses = expenses.filter((e) => e.property_id === prop.id);
-        const totalExpenses = propExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const profit = revenue - totalExpenses;
-
-        return {
-          id: prop.id,
-          title: prop.title,
-          revenue,
-          expenses: totalExpenses,
-          profit,
-          margin: revenue > 0 ? Math.round((profit / revenue) * 100) : 0,
-          bookings: propBookings.length,
-        };
+        setFailed(true);
+      })
+      .finally(() => {
+        if (!stale) setLoading(false);
       });
-
-      setData(profitData.sort((a, b) => b.profit - a.profit));
-    } catch {
-      // Empty state shown
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      stale = true;
+    };
+  }, [year, resolved]);
 
   const fmt = (amountOre: number) => oreToSek(amountOre).toLocaleString("sv-SE");
   const totalRevenue = data.reduce((s, d) => s + d.revenue, 0);
+  const totalCancellationIncome = data.reduce((s, d) => s + d.cancellationIncome, 0);
   const totalExpenses = data.reduce((s, d) => s + d.expenses, 0);
+  const totalHostCharges = data.reduce((s, d) => s + d.hostCharges, 0);
   const totalProfit = totalRevenue - totalExpenses;
   const overallMargin = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
 
@@ -108,16 +157,14 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Profitability</h3>
-        <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {[2024, 2025, 2026].map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold">Profitability</h3>
+          <p className="text-xs text-muted-foreground">
+            {NORDIC_GETAWAYS_ONLY_LABEL}. Bookings {STAY_BASIS_LABEL.toLowerCase()}, expenses by expense date.
+          </p>
+        </div>
+        <YearSelect years={years} value={year} onChange={setYear} />
       </div>
 
       <div className={`grid grid-cols-2 ${summaryGridCols} gap-4`}>
@@ -125,12 +172,18 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
           <CardContent className="pt-4 text-center">
             <p className="text-xs text-muted-foreground">Total Revenue</p>
             <p className="text-lg font-bold text-green-600">{fmt(totalRevenue)} kr</p>
+            {totalCancellationIncome > 0 && (
+              <p className="text-xs text-muted-foreground">incl. {fmt(totalCancellationIncome)} kr kept from cancellations</p>
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
             <p className="text-xs text-muted-foreground">Total Expenses</p>
             <p className="text-lg font-bold text-red-600">{fmt(totalExpenses)} kr</p>
+            {totalHostCharges > 0 && (
+              <p className="text-xs text-muted-foreground">incl. {fmt(totalHostCharges)} kr card fees from host cancellations</p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -188,12 +241,19 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
                 <TableHead className="text-right">Expenses</TableHead>
                 <TableHead className="text-right">Profit</TableHead>
                 <TableHead className="text-right">Margin</TableHead>
-                <TableHead className="text-right">Bookings</TableHead>
+                <TableHead className="text-right">Stays</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow><TableCell colSpan={6} className="text-center py-8">Loading...</TableCell></TableRow>
+              ) : failed ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <p className="font-medium">Could not load {year}</p>
+                    <p className="text-sm mt-1">Please reload the page or try again later.</p>
+                  </TableCell>
+                </TableRow>
               ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">

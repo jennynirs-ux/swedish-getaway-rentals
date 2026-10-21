@@ -1,121 +1,141 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveScope, type FinancialScope } from "./scope";
+import type { FinancialScope, ResolvedScope } from "./scope";
 import { oreToSek } from "@/lib/swedishTax";
-import { hostShareOre } from "@/lib/constants";
+import { INCOME_STATUSES, NORDIC_GETAWAYS_ONLY_LABEL, STAY_BASIS_LABEL, hostNetAmount, yearBounds } from "./reporting";
+import { YearSelect } from "./YearSelect";
+import { useFinancialYears } from "./useFinancialYears";
 
+/** Every value bookings.source can hold (bookings_source_check) */
 const SOURCE_COLORS: Record<string, string> = {
+  direct: "#22c55e",
+  manual: "#a855f7",
   airbnb: "#f43f5e",
   booking_com: "#3b82f6",
-  direct: "#22c55e",
-  blocked: "#9ca3af",
+  vrbo: "#0ea5e9",
+  landfolk: "#f59e0b",
+  ical: "#64748b",
+  other: "#9ca3af",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
+  direct: "Direct",
+  manual: "Manual",
   airbnb: "Airbnb",
   booking_com: "Booking.com",
-  direct: "Direct",
-  blocked: "Blocked",
+  vrbo: "Vrbo",
+  landfolk: "Landfolk",
+  ical: "Calendar import",
+  other: "Other",
 };
+
+const sourceLabel = (source: string) => SOURCE_LABELS[source] || source;
+const sourceColor = (source: string) => SOURCE_COLORS[source] || SOURCE_COLORS.other;
+
+interface ChannelData {
+  /** Sources with income, largest first */
+  sources: string[];
+  pie: { name: string; value: number; color: string }[];
+  /** One row per month: { month: "01", [source]: kronor } */
+  monthly: Record<string, string | number>[];
+}
+
+const EMPTY: ChannelData = { sources: [], pie: [], monthly: [] };
+
+/** Host income per channel and check-in month (öre summed first, kronor at the end, so both charts agree) */
+async function loadChannels({ propertyIds }: ResolvedScope, year: number): Promise<ChannelData> {
+  if (propertyIds.length === 0) return EMPTY;
+
+  const { from, to } = yearBounds(year);
+  const { data, error } = await supabase
+    .from("bookings_secure")
+    .select(
+      "source, status, total_amount, host_amount, service_fee, refunded_amount, host_reversed_amount, stripe_payment_intent_id, check_in_date, property_id"
+    )
+    .in("property_id", propertyIds)
+    .in("status", INCOME_STATUSES)
+    .gte("check_in_date", from)
+    .lte("check_in_date", to);
+  if (error) throw error;
+
+  const bySource: Record<string, number> = {};
+  const byMonth: Record<string, Record<string, number>> = {};
+  for (const b of data || []) {
+    const src = b.source || "direct";
+    const month = (b.check_in_date || "").slice(5, 7);
+    const net = hostNetAmount(b);
+    // Blocked dates are not bookings and carry no income
+    if (src === "blocked" || net <= 0 || !month) continue;
+    bySource[src] = (bySource[src] || 0) + net;
+    byMonth[month] = byMonth[month] || {};
+    byMonth[month][src] = (byMonth[month][src] || 0) + net;
+  }
+
+  const sources = Object.keys(bySource).sort((a, b) => bySource[b] - bySource[a]);
+  return {
+    sources,
+    pie: sources.map((src) => ({ name: sourceLabel(src), value: Math.round(oreToSek(bySource[src])), color: sourceColor(src) })),
+    monthly: Array.from({ length: 12 }, (_, m) => {
+      const month = String(m + 1).padStart(2, "0");
+      const row: Record<string, string | number> = { month };
+      for (const src of sources) row[src] = Math.round(oreToSek(byMonth[month]?.[src] || 0));
+      return row;
+    }),
+  };
+}
 
 interface Props {
   scope: FinancialScope;
 }
 
+/**
+ * The host's income per booking channel and month. Income is what the host
+ * keeps (including from cancelled bookings), counted in the check-in month.
+ * Only bookings made through Nordic Getaways exist here: Airbnb and
+ * Booking.com reach us as blocked dates without prices, which the labels say.
+ * The charts show only the channels that have income.
+ */
 const RevenueByChannel = ({ scope }: Props) => {
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [pieData, setPieData] = useState<{ name: string; value: number; color: string }[]>([]);
-  const [monthlyData, setMonthlyData] = useState<Record<string, unknown>[]>([]);
+  const { year, setYear, years, scope: resolved } = useFinancialYears(scope);
+  const [channels, setChannels] = useState<ChannelData>(EMPTY);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, scope]);
-
-  const loadData = async () => {
+    if (!resolved) return;
+    // Drop the answer if the year or scope changed while it was loading
+    let stale = false;
     setLoading(true);
-    try {
-      const { propertyIds } = await resolveScope(scope);
+    loadChannels(resolved, year)
+      .then((result) => {
+        if (!stale) setChannels(result);
+      })
+      .catch(() => {
+        if (!stale) setChannels(EMPTY); // Empty charts shown
+      })
+      .finally(() => {
+        if (!stale) setLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [year, resolved]);
 
-      if (propertyIds.length === 0) {
-        setPieData([]);
-        setMonthlyData([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select("source, total_amount, host_amount, service_fee, created_at, property_id")
-        .in("property_id", propertyIds)
-        .in("status", ["confirmed", "completed"])
-        .gte("created_at", `${year}-01-01`)
-        .lte("created_at", `${year}-12-31`);
-
-      if (!bookings) return;
-
-      const bySource: Record<string, number> = {};
-      for (const b of bookings) {
-        const src = b.source || "direct";
-        bySource[src] = (bySource[src] || 0) + hostShareOre(b);
-      }
-
-      setPieData(
-        Object.entries(bySource)
-          .filter(([_, v]) => v > 0)
-          .map(([source, value]) => ({
-            name: SOURCE_LABELS[source] || source,
-            value: Math.round(oreToSek(value)),
-            color: SOURCE_COLORS[source] || "#9ca3af",
-          }))
-      );
-
-      const monthly: Record<string, Record<string, number>> = {};
-      for (let m = 0; m < 12; m++) {
-        const key = `${year}-${String(m + 1).padStart(2, "0")}`;
-        monthly[key] = { airbnb: 0, booking_com: 0, direct: 0 };
-      }
-
-      for (const b of bookings) {
-        const month = (b.created_at || "").substring(0, 7);
-        const src = b.source || "direct";
-        if (monthly[month] && src !== "blocked") {
-          monthly[month][src] = (monthly[month][src] || 0) + Math.round(oreToSek(hostShareOre(b)));
-        }
-      }
-
-      setMonthlyData(
-        Object.entries(monthly).map(([month, sources]) => ({
-          month: month.substring(5),
-          ...sources,
-        }))
-      );
-    } catch {
-      // Empty charts shown
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const { pie: pieData, monthly: monthlyData, sources } = channels;
   const totalRevenue = pieData.reduce((s, d) => s + d.value, 0);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Revenue by Channel</h3>
-        <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {[2024, 2025, 2026].map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold">Revenue by Channel</h3>
+          <p className="text-xs text-muted-foreground">
+            {NORDIC_GETAWAYS_ONLY_LABEL}: income from Airbnb, Booking.com and other channels is not included.{" "}
+            {STAY_BASIS_LABEL}.
+          </p>
+        </div>
+        <YearSelect years={years} value={year} onChange={setYear} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -149,7 +169,7 @@ const RevenueByChannel = ({ scope }: Props) => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Monthly Revenue by Channel</CardTitle>
+            <CardTitle className="text-sm">Monthly Revenue by Check-in Month</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -161,9 +181,9 @@ const RevenueByChannel = ({ scope }: Props) => {
                   <YAxis tick={{ fontSize: 10 }} />
                   <Tooltip formatter={(value: number) => `${value.toLocaleString("sv-SE")} SEK`} />
                   <Legend />
-                  <Bar dataKey="airbnb" name="Airbnb" fill={SOURCE_COLORS.airbnb} stackId="a" />
-                  <Bar dataKey="booking_com" name="Booking.com" fill={SOURCE_COLORS.booking_com} stackId="a" />
-                  <Bar dataKey="direct" name="Direct" fill={SOURCE_COLORS.direct} stackId="a" />
+                  {sources.map((src) => (
+                    <Bar key={src} dataKey={src} name={sourceLabel(src)} fill={sourceColor(src)} stackId="a" />
+                  ))}
                 </BarChart>
               </ResponsiveContainer>
             )}

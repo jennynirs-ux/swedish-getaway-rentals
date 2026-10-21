@@ -6,10 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
 import { Gift, CheckCircle, ArrowRight } from "lucide-react";
-import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, foundingHostOfferOpen } from "@/lib/constants";
+import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, HOST_PAYOUT_TIMING_TEXT, foundingHostOfferOpen } from "@/lib/constants";
+import { HOST_TERMS_PATH, HOST_TERMS_VERSION } from "@/content/hostTerms";
+
+// Publishing needs accepted host terms (prevent_self_publish); a failure here
+// is not fatal, as the dashboard checklist asks again
+const recordTermsAcceptance = async () => {
+  const { error } = await supabase.rpc('accept_host_terms', { _version: HOST_TERMS_VERSION });
+  if (error) {
+    console.error('Error saving host terms acceptance:', error);
+    toast.warning('We could not save that you accepted the host terms. Please accept them again in your dashboard.');
+  }
+};
 
 const HostApplication = () => {
   const [loading, setLoading] = useState(false);
@@ -19,6 +31,7 @@ const HostApplication = () => {
     businessName: '',
     contactPhone: ''
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +41,10 @@ const HostApplication = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!termsAccepted) {
+      toast.error('Please accept the host terms to continue.');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -46,6 +63,7 @@ const HostApplication = () => {
         .single();
 
       if (profile?.is_host && profile?.host_approved) {
+        await recordTermsAcceptance();
         toast.success('You are already a host!');
         navigate('/host-dashboard');
         return;
@@ -59,6 +77,9 @@ const HostApplication = () => {
       });
 
       if (signupError) throw signupError;
+
+      // After become_host: the terms are a host's terms
+      await recordTermsAcceptance();
 
       // Handle referral code
       if (referralCode && profileId) {
@@ -81,7 +102,8 @@ const HostApplication = () => {
       navigate('/host-dashboard');
     } catch (error) {
       console.error('Error becoming host:', error);
-      toast.error('Something went wrong. Please try again.');
+      const message = (error as { message?: string } | null)?.message;
+      toast.error(message ? `Something went wrong: ${message}` : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -148,6 +170,7 @@ const HostApplication = () => {
                       'Calendar sync with Airbnb & Booking.com',
                       'Automatic booking confirmations',
                       'Secure payments via Stripe',
+                      `Your price paid out to your bank ${HOST_PAYOUT_TIMING_TEXT}`,
                       'Digital guidebook for your guests',
                     ].map((item) => (
                       <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -165,7 +188,29 @@ const HostApplication = () => {
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="acceptHostTerms"
+                    checked={termsAccepted}
+                    onCheckedChange={(v) => setTermsAccepted(v === true)}
+                    className="mt-0.5"
+                    aria-required="true"
+                  />
+                  <Label htmlFor="acceptHostTerms" className="text-sm font-normal leading-snug">
+                    I accept the{' '}
+                    <a
+                      href={HOST_TERMS_PATH}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline underline-offset-2"
+                    >
+                      host terms
+                    </a>{' '}
+                    (fees, payouts, cancellations and refunds) *
+                  </Label>
+                </div>
+
+                <Button type="submit" className="w-full" size="lg" disabled={loading || !termsAccepted}>
                   {loading ? 'Setting up...' : (
                     <>
                       Start Hosting Now

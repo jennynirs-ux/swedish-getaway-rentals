@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -25,12 +24,44 @@ interface WizardState {
   location: string;
   /** ISO 3166-2:SE code; the listing can't be published without it */
   county: string;
-  bedrooms: number;
-  bathrooms: number;
-  max_guests: number;
-  price_per_night: number;
+  // Number fields keep what the host typed, so a field can be cleared and
+  // retyped (forcing a number turned "4" typed after clearing into "14");
+  // they are checked on Next
+  bedrooms: string;
+  bathrooms: string;
+  max_guests: string;
+  price_per_night: string;
   currency: string;
 }
+
+/** A whole number of at least min, or null */
+const parseCount = (value: string, min: number) => {
+  const t = value.trim();
+  if (!/^\d+$/.test(t)) return null;
+  const n = parseInt(t, 10);
+  return n >= min ? n : null;
+};
+
+/** Bathrooms come in halves (2.5 = two bathrooms and a toilet; 0 is allowed), or null */
+const parseHalves = (value: string) => {
+  const t = value.trim().replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(t)) return null;
+  const n = parseFloat(t);
+  return Number.isInteger(n * 2) ? n : null;
+};
+
+const EMPTY_STATE: WizardState = {
+  title: "",
+  property_type: "Cabin",
+  description: "",
+  location: "",
+  county: "",
+  bedrooms: "1",
+  bathrooms: "1",
+  max_guests: "2",
+  price_per_night: "1500",
+  currency: "SEK",
+};
 
 const PROPERTY_TYPES = [
   "Cabin",
@@ -61,27 +92,21 @@ const STEPS = [
 const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [state, setState] = useState<WizardState>({
-    title: "",
-    property_type: "Cabin",
-    description: "",
-    location: "",
-    county: "",
-    bedrooms: 1,
-    bathrooms: 1,
-    max_guests: 2,
-    price_per_night: 1500,
-    currency: "SEK",
-  });
+  const [state, setState] = useState<WizardState>(EMPTY_STATE);
 
   const update = <K extends keyof WizardState>(key: K, value: WizardState[K]) =>
     setState((s) => ({ ...s, [key]: value }));
 
+  const bedrooms = parseCount(state.bedrooms, 0);
+  const bathrooms = parseHalves(state.bathrooms);
+  const maxGuests = parseCount(state.max_guests, 1);
+  const price = parseCount(state.price_per_night, 1);
+
   const canAdvance = () => {
-    if (step === 0) return state.title.trim().length >= 3 && state.property_type;
+    if (step === 0) return state.title.trim().length >= 3 && !!state.property_type;
     if (step === 1) return state.location.trim().length >= 2 && !!state.county;
-    if (step === 2) return state.bedrooms > 0 && state.bathrooms > 0 && state.max_guests > 0;
-    if (step === 3) return state.price_per_night > 0;
+    if (step === 2) return bedrooms !== null && bathrooms !== null && maxGuests !== null;
+    if (step === 3) return price !== null;
     return true;
   };
 
@@ -106,10 +131,10 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
           location: state.location.trim(),
           county: state.county,
           property_type: state.property_type,
-          bedrooms: state.bedrooms,
-          bathrooms: state.bathrooms,
-          max_guests: state.max_guests,
-          price_per_night: state.price_per_night,
+          bedrooms,
+          bathrooms,
+          max_guests: maxGuests,
+          price_per_night: price,
           currency: state.currency,
           host_id: profile.id,
           active: false, // draft — host continues in editor
@@ -133,18 +158,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
 
   const resetWizard = () => {
     setStep(0);
-    setState({
-      title: "",
-      property_type: "Cabin",
-      description: "",
-      location: "",
-      county: "",
-      bedrooms: 1,
-      bathrooms: 1,
-      max_guests: 2,
-      price_per_night: 1500,
-      currency: "SEK",
-    });
+    setState(EMPTY_STATE);
   };
 
   const progress = ((step + 1) / STEPS.length) * 100;
@@ -245,33 +259,47 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
 
           {/* Step 2: Capacity */}
           {step === 2 && (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <Label>Bedrooms *</Label>
+                <Label htmlFor="wizard-bedrooms">Bedrooms *</Label>
                 <Input
+                  id="wizard-bedrooms"
                   type="number"
-                  min={1}
+                  inputMode="numeric"
+                  min={0}
                   value={state.bedrooms}
-                  onChange={(e) => update("bedrooms", Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) => update("bedrooms", e.target.value)}
                 />
+                <p className={`text-xs mt-1 ${bedrooms === null ? "text-destructive" : "text-muted-foreground"}`}>
+                  0 for a studio
+                </p>
               </div>
               <div>
-                <Label>Bathrooms *</Label>
+                <Label htmlFor="wizard-bathrooms">Bathrooms *</Label>
                 <Input
+                  id="wizard-bathrooms"
                   type="number"
-                  min={1}
+                  inputMode="decimal"
+                  min={0}
+                  step={0.5}
                   value={state.bathrooms}
-                  onChange={(e) => update("bathrooms", Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) => update("bathrooms", e.target.value)}
                 />
+                <p className={`text-xs mt-1 ${bathrooms === null ? "text-destructive" : "text-muted-foreground"}`}>
+                  Halves allowed, e.g. 1.5; 0 if there is none
+                </p>
               </div>
               <div>
-                <Label>Max guests *</Label>
+                <Label htmlFor="wizard-guests">Max guests *</Label>
                 <Input
+                  id="wizard-guests"
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   value={state.max_guests}
-                  onChange={(e) => update("max_guests", Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) => update("max_guests", e.target.value)}
                 />
+                {maxGuests === null && <p className="text-xs mt-1 text-destructive">At least 1</p>}
               </div>
             </div>
           )}
@@ -284,10 +312,11 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
                 <div className="flex gap-2">
                   <Input
                     type="number"
-                    min={100}
+                    inputMode="numeric"
+                    min={1}
                     step={50}
                     value={state.price_per_night}
-                    onChange={(e) => update("price_per_night", Math.max(0, Number(e.target.value) || 0))}
+                    onChange={(e) => update("price_per_night", e.target.value)}
                     className="flex-1"
                   />
                   {/* SEK only: guests see, filter and pay every price on the site in kronor */}
@@ -295,16 +324,18 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
                     SEK
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Tip: Swedish cabins typically range 1,200-3,500 SEK/night. You can add seasonal pricing later.
+                <p className={`text-xs mt-1 ${price === null ? "text-destructive" : "text-muted-foreground"}`}>
+                  {price === null
+                    ? "Enter a whole number of kronor."
+                    : "Tip: Swedish cabins typically range 1,200-3,500 SEK/night. You can add seasonal pricing later."}
                 </p>
               </div>
 
               <div className="rounded-lg bg-muted p-3 text-sm">
                 <p className="font-medium mb-1">Ready to create</p>
                 <p className="text-muted-foreground">
-                  Your property will be saved as a <strong>draft</strong>. Add photos, pin it on the map and add
-                  amenities and house rules in the editor, then publish when ready.
+                  Your property will be saved as a <strong>draft</strong> and the editor opens on the map, so you can
+                  pin the exact spot. Then add photos, amenities and house rules, and publish when ready.
                 </p>
               </div>
             </>

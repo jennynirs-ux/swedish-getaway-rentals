@@ -11,6 +11,11 @@ interface PropertyHeroProps {
 
 const PropertyHero = memo(({ property }: PropertyHeroProps) => {
   const nickname = property.slug ? PROPERTY_CONTENT[property.slug]?.nickname : undefined;
+  // The host's own words only: these columns have no defaults, and an empty
+  // (or blank) one shows nothing rather than made-up marketing text
+  const tagline1 = property.tagline_line1?.trim();
+  const tagline2 = property.tagline_line2?.trim();
+  const availability = property.availability_text?.trim();
 
   const scrollToBooking = () => {
     document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -41,11 +46,12 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
             <p className="text-xl md:text-2xl text-white/90 mb-6">{property.title}</p>
           )}
           
-          {/* Tagline */}
-          <div className="text-xl md:text-2xl mb-8 font-light leading-relaxed">
-            <p>{property.tagline_line1 || 'Experience luxury in the heart of Swedish nature.'}</p>
-            <p>{property.tagline_line2 || 'Your perfect escape awaits.'}</p>
-          </div>
+          {(tagline1 || tagline2) && (
+            <div className="text-xl md:text-2xl mb-8 font-light leading-relaxed">
+              {tagline1 && <p>{tagline1}</p>}
+              {tagline2 && <p>{tagline2}</p>}
+            </div>
+          )}
 
           {/* Quick Info */}
           <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-lg">
@@ -57,11 +63,10 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
               <Users className="h-5 w-5" />
               <span>Up to {property.max_guests} guests</span>
             </div>
-            {/* No default: a made-up "year-round" was wrong for Lakehouse */}
-            {property.availability_text && (
+            {availability && (
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                <span>{property.availability_text}</span>
+                <span>{availability}</span>
               </div>
             )}
           </div>

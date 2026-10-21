@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import forestHeroBg from "@/assets/forest-hero-light.webp";
+import { HOST_TERMS_PATH } from "@/content/hostTerms";
 import {
   FOUNDING_HOST_DEADLINE,
   FOUNDING_HOST_FEE_PCT,
@@ -48,6 +50,18 @@ const FOUNDING_HOST_DEADLINE_SHORT = FOUNDING_HOST_DEADLINE.replace(/([A-Za-z]{3
 // Host price used in the fee examples below
 const EXAMPLE_PRICE = 2500;
 const sek = (amount: number) => `${Math.round(amount).toLocaleString("sv-SE")} SEK`;
+// A new tab, so the host keeps their place here. The router doesn't scroll to
+// #hashes; HostTerms scrolls to the section itself once it has rendered.
+const hostTermsLink = (label: string, section?: string) => (
+  <a
+    href={section ? `${HOST_TERMS_PATH}#${section}` : HOST_TERMS_PATH}
+    target="_blank"
+    rel="noopener"
+    className="underline text-primary"
+  >
+    {label}
+  </a>
+);
 
 const BecomeHost = () => {
   const feeTerms = foundingHostOfferOpen()
@@ -60,7 +74,7 @@ const BecomeHost = () => {
   });
 
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [showSupport, setShowSupport] = useState(false);
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportForm, setSupportForm] = useState({
@@ -134,7 +148,7 @@ const BecomeHost = () => {
       });
       setSupportForm({ name: "", email: user?.email || "", message: "" });
       setShowSupport(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Support form error:", error);
       toast({
         title: "Error",
@@ -187,10 +201,10 @@ const BecomeHost = () => {
       question: "Do I need a company to host?",
       answer: (
         <>
-          No, you can host as a private individual. If you rent out frequently or have multiple 
-          properties, you may need to register a business or report income for taxes.  
-          In Sweden, you can earn up to <strong>40,000 SEK tax-free</strong> per year from private rentals, 
-          plus a 20% deduction on the rest.  
+          No. Hosts on Nordic Getaways rent out their own place as private individuals.
+          In Sweden, private hosts can deduct <strong>40,000 SEK a year</strong> from their rental income, plus 20%
+          of the rent if they own the house (for a tenant-owned flat, the share of the monthly fee instead). The
+          40,000 SEK covers all your private rental income together, wherever you rent out.  
           Learn more at{" "}
           <a
             href="https://www.skatteverket.se/privat/skatter/bostad/uthyrningavprivatbostad"
@@ -207,10 +221,33 @@ const BecomeHost = () => {
       question: "How do payments work?",
       answer: (
         <>
-          Guests pay securely through our payment provider (<strong>Stripe</strong>).  
-          You receive your full listed amount directly, and the guest sees a 
-          transparent {FEE_PCT}% platform fee covering marketing, support, and payment handling.
-          You always see exactly what you earn before confirming your listing.
+          Guests pay by card through <strong>Stripe</strong> when they book. Your share goes straight to your own
+          Stripe account, and we pay it out to your bank <strong>the day after check-in</strong>, or 85 days after
+          the guest paid if that comes first. If a guest is refunded after that, the refund is taken from your next
+          payout. Guests pay a{" "}
+          {FEE_PCT}% service fee on top of your price
+          {foundingHostOfferOpen() ? ` (${FOUNDING_HOST_FEE_PCT}% for founding hosts' first 12 months)` : ""}, so you
+          receive your price in full. See {hostTermsLink("payouts in the host terms", "payouts")}.
+        </>
+      ),
+    },
+    {
+      question: "Who do guests book with?",
+      answer: (
+        <>
+          With you. You rent out your place as a private person, and guests deal directly with you about their
+          stay. Nordic Getaways (Mojjo AB) shows your listing and takes the booking and payment in
+          your name.
+        </>
+      ),
+    },
+    {
+      question: "What do I agree to as a host?",
+      answer: (
+        <>
+          Our {hostTermsLink("host terms")}: your responsibility for an accurate and safe listing, insurance and
+          taxes, the guest service fee, when you are paid out, and what happens when a guest or you cancel.
+          You accept them when you apply to become a host.
         </>
       ),
     },
@@ -249,7 +286,7 @@ const BecomeHost = () => {
         <>
           Your earnings depend on your home’s location, size, and season.  
           You set your own nightly price, and we make it easy to see both your payout 
-          and what the guest pays, including our transparent platform fee.
+          and what the guest pays, including the guest service fee.
         </>
       ),
     },
@@ -267,10 +304,12 @@ const BecomeHost = () => {
       question: "How do cancellations and refunds work?",
       answer: (
         <>
-          All stays share one cancellation policy, shown to guests before they book:{" "}
-          <strong>90% refund</strong> more than 21 days before arrival, <strong>50%</strong> 8–21 days
-          before, and <strong>no refund</strong> within 7 days. Our team handles cancellations and
-          refunds, and your payout is adjusted in proportion.
+          All stays share one cancellation policy, shown to guests before they book: guests get{" "}
+          <strong>90%</strong> of the price of the stay back more than 21 days before arrival, <strong>50%</strong>{" "}
+          8–21 days before, and <strong>nothing</strong> within 7 days. Our team handles cancellations and refunds.
+          The refund comes out of your payout for that booking; the service fee is not refunded to the guest and
+          never reduces your share. If you have to cancel, the guest gets everything back, you get nothing for that
+          booking and you pay the card fee. Details are in the {hostTermsLink("host terms", "guest-cancels")}.
         </>
       ),
     },
@@ -280,6 +319,8 @@ const BecomeHost = () => {
         <>
           You’re responsible for declaring your rental income based on local tax rules.  
           In Sweden, most hosts can rent out part of their home tax-free up to a certain limit.  
+          By law (the EU's DAC7 rules) we report hosts' rental income from Nordic Getaways to Skatteverket, and
+          ask you for the details needed.  
           Always double-check with <a
             href="https://www.skatteverket.se"
             target="_blank"
@@ -431,7 +472,7 @@ const BecomeHost = () => {
                 </div>
                 <div>
                   <div className="text-4xl font-bold text-primary mb-2">+{FEE_PCT}%</div>
-                  <div className="text-muted-foreground">Platform Fee</div>
+                  <div className="text-muted-foreground">Guest service fee</div>
                 </div>
                 <div>
                   <div className="text-4xl font-bold text-primary mb-2">{sek(withServiceFee(EXAMPLE_PRICE))}</div>
@@ -524,6 +565,9 @@ const BecomeHost = () => {
             Start Hosting Now
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
+          <p className="text-sm text-muted-foreground mt-6">
+            When you apply, you accept our {hostTermsLink("host terms")}: fees, payouts and cancellations.
+          </p>
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-6">

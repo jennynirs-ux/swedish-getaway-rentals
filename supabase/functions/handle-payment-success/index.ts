@@ -41,6 +41,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // A failed save alerts the admin from the shared path. message
+    // 'processing' (success false) means the webhook is saving it right now:
+    // the page should ask again in a few seconds rather than say "confirmed".
     const result = await processCheckoutSession(stripe, supabase, session_id, {
       ip: clientIpFrom(req),
       userAgent,

@@ -1,17 +1,28 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { alertAdmin, sendEmail, SUPPORT_EMAIL } from "./alert.ts";
+import { alertAdmin, alertAdminOnce, sendEmail, SUPPORT_EMAIL } from "./alert.ts";
 import { escapeHtml } from "./auth.ts";
+import { hostShareAmount, initialHostPayout } from "./payout.ts";
+import { MONEY_BOOKING_COLUMNS, type MoneyBooking, reconcileBookingMoney, reverseUnsavedPayment } from "./booking-money.ts";
 
-// Shared by handle-payment-success (guest redirect) and stripe-webhook, which
-// can both fire for the same Checkout session, often at the same moment.
+// Shared by handle-payment-success (guest redirect), stripe-webhook and
+// reconcile-payments, which can all fire for the same Checkout session, often
+// at the same moment.
 
 export interface ProcessResult {
   success: boolean;
   type: string;
   bookingId: string | null;
+  // 'processing': another call is saving it right now (the webhook answers
+  // non-2xx so Stripe retries); 'dates_taken_refunded'; 'refunded'
   message?: string;
 }
+
+// A claim this old with no booking belongs to a call that died midway (edge
+// functions are stopped after a few minutes), so it may be taken over.
+const STALE_CLAIM_MS = 10 * 60 * 1000;
+
+const kr = (ore: number) => (ore / 100).toLocaleString('sv-SE');
 
 // Nights already taken: another booking, a channel block (Airbnb...), a host block
 async function datesTaken(supabase: SupabaseClient, propertyId: string, checkIn: string, checkOut: string) {
@@ -38,52 +49,129 @@ export const clientIpFrom = (req: Request): string | null => {
   return ip && /^[0-9a-fA-F.:]+$/.test(ip) ? ip : null;
 };
 
+const idOf = (value: string | { id: string } | null | undefined): string | null =>
+  typeof value === 'string' ? value : value?.id ?? null;
+
 export async function processCheckoutSession(
   stripe: Stripe,
   supabase: SupabaseClient,
   sessionId: string,
   origin: { ip: string | null; userAgent: string },
 ): Promise<ProcessResult> {
-  // Always read the session from Stripe - never trust the caller's data
-  const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['line_items'] });
+  // Always read the session from Stripe - never trust the caller's data. The
+  // charge says whether the host's share went to their Stripe account.
+  const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['payment_intent.latest_charge'] });
 
+  // Not an error worth a person's time: the guest's redirect can arrive
+  // before a delayed payment completes, and Stripe sends an event when it does
   if (session.payment_status !== 'paid') {
     console.error('Payment not completed:', session.payment_status);
     throw new Error("Payment not completed");
   }
 
+  try {
+    return await saveSession(stripe, supabase, session, origin);
+  } catch (error) {
+    // The guest has paid but nothing was saved, and the dates can be sold
+    // again: a person must look. Alerted only from here, after Stripe confirmed
+    // a paid session, so made-up session ids can't trigger e-mails. Once per
+    // session: the webhook retries for days and reconcile-payments hourly.
+    const message = error instanceof Error ? error.message : String((error as { message?: string })?.message ?? error);
+    const metadata = session.metadata ?? {};
+    await alertAdminOnce(supabase, `payment-failed:${sessionId}`, 'Paid checkout could not be saved', [
+      `Stripe session: ${sessionId} (${metadata.type ?? 'unknown'})`,
+      `Property: ${metadata.propertyTitle ?? '-'}, ${metadata.checkInDate ?? ''} to ${metadata.checkOutDate ?? ''}`,
+      `Guest: ${metadata.guestName ?? '-'} <${metadata.guestEmail ?? '-'}>`,
+      `Paid: ${kr(session.amount_total ?? 0)} ${(session.currency ?? 'sek').toUpperCase()}`,
+      `Error: ${message}`,
+      "The Stripe webhook retries for 3 days and reconcile-payments every hour. Fix the cause, or refund the payment in Stripe (the host's transfer is then taken back automatically).",
+      'Do not enter this booking by hand: a retry would see its dates as taken and refund the guest as a double booking.',
+    ]).catch((alertError) => console.error('Alert failed:', alertError));
+    throw error;
+  }
+}
+
+async function saveSession(
+  stripe: Stripe,
+  supabase: SupabaseClient,
+  session: Stripe.Checkout.Session,
+  origin: { ip: string | null; userAgent: string },
+): Promise<ProcessResult> {
+  const sessionId = session.id;
   const sessionType = session.metadata?.type || 'unknown';
+  const paymentIntent = typeof session.payment_intent === 'object' ? session.payment_intent : null;
+  const paymentIntentId = idOf(session.payment_intent);
 
   // Claim the session first. The unique constraint on session_id makes this
   // atomic, so the webhook and the redirect can't both create a booking.
-  const { data: claim, error: claimError } = await supabase
-    .from('processed_sessions')
-    .insert({
-      session_id: sessionId,
-      session_type: sessionType,
-      ip_address: origin.ip,
-      user_agent: origin.userAgent,
-    })
-    .select('id')
-    .single();
+  const insertClaim = () =>
+    supabase
+      .from('processed_sessions')
+      .insert({
+        session_id: sessionId,
+        session_type: sessionType,
+        ip_address: origin.ip,
+        user_agent: origin.userAgent,
+      })
+      .select('id')
+      .single();
+
+  let { data: claim, error: claimError } = await insertClaim();
 
   if (claimError) {
     if (claimError.code !== '23505') throw claimError;
     const { data: existing } = await supabase
       .from('processed_sessions')
-      .select('session_type, created_record_id')
+      .select('id, session_type, created_record_id, processed_at')
       .eq('session_id', sessionId)
       .single();
-    console.log('Session already processed:', sessionId);
     if (existing?.session_type === 'booking_refunded_dates_taken') {
       return { success: false, type: 'booking', bookingId: null, message: 'dates_taken_refunded' };
     }
-    return {
-      success: true,
-      type: existing?.session_type ?? sessionType,
-      bookingId: existing?.created_record_id ?? null,
-      message: 'Already processed',
-    };
+    if (existing?.session_type === 'booking_refunded_unsaved') {
+      return { success: false, type: 'booking', bookingId: null, message: 'refunded' };
+    }
+    if (existing?.created_record_id || sessionType !== 'booking') {
+      console.log('Session already processed:', sessionId);
+      return {
+        success: true,
+        type: existing?.session_type ?? sessionType,
+        bookingId: existing?.created_record_id ?? null,
+        message: 'Already processed',
+      };
+    }
+
+    // Claimed but no booking recorded. The booking may exist already if the
+    // call that saved it stopped before recording it on the claim.
+    const { data: saved } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntentId ?? '')
+      .maybeSingle();
+    if (saved) {
+      await supabase.from('processed_sessions').update({ created_record_id: saved.id }).eq('id', existing!.id);
+      return { success: true, type: 'booking', bookingId: saved.id, message: 'Already processed' };
+    }
+
+    const claimAge = Date.now() - Date.parse(existing?.processed_at ?? '');
+    if (!(claimAge > STALE_CLAIM_MS)) {
+      console.log('Session is being processed by another call:', sessionId);
+      return { success: false, type: 'booking', bookingId: null, message: 'processing' };
+    }
+
+    // Stale: take it over. Delete only that exact claim, so two callers can't
+    // both take it over; the loser gets 'processing' below.
+    console.warn('Taking over a stale claim:', sessionId);
+    await supabase
+      .from('processed_sessions')
+      .delete()
+      .eq('id', existing!.id)
+      .is('created_record_id', null);
+    ({ data: claim, error: claimError } = await insertClaim());
+    if (claimError) {
+      if (claimError.code !== '23505') throw claimError;
+      return { success: false, type: 'booking', bookingId: null, message: 'processing' };
+    }
   }
 
   let result: ProcessResult = { success: true, type: 'unknown', bookingId: null };
@@ -92,36 +180,69 @@ export async function processCheckoutSession(
   try {
     if (session.metadata?.type === 'booking') {
       const metadata = session.metadata;
-    
+
       // Verify the amount paid matches the booking amount (critical security check)
       const paidAmount = session.amount_total || 0;
       // metadata.totalAmount is already in öre (set by create-booking-payment-connect)
       const expectedAmount = parseInt(metadata.totalAmount);
-    
+
       if (paidAmount !== expectedAmount) {
         console.error('Payment amount mismatch:', { paidAmount, expectedAmount });
         throw new Error('Payment amount verification failed');
+      }
+
+      const charge = paymentIntent && typeof paymentIntent.latest_charge === 'object' ? paymentIntent.latest_charge : null;
+
+      // Saved already by a call whose response was lost (or that died before
+      // recording it on the claim): its own booking must not count as a
+      // clash below, which would refund a confirmed stay
+      const { data: savedRows, error: savedError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('stripe_payment_intent_id', paymentIntentId ?? '')
+        .limit(1);
+      if (savedError) throw savedError;
+      const saved = savedRows?.[0];
+      if (saved) {
+        await supabase.from('processed_sessions').update({ created_record_id: saved.id }).eq('id', claim!.id);
+        return { success: true, type: 'booking', bookingId: saved.id, message: 'Already processed' };
+      }
+
+      // Refunded before it was ever saved (e.g. by hand in Stripe after a
+      // failed save): saving it now would confirm a stay nobody paid for, and
+      // with no booking the host must not keep the transfer either
+      if (charge?.refunded) {
+        await reverseUnsavedPayment(stripe, supabase, charge, sessionId, [
+          `Stripe session: ${sessionId}`,
+          `Property: ${metadata.propertyTitle ?? '-'}, ${metadata.checkInDate ?? ''} to ${metadata.checkOutDate ?? ''}`,
+          `Guest: ${metadata.guestName ?? '-'} <${metadata.guestEmail ?? '-'}>`,
+        ]);
+        await supabase
+          .from('processed_sessions')
+          .update({ session_type: 'booking_refunded_unsaved' })
+          .eq('id', claim!.id);
+        console.warn('Paid session was refunded before it was saved; no booking created:', sessionId);
+        return { success: false, type: 'booking', bookingId: null, message: 'refunded' };
       }
 
       // The dates were free when checkout opened, but it stays open for up to
       // 30 minutes: another guest or a channel booking may have taken them.
       // Refund in full rather than save a double booking.
       if (await datesTaken(supabase, metadata.propertyId, metadata.checkInDate, metadata.checkOutDate)) {
-        const paymentIntentId = session.payment_intent as string;
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
         await stripe.refunds.create(
           {
-            payment_intent: paymentIntentId,
+            payment_intent: paymentIntentId!,
             reason: 'duplicate',
-            // A Connect host payout and the service fee go back too
-            ...(paymentIntent.transfer_data ? { reverse_transfer: true, refund_application_fee: true } : {}),
+            // A Connect host payout and the service fee go back too; the
+            // platform absorbs Stripe's card fee (owner decision 21 Oct 2026)
+            ...(paymentIntent?.transfer_data ? { reverse_transfer: true, refund_application_fee: true } : {}),
           },
           { idempotencyKey: `dates-taken-refund-${sessionId}` },
         );
         await supabase
           .from('processed_sessions')
           .update({ session_type: 'booking_refunded_dates_taken' })
-          .eq('id', claim.id);
+          .eq('id', claim!.id);
 
         const stay = `${metadata.propertyTitle || 'the cabin'}, ${metadata.checkInDate} to ${metadata.checkOutDate}`;
         await sendEmail(
@@ -136,12 +257,24 @@ export async function processCheckoutSession(
         await alertAdmin('Double booking prevented – guest refunded', [
           `Stay: ${stay}`,
           `Guest: ${metadata.guestName} <${metadata.guestEmail}>`,
-          `Amount refunded: ${(paidAmount / 100).toLocaleString('sv-SE')} ${(metadata.currency || 'SEK').toUpperCase()}`,
+          `Amount refunded: ${kr(paidAmount)} ${(metadata.currency || 'SEK').toUpperCase()}`,
           `Stripe session: ${sessionId}`,
         ]);
         return { success: false, type: 'booking', bookingId: null, message: 'dates_taken_refunded' };
       }
-    
+
+      // Where the host's share went: a destination charge leaves it in the
+      // host's own Stripe balance until the payout job pays it out (the day
+      // after check-in, or 85 days after payment if that comes first);
+      // otherwise it reached the platform account.
+      const transferId = idOf(charge?.transfer as string | { id: string } | null | undefined);
+      const hasDestination = !!paymentIntent?.transfer_data?.destination;
+      const paidAt = (charge?.created ?? paymentIntent?.created ?? session.created) * 1000;
+      const payout = initialHostPayout(metadata.checkInDate, paidAt, transferId, hasDestination);
+      if (hasDestination && !transferId) {
+        console.warn('Destination charge without a transfer id yet; the payout job can read it from the charge:', paymentIntentId);
+      }
+
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -162,7 +295,9 @@ export async function processCheckoutSession(
           currency: metadata.currency?.toUpperCase() || 'SEK',
           status: 'confirmed',
           source: 'direct',
-          stripe_payment_intent_id: session.payment_intent as string
+          stripe_payment_intent_id: paymentIntentId,
+          // Saved with the booking so the host's e-mail can state the payout
+          ...payout,
         })
         .select()
         .single();
@@ -178,34 +313,50 @@ export async function processCheckoutSession(
         });
         if (couponError) console.error('Failed to record coupon use:', couponError);
       }
-    
-      // Send notification emails
+
       if (booking) {
         result.bookingId = booking.id;
         recordId = booking.id;
-      
+
+        // Partly refunded before it was saved: take that part back from the
+        // host now, as for any later refund
+        if (charge?.amount_refunded) {
+          const { data: moneyRow } = await supabase.from('bookings').select(MONEY_BOOKING_COLUMNS).eq('id', booking.id).single();
+          await reconcileBookingMoney(stripe, supabase, moneyRow as MoneyBooking, { context: 'refunded before the booking was saved' })
+            .catch(async (reconcileError) => {
+              console.error('Reconciling an early refund failed:', reconcileError);
+              // So the payout job's daily retry sees the refund and takes it from the host
+              await supabase.from('bookings').update({ refunded_amount: charge.amount_refunded })
+                .eq('id', booking.id).lt('refunded_amount', charge.amount_refunded);
+            });
+        }
+
+        if (payout.host_payout_status === 'manual') {
+          await alertManualPayout(supabase, booking, metadata, sessionId)
+            .catch((alertError) => console.error('Manual payout alert failed:', alertError));
+        }
+
+        // The booking stands even if the e-mails fail, but a person must know:
+        // the guest has no address or check-in details, the host no notice
         try {
-          await supabase.functions.invoke('send-booking-notifications', {
-            body: {
-              bookingId: booking.id,
-              propertyId: metadata.propertyId,
-              propertyTitle: metadata.propertyTitle,
-              guestName: metadata.guestName,
-              guestEmail: metadata.guestEmail,
-              guestPhone: metadata.guestPhone || null,
-              numberOfGuests: parseInt(metadata.numberOfGuests),
-              checkInDate: metadata.checkInDate,
-              checkOutDate: metadata.checkOutDate,
-              totalAmount: parseInt(metadata.totalAmount),
-              currency: metadata.currency?.toUpperCase() || 'SEK',
-              hostId: metadata.hostId,
-            }
+          const { error: notifyError } = await supabase.functions.invoke('send-booking-notifications', {
+            body: { bookingId: booking.id },
           });
+          if (notifyError) throw notifyError;
         } catch (notificationError) {
           console.error('Failed to send notifications:', notificationError);
+          const detail = await errorDetail(notificationError);
+          // Same key as send-booking-notifications uses, so one failure is one e-mail
+          await alertAdminOnce(supabase, `notify-failed:${booking.id}`, 'Booking confirmation e-mail not sent', [
+            `${metadata.propertyTitle}, ${metadata.checkInDate} to ${metadata.checkOutDate}`,
+            `Guest: ${metadata.guestName} <${metadata.guestEmail}>`,
+            `Booking: ${booking.id}`,
+            `Error: ${detail}`,
+            'The booking is saved and confirmed. Send the guest their confirmation (address, check-in) and tell the host.',
+          ]).catch((alertError) => console.error('Alert failed:', alertError));
         }
       }
-    
+
       result.type = 'booking';
 
     }
@@ -213,14 +364,55 @@ export async function processCheckoutSession(
 
   } catch (error) {
     // Release the claim so a later retry (e.g. Stripe re-sending the webhook) can succeed
-    await supabase.from('processed_sessions').delete().eq('id', claim.id);
+    await supabase.from('processed_sessions').delete().eq('id', claim!.id);
     throw error;
   }
 
   await supabase
     .from('processed_sessions')
     .update({ created_record_id: recordId })
-    .eq('id', claim.id);
+    .eq('id', claim!.id);
 
   return result;
+}
+
+// functions.invoke wraps a non-2xx in an error whose body says what went wrong
+async function errorDetail(error: unknown): Promise<string> {
+  const message = error instanceof Error ? error.message : String(error);
+  try {
+    const context = (error as { context?: Response }).context;
+    const body = context && typeof context.text === 'function' ? await context.text() : '';
+    return body ? `${message}: ${body.slice(0, 300)}` : message;
+  } catch {
+    return message;
+  }
+}
+
+// The guest's money reached the platform account (the host has no Stripe
+// account that can receive transfers): someone must pay the host by hand
+async function alertManualPayout(
+  supabase: SupabaseClient,
+  booking: { id: string; host_amount: number | null; total_amount: number; service_fee: number | null; host_payout_due_on: string | null },
+  metadata: Stripe.Metadata,
+  sessionId: string,
+) {
+  const { data: host } = await supabase
+    .from('profiles')
+    .select('full_name, host_business_name, email')
+    .eq('id', metadata.hostId ?? '')
+    .maybeSingle();
+  const reasons: Record<string, string> = {
+    no_account: "The host has no Stripe payout account connected.",
+    transfers_inactive: "The host's Stripe account could not receive transfers at checkout.",
+    check_failed: "Stripe could not be reached to check the host's account at checkout.",
+  };
+  const currency = (metadata.currency || 'SEK').toUpperCase();
+  await alertAdminOnce(supabase, `host-payout-manual:${booking.id}`, 'Pay host by hand', [
+    `${metadata.propertyTitle}, ${metadata.checkInDate} to ${metadata.checkOutDate}, guest ${metadata.guestName}`,
+    `Host: ${host?.host_business_name || host?.full_name || metadata.hostId || '-'}${host?.email ? ` <${host.email}>` : ''}`,
+    `Host's share: ${kr(hostShareAmount(booking))} ${currency} (the guest paid ${kr(booking.total_amount)} ${currency}; the service fee stays with the platform)`,
+    reasons[metadata.hostPayoutReason ?? ''] ?? "The payment was not sent to the host's Stripe account.",
+    `The whole payment is in the platform's Stripe balance. Pay the host by hand on ${booking.host_payout_due_on ?? 'the day after check-in'}, the day after check-in: the money is in our own account, so the 85-day rule for shares waiting in a host's Stripe account does not apply. Deduct what they owe in host_charges (card fees, refunds after payout), then set the booking's payout status to paid_out. It is listed in the daily health check until then.`,
+    `Booking: ${booking.id}, Stripe session: ${sessionId}`,
+  ]);
 }

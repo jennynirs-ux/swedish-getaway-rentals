@@ -32,6 +32,7 @@ const PricingGuide = lazy(() => import("./pages/PricingGuide"));
 const BecomeHost = lazy(() => import("./pages/BecomeHost"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const HostTerms = lazy(() => import("./pages/HostTerms"));
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const App = () => {
                 <Route path="/become-host" element={<BecomeHost />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/host-terms" element={<HostTerms />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
