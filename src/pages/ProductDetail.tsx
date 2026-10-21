@@ -399,10 +399,12 @@ const ProductDetail = () => {
 
             {/* Product Features */}
             <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center">
-                <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-                Free shipping on orders over 500 SEK
-              </div>
+              {shipping?.free_shipping_threshold ? (
+                <div className="flex items-center">
+                  <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                  Free shipping in Sweden on orders from {formatPrice(shipping.free_shipping_threshold, "SEK")}
+                </div>
+              ) : null}
               <div className="flex items-center">
                 <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
                 High-quality printing and materials
