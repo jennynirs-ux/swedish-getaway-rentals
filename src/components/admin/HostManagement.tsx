@@ -309,11 +309,12 @@ const HostManagement = () => {
                               value={newCommissionRate}
                               onChange={(e) => setNewCommissionRate(e.target.value)}
                               min="3"
-                              max="100"
+                              max="10"
                               step="0.5"
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                              The guest pays this on top of the host's price. At least 3%, which covers the card fee.
+                              The guest pays this on top of the host's price: 3–10%. 3% covers the card fee; the site
+                              tells guests the fee is 10% or less.
                             </p>
                           </div>
                           <Button 

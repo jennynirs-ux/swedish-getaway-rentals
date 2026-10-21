@@ -1155,6 +1155,7 @@ export type Database = {
           commission_rate: number | null
           contact_response_time: string | null
           country: string | null
+          county: string | null
           created_at: string
           currency: string
           description: string | null
@@ -1219,6 +1220,7 @@ export type Database = {
           commission_rate?: number | null
           contact_response_time?: string | null
           country?: string | null
+          county?: string | null
           created_at?: string
           currency?: string
           description?: string | null
@@ -1283,6 +1285,7 @@ export type Database = {
           commission_rate?: number | null
           contact_response_time?: string | null
           country?: string | null
+          county?: string | null
           created_at?: string
           currency?: string
           description?: string | null
