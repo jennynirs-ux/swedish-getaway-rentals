@@ -50,6 +50,8 @@ export interface PropertyCardData {
   location: string;
   price_per_night: number;
   currency: string;
+  /** Guest service fee in percent (properties.service_fee_rate) */
+  service_fee_rate?: number | null;
   bedrooms: number;
   bathrooms: number;
   max_guests: number;
@@ -324,7 +326,7 @@ const PropertyCard = memo(({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-foreground">
-                {Math.round(withServiceFee(safeProperty.price_per_night || 0)).toLocaleString()} {safeProperty.currency}
+                {Math.round(withServiceFee(safeProperty.price_per_night || 0, safeProperty.service_fee_rate)).toLocaleString()} {safeProperty.currency}
               </span>
               <span className="text-muted-foreground text-sm ml-1">/night incl. service fee</span>
             </div>

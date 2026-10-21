@@ -50,11 +50,17 @@ async function fetchRest(query) {
 }
 
 async function fetchProperties() {
-  const [properties, rules] = await Promise.all([
+  const [properties, rules, fees] = await Promise.all([
     fetchRest("properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at&active=eq.true"),
     fetchRest("properties_pricing_rules?select=property_id,rule_type,price,is_per_night&is_active=eq.true"),
+    // Guest fee per property (5 % on founding hosts' listings)
+    fetchRest("rpc/property_service_fee_rates"),
   ]);
-  return properties.map((p) => ({ ...p, rules: rules.filter((r) => r.property_id === p.id) }));
+  return properties.map((p) => ({
+    ...p,
+    service_fee_rate: Number(fees.find((f) => f.property_id === p.id)?.service_fee_rate ?? 10),
+    rules: rules.filter((r) => r.property_id === p.id),
+  }));
 }
 
 // Shop products for the product pages and the Merchant Center feed
@@ -168,7 +174,7 @@ async function writeLlmsTxt(properties) {
     .map((p) => {
       const rating = p.review_rating && p.review_count ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests.` : "";
       const summary = (p.description ?? "").replace(/\s+/g, " ").trim();
-      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * 1.1)} ${p.currency}/night incl. 10% service fee.${feesText(p)}${rating} ${summary}`;
+      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * (1 + (p.service_fee_rate ?? 10) / 100))} ${p.currency}/night incl. ${p.service_fee_rate ?? 10}% service fee.${feesText(p)}${rating} ${summary}`;
     })
     .join("\n");
   await writeFile(
@@ -188,7 +194,7 @@ ${stays}
 
 ## For hosts
 
-- [Become a host](${SITE_URL}/become-host): list your holiday home on Nordic Getaways. Guests pay a 10% service fee; hosts keep their full nightly price.
+- [Become a host](${SITE_URL}/become-host): list your holiday home on Nordic Getaways. Guests pay a 10% service fee; hosts keep their full nightly price. Founding-host offer: hosts who join by 31 December 2026 get a 5% guest fee for their first 12 months.
 - [Pricing guide for hosts](${SITE_URL}/pricing-guide): how to set nightly prices.
 
 ## Shop

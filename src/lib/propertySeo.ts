@@ -7,7 +7,7 @@ type SeoProperty = Pick<
   Property,
   | "id" | "slug" | "title" | "description" | "location" | "city" | "price_per_night" | "currency"
   | "bedrooms" | "bathrooms" | "max_guests" | "amenities" | "hero_image_url" | "gallery_images"
-  | "review_rating" | "review_count" | "latitude" | "longitude"
+  | "review_rating" | "review_count" | "latitude" | "longitude" | "service_fee_rate"
 >;
 
 export const propertyPath = (p: Pick<Property, "id" | "slug">) => `/property/${p.slug || p.id}`;
@@ -18,7 +18,7 @@ const firstSentences = (text: string, max = 155) => {
 };
 
 export const propertyMetaDescription = (p: SeoProperty) => {
-  const facts = `Sleeps ${p.max_guests}, ${p.bedrooms} bedroom${p.bedrooms === 1 ? "" : "s"}, from ${Math.round(withServiceFee(p.price_per_night))} ${p.currency}/night incl. service fee.`;
+  const facts = `Sleeps ${p.max_guests}, ${p.bedrooms} bedroom${p.bedrooms === 1 ? "" : "s"}, from ${Math.round(withServiceFee(p.price_per_night, p.service_fee_rate))} ${p.currency}/night incl. service fee.`;
   const rating = p.review_rating && p.review_count ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests.` : "";
   return firstSentences(`${p.title} in ${p.location}. ${facts}${rating} ${p.description ?? ""}`);
 };
@@ -66,7 +66,7 @@ export const buildPropertyJsonLd = (p: SeoProperty, content?: PropertyContent) =
         value: true,
       })),
     },
-    priceRange: `From ${Math.round(withServiceFee(p.price_per_night))} ${p.currency} per night incl. service fee`,
+    priceRange: `From ${Math.round(withServiceFee(p.price_per_night, p.service_fee_rate))} ${p.currency} per night incl. service fee`,
     // House rules (see the FAQ)
     checkinTime: "16:00",
     checkoutTime: "11:00",

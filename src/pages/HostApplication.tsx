@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
 import { Gift, CheckCircle, ArrowRight } from "lucide-react";
+import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, foundingHostOfferOpen } from "@/lib/constants";
 
 const HostApplication = () => {
   const [loading, setLoading] = useState(false);
@@ -156,7 +157,11 @@ const HostApplication = () => {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground pt-1">
-                    You set the price. We add a 10% service fee for guests.
+                    You set the price. We add a 10% service fee for guests
+                    {foundingHostOfferOpen()
+                      ? ` (founding-host offer: only ${FOUNDING_HOST_FEE_PCT}% for your first 12 months if you join by ${FOUNDING_HOST_DEADLINE})`
+                      : ""}
+                    .
                   </p>
                 </div>
 

@@ -7,6 +7,8 @@ export interface Property {
   description: string;
   location: string;
   price_per_night: number;
+  /** Guest service fee in percent (computed field; 5 during the founding-host offer) */
+  service_fee_rate?: number | null;
   currency: string;
   bedrooms: number;
   bathrooms: number;
@@ -85,8 +87,12 @@ export const useProperties = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      // Guest fee per property (5 % on founding hosts' listings)
+      const { data: fees } = await supabase.rpc('property_service_fee_rates');
+      const feeById = new Map((fees || []).map((f) => [f.property_id, Number(f.service_fee_rate)]));
       const mappedData = (data || []).map((item: any) => ({
         ...item,
+        service_fee_rate: feeById.get(item.id) ?? null,
         amenities: Array.isArray(item.amenities) ? item.amenities : [],
         gallery_metadata: Array.isArray(item.gallery_metadata) ? item.gallery_metadata : [],
         special_amenities: Array.isArray(item.special_amenities) ? item.special_amenities : [],

@@ -3,7 +3,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import LegalPage from "@/components/LegalPage";
 import { COMPANY, COMPANY_ADDRESS } from "@/content/company";
 import { MIN_LEAD_GUEST_AGE, MIN_NIGHTS, PARTY_NIGHT_MIN_NIGHTS } from "@/lib/stayRules";
-import { PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
+import { FOUNDING_HOST_FEE_PCT, PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 
 // Keep the refund tiers in line with platform_settings.cancellation_policy
 // (supabase/functions/_shared/cancellation.ts), which the refunds use
@@ -43,7 +43,8 @@ const Terms = () => {
           <li>You pay the full amount when you book, by card through Stripe. Prices are in Swedish kronor (SEK).</li>
           <li>
             The total shown before you pay is the full price: the nightly price, any extra-guest and cleaning fees,
-            and a {fee}% service fee. A weekly or monthly discount is taken off the nightly price.
+            and a {fee}% service fee ({FOUNDING_HOST_FEE_PCT}% on listings from new hosts during their first year). A
+            weekly or monthly discount is taken off the nightly price.
           </li>
           <li>Bed linen and towels for every guest are included.</li>
         </ul>

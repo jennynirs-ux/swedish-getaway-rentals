@@ -119,7 +119,9 @@ const PropertyPage = memo(() => {
       .single();
 
     if (error) throw error;
-    return { data, error: null };
+    // Guest fee for the "from" price in the page description and JSON-LD
+    const { data: fee } = await supabase.rpc("property_service_fee_rate", { _property_id: data.id });
+    return { data: { ...data, service_fee_rate: fee == null ? null : Number(fee) }, error: null };
   }, [id, resolvePropertyId]);
 
   const { data: lightProperty, loading, error } = useOptimizedQuery(

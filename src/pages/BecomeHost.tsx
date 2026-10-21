@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import forestHeroBg from "@/assets/forest-hero-light.webp";
+import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, foundingHostOfferOpen } from "@/lib/constants";
 
 const BecomeHost = () => {
   usePageMeta({
@@ -329,6 +330,12 @@ const BecomeHost = () => {
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto opacity-90">
             Share your Nordic home — earn income on your terms. You set the price, we add 10%.
           </p>
+          {foundingHostOfferOpen() && (
+            <p className="mb-8 inline-block rounded-full bg-white/15 px-5 py-2 text-base md:text-lg backdrop-blur">
+              Founding-host offer: join by {FOUNDING_HOST_DEADLINE} and we add only {FOUNDING_HOST_FEE_PCT}% for your
+              first 12 months.
+            </p>
+          )}
           <Button size="lg" onClick={handleHostRedirect} className="text-lg px-8 py-6">
             Start Hosting Now
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -358,6 +365,29 @@ const BecomeHost = () => {
             ))}
           </div>
         </div>
+
+        {/* Founding-host offer */}
+        {foundingHostOfferOpen() && (
+        <div className="mb-12 max-w-4xl mx-auto">
+          <Card className="border-2 border-primary">
+            <CardContent className="p-8 text-center space-y-4">
+              <h2 className="text-2xl md:text-3xl font-bold">Founding-host offer: {FOUNDING_HOST_FEE_PCT}% for a year</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Join by {FOUNDING_HOST_DEADLINE} and guests pay only a {FOUNDING_HOST_FEE_PCT}% service fee on your
+                listing for your first 12 months, instead of 10%. With the same price as on other sites, your place
+                can cost guests less here, and you still keep 100% of your price.
+              </p>
+              <p className="font-medium">
+                Example: your price 2 500 SEK, the guest pays 2 625 SEK (instead of 2 750 SEK). You receive 2 500 SEK.
+              </p>
+              <Button size="lg" onClick={handleHostRedirect}>
+                Claim the offer
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        )}
 
         {/* Earnings Example */}
         <div className="mb-20 max-w-4xl mx-auto">

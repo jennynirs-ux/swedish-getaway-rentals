@@ -15,7 +15,6 @@ import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDispla
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
-import { PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
 import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
 
@@ -45,6 +44,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const { calculatePrice, rules } = usePricingRules(propertyId);
   // Special prices hosts set per night (availability.seasonal_price, in SEK)
   const [seasonalPrices, setSeasonalPrices] = useState<Record<string, number>>({});
+  // The guest service fee for this property in percent (10, or 5 during the
+  // founding-host offer); the payment function charges the same
+  const [feeRate, setFeeRate] = useState<number | null>(null);
+
+  useEffect(() => {
+    supabase.rpc('property_service_fee_rate', { _property_id: propertyId }).then(({ data, error }) => {
+      setFeeRate(error || data == null ? 10 : Number(data));
+    });
+  }, [propertyId]);
 
   useEffect(() => {
     supabase
@@ -168,7 +176,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const hostTotal = Math.max(0, subtotal - couponDiscount);
   // Fee model A: service fee on top of the host's price (mirrors the payment function)
-  const serviceFee = serviceFeeAmount(hostTotal, Math.round(PLATFORM_SERVICE_FEE_RATE * 100)); // exactly 10, as on the server
+  const serviceFee = serviceFeeAmount(hostTotal, feeRate ?? 10);
   const totalAmount = hostTotal + serviceFee;
 
   const validateForm = () => {
@@ -393,7 +401,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
                 {serviceFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Service fee ({Math.round(PLATFORM_SERVICE_FEE_RATE * 100)}%)</span>
+                    <span>Service fee ({feeRate ?? 10}%)</span>
                     <span>{(serviceFee / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}
@@ -581,7 +589,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || totalAmount <= 0 || !!stayError || !houseRulesAccepted || !partyRulesAccepted}
+            disabled={loading || feeRate === null || totalAmount <= 0 || !!stayError || !houseRulesAccepted || !partyRulesAccepted}
           >
             {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
           </Button>

@@ -18,6 +18,12 @@ const toCount = (value: string) => {
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
+// Bathrooms come in halves (2.5 = two bathrooms and a toilet)
+const toHalves = (value: string) => {
+  const n = parseFloat(value.replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 2) / 2 : null;
+};
+
 export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -78,7 +84,7 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
           // Empty boxes keep the saved number
           ...(toCount(formData.max_guests) !== null && { max_guests: toCount(formData.max_guests) }),
           ...(toCount(formData.bedrooms) !== null && { bedrooms: toCount(formData.bedrooms) }),
-          ...(toCount(formData.bathrooms) !== null && { bathrooms: toCount(formData.bathrooms) }),
+          ...(toHalves(formData.bathrooms) !== null && { bathrooms: toHalves(formData.bathrooms) }),
           get_in_touch_info: {
             type: 'custom',
             contact_email: formData.contact_email,
@@ -174,6 +180,7 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
                 id="bathrooms"
                 type="number"
                 min={0}
+                step={0.5}
                 value={formData.bathrooms}
                 onChange={(e) => setFormData(prev => ({ ...prev, bathrooms: e.target.value }))}
               />

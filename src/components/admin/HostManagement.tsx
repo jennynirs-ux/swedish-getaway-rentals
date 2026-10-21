@@ -36,6 +36,9 @@ interface Host {
   is_host: boolean;
   host_approved: boolean;
   commission_rate: number;
+  fee_offer_rate?: number | null;
+  fee_offer_until?: string | null;
+  stripe_connect_ready?: boolean;
   stripe_connect_account_id: string;
   host_onboarding_completed: boolean;
 }
@@ -265,10 +268,18 @@ const HostManagement = () => {
                 <TableRow key={host.id}>
                   <TableCell className="font-medium">{host.full_name}</TableCell>
                   <TableCell>{host.email}</TableCell>
-                  <TableCell>{host.commission_rate}%</TableCell>
                   <TableCell>
-                    <Badge variant={host.stripe_connect_account_id ? 'default' : 'secondary'}>
-                      {host.stripe_connect_account_id ? 'Connected' : 'Not Connected'}
+                    {host.fee_offer_rate != null && host.fee_offer_until && host.fee_offer_until >= new Date().toISOString().slice(0, 10) ? (
+                      <span title={`Founding-host offer, then ${host.commission_rate}%`}>
+                        {Number(host.fee_offer_rate)}% until {host.fee_offer_until}
+                      </span>
+                    ) : (
+                      `${host.commission_rate}%`
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={host.stripe_connect_ready ? 'default' : 'secondary'}>
+                      {host.stripe_connect_ready ? 'Connected' : host.stripe_connect_account_id ? 'Setup unfinished' : 'Not Connected'}
                     </Badge>
                   </TableCell>
                   <TableCell>

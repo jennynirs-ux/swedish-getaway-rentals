@@ -1051,6 +1051,8 @@ export type Database = {
           date_of_birth: string | null
           display_name: string | null
           email: string | null
+          fee_offer_rate: number | null
+          fee_offer_until: string | null
           full_name: string | null
           guest_rating: number | null
           guest_review_count: number | null
@@ -1080,6 +1082,8 @@ export type Database = {
           date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
+          fee_offer_rate?: number | null
+          fee_offer_until?: string | null
           full_name?: string | null
           guest_rating?: number | null
           guest_review_count?: number | null
@@ -1109,6 +1113,8 @@ export type Database = {
           date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
+          fee_offer_rate?: number | null
+          fee_offer_until?: string | null
           full_name?: string | null
           guest_rating?: number | null
           guest_review_count?: number | null
@@ -2221,6 +2227,14 @@ export type Database = {
       health_issues: { Args: never; Returns: string[] }
       is_admin_secure_new: { Args: { user_id_param: string }; Returns: boolean }
       is_booking_accessible: { Args: { booking_id: string }; Returns: boolean }
+      property_service_fee_rate: {
+        Args: { _property_id: string }
+        Returns: number
+      }
+      property_service_fee_rates: {
+        Args: Record<PropertyKey, never>
+        Returns: { property_id: string; service_fee_rate: number }[]
+      }
       record_coupon_use: {
         Args: {
           _booking_id: string

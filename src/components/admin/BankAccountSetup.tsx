@@ -31,6 +31,24 @@ export const BankAccountSetup = () => {
     refetchOnWindowFocus: true,
   });
 
+  // The guest fee on this host's listings (5 % during the founding-host offer)
+  const { data: fee } = useQuery({
+    queryKey: ["host-fee"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("commission_rate, fee_offer_rate, fee_offer_until")
+        .eq("user_id", user.id)
+        .single();
+      return data;
+    },
+  });
+  const baseRate = Number(fee?.commission_rate ?? 10);
+  const offerActive =
+    fee?.fee_offer_rate != null && !!fee.fee_offer_until && fee.fee_offer_until >= new Date().toISOString().slice(0, 10);
+
   const handleConnectStripe = async () => {
     setLoading(true);
     try {
@@ -107,8 +125,15 @@ export const BankAccountSetup = () => {
       </div>
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">Guests pay:</span>
-        <span className="font-medium">a 10% service fee on top</span>
+        <span className="font-medium">
+          a {offerActive ? Number(fee?.fee_offer_rate) : baseRate}% service fee on top
+        </span>
       </div>
+      {offerActive && (
+        <p className="text-xs text-muted-foreground">
+          Founding-host offer until {fee?.fee_offer_until}, then {baseRate}%.
+        </p>
+      )}
     </div>
   );
 

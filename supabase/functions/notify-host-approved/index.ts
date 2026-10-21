@@ -30,7 +30,7 @@ serve(async (req) => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id, full_name, is_host")
+      .select("id, full_name, is_host, fee_offer_rate, fee_offer_until")
       .eq("user_id", caller.id)
       .single();
     const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
@@ -46,6 +46,10 @@ serve(async (req) => {
     }
 
     const hostName = escapeHtml(profile.full_name || "there");
+    // Founding-host offer (set by become_host): a lower guest fee for a year
+    const feeText = profile.fee_offer_rate && profile.fee_offer_until
+      ? `${Number(profile.fee_offer_rate)}% (instead of 10%, founding-host offer until ${profile.fee_offer_until})`
+      : "10%";
     const hostEmail = caller.email;
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
@@ -81,7 +85,7 @@ serve(async (req) => {
 
           <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 0; font-size: 14px; color: #4b5563;">
-              <strong>How pricing works:</strong> You set the nightly rate. We add a 10% service fee for guests — you always receive exactly what you set. Need help? Email support@mojjo.se.
+              <strong>How pricing works:</strong> You set the nightly rate. We add a ${feeText} service fee for guests — you always receive exactly what you set. Need help? Email support@mojjo.se.
             </p>
           </div>
 

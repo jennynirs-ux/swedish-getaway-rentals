@@ -356,7 +356,9 @@ serve(async (req) => {
     const hostAmount = subtotal - discountAmount;
 
     const profileData = property.profiles as any;
-    const commissionRate = Number(profileData?.commission_rate ?? 10);
+    // The host's fee (5 % during the founding-host offer), as the booking form shows it
+    const { data: feeRate } = await supabaseClient.rpc("property_service_fee_rate", { _property_id: property.id });
+    const commissionRate = Number(feeRate ?? profileData?.commission_rate ?? 10);
     const serviceFee = serviceFeeAmount(hostAmount, commissionRate);
     const guestTotal = hostAmount + serviceFee;
 
