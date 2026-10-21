@@ -500,7 +500,8 @@ serve(async (req) => {
 
       if (transfersActive) {
         sessionConfig.payment_intent_data = {
-          application_fee_amount: serviceFee,
+          // A host on 0 % (e.g. a partner) gets the whole payment
+          ...(serviceFee > 0 && { application_fee_amount: serviceFee }),
           transfer_data: { destination: connectAccountId },
         };
         logStep("Stripe Connect configured", { destination: connectAccountId, applicationFee: serviceFee });
