@@ -13,7 +13,6 @@ import MainNavigation from "@/components/MainNavigation";
 import HeroSearch from "@/components/home/HeroSearch";
 import ExploreSweden from "@/components/home/ExploreSweden";
 import GuestQuotes from "@/components/home/GuestQuotes";
-import WhyBookDirect from "@/components/home/WhyBookDirect";
 import HostCta from "@/components/home/HostCta";
 import ShopStrip from "@/components/home/ShopStrip";
 import CompanyLine from "@/components/CompanyLine";
@@ -364,12 +363,9 @@ const HomePage = memo(() => {
 
         <div className="relative z-10 px-4 max-w-4xl mx-auto w-full">
           <p className="text-sm uppercase tracking-wide text-white/80 mb-3">Nordic Getaways</p>
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 md:mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 md:mb-10">
             Holiday cabins in Sweden, booked directly with the host
           </h1>
-          <p className="text-lg md:text-2xl text-white/90 mb-8 md:mb-10">
-            Every cost is shown before you pay, and the same clear cancellation rules apply to every cabin.
-          </p>
 
           <HeroSearch properties={properties} filters={filters} onFiltersChange={setFilters} resetKey={resetKey} />
         </div>
@@ -465,7 +461,6 @@ const HomePage = memo(() => {
 
         <ExploreSweden properties={properties} />
 
-        <WhyBookDirect />
 
         <GuestQuotes properties={properties} />
 
