@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.18"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -174,6 +199,9 @@ export type Database = {
         Row: {
           access_code: string | null
           access_code_expires_at: string | null
+          cancel_requested_on: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           check_in_date: string
           check_out_date: string
           created_at: string
@@ -182,16 +210,23 @@ export type Database = {
           guest_name: string
           guest_phone: string | null
           host_amount: number | null
+          host_paid_out_at: string | null
+          host_payout_due_on: string | null
+          host_payout_status: string | null
+          host_reversed_amount: number
           id: string
           number_of_guests: number
           pre_checkin_reminder_sent_at: string | null
           property_id: string
+          refunded_amount: number
           rules_confirmed_at: string | null
           service_fee: number
           source: string
           special_requests: string | null
           status: string
           stripe_payment_intent_id: string | null
+          stripe_payout_id: string | null
+          stripe_transfer_id: string | null
           total_amount: number
           updated_at: string
           user_id: string | null
@@ -199,6 +234,9 @@ export type Database = {
         Insert: {
           access_code?: string | null
           access_code_expires_at?: string | null
+          cancel_requested_on?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in_date: string
           check_out_date: string
           created_at?: string
@@ -207,16 +245,23 @@ export type Database = {
           guest_name: string
           guest_phone?: string | null
           host_amount?: number | null
+          host_paid_out_at?: string | null
+          host_payout_due_on?: string | null
+          host_payout_status?: string | null
+          host_reversed_amount?: number
           id?: string
           number_of_guests: number
           pre_checkin_reminder_sent_at?: string | null
           property_id: string
+          refunded_amount?: number
           rules_confirmed_at?: string | null
           service_fee?: number
           source?: string
           special_requests?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
           total_amount: number
           updated_at?: string
           user_id?: string | null
@@ -224,6 +269,9 @@ export type Database = {
         Update: {
           access_code?: string | null
           access_code_expires_at?: string | null
+          cancel_requested_on?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in_date?: string
           check_out_date?: string
           created_at?: string
@@ -232,16 +280,23 @@ export type Database = {
           guest_name?: string
           guest_phone?: string | null
           host_amount?: number | null
+          host_paid_out_at?: string | null
+          host_payout_due_on?: string | null
+          host_payout_status?: string | null
+          host_reversed_amount?: number
           id?: string
           number_of_guests?: number
           pre_checkin_reminder_sent_at?: string | null
           property_id?: string
+          refunded_amount?: number
           rules_confirmed_at?: string | null
           service_fee?: number
           source?: string
           special_requests?: string | null
           status?: string
           stripe_payment_intent_id?: string | null
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
           total_amount?: number
           updated_at?: string
           user_id?: string | null
@@ -723,6 +778,64 @@ export type Database = {
           },
         ]
       }
+      host_charges: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string
+          currency: string
+          host_profile_id: string
+          id: string
+          reason: string
+          settled_at: string | null
+          settled_by: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          host_profile_id: string
+          id?: string
+          reason: string
+          settled_at?: string | null
+          settled_by?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          host_profile_id?: string
+          id?: string
+          reason?: string
+          settled_at?: string | null
+          settled_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_charges_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_charges_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_charges_host_profile_id_fkey"
+            columns: ["host_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       host_message_templates: {
         Row: {
           body: string
@@ -1061,6 +1174,8 @@ export type Database = {
           host_business_name: string | null
           host_description: string | null
           host_onboarding_completed: boolean | null
+          host_terms_accepted_at: string | null
+          host_terms_version: string | null
           id: string
           is_host: boolean
           location: string | null
@@ -1092,6 +1207,8 @@ export type Database = {
           host_business_name?: string | null
           host_description?: string | null
           host_onboarding_completed?: boolean | null
+          host_terms_accepted_at?: string | null
+          host_terms_version?: string | null
           id?: string
           is_host?: boolean
           location?: string | null
@@ -1123,6 +1240,8 @@ export type Database = {
           host_business_name?: string | null
           host_description?: string | null
           host_onboarding_completed?: boolean | null
+          host_terms_accepted_at?: string | null
+          host_terms_version?: string | null
           id?: string
           is_host?: boolean
           location?: string | null
@@ -1752,6 +1871,8 @@ export type Database = {
         Row: {
           access_code: string | null
           access_code_expires_at: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           check_in_date: string | null
           check_out_date: string | null
           created_at: string | null
@@ -1759,10 +1880,18 @@ export type Database = {
           guest_email: string | null
           guest_name: string | null
           guest_phone: string | null
+          host_amount: number | null
+          host_paid_out_at: string | null
+          host_payout_due_on: string | null
+          host_payout_status: string | null
+          host_reversed_amount: number | null
           id: string | null
           number_of_guests: number | null
           pre_checkin_reminder_sent_at: string | null
           property_id: string | null
+          refunded_amount: number | null
+          service_fee: number | null
+          source: string | null
           special_requests: string | null
           status: string | null
           stripe_payment_intent_id: string | null
@@ -1773,6 +1902,8 @@ export type Database = {
         Insert: {
           access_code?: never
           access_code_expires_at?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in_date?: string | null
           check_out_date?: string | null
           created_at?: string | null
@@ -1780,10 +1911,18 @@ export type Database = {
           guest_email?: never
           guest_name?: string | null
           guest_phone?: never
+          host_amount?: number | null
+          host_paid_out_at?: string | null
+          host_payout_due_on?: string | null
+          host_payout_status?: string | null
+          host_reversed_amount?: number | null
           id?: string | null
           number_of_guests?: number | null
           pre_checkin_reminder_sent_at?: string | null
           property_id?: string | null
+          refunded_amount?: number | null
+          service_fee?: number | null
+          source?: string | null
           special_requests?: string | null
           status?: string | null
           stripe_payment_intent_id?: string | null
@@ -1794,6 +1933,8 @@ export type Database = {
         Update: {
           access_code?: never
           access_code_expires_at?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           check_in_date?: string | null
           check_out_date?: string | null
           created_at?: string | null
@@ -1801,10 +1942,18 @@ export type Database = {
           guest_email?: never
           guest_name?: string | null
           guest_phone?: never
+          host_amount?: number | null
+          host_paid_out_at?: string | null
+          host_payout_due_on?: string | null
+          host_payout_status?: string | null
+          host_reversed_amount?: number | null
           id?: string | null
           number_of_guests?: number | null
           pre_checkin_reminder_sent_at?: string | null
           property_id?: string | null
+          refunded_amount?: number | null
+          service_fee?: number | null
+          source?: string | null
           special_requests?: string | null
           status?: string | null
           stripe_payment_intent_id?: string | null
@@ -2081,6 +2230,7 @@ export type Database = {
       }
     }
     Functions: {
+      accept_host_terms: { Args: { _version: string }; Returns: undefined }
       become_host: {
         Args: { _business_name: string; _contact_phone?: string }
         Returns: string
@@ -2147,6 +2297,8 @@ export type Database = {
         Returns: {
           access_code: string | null
           access_code_expires_at: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           check_in_date: string | null
           check_out_date: string | null
           created_at: string | null
@@ -2154,10 +2306,18 @@ export type Database = {
           guest_email: string | null
           guest_name: string | null
           guest_phone: string | null
+          host_amount: number | null
+          host_paid_out_at: string | null
+          host_payout_due_on: string | null
+          host_payout_status: string | null
+          host_reversed_amount: number | null
           id: string | null
           number_of_guests: number | null
           pre_checkin_reminder_sent_at: string | null
           property_id: string | null
+          refunded_amount: number | null
+          service_fee: number | null
+          source: string | null
           special_requests: string | null
           status: string | null
           stripe_payment_intent_id: string | null
@@ -2235,8 +2395,11 @@ export type Database = {
         Returns: number
       }
       property_service_fee_rates: {
-        Args: Record<PropertyKey, never>
-        Returns: { property_id: string; service_fee_rate: number }[]
+        Args: never
+        Returns: {
+          property_id: string
+          service_fee_rate: number
+        }[]
       }
       record_coupon_use: {
         Args: {
@@ -2253,6 +2416,10 @@ export type Database = {
           _approve: boolean
         }
         Returns: undefined
+      }
+      service_fee_rate: {
+        Args: { p: Database["public"]["Tables"]["properties"]["Row"] }
+        Returns: number
       }
       set_host_commission_rate: {
         Args: { _profile_id: string; _rate: number }
@@ -2414,6 +2581,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
