@@ -3,12 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LocationEditor } from "@/components/LocationEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
-import { REGIONS_BY_NAME } from "@/content/regions";
+import { CountySelect, publicAreaFrom } from "./CountySelect";
 import { MapPin } from "lucide-react";
 
 interface LocationData {
@@ -120,7 +119,11 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
     <div className="space-y-6">
       <LocationEditor
         value={locationData}
-        onChange={(data) =>
+        onChange={(data) => {
+          // The area guests see follows the town until the host writes their own
+          if (publicLocation === publicAreaFrom(locationData.city, locationData.country) || !publicLocation.trim()) {
+            setPublicLocation(publicAreaFrom(data.city, data.country || "Sweden"));
+          }
           setLocationData({
             street: data.street || "",
             postal_code: data.postal_code || "",
@@ -128,9 +131,11 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
             country: data.country || "Sweden",
             latitude: data.latitude || null,
             longitude: data.longitude || null,
-          })
-        }
-      />
+          });
+        }}
+      >
+        <CountySelect value={county} onChange={setCounty} />
+      </LocationEditor>
 
       <Card>
         <CardHeader>
@@ -139,8 +144,8 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
             Area shown to guests
           </CardTitle>
           <CardDescription>
-            Shown on your listing and in search, e.g. "Åre, Sweden" (town or village, then country). Your street
-            address stays private: guests get it in their booking confirmation.
+            Shown on your listing and in search instead of the address, e.g. "Åre, Sweden". Filled in from the town
+            above; change it if a nearby better-known place says more.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -156,29 +161,9 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>County</CardTitle>
-          <CardDescription>So your place appears in the right region.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Label htmlFor="county" className="sr-only">County</Label>
-          <Select value={county} onValueChange={setCounty}>
-            <SelectTrigger id="county">
-              <SelectValue placeholder="Choose a county" />
-            </SelectTrigger>
-            <SelectContent>
-              {REGIONS_BY_NAME.map((r) => (
-                <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
       <div className="flex justify-end">
         <Button onClick={handleSaveLocation} disabled={saving}>
-          {saving ? "Saving..." : "Save Location"}
+          {saving ? "Saving…" : "Save location"}
         </Button>
       </div>
     </div>

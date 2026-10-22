@@ -983,6 +983,27 @@ export type Database = {
         }
         Relationships: []
       }
+      job_locks: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          owner: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id: string
+          owner: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner?: string
+        }
+        Relationships: []
+      }
       lock_access_log: {
         Row: {
           access_code: string
@@ -1467,6 +1488,7 @@ export type Database = {
         Row: {
           created_at: string
           currency: string
+          guests_included: number
           id: string
           is_active: boolean
           is_per_night: boolean
@@ -1479,6 +1501,7 @@ export type Database = {
         Insert: {
           created_at?: string
           currency?: string
+          guests_included?: number
           id?: string
           is_active?: boolean
           is_per_night?: boolean
@@ -1491,6 +1514,7 @@ export type Database = {
         Update: {
           created_at?: string
           currency?: string
+          guests_included?: number
           id?: string
           is_active?: boolean
           is_per_night?: boolean

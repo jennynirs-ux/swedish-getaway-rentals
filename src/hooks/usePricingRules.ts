@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { extraGuestFee } from '../../supabase/functions/_shared/booking-price';
 
 export interface PricingRule {
   id: string;
@@ -10,6 +11,8 @@ export interface PricingRule {
   currency: string;
   is_per_night: boolean;
   is_active: boolean;
+  /** extra_guest only: guests the nightly price covers */
+  guests_included?: number | null;
 }
 
 export interface PricingCalculation {
@@ -84,17 +87,10 @@ export const usePricingRules = (propertyId: string) => {
     const cleaningRules = rules.filter(r => r.rule_type === 'cleaning_fee');
     const serviceRules = rules.filter(r => r.rule_type === 'extra_service' && selectedServices.includes(r.id));
 
-    // Calculate extra guest fees
+    // Guests beyond those the nightly price covers (shared with the payment function)
     let extraGuestTotal = 0;
     extraGuestRules.forEach(rule => {
-      const extraGuests = Math.max(0, numberOfGuests - 1); // Assuming base price includes 1 guest
-      if (extraGuests > 0) {
-        if (rule.is_per_night) {
-          extraGuestTotal += rule.price * extraGuests * nights;
-        } else {
-          extraGuestTotal += rule.price * extraGuests;
-        }
-      }
+      extraGuestTotal += extraGuestFee(rule, numberOfGuests, nights);
     });
 
     // Calculate cleaning fees

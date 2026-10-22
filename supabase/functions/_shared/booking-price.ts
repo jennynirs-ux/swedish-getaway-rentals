@@ -27,3 +27,20 @@ export function stayDiscountAmount(accommodationTotal: number, discount: StayDis
 
 /** Fee model A: the guest pays the platform service fee on top of the host's price */
 export const serviceFeeAmount = (hostTotal: number, ratePct: number) => roundToKronor(hostTotal * (ratePct / 100));
+
+/** A listing's extra-guest fee (properties_pricing_rules, rule_type extra_guest) */
+export interface ExtraGuestRule {
+  /** Öre per extra guest, per night or per stay */
+  price: number;
+  is_per_night: boolean;
+  /** Guests the nightly price covers; rules saved before this setting existed covered 1 */
+  guests_included?: number | null;
+}
+
+/** Guests beyond those the nightly price covers */
+export const extraGuestCount = (guests: number, guestsIncluded?: number | null) =>
+  Math.max(0, guests - Math.max(1, guestsIncluded ?? 1));
+
+/** What one extra-guest rule adds to a stay, in öre */
+export const extraGuestFee = (rule: ExtraGuestRule, guests: number, nights: number) =>
+  extraGuestCount(guests, rule.guests_included) * rule.price * (rule.is_per_night ? nights : 1);

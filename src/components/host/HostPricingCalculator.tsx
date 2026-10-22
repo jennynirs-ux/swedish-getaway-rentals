@@ -9,6 +9,7 @@ import { Calculator } from "lucide-react";
 import { HOST_PAYOUT_TIMING_TEXT } from "@/lib/constants";
 import {
   applicableStayDiscount,
+  extraGuestCount,
   serviceFeeAmount,
   stayDiscountAmount,
 } from "../../../supabase/functions/_shared/booking-price";
@@ -25,7 +26,7 @@ const clampInt = (raw: string, min: number, max: number) => Math.min(max, Math.m
 /**
  * What a stay costs the guest and what the host receives, worked out like
  * the booking form and the payment function do (the same shared helpers):
- * pricing rules in öre, extra guests beyond the first, cleaning once, the
+ * pricing rules in öre, guests beyond those the price covers, cleaning once, the
  * weekly/monthly discount on the nights only, and this listing's real guest
  * service fee (5 % during the founding-host offer).
  */
@@ -33,7 +34,7 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
   // Raw text, so a field can be cleared while typing
   const [guestsText, setGuestsText] = useState("2");
   const [nightsText, setNightsText] = useState("3");
-  const { calculatePrice } = usePricingRules(propertyId);
+  const { calculatePrice, rules } = usePricingRules(propertyId);
   const [feeRate, setFeeRate] = useState<number | null>(null);
   const [discounts, setDiscounts] = useState({ weekly: 0, monthly: 0 });
 
@@ -117,7 +118,7 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
 
           {calc.breakdown.extraGuests > 0 && (
             <div className="flex justify-between gap-4 text-sm text-muted-foreground">
-              <span>Extra guests ({guests - 1})</span>
+              <span>Extra guests ({extraGuestCount(guests, rules.find((r) => r.rule_type === "extra_guest")?.guests_included)})</span>
               <span>{money(calc.breakdown.extraGuests)}</span>
             </div>
           )}

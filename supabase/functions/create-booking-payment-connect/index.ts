@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { stayRuleError } from "../_shared/stay-rules.ts";
-import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../_shared/booking-price.ts";
+import { applicableStayDiscount, extraGuestFee, serviceFeeAmount, stayDiscountAmount } from "../_shared/booking-price.ts";
 import { stockholmToday } from "../_shared/format.ts";
 import { alertAdminOnce } from "../_shared/alert.ts";
 
@@ -257,17 +257,12 @@ serve(async (req) => {
     // Calculate extra guest fees
     let extraGuestTotal = 0;
     if (pricingRules) {
-      const extraGuestRules = pricingRules.filter(r => r.rule_type === 'extra_guest');
-      extraGuestRules.forEach(rule => {
-        const extraGuests = Math.max(0, numberOfGuests - 1); // Base price includes 1 guest
-        if (extraGuests > 0) {
-          if (rule.is_per_night) {
-            extraGuestTotal += rule.price * extraGuests * nightCount;
-          } else {
-            extraGuestTotal += rule.price * extraGuests;
-          }
-        }
-      });
+      // Guests beyond those the nightly price covers (shared with BookingForm)
+      pricingRules
+        .filter(r => r.rule_type === 'extra_guest')
+        .forEach(rule => {
+          extraGuestTotal += extraGuestFee(rule, numberOfGuests, nightCount);
+        });
     }
     
     const subtotalBeforeStayDiscount = accommodationTotal + cleaningTotal + extraGuestTotal;

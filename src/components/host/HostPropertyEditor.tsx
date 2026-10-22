@@ -3,10 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropertyPreparationDays } from "@/components/admin/PropertyPreparationDays";
 import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, FileText, Sparkles, Banknote, BookOpen, Mail, MapPin, Image, KeyRound } from "lucide-react";
 import { CheckInOutTimes } from "@/components/admin/CheckInOutTimes";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +15,7 @@ import { HostLocationTab } from "./HostLocationTab";
 import { EmailTemplatesEditor } from "@/components/admin/EmailTemplatesEditor";
 import { HostPricingCalculator } from "./HostPricingCalculator";
 import { HostDiscountSettings } from "./HostDiscountSettings";
-import PropertyPricingRules from "@/components/PropertyPricingRules";
+import { HostPriceSettings } from "./HostPriceSettings";
 import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
 import CouponForm from "@/components/CouponForm";
 import { PropertyCouponsList } from "@/components/PropertyCouponsList";
@@ -28,13 +24,14 @@ import { AirbnbSyncManager } from "@/components/admin/AirbnbSyncManager";
 import PreArrivalSettings from "@/components/admin/PreArrivalSettings";
 import { ImageUploadFolder } from "@/components/admin/ImageUpload";
 
+// In the order a host fills them in (like Airbnb's listing editor)
 const EDITOR_TABS = [
-  { value: "basic", label: "Basic", icon: FileText },
-  { value: "amenities", label: "Amenities", icon: Sparkles },
-  { value: "gallery", label: "Gallery", icon: Image },
+  { value: "basic", label: "Details", icon: FileText },
+  { value: "gallery", label: "Photos", icon: Image },
   { value: "location", label: "Location", icon: MapPin },
-  { value: "calendar", label: "Calendar", icon: Calendar },
   { value: "pricing", label: "Pricing", icon: Banknote },
+  { value: "calendar", label: "Calendar", icon: Calendar },
+  { value: "amenities", label: "Amenities", icon: Sparkles },
   { value: "guide", label: "Guide", icon: BookOpen },
   { value: "arrival", label: "Arrival", icon: KeyRound },
   { value: "emails", label: "Emails", icon: Mail },
@@ -55,8 +52,8 @@ const SECTION_TAB = {
   emails: "emails",
 } as const;
 type Section = keyof typeof SECTION_TAB;
-/** Edits kept in this editor's own state (nightly price, guide) survive a tab change; the others are lost with the tab */
-const KEPT_ACROSS_TABS: ReadonlySet<Section> = new Set<Section>(["price", "guide"]);
+/** Edits kept in this editor's own state (the guide) survive a tab change; the others are lost with the tab */
+const KEPT_ACROSS_TABS: ReadonlySet<Section> = new Set<Section>(["guide"]);
 
 // Controls that change a value without a native input event (Radix checkbox, switch, radio, select option)
 const VALUE_CONTROL = '[role="checkbox"],[role="switch"],[role="radio"],[role="option"],[role="menuitemcheckbox"],[role="menuitemradio"]';
@@ -177,9 +174,10 @@ export const HostPropertyEditor = ({
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [emailTemplates, setEmailTemplates] = useState({});
   const [saving, setSaving] = useState(false);
-  const [savingPrice, setSavingPrice] = useState(false);
+  // The nightly price as typed, for the calculator; its key reloads the
+  // calculator's fees after the prices are saved
   const [nightlyPrice, setNightlyPrice] = useState<number>(basePrice);
-  const [priceCurrency, setPriceCurrency] = useState<string>(currency || "SEK");
+  const [pricesSaved, setPricesSaved] = useState(0);
 
   useEffect(() => {
     loadPropertyData();
@@ -251,32 +249,6 @@ export const HostPropertyEditor = ({
       }
     };
 
-   const handleSaveNightlyPrice = async () => {
-     setSavingPrice(true);
-     try {
-       const { error } = await supabase
-         .from('properties')
-         .update({
-           price_per_night: nightlyPrice,
-           currency: priceCurrency,
-           updated_at: new Date().toISOString()
-         })
-         .eq('id', propertyId);
-       if (error) throw error;
-       // Extra fees are charged in the property's currency; keep their label in step
-       if (priceCurrency !== currency) {
-         await supabase.from('properties_pricing_rules').update({ currency: priceCurrency }).eq('property_id', propertyId);
-       }
-       toast({ title: 'Success', description: 'Nightly price updated' });
-       saved("price")();
-     } catch (error) {
-       console.error('Error updating nightly price:', error);
-       toast({ title: 'Error', description: 'Failed to update nightly price', variant: 'destructive' });
-     } finally {
-       setSavingPrice(false);
-     }
-   };
-
   return (
     <div className="space-y-6">
       <Tabs value={tab} onValueChange={changeTab} className="w-full">
@@ -294,7 +266,7 @@ export const HostPropertyEditor = ({
         <TabsContent value="basic" className="mt-6 space-y-4">
           <div>
             <h2 className="text-2xl font-bold mb-1">{propertyTitle}</h2>
-            <p className="text-muted-foreground">Basic property information and settings</p>
+            <p className="text-muted-foreground">Name, description, guests and rooms</p>
           </div>
           <Tracked onEdit={markDirty("basic")}>
             <HostBasicTab propertyId={propertyId} onUpdate={saved("basic")} />
@@ -316,8 +288,8 @@ export const HostPropertyEditor = ({
 
         <TabsContent value="gallery" className="mt-6 space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Gallery</h2>
-            <p className="text-muted-foreground">Manage property images and photos</p>
+            <h2 className="text-2xl font-bold mb-1">Photos</h2>
+            <p className="text-muted-foreground">Guests decide on the photos: put your best one first</p>
           </div>
           <HostGalleryTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
@@ -384,44 +356,31 @@ export const HostPropertyEditor = ({
         <TabsContent value="pricing" className="mt-6 space-y-6">
           <div>
             <h2 className="text-2xl font-bold mb-1">Pricing</h2>
-            <p className="text-muted-foreground">Configure pricing rules and special rates</p>
+            <p className="text-muted-foreground">Your price per night, extra guests and cleaning; then discounts and special dates</p>
           </div>
 
           <Tracked onEdit={markDirty("price")}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Nightly Base Price</CardTitle>
-              <CardDescription>Set your standard nightly rate</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nightly-price">Price per night</Label>
-                <Input id="nightly-price" type="number" value={nightlyPrice}
-                  onChange={(e) => setNightlyPrice(parseInt(e.target.value) || 0)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price-currency">Currency</Label>
-                <Select value={priceCurrency} onValueChange={setPriceCurrency}>
-                  <SelectTrigger id="price-currency"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SEK">SEK</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
-                <Button onClick={handleSaveNightlyPrice} disabled={savingPrice}>
-                  {savingPrice ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-          </CardContent>
-          </Card>
+            <HostPriceSettings
+              propertyId={propertyId}
+              onPriceChange={setNightlyPrice}
+              onSaved={() => {
+                saved("price")();
+                setPricesSaved((n) => n + 1);
+              }}
+            />
           </Tracked>
+
+          {/* The price typed above, so the host sees its effect before saving */}
+          <HostPricingCalculator
+            key={pricesSaved}
+            propertyId={propertyId}
+            basePrice={nightlyPrice}
+            currency={currency}
+          />
 
           <Tracked onEdit={markDirty("discounts")}>
             <HostDiscountSettings propertyId={propertyId} onUpdate={saved("discounts")} />
           </Tracked>
-
-          <PropertyPricingRules propertyId={propertyId} />
 
           <PropertySpecialPricingEnhanced
             propertyId={propertyId}
@@ -445,13 +404,6 @@ export const HostPropertyEditor = ({
               </div>
             </CardContent>
           </Card>
-
-          {/* The price typed above, so the host sees its effect before saving */}
-          <HostPricingCalculator
-            propertyId={propertyId}
-            basePrice={nightlyPrice}
-            currency={priceCurrency}
-          />
         </TabsContent>
 
         <TabsContent value="guide" className="mt-6 space-y-4">

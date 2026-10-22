@@ -797,9 +797,9 @@ const HostDashboard = () => {
           <HostPropertyWizard
             open={wizardOpen}
             onOpenChange={setWizardOpen}
-            onCreated={(propertyId) => {
-              // Next step after the wizard: the map pin
-              openEditor(propertyId, "location");
+            onCreated={(propertyId, nextTab) => {
+              // Next step after the wizard: photos, or the map pin if it is still missing
+              openEditor(propertyId, nextTab);
               refetchProperties();
               fetchHostStats();
               refreshChecklist();

@@ -1,9 +1,10 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, type ReactNode } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { geocodeAddress } from '@/lib/geocoding';
 import { toast } from '@/hooks/use-toast';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
@@ -22,7 +23,15 @@ interface LocationData {
 interface LocationEditorProps {
   value: LocationData;
   onChange: (data: LocationData) => void;
+  /** Shown between the country and the address, e.g. the county */
+  children?: ReactNode;
+  /** Without the card frame, e.g. inside the new-listing guide */
+  bare?: boolean;
+  mapHeightClass?: string;
 }
+
+/** Listings are in Sweden only (counties, prices in kronor) */
+const COUNTRIES = ['Sweden'];
 
 
 // Mid-Sweden: where the map opens for a place that has no pin yet, zoomed
@@ -33,7 +42,7 @@ const SWEDEN_CENTER: [number, number] = [62.4, 16.5];
 const normaliseCountry = (country?: string) =>
   country && /^(sverige|se|swe)$/i.test(country.trim()) ? 'Sweden' : country;
 
-export function LocationEditor({ value, onChange }: LocationEditorProps) {
+export function LocationEditor({ value, onChange, children, bare = false, mapHeightClass = 'h-[400px]' }: LocationEditorProps) {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const hasPin = Number.isFinite(value.latitude) && Number.isFinite(value.longitude);
@@ -62,7 +71,7 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
     if (!value.street && !value.city) {
       toast({
         title: 'Missing information',
-        description: 'Please enter at least a city or street address',
+        description: 'Enter the street address or the town first.',
         variant: 'destructive'
       });
       return;
@@ -92,13 +101,13 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
         });
         setMapPosition([result.latitude, result.longitude]);
         toast({
-          title: 'Location found',
-          description: 'Coordinates have been updated. You can drag the pin to adjust.'
+          title: 'Found it',
+          description: 'Check the pin and drag it if it is not quite right.'
         });
       } else {
         toast({
-          title: 'Location not found',
-          description: 'Could not find coordinates for this address',
+          title: 'Address not found',
+          description: 'Click the map where your place is instead.',
           variant: 'destructive'
         });
       }
@@ -123,103 +132,94 @@ export function LocationEditor({ value, onChange }: LocationEditorProps) {
     setMapPosition([lat, lng]);
   };
 
+  const body = (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="country">Country</Label>
+        <Select value={normaliseCountry(value.country) || 'Sweden'} onValueChange={(v) => handleFieldChange('country', v)}>
+          <SelectTrigger id="country"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {children}
+
+      <div className="space-y-2">
+        <Label htmlFor="street">Street address</Label>
+        <Input
+          id="street"
+          value={value.street || ''}
+          onChange={(e) => handleFieldChange('street', e.target.value)}
+          placeholder="Storgatan 12"
+          autoComplete="street-address"
+        />
+        <p className="text-xs text-muted-foreground">Private: only guests with a booking get the address.</p>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[10rem_1fr]">
+        <div className="space-y-2">
+          <Label htmlFor="postal_code">Postal code</Label>
+          <Input
+            id="postal_code"
+            value={value.postal_code || ''}
+            onChange={(e) => handleFieldChange('postal_code', e.target.value)}
+            placeholder="123 45"
+            autoComplete="postal-code"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="city">Town or village</Label>
+          <Input
+            id="city"
+            value={value.city || ''}
+            onChange={(e) => handleFieldChange('city', e.target.value)}
+            placeholder="Åre"
+            autoComplete="address-level2"
+          />
+        </div>
+      </div>
+
+      <Button type="button" variant="outline" onClick={handleGeocode} disabled={loading} className="gap-2">
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+        {loading ? 'Finding it…' : 'Find on map'}
+      </Button>
+
+      {mounted && (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            {hasPin
+              ? 'Is the pin in the right spot? Drag it, or click the map where your place is.'
+              : 'No pin yet. Press "Find on map", or click the map where your place is.'}
+          </p>
+          <div className={`${mapHeightClass} rounded-lg overflow-hidden border`}>
+            <ErrorBoundary>
+              <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                <EditorMap
+                  center={mapPosition}
+                  zoom={hasPin ? 13 : 5}
+                  showMarker={hasPin}
+                  onPositionChange={handleMarkerMove}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (bare) return body;
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="w-5 h-5" />
-          Location & Address
+          Address
         </CardTitle>
-        <CardDescription>
-          Enter the property address and adjust the location on the map
-        </CardDescription>
+        <CardDescription>Where your place is. Guests see the area; the street address only after booking.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="street">Street Address</Label>
-            <Input
-              id="street"
-              value={value.street || ''}
-              onChange={(e) => handleFieldChange('street', e.target.value)}
-              placeholder="Storgatan 123"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="postal_code">Postal Code</Label>
-            <Input
-              id="postal_code"
-              value={value.postal_code || ''}
-              onChange={(e) => handleFieldChange('postal_code', e.target.value)}
-              placeholder="123 45"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="city">City</Label>
-            <Input
-              id="city"
-              value={value.city || ''}
-              onChange={(e) => handleFieldChange('city', e.target.value)}
-              placeholder="Åre"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="country">Country</Label>
-            <Input
-              id="country"
-              value={value.country || 'Sweden'}
-              onChange={(e) => handleFieldChange('country', e.target.value)}
-              placeholder="Sweden"
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            onClick={handleGeocode}
-            disabled={loading}
-            className="gap-2"
-          >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loading ? 'Finding location...' : 'Find Coordinates'}
-          </Button>
-        </div>
-
-        {mounted && (
-          <div className="space-y-2">
-            <Label>Map Preview</Label>
-            <p className="text-sm text-muted-foreground mb-2">
-              {hasPin
-                ? "Drag the pin to adjust the exact location. Click anywhere on the map to move the pin."
-                : "No pin yet. Find your address above, or click the map where your place is."}
-            </p>
-            <div className="h-[400px] rounded-lg overflow-hidden border">
-              <ErrorBoundary>
-                <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
-                  <EditorMap
-                    center={mapPosition}
-                    zoom={hasPin ? 13 : 5}
-                    showMarker={hasPin}
-                    onPositionChange={handleMarkerMove}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-            {typeof value.latitude === 'number' && typeof value.longitude === 'number' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude) && (
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Latitude:</span>
-                  <span className="ml-2 font-mono">{value.latitude.toFixed(6)}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Longitude:</span>
-                  <span className="ml-2 font-mono">{value.longitude.toFixed(6)}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
+      <CardContent>{body}</CardContent>
     </Card>
   );
 }

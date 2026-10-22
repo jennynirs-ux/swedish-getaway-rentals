@@ -341,7 +341,7 @@ const sections: SectionDef[] = [
   },
   {
     id: "gallery",
-    title: "Gallery Guide",
+    title: "Photos Guide",
     icon: Camera,
     content: {
       title: "Taking Great Property Photos",

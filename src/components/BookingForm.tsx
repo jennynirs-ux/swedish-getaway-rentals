@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
 import { LINEN_INCLUDED_PROPERTY_IDS } from "@/content/propertyContent";
 import { PHONE_INPUT_MAX, SPECIAL_REQUESTS_MAX, isValidGuestName, isValidGuestPhone } from "@/lib/guestDetails";
-import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
+import { applicableStayDiscount, extraGuestCount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
 
 interface BookingFormProps {
   propertyId: string;
@@ -186,6 +186,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Only promised for cabins whose host is known to include it (the Terms leave
   // linen to each listing); matched by id since this form has no slug
   const linenNote = LINEN_INCLUDED_PROPERTY_IDS.includes(propertyId) ? ' Bed linen and towels for every guest are included.' : '';
+  const extraGuestRule = rules.find((r) => r.rule_type === 'extra_guest');
+  const extraGuests = extraGuestRule ? extraGuestCount(formData.number_of_guests, extraGuestRule.guests_included) : 0;
 
   const validateForm = () => {
     try {
@@ -323,7 +325,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             {rules.filter((r) => r.rule_type === 'extra_guest' || r.rule_type === 'cleaning_fee').map((r) => (
               <p key={r.id} className="text-sm text-muted-foreground">
                 {r.rule_type === 'extra_guest'
-                  ? `The nightly price is for 1 guest; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.${linenNote}`
+                  ? `The nightly price covers ${Math.max(1, r.guests_included ?? 1)} guest${Math.max(1, r.guests_included ?? 1) !== 1 ? 's' : ''}; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.${linenNote}`
                   : `A cleaning fee of ${(r.price / 100).toLocaleString()} ${currency} is added per stay.`}
               </p>
             ))}
@@ -374,7 +376,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 
                 {priceCalculation.extraGuestFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Extra guest fee ({Math.max(0, formData.number_of_guests - 1)} guest{Math.max(0, formData.number_of_guests - 1) !== 1 ? 's' : ''} × {nights} night{nights !== 1 ? 's' : ''})</span>
+                    <span>Extra guest fee ({extraGuests} guest{extraGuests !== 1 ? 's' : ''}{extraGuestRule?.is_per_night !== false ? ` × ${nights} night${nights !== 1 ? 's' : ''}` : ''})</span>
                     <span>{(priceCalculation.extraGuestFee / 100).toLocaleString()} {currency}</span>
                   </div>
                 )}

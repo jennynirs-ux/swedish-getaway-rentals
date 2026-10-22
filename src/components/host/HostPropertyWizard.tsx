@@ -5,366 +5,287 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Check, Home, MapPin, Users as UsersIcon, DollarSign } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building, Building2, Castle, Check, Fence, Home, Hotel, Mountain, TreePine } from "lucide-react";
 import { toast } from "sonner";
-import { REGIONS_BY_NAME } from "@/content/regions";
+import { LocationEditor } from "@/components/LocationEditor";
+import { savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
+import { CountySelect, publicAreaFrom } from "./CountySelect";
+import { emptyPriceDraft, parseKronor, PriceFields, priceDraftProblem, savePriceDraft, Stepper, type PriceDraft } from "./listingPrices";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: (propertyId: string) => void;
+  /** The new draft, and the editor tab to continue on */
+  onCreated: (propertyId: string, nextTab: string) => void;
 }
 
-interface WizardState {
-  title: string;
-  property_type: string;
-  description: string;
-  location: string;
-  /** ISO 3166-2:SE code; the listing can't be published without it */
-  county: string;
-  // Number fields keep what the host typed, so a field can be cleared and
-  // retyped (forcing a number turned "4" typed after clearing into "14");
-  // they are checked on Next
-  bedrooms: string;
-  bathrooms: string;
-  max_guests: string;
-  price_per_night: string;
-  currency: string;
+interface Place {
+  street: string;
+  postal_code: string;
+  city: string;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
 }
-
-/** A whole number of at least min, or null */
-const parseCount = (value: string, min: number) => {
-  const t = value.trim();
-  if (!/^\d+$/.test(t)) return null;
-  const n = parseInt(t, 10);
-  return n >= min ? n : null;
-};
-
-/** Bathrooms come in halves (2.5 = two bathrooms and a toilet; 0 is allowed), or null */
-const parseHalves = (value: string) => {
-  const t = value.trim().replace(",", ".");
-  if (!/^\d+(\.\d+)?$/.test(t)) return null;
-  const n = parseFloat(t);
-  return Number.isInteger(n * 2) ? n : null;
-};
-
-const EMPTY_STATE: WizardState = {
-  title: "",
-  property_type: "Cabin",
-  description: "",
-  location: "",
-  county: "",
-  bedrooms: "1",
-  bathrooms: "1",
-  max_guests: "2",
-  price_per_night: "1500",
-  currency: "SEK",
-};
 
 const PROPERTY_TYPES = [
-  "Cabin",
-  "Cottage",
-  "Apartment",
-  "House",
-  "Villa",
-  "Studio",
-  "Loft",
-  "Chalet",
-];
-
-const STEPS = [
-  { id: "basics", label: "Basics", icon: Home },
-  { id: "location", label: "Location", icon: MapPin },
-  { id: "capacity", label: "Capacity", icon: UsersIcon },
-  { id: "pricing", label: "Pricing", icon: DollarSign },
+  { value: "Cabin", icon: TreePine },
+  { value: "Cottage", icon: Fence },
+  { value: "House", icon: Home },
+  { value: "Villa", icon: Castle },
+  { value: "Apartment", icon: Building2 },
+  { value: "Studio", icon: Hotel },
+  { value: "Chalet", icon: Mountain },
+  { value: "Loft", icon: Building },
 ] as const;
 
+const STEPS = [
+  { id: "type", title: "Which of these best describes your place?" },
+  { id: "location", title: "Where is your place?" },
+  { id: "basics", title: "How many guests, bedrooms and bathrooms?" },
+  { id: "title", title: "Give your place a name" },
+  { id: "price", title: "Set your price" },
+] as const;
+
+const EMPTY_PLACE: Place = { street: "", postal_code: "", city: "", country: "Sweden", latitude: null, longitude: null };
+
 /**
- * Guided multi-step property creation wizard.
- *
- * Replaces the bare "New Property" insert with a 4-step flow that captures
- * enough data that the property is meaningful on creation (title, location,
- * capacity, price). The property is saved as a draft (active: false) so the
- * host can continue editing in the full PropertyEditor afterwards.
+ * New listing in five short steps, one question each (like Airbnb): type,
+ * location (country, county, address and a map pin), guests and rooms, name
+ * and description, and price. Saved as a draft; the editor then opens on
+ * Photos (or on Location if the pin is still missing, since publishing needs it).
  */
 const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [state, setState] = useState<WizardState>(EMPTY_STATE);
+  const [propertyType, setPropertyType] = useState("");
+  const [place, setPlace] = useState<Place>(EMPTY_PLACE);
+  const [county, setCounty] = useState("");
+  const [guests, setGuests] = useState(4);
+  const [bedrooms, setBedrooms] = useState(2);
+  const [bathrooms, setBathrooms] = useState(1);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState<PriceDraft>(emptyPriceDraft(4));
 
-  const update = <K extends keyof WizardState>(key: K, value: WizardState[K]) =>
-    setState((s) => ({ ...s, [key]: value }));
+  const hasPin = place.latitude !== null && place.longitude !== null;
 
-  const bedrooms = parseCount(state.bedrooms, 0);
-  const bathrooms = parseHalves(state.bathrooms);
-  const maxGuests = parseCount(state.max_guests, 1);
-  const price = parseCount(state.price_per_night, 1);
+  const problem = (): string | null => {
+    switch (STEPS[step].id) {
+      case "type":
+        return propertyType ? null : "Choose the type that fits best.";
+      case "location":
+        if (!county) return "Choose the county.";
+        if (place.city.trim().length < 2) return "Enter the town or village.";
+        return null;
+      case "basics":
+        return null;
+      case "title":
+        return title.trim().length >= 3 ? null : "Give your place a name (at least 3 characters).";
+      case "price":
+        return priceDraftProblem(price, guests);
+      default:
+        return null;
+    }
+  };
 
-  const canAdvance = () => {
-    if (step === 0) return state.title.trim().length >= 3 && !!state.property_type;
-    if (step === 1) return state.location.trim().length >= 2 && !!state.county;
-    if (step === 2) return bedrooms !== null && bathrooms !== null && maxGuests !== null;
-    if (step === 3) return price !== null;
-    return true;
+  const reset = () => {
+    setStep(0);
+    setPropertyType("");
+    setPlace(EMPTY_PLACE);
+    setCounty("");
+    setGuests(4);
+    setBedrooms(2);
+    setBathrooms(1);
+    setTitle("");
+    setDescription("");
+    setPrice(emptyPriceDraft(4));
   };
 
   const handleCreate = async () => {
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Not authenticated");
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", userData.user.id)
-        .single();
-      if (!profile) throw new Error("No profile");
+      if (!userData.user) throw new Error("Please sign in again.");
+      const { data: profile } = await supabase.from("profiles").select("id").eq("user_id", userData.user.id).single();
+      if (!profile) throw new Error("Your host profile was not found.");
 
       const { data, error } = await supabase
         .from("properties")
         .insert({
-          title: state.title.trim(),
-          description: state.description.trim(),
-          location: state.location.trim(),
-          county: state.county,
-          property_type: state.property_type,
+          title: title.trim(),
+          description: description.trim(),
+          property_type: propertyType,
+          // Guests see the area; the street address is private
+          location: publicAreaFrom(place.city, place.country),
+          city: place.city.trim().toLowerCase(),
+          country: place.country,
+          county,
+          latitude: place.latitude,
+          longitude: place.longitude,
           bedrooms,
           bathrooms,
-          max_guests: maxGuests,
-          price_per_night: price,
-          currency: state.currency,
+          max_guests: guests,
+          price_per_night: parseKronor(price.nightly, 1) ?? 0,
+          currency: "SEK",
           host_id: profile.id,
-          active: false, // draft — host continues in editor
+          active: false, // a draft until the host publishes it
           hero_image_url: "",
         })
-        .select()
+        .select("id")
         .single();
-
       if (error) throw error;
 
-      toast.success("Draft created! Add photos and publish when ready.");
-      resetWizard();
+      // The draft exists now; what fails below can be fixed in the editor
+      const followUps = await Promise.allSettled([
+        place.street.trim() || place.postal_code.trim()
+          ? savePropertyPrivateDetails(data.id, { street: place.street.trim() || null, postal_code: place.postal_code.trim() || null })
+          : Promise.resolve(),
+        savePriceDraft(data.id, price, guests),
+      ]);
+      if (followUps.some((r) => r.status === "rejected")) {
+        toast.warning("Your draft is saved, but check the address and prices in the editor.");
+      } else {
+        toast.success(hasPin ? "Draft saved! Now add photos." : "Draft saved! Now pin your place on the map.");
+      }
+      reset();
       onOpenChange(false);
-      onCreated(data.id);
+      onCreated(data.id, hasPin ? "gallery" : "location");
     } catch (e) {
-      toast.error((e as Error).message || "Failed to create property");
+      toast.error((e as { message?: string })?.message || "Could not create your listing");
     } finally {
       setSaving(false);
     }
   };
 
-  const resetWizard = () => {
-    setStep(0);
-    setState(EMPTY_STATE);
-  };
-
-  const progress = ((step + 1) / STEPS.length) * 100;
-  const CurrentIcon = STEPS[step].icon;
+  const current = STEPS[step];
+  const blocked = problem();
+  const last = step === STEPS.length - 1;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
         onOpenChange(o);
-        if (!o) resetWizard();
+        if (!o) reset();
       }}
     >
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <CurrentIcon className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <DialogTitle>Create a new property</DialogTitle>
-              <DialogDescription>
-                Step {step + 1} of {STEPS.length}: {STEPS[step].label}
-              </DialogDescription>
-            </div>
-          </div>
-          <Progress value={progress} className="mt-3 h-2" />
+          <DialogDescription>
+            Step {step + 1} of {STEPS.length}
+          </DialogDescription>
+          <DialogTitle className="text-2xl">{current.title}</DialogTitle>
+          <Progress value={((step + 1) / STEPS.length) * 100} className="mt-2 h-1.5" />
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
-          {/* Step 0: Basics */}
-          {step === 0 && (
-            <>
-              <div>
-                <Label>Property title *</Label>
+        <div className="pt-2">
+          {current.id === "type" && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {PROPERTY_TYPES.map(({ value, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setPropertyType(value)}
+                  aria-pressed={propertyType === value}
+                  className={`flex flex-col items-start gap-3 rounded-xl border-2 p-4 text-left transition-colors hover:border-foreground/60 ${
+                    propertyType === value ? "border-foreground bg-muted" : "border-border"
+                  }`}
+                >
+                  <Icon className="h-7 w-7" />
+                  <span className="font-medium">{value}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {current.id === "location" && (
+            <LocationEditor
+              bare
+              mapHeightClass="h-[280px]"
+              value={place}
+              onChange={(data) =>
+                setPlace({
+                  street: data.street ?? "",
+                  postal_code: data.postal_code ?? "",
+                  city: data.city ?? "",
+                  country: data.country || "Sweden",
+                  latitude: Number.isFinite(data.latitude) ? (data.latitude as number) : null,
+                  longitude: Number.isFinite(data.longitude) ? (data.longitude as number) : null,
+                })
+              }
+            >
+              <CountySelect value={county} onChange={setCounty} />
+            </LocationEditor>
+          )}
+
+          {current.id === "basics" && (
+            <div className="divide-y">
+              <Stepper id="wizard-guests" label="Guests" hint="The most people who can stay" value={guests} min={1} max={30} onChange={(n) => {
+                setGuests(n);
+                setPrice((p) => ({ ...p, guestsIncluded: Math.min(p.guestsIncluded, Math.max(1, n - 1)) }));
+              }} />
+              <Stepper id="wizard-bedrooms" label="Bedrooms" hint="0 for a studio" value={bedrooms} min={0} max={20} onChange={setBedrooms} />
+              <Stepper id="wizard-bathrooms" label="Bathrooms" hint="Half: a toilet without a shower" value={bathrooms} min={0} max={10} step={0.5} onChange={setBathrooms} />
+            </div>
+          )}
+
+          {current.id === "title" && (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="wizard-title">Name</Label>
                 <Input
-                  value={state.title}
-                  onChange={(e) => update("title", e.target.value)}
-                  placeholder="e.g., Cozy Lakeside Cabin in Dalarna"
+                  id="wizard-title"
+                  value={title}
+                  maxLength={60}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Lakeside cabin with sauna in Dalarna"
                   autoFocus
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {state.title.length}/60 — Make it descriptive and location-specific
-                </p>
+                <p className="text-xs text-muted-foreground">{title.length}/60. Short and specific works best.</p>
               </div>
-              <div>
-                <Label>Property type *</Label>
-                <Select value={state.property_type} onValueChange={(v) => update("property_type", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PROPERTY_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Short description</Label>
+              <div className="space-y-2">
+                <Label htmlFor="wizard-description">Description <span className="font-normal text-muted-foreground">(optional now)</span></Label>
                 <Textarea
-                  value={state.description}
-                  onChange={(e) => update("description", e.target.value)}
-                  placeholder="What makes this place special? You can add more details later."
-                  rows={3}
+                  id="wizard-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What makes your place special? You can write more later."
+                  rows={4}
                 />
-              </div>
-            </>
-          )}
-
-          {/* Step 1: Location */}
-          {step === 1 && (
-            <>
-              <div>
-                <Label>City or area *</Label>
-                <Input
-                  value={state.location}
-                  onChange={(e) => update("location", e.target.value)}
-                  placeholder="e.g. Åre, Sweden"
-                  autoFocus
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  After saving, pin the exact spot on the map in the Location tab.
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="wizard-county">County *</Label>
-                <Select value={state.county} onValueChange={(v) => update("county", v)}>
-                  <SelectTrigger id="wizard-county"><SelectValue placeholder="Choose a county" /></SelectTrigger>
-                  <SelectContent>
-                    {REGIONS_BY_NAME.map((r) => (
-                      <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">So your place appears in the right region.</p>
-              </div>
-            </>
-          )}
-
-          {/* Step 2: Capacity */}
-          {step === 2 && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <Label htmlFor="wizard-bedrooms">Bedrooms *</Label>
-                <Input
-                  id="wizard-bedrooms"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={state.bedrooms}
-                  onChange={(e) => update("bedrooms", e.target.value)}
-                />
-                <p className={`text-xs mt-1 ${bedrooms === null ? "text-destructive" : "text-muted-foreground"}`}>
-                  0 for a studio
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="wizard-bathrooms">Bathrooms *</Label>
-                <Input
-                  id="wizard-bathrooms"
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step={0.5}
-                  value={state.bathrooms}
-                  onChange={(e) => update("bathrooms", e.target.value)}
-                />
-                <p className={`text-xs mt-1 ${bathrooms === null ? "text-destructive" : "text-muted-foreground"}`}>
-                  Halves allowed, e.g. 1.5; 0 if there is none
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="wizard-guests">Max guests *</Label>
-                <Input
-                  id="wizard-guests"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  value={state.max_guests}
-                  onChange={(e) => update("max_guests", e.target.value)}
-                />
-                {maxGuests === null && <p className="text-xs mt-1 text-destructive">At least 1</p>}
               </div>
             </div>
           )}
 
-          {/* Step 3: Pricing */}
-          {step === 3 && (
-            <>
-              <div>
-                <Label>Base price per night *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    step={50}
-                    value={state.price_per_night}
-                    onChange={(e) => update("price_per_night", e.target.value)}
-                    className="flex-1"
-                  />
-                  {/* SEK only: guests see, filter and pay every price on the site in kronor */}
-                  <span className="flex w-28 items-center justify-center rounded-md border bg-muted text-sm text-muted-foreground">
-                    SEK
-                  </span>
-                </div>
-                <p className={`text-xs mt-1 ${price === null ? "text-destructive" : "text-muted-foreground"}`}>
-                  {price === null
-                    ? "Enter a whole number of kronor."
-                    : "Tip: Swedish cabins typically range 1,200-3,500 SEK/night. You can add seasonal pricing later."}
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-muted p-3 text-sm">
-                <p className="font-medium mb-1">Ready to create</p>
-                <p className="text-muted-foreground">
-                  Your property will be saved as a <strong>draft</strong> and the editor opens on the map, so you can
-                  pin the exact spot. Then add photos, amenities and house rules, and publish when ready.
-                </p>
-              </div>
-            </>
-          )}
+          {current.id === "price" && <PriceFields value={price} onChange={setPrice} maxGuests={guests} />}
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between pt-4 border-t">
-          <Button
-            variant="outline"
-            disabled={step === 0 || saving}
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
-          >
+        <div className="flex items-center justify-between gap-3 border-t pt-4">
+          <Button variant="ghost" disabled={step === 0 || saving} onClick={() => setStep((s) => Math.max(0, s - 1))}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-          {step < STEPS.length - 1 ? (
-            <Button disabled={!canAdvance()} onClick={() => setStep((s) => s + 1)}>
-              Next <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          ) : (
-            <Button disabled={!canAdvance() || saving} onClick={handleCreate}>
-              {saving ? "Creating..." : (
-                <>
-                  <Check className="h-4 w-4 mr-1" /> Create Draft
-                </>
-              )}
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            {blocked && <span className="hidden text-xs text-muted-foreground sm:inline">{blocked}</span>}
+            {!last ? (
+              <Button disabled={!!blocked} onClick={() => setStep((s) => s + 1)}>
+                Next <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            ) : (
+              <Button disabled={!!blocked || saving} onClick={handleCreate}>
+                {saving ? "Saving…" : (
+                  <>
+                    <Check className="h-4 w-4 mr-1" /> Save draft
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
+        {blocked && <p className="text-xs text-muted-foreground sm:hidden">{blocked}</p>}
+        {current.id === "location" && !hasPin && (
+          <p className="text-xs text-muted-foreground">You can also place the pin later, but your place can't be published without it.</p>
+        )}
       </DialogContent>
     </Dialog>
   );

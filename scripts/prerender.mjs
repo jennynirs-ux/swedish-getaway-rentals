@@ -53,7 +53,7 @@ async function fetchRest(query) {
 async function fetchProperties() {
   const [properties, rules, fees] = await Promise.all([
     fetchRest("properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at&active=eq.true"),
-    fetchRest("properties_pricing_rules?select=property_id,rule_type,price,is_per_night&is_active=eq.true"),
+    fetchRest("properties_pricing_rules?select=property_id,rule_type,price,is_per_night,guests_included&is_active=eq.true"),
     // Guest fee per property (5 % on founding hosts' listings)
     fetchRest("rpc/property_service_fee_rates"),
   ]);
@@ -145,7 +145,7 @@ const feesText = (p) =>
   p.rules
     .map((r) =>
       r.rule_type === "extra_guest"
-        ? ` The price is for 1 guest; each extra guest adds ${r.price / 100} ${p.currency} per night.${LINEN_INCLUDED_PROPERTY_IDS.has(p.id) ? " Bed linen and towels for every guest are included." : ""}`
+        ? ` The price covers ${Math.max(1, r.guests_included ?? 1)} guest${Math.max(1, r.guests_included ?? 1) !== 1 ? "s" : ""}; each extra guest adds ${r.price / 100} ${p.currency}${r.is_per_night ? " per night" : " per stay"}.${LINEN_INCLUDED_PROPERTY_IDS.has(p.id) ? " Bed linen and towels for every guest are included." : ""}`
         : r.rule_type === "cleaning_fee"
           ? ` Cleaning fee ${r.price / 100} ${p.currency} per stay.`
           : "",

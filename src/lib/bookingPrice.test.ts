@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { applicableStayDiscount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
+import {
+  applicableStayDiscount,
+  extraGuestCount,
+  extraGuestFee,
+  serviceFeeAmount,
+  stayDiscountAmount,
+} from "../../supabase/functions/_shared/booking-price";
 
 describe("applicableStayDiscount", () => {
   it.each([
@@ -30,5 +36,23 @@ describe("serviceFeeAmount", () => {
   it("rounds to whole kronor", () => {
     // Lakehouse Getaway, a week for 2: 13 149 SEK host price -> 1 315 SEK fee, total 14 464 SEK
     expect(serviceFeeAmount(1314900, 10)).toBe(131500);
+  });
+});
+
+describe("extra guests", () => {
+  it("counts the guests beyond those the price covers", () => {
+    expect(extraGuestCount(4, 2)).toBe(2);
+    expect(extraGuestCount(2, 4)).toBe(0);
+    // Rules saved before guests_included existed: the price covered 1 guest
+    expect(extraGuestCount(3, null)).toBe(2);
+    expect(extraGuestCount(3, undefined)).toBe(2);
+    expect(extraGuestCount(3, 0)).toBe(2);
+  });
+
+  it("charges per extra guest per night, or once per stay", () => {
+    expect(extraGuestFee({ price: 40_000, is_per_night: true, guests_included: 2 }, 4, 3)).toBe(240_000);
+    expect(extraGuestFee({ price: 40_000, is_per_night: false, guests_included: 2 }, 4, 3)).toBe(80_000);
+    expect(extraGuestFee({ price: 75_000, is_per_night: true }, 1, 3)).toBe(0);
+    expect(extraGuestFee({ price: 75_000, is_per_night: true }, 8, 2)).toBe(1_050_000);
   });
 });
