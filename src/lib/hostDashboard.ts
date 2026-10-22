@@ -63,11 +63,12 @@ export const payoutStatusPollMs = (status?: PayoutStatus | null): number | false
 // Publishing
 
 /** Which rule of the database's publish check (prevent_self_publish) stopped a publish */
-export type PublishBlocker = "terms" | "bank" | "location" | null;
+export type PublishBlocker = "terms" | "bank" | "location" | "tax" | null;
 export const publishBlocker = (message: string): PublishBlocker => {
   if (/host terms/i.test(message)) return "terms";
   if (/bank account/i.test(message)) return "bank";
   if (/county|on the map/i.test(message)) return "location";
+  if (/tax details/i.test(message)) return "tax";
   return null;
 };
 

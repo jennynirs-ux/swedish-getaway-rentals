@@ -8,6 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { fetchPropertyPrivateDetails, savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
 import { CountySelect, publicAreaFrom } from "./CountySelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// The designation Skatteverket's yearly report asks for (DAC7), by kind of place
+const DESIGNATION_KINDS = [
+  { value: "fastighet", label: "A house or cabin with its own property designation", placeholder: "e.g. Lerum Exempel 1:23" },
+  { value: "lagenhet", label: "A flat (give the apartment number)", placeholder: "e.g. lgh 1102" },
+  { value: "stuga", label: "A cabin in a cabin village (give the cabin number)", placeholder: "e.g. stuga 14" },
+  { value: "none", label: "It has no designation of its own", placeholder: "" },
+] as const;
 import { MapPin } from "lucide-react";
 
 interface LocationData {
@@ -37,6 +46,9 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
   const [publicLocation, setPublicLocation] = useState("");
   // ISO 3166-2:SE code; publishing needs it (and the pin) so guests can find the place by region
   const [county, setCounty] = useState("");
+  // DAC7: fastighetsbeteckning (or apartment / cabin number), private like the street
+  const [designationKind, setDesignationKind] = useState("");
+  const [designation, setDesignation] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -61,6 +73,8 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       if (data) {
         setPublicLocation(data.location || "");
         setCounty(data.county || "");
+        setDesignationKind(privateDetails?.designation_kind || "");
+        setDesignation(privateDetails?.fastighetsbeteckning || "");
         setLocationData({
           street: privateDetails?.street || "",
           postal_code: privateDetails?.postal_code || "",
@@ -94,6 +108,8 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       if (error) throw error;
 
       await savePropertyPrivateDetails(propertyId, {
+        designation_kind: designationKind || null,
+        fastighetsbeteckning: designationKind && designationKind !== "none" ? designation.trim() || null : null,
         street: locationData.street || null,
         postal_code: locationData.postal_code || null,
       });
@@ -158,6 +174,40 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
               placeholder="Åre, Sweden"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Property designation</CardTitle>
+          <CardDescription>
+            For the yearly report to Skatteverket that Swedish law requires (DAC7). Private: guests never see it. You
+            find it on your title deed, in your tax return or on lantmateriet.se.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="designation-kind">What kind of place is it?</Label>
+            <Select value={designationKind} onValueChange={setDesignationKind}>
+              <SelectTrigger id="designation-kind"><SelectValue placeholder="Choose" /></SelectTrigger>
+              <SelectContent>
+                {DESIGNATION_KINDS.map((k) => (
+                  <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {designationKind && designationKind !== "none" && (
+            <div className="space-y-2">
+              <Label htmlFor="designation">{designationKind === "fastighet" ? "Fastighetsbeteckning" : designationKind === "lagenhet" ? "Apartment number" : "Cabin number"}</Label>
+              <Input
+                id="designation"
+                value={designation}
+                onChange={(e) => setDesignation(e.target.value)}
+                placeholder={DESIGNATION_KINDS.find((k) => k.value === designationKind)?.placeholder}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -306,9 +306,19 @@ const HostTerms = () => {
             may share it with tax authorities in other EU countries. We report where the law requires it.
           </li>
           <li>
-            You must give us the information needed for this when we ask: for example your name, address and
-            personal identity number or date of birth, and the address of each place you rent out. If you have not given it after two reminders, the law
-            requires us to hold back your payouts or close your account until you do.
+            Before your listing goes live you give us these details under "Payouts & tax" in your host dashboard: your
+            name, home address, personal identity number (personnummer or samordningsnummer) and date of birth, or for
+            a company its full name, organisationsnummer and registered address; any tax numbers from other countries;
+            and your VAT number if you have one. For each place you rent out we also need its address and, if it has
+            one, its property designation (fastighetsbeteckning). Keep the details up to date.
+          </li>
+          <li>
+            You get a copy of what we report about you by 31 January each year.
+          </li>
+          <li>
+            If details we need are missing, we ask you and then remind you twice. If they are still missing after two
+            reminders and at least 60 days, the law requires us to hold back your payouts or close your account until
+            you give them.
           </li>
           <li>The tax report in your host dashboard is a help, not tax advice. You are responsible for your own tax return.</li>
         </ul>

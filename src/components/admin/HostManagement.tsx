@@ -81,6 +81,8 @@ const HostManagement = () => {
   const [newCommissionRate, setNewCommissionRate] = useState("");
   // What each host owes us and is not settled yet (host_charges, öre by host profile)
   const [openCharges, setOpenCharges] = useState<Map<string, number>>(new Map());
+  // DAC7 tax details given (save-host-tax-profile); publishing needs them
+  const [taxDone, setTaxDone] = useState<Map<string, string>>(new Map());
 
   const fetchData = async () => {
     try {
@@ -120,9 +122,16 @@ const HostManagement = () => {
         owed.set(charge.host_profile_id, (owed.get(charge.host_profile_id) ?? 0) + charge.amount);
       }
 
+      const { data: taxData, error: taxError } = await supabase
+        .from('host_tax_profiles')
+        .select('profile_id, seller_type, dac7_complete')
+        .eq('dac7_complete', true);
+      if (taxError) console.error('Error fetching tax details:', taxError);
+
       setApplications(applicationsData || []);
       setHosts(hostsData || []);
       setOpenCharges(owed);
+      setTaxDone(new Map((taxData ?? []).map((t) => [t.profile_id, t.seller_type === 'entity' ? 'Company' : 'Private person'])));
     } catch (error) {
       console.error('Error fetching host data:', error);
       toast.error('Failed to load host data');
@@ -376,6 +385,13 @@ const HostManagement = () => {
                     ) : (
                       <Badge variant="outline">Not accepted</Badge>
                     )}
+                    <div className="mt-1">
+                      {taxDone.has(host.id) ? (
+                        <Badge variant="secondary">Tax details: {taxDone.get(host.id)}</Badge>
+                      ) : (
+                        <Badge variant="outline">No tax details</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Dialog>

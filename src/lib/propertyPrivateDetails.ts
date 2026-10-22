@@ -2,7 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 /**
- * Guest-only property data (exact address, check-in instructions, parking).
+ * Guest-only property data (exact address, check-in instructions, parking),
+ * and the property designation for the yearly DAC7 report.
  * Lives in `property_private_details`, readable only by the property's host,
  * admins and the service role — never select these from `properties`.
  */
@@ -10,7 +11,10 @@ export type PropertyPrivateDetails =
   Database["public"]["Tables"]["property_private_details"]["Row"];
 
 export type PropertyPrivateDetailsUpdate = Partial<
-  Pick<PropertyPrivateDetails, "street" | "postal_code" | "check_in_instructions" | "parking_info">
+  Pick<
+    PropertyPrivateDetails,
+    "street" | "postal_code" | "check_in_instructions" | "parking_info" | "fastighetsbeteckning" | "designation_kind"
+  >
 >;
 
 export const fetchPropertyPrivateDetails = async (

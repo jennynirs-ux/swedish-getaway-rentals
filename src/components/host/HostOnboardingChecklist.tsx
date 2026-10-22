@@ -104,6 +104,8 @@ interface ChecklistProperty {
 
 interface ChecklistData {
   termsAccepted: boolean;
+  /** DAC7 tax details saved and complete (publishing needs them) */
+  taxDone: boolean;
   /** The profile's stored flag, used until Stripe's live answer is in */
   storedPayoutReady: boolean;
   /** The listing the steps are about: the first draft, else the first listing */
@@ -129,6 +131,8 @@ const loadChecklist = async (): Promise<ChecklistData | null> => {
     .order("created_at", { ascending: true });
   if (propertiesError) throw propertiesError;
 
+  const { data: tax } = await supabase.from("host_tax_profiles").select("dac7_complete").eq("profile_id", profile.id).maybeSingle();
+
   const list = (properties || []) as ChecklistProperty[];
   const target = list.find((p) => !p.active) ?? list[0] ?? null;
 
@@ -144,6 +148,7 @@ const loadChecklist = async (): Promise<ChecklistData | null> => {
   return {
     // A new version of the terms asks again (publishing only needs some acceptance)
     termsAccepted: !!profile.host_terms_accepted_at && profile.host_terms_version === HOST_TERMS_VERSION,
+    taxDone: !!tax?.dac7_complete,
     storedPayoutReady: !!profile.stripe_connect_ready,
     target,
     targetHasCalendarFeed,
@@ -286,6 +291,14 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty, onEditProperty, 
       description: `Your price is paid out to your bank ${HOST_PAYOUT_TIMING_TEXT}.`,
       done: payoutReady,
       actionLabel: "Connect bank",
+      action: () => onGoToTab("payouts"),
+    },
+    {
+      id: "tax",
+      label: "Add your tax details",
+      description: "Swedish law (DAC7) requires a few details from every host before a listing goes live.",
+      done: data.taxDone,
+      actionLabel: "Add tax details",
       action: () => onGoToTab("payouts"),
     },
     {

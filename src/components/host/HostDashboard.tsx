@@ -28,6 +28,7 @@ import { chargesTakenFrom, formatDay, formatSek, hostPayoutText, nextPayoutId } 
 import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
+import { HostTaxDetails } from "./HostTaxDetails";
 import HostOnboardingChecklist, {
   HOST_CHECKLIST_KEY,
   HostTermsAcceptance,
@@ -373,7 +374,7 @@ const HostDashboard = () => {
   };
 
   // Hosts publish their own listings. The database (prevent_self_publish) decides:
-  // working payouts, a map pin and county, and accepted host terms.
+  // working payouts, a map pin and county, accepted host terms and tax details.
   // (No e-mail to the team from here: send-support-email also answers the host
   // "we received your message". A listing-published notice needs its own function.)
   const publish = (id: string) => exclusive(() => publishNow(id));
@@ -387,6 +388,10 @@ const HostDashboard = () => {
         setTermsForId(id);
       } else if (blocker === "bank") {
         toast.error("Connect your bank account before publishing, so you can be paid for bookings.");
+        setEditingPropertyId(null);
+        setActiveTab("payouts");
+      } else if (blocker === "tax") {
+        toast.error("Add your tax details before publishing: Swedish law requires them.");
         setEditingPropertyId(null);
         setActiveTab("payouts");
       } else if (blocker === "location") {
@@ -583,7 +588,7 @@ const HostDashboard = () => {
                   Financials
                 </TabsTrigger>
                 <TabsTrigger value="messages">Messages</TabsTrigger>
-                <TabsTrigger value="payouts">Bank Account</TabsTrigger>
+                <TabsTrigger value="payouts">Payouts & tax</TabsTrigger>
               </TabsList>
             </div>
 
@@ -624,6 +629,7 @@ const HostDashboard = () => {
 
             <TabsContent value="payouts" className="space-y-6">
               <BankAccountSetup />
+              <HostTaxDetails />
             </TabsContent>
 
             <TabsContent value="properties" className="space-y-6">

@@ -950,6 +950,98 @@ export type Database = {
           },
         ]
       }
+      host_tax_profiles: {
+        Row: {
+          birth_place: string | null
+          city: string
+          confirmed_at: string | null
+          country_code: string
+          created_at: string
+          dac7_complete: boolean
+          date_of_birth: string | null
+          first_name: string | null
+          last_name: string | null
+          legal_name: string | null
+          other_tin_countries: string[]
+          other_tins_ciphertext: string | null
+          pe_countries: string[]
+          pe_eu: boolean | null
+          postal_code: string
+          profile_id: string
+          seller_type: string
+          street: string
+          tin_ciphertext: string | null
+          tin_country: string | null
+          tin_hmac: string | null
+          tin_masked: string | null
+          updated_at: string
+          vat_number: string | null
+          verification_log: Json
+        }
+        Insert: {
+          birth_place?: string | null
+          city: string
+          confirmed_at?: string | null
+          country_code?: string
+          created_at?: string
+          dac7_complete?: boolean
+          date_of_birth?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          legal_name?: string | null
+          other_tin_countries?: string[]
+          other_tins_ciphertext?: string | null
+          pe_countries?: string[]
+          pe_eu?: boolean | null
+          postal_code: string
+          profile_id: string
+          seller_type: string
+          street: string
+          tin_ciphertext?: string | null
+          tin_country?: string | null
+          tin_hmac?: string | null
+          tin_masked?: string | null
+          updated_at?: string
+          vat_number?: string | null
+          verification_log?: Json
+        }
+        Update: {
+          birth_place?: string | null
+          city?: string
+          confirmed_at?: string | null
+          country_code?: string
+          created_at?: string
+          dac7_complete?: boolean
+          date_of_birth?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          legal_name?: string | null
+          other_tin_countries?: string[]
+          other_tins_ciphertext?: string | null
+          pe_countries?: string[]
+          pe_eu?: boolean | null
+          postal_code?: string
+          profile_id?: string
+          seller_type?: string
+          street?: string
+          tin_ciphertext?: string | null
+          tin_country?: string | null
+          tin_hmac?: string | null
+          tin_masked?: string | null
+          updated_at?: string
+          vat_number?: string | null
+          verification_log?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_tax_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ical_feeds: {
         Row: {
           active: boolean
@@ -1575,7 +1667,10 @@ export type Database = {
         Row: {
           check_in_instructions: string | null
           created_at: string
+          designation_kind: string | null
+          fastighetsbeteckning: string | null
           ical_export_secret: string
+          ku_property_type: number | null
           parking_info: string | null
           postal_code: string | null
           property_id: string
@@ -1585,7 +1680,10 @@ export type Database = {
         Insert: {
           check_in_instructions?: string | null
           created_at?: string
+          designation_kind?: string | null
+          fastighetsbeteckning?: string | null
           ical_export_secret?: string
+          ku_property_type?: number | null
           parking_info?: string | null
           postal_code?: string | null
           property_id: string
@@ -1595,7 +1693,10 @@ export type Database = {
         Update: {
           check_in_instructions?: string | null
           created_at?: string
+          designation_kind?: string | null
+          fastighetsbeteckning?: string | null
           ical_export_secret?: string
+          ku_property_type?: number | null
           parking_info?: string | null
           postal_code?: string | null
           property_id?: string
