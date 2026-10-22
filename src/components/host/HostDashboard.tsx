@@ -627,9 +627,10 @@ const HostDashboard = () => {
               </Tabs>
             </TabsContent>
 
+            {/* Tax details first: Stripe's setup is then prefilled from them */}
             <TabsContent value="payouts" className="space-y-6">
-              <BankAccountSetup />
               <HostTaxDetails />
+              <BankAccountSetup />
             </TabsContent>
 
             <TabsContent value="properties" className="space-y-6">

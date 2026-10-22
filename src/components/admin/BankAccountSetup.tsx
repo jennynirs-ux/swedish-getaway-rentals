@@ -9,7 +9,7 @@ import { Building2, CheckCircle2, ExternalLink, AlertCircle, RefreshCw, Loader2,
 import { useQuery } from "@tanstack/react-query";
 import { HOST_PAYOUT_TIMING_TEXT, stockholmDate } from "@/lib/constants";
 // Pure rules, shared with the onboarding checklist and tested in src/lib/hostDashboard.test.ts
-import { formatSek, payoutState, payoutStatusPollMs, type PayoutStatus } from "@/lib/hostDashboard";
+import { formatSek, payoutState, payoutStatusPollMs, stripeRequirementLabels, type PayoutStatus } from "@/lib/hostDashboard";
 import { StripeExplainer } from "@/components/host/StripeExplainer";
 
 export { payoutState };
@@ -317,10 +317,25 @@ export const BankAccountSetup = () => {
                 {state === "details_missing" ? (
                   <>
                     <p className="font-medium mb-1">Finish your payout setup with Stripe</p>
-                    <p className="text-sm text-muted-foreground">
-                      Stripe still needs a few details
-                      {status?.requirementsDue ? ` (${status.requirementsDue} left)` : ""} before it can pay you. You
-                      can publish your listing once this is done.
+                    {stripeRequirementLabels(status?.currentlyDue).length > 0 ? (
+                      <>
+                        <p className="text-sm text-muted-foreground">Stripe still needs:</p>
+                        <ul className="mt-1 list-disc pl-5 text-sm">
+                          {stripeRequirementLabels(status?.currentlyDue).map((label) => <li key={label}>{label}</li>)}
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Stripe still needs a few details
+                        {status?.requirementsDue ? ` (${status.requirementsDue} left)` : ""} before it can pay you.
+                      </p>
+                    )}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {status?.currentDeadline
+                        ? `Please finish by ${formatDay(stockholmDate(new Date(status.currentDeadline * 1000).toISOString()))}. `
+                        : ""}
+                      Press "Finish setup on Stripe": you continue where you left off. You can publish your listing once
+                      this is done.
                     </p>
                   </>
                 ) : (

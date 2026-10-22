@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { alertAdminOnce } from "../_shared/alert.ts";
 import { stockholmToday } from "../_shared/format.ts";
 
@@ -11,8 +11,9 @@ const corsHeaders = {
 
 const SITE_URL = "https://nordic-getaways.com";
 
-// Prefilled so Stripe asks the host less. No business_type: some hosts rent
-// out privately, others through their own company (AB), and Stripe asks.
+// Prefilled so Stripe asks the host less. Private person or company (and
+// name, address, date of birth) come from the host's tax details when they
+// have given them (prefillFromTaxDetails); otherwise Stripe asks.
 const BUSINESS_PROFILE = {
   mcc: "6513", // Real estate agents and managers - rentals
   product_description: "Holiday home rentals booked through nordic-getaways.com",
@@ -23,6 +24,44 @@ const BUSINESS_PROFILE = {
 // after the guest paid if that comes first, so Stripe must never pay out on
 // its own schedule
 const MANUAL_PAYOUTS = { payouts: { schedule: { interval: "manual" as const } } };
+
+/**
+ * What we already know about the host from their tax details (DAC7), so
+ * Stripe's onboarding asks them less: private person or company, name, date
+ * of birth and address. Nothing if they haven't given them yet. Tax numbers
+ * are not passed (Stripe doesn't need a personnummer here).
+ */
+async function prefillFromTaxDetails(
+  supabase: SupabaseClient,
+  profileId: string,
+  email: string,
+): Promise<Pick<Stripe.AccountCreateParams, "business_type" | "individual" | "company"> | null> {
+  const { data } = await supabase
+    .from("host_tax_profiles")
+    .select("seller_type, first_name, last_name, legal_name, date_of_birth, street, postal_code, city, country_code")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  const tax = data as {
+    seller_type: string; first_name: string | null; last_name: string | null; legal_name: string | null;
+    date_of_birth: string | null; street: string; postal_code: string; city: string; country_code: string;
+  } | null;
+  if (!tax) return null;
+  const address = { line1: tax.street, postal_code: tax.postal_code, city: tax.city, country: tax.country_code };
+  if (tax.seller_type === "entity") {
+    return { business_type: "company", company: { name: tax.legal_name ?? undefined, address } };
+  }
+  const [year, month, day] = (tax.date_of_birth ?? "").split("-").map(Number);
+  return {
+    business_type: "individual",
+    individual: {
+      first_name: tax.first_name ?? undefined,
+      last_name: tax.last_name ?? undefined,
+      email,
+      address,
+      ...(year && month && day ? { dob: { day, month, year } } : {}),
+    },
+  };
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -115,6 +154,9 @@ serve(async (req) => {
         detailsSubmitted: !!account.details_submitted,
         payoutsEnabled: !!account.payouts_enabled,
         requirementsDue: account.requirements?.currently_due?.length ?? 0,
+        // Field names only (e.g. "external_account"); the dashboard words them
+        currentlyDue: [...new Set([...(account.requirements?.past_due ?? []), ...(account.requirements?.currently_due ?? [])])],
+        currentDeadline: account.requirements?.current_deadline ?? null,
         // Rejected or disabled accounts (e.g. "rejected.other") can't be
         // fixed by waiting: the bank card tells the host to contact support
         disabledReason: account.requirements?.disabled_reason ?? null,
@@ -122,8 +164,9 @@ serve(async (req) => {
       });
     }
 
+    const prefill = await prefillFromTaxDetails(supabase, profile.id, user.email).catch(() => null);
     if (!accountId) {
-      const account = await stripe.accounts.create({
+      const params: Stripe.AccountCreateParams = {
         type: "express",
         country: "SE",
         email: user.email,
@@ -131,7 +174,15 @@ serve(async (req) => {
         business_profile: BUSINESS_PROFILE,
         settings: MANUAL_PAYOUTS,
         metadata: { profile_id: profile.id },
-      });
+      };
+      // If Stripe refuses what we prefilled (e.g. an address abroad), the host fills it in on Stripe
+      const account = await stripe.accounts
+        .create({ ...params, ...(prefill ?? {}) })
+        .catch((prefillError) => {
+          if (!prefill) throw prefillError;
+          console.error("Prefilled account refused, creating without:", prefillError instanceof Error ? prefillError.message : String(prefillError));
+          return stripe.accounts.create(params);
+        });
       accountId = account.id;
 
       // If this fails we must stop: otherwise every click creates another
@@ -141,6 +192,15 @@ serve(async (req) => {
         .update({ stripe_connect_account_id: accountId })
         .eq("id", profile.id);
       if (saveError) throw new Error(`Could not save Stripe account ${accountId}: ${saveError.message}`);
+    } else if (prefill) {
+      // An account started before the tax details were given: fill in what
+      // Stripe hasn't got yet, unless the host already chose private/company there
+      try {
+        const account = await stripe.accounts.retrieve(accountId);
+        if (!account.details_submitted && !account.business_type) await stripe.accounts.update(accountId, prefill);
+      } catch (prefillError) {
+        console.error("Prefilling the Stripe account failed:", prefillError instanceof Error ? prefillError.message : String(prefillError));
+      }
     }
 
     const accountLink = await stripe.accountLinks.create({

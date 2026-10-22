@@ -7,6 +7,7 @@ import {
   payoutState,
   payoutStatusPollMs,
   publishBlocker,
+  stripeRequirementLabels,
 } from "./hostDashboard";
 
 describe("payoutState: where the host is with Stripe", () => {
@@ -151,5 +152,35 @@ describe("formatSek", () => {
   it("shows öre as whole kronor", () => {
     expect(formatSek(1_000_000).replace(/\s/g, " ")).toBe("10 000 SEK");
     expect(formatSek(31_249)).toBe("312 SEK");
+  });
+});
+
+describe("stripeRequirementLabels", () => {
+  it("turns Stripe's field names into a short list, once each", () => {
+    expect(
+      stripeRequirementLabels([
+        "individual.dob.day",
+        "individual.dob.month",
+        "individual.dob.year",
+        "external_account",
+        "individual.verification.document",
+        "tos_acceptance.date",
+        "tos_acceptance.ip",
+      ]),
+    ).toEqual([
+      "Your date of birth",
+      "Your bank account",
+      "A photo of your ID (passport, ID card or driving licence)",
+      "Accepting Stripe's terms",
+    ]);
+  });
+
+  it("groups unknown fields into one line at the end", () => {
+    expect(stripeRequirementLabels(["something.new", "external_account", "another.new"])).toEqual([
+      "Your bank account",
+      "A few more details Stripe asks for",
+    ]);
+    expect(stripeRequirementLabels([])).toEqual([]);
+    expect(stripeRequirementLabels()).toEqual([]);
   });
 });

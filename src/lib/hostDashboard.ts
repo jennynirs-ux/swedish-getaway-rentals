@@ -17,6 +17,10 @@ export interface PayoutStatus {
   /** Stripe has verified the bank account, so payouts to it can go out */
   payoutsEnabled?: boolean;
   requirementsDue?: number;
+  /** Stripe's requirements.currently_due field names, e.g. "external_account" */
+  currentlyDue?: string[];
+  /** When Stripe stops the account if they are still missing (unix seconds) */
+  currentDeadline?: number | null;
   /**
    * Stripe's requirements.disabled_reason (e.g. "rejected.fraud",
    * "requirements.past_due"), once create-connect-account sends it. Without
@@ -56,6 +60,39 @@ export const payoutState = (status?: PayoutStatus | null): PayoutState => {
  * How often to ask Stripe again, in ms, or false: only while Stripe is
  * checking, since nothing changes on its own while the host has to act.
  */
+/**
+ * What Stripe still needs, in words a host understands: Stripe names each
+ * missing field ("individual.dob.day", "external_account"); several fields
+ * make one line ("Date of birth"). Unknown fields share one line at the end.
+ */
+export const stripeRequirementLabels = (fields: string[] = []): string[] => {
+  const rules: [RegExp, string][] = [
+    [/^business_type$/, "Whether you rent out as a private person or a company"],
+    [/^(individual|representative)\.(first_name|last_name|full_name_aliases)/, "Your name"],
+    [/^(individual|representative)\.dob/, "Your date of birth"],
+    [/^(individual|representative)\.address/, "Your home address"],
+    [/^(individual|representative)\.(phone|email)/, "Your phone number and email"],
+    [/^(individual|representative)\.(id_number|ssn_last_4)/, "Your personal identity number"],
+    [/^(individual|representative)\.verification\.(document|additional_document)/, "A photo of your ID (passport, ID card or driving licence)"],
+    [/^(individual|representative)\.verification/, "Confirming your identity"],
+    [/^(individual|representative)\.relationship/, "Your role in the company"],
+    [/^company\./, "Company details (name, address, organisationsnummer)"],
+    [/^(owners|directors|executives|representative|person_)/, "The company's owners and representative"],
+    [/^business_profile\./, "About your rentals (website or a short description)"],
+    [/^external_account/, "Your bank account"],
+    [/^tos_acceptance/, "Accepting Stripe's terms"],
+  ];
+  const labels: string[] = [];
+  let other = false;
+  for (const field of fields) {
+    const label = rules.find(([pattern]) => pattern.test(field))?.[1];
+    if (!label) other = true;
+    else if (!labels.includes(label)) labels.push(label);
+  }
+  if (other) labels.push("A few more details Stripe asks for");
+  return labels;
+};
+
 export const payoutStatusPollMs = (status?: PayoutStatus | null): number | false =>
   payoutState(status) === "verifying" ? 30_000 : false;
 
