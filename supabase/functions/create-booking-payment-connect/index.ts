@@ -180,6 +180,20 @@ serve(async (req) => {
       logStep("House rules not met", { checkInDate, checkOutDate, rulesConfirmed });
       return badRequest(houseRuleError);
     }
+    // The guest agreed to the policy and minimum age the form showed; if the
+    // host changed them since, the guest must see the new ones first (older
+    // pages that don't send them are let through)
+    const { shownPolicy, shownMinAge } = requestData;
+    if (
+      (shownPolicy !== undefined && shownPolicy !== policyFor(property.cancellation_policy).key) ||
+      (shownMinAge !== undefined && shownMinAge !== minGuestAge(property))
+    ) {
+      logStep("Rules changed since the form loaded", { shownPolicy, shownMinAge });
+      return new Response(JSON.stringify({ error: "The host has just changed this place's rules or cancellation policy. Please reload the page, check them and try again." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 409,
+      });
+    }
 
     // Validate guest count against property max
     if (numberOfGuests > property.max_guests) {

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ADULT_AGE, DEFAULT_STAY_RULES } from "@/lib/stayRules";
+import { ADULT_AGE } from "@/lib/stayRules";
 import { CANCELLATION_POLICIES, DEFAULT_POLICY, isPolicyKey, POLICY_KEYS, type PolicyKey } from "../../../supabase/functions/_shared/cancellation";
 import { Stepper } from "./listingPrices";
 
@@ -19,8 +19,6 @@ interface Rules {
   min_guest_age: number;
 }
 
-const DEFAULTS: Rules = { ...DEFAULT_STAY_RULES, cancellation_policy: DEFAULT_POLICY };
-
 /**
  * The Rules tab: the listing's cancellation policy (one of four fixed ones)
  * and house rules. Guests see both before they pay; the payment function
@@ -29,6 +27,7 @@ const DEFAULTS: Rules = { ...DEFAULT_STAY_RULES, cancellation_policy: DEFAULT_PO
  */
 export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string; onSaved?: () => void }) {
   const [rules, setRules] = useState<Rules | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -38,15 +37,17 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
       .eq("id", propertyId)
       .single()
       .then(({ data, error }) => {
+        // Never show (and save) defaults over rules that could not be read
         if (error || !data) {
           console.error("Error loading rules:", error);
-          setRules(DEFAULTS);
+          setLoadFailed(true);
           return;
         }
         setRules({ ...data, cancellation_policy: isPolicyKey(data.cancellation_policy) ? data.cancellation_policy : DEFAULT_POLICY });
       });
   }, [propertyId]);
 
+  if (loadFailed) return <p className="text-sm text-destructive">Your rules could not be loaded. Reload the page to try again.</p>;
   if (!rules) return <p className="text-sm text-muted-foreground">Loading…</p>;
   const set = <K extends keyof Rules>(key: K, value: Rules[K]) => setRules({ ...rules, [key]: value });
   const holidayOn = rules.holiday_min_nights !== null;
@@ -118,7 +119,7 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
             hint={`${rules.min_nights} night${rules.min_nights !== 1 ? "s" : ""}`}
             value={rules.min_nights}
             min={1}
-            max={30}
+            max={holidayOn ? 29 : 30}
             onChange={(n) =>
               setRules({ ...rules, min_nights: n, holiday_min_nights: holidayOn ? Math.max(n + 1, rules.holiday_min_nights ?? 0) : null })
             }

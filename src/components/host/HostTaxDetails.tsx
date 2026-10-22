@@ -31,8 +31,11 @@ interface SavedTax {
   country_code: string;
   tin_country: string | null;
   tin_masked: string | null;
+  other_tin_countries: string[] | null;
+  birth_place: string | null;
   vat_number: string | null;
   pe_eu: boolean | null;
+  pe_countries: string[] | null;
   dac7_complete: boolean;
   updated_at: string;
 }
@@ -44,7 +47,7 @@ const loadTax = async (): Promise<SavedTax | null> => {
   if (!profile) return null;
   const { data, error } = await supabase
     .from("host_tax_profiles")
-    .select("seller_type, first_name, last_name, legal_name, date_of_birth, street, postal_code, city, country_code, tin_country, tin_masked, vat_number, pe_eu, dac7_complete, updated_at")
+    .select("seller_type, first_name, last_name, legal_name, date_of_birth, birth_place, street, postal_code, city, country_code, tin_country, tin_masked, other_tin_countries, vat_number, pe_eu, pe_countries, dac7_complete, updated_at")
     .eq("profile_id", profile.id)
     .maybeSingle();
   if (error) throw error;
@@ -109,6 +112,10 @@ const fromSaved = (s: SavedTax): Form => ({
   swedishTin: (s.tin_country ?? "SE") === "SE",
   tinCountry: s.tin_country && s.tin_country !== "SE" ? s.tin_country : "",
   dateOfBirth: s.date_of_birth ?? "",
+  birthPlace: s.birth_place ?? "",
+  hasOtherTin: (s.other_tin_countries?.length ?? 0) > 0,
+  otherTinCountry: s.other_tin_countries?.[0] ?? "",
+  peCountries: (s.pe_countries ?? []).join(", "),
   street: s.street,
   postalCode: s.postal_code,
   city: s.city,
@@ -139,6 +146,11 @@ export function HostTaxDetails() {
   const f = form ?? (saved ? fromSaved(saved) : EMPTY);
   const startEditing = () => setForm(saved ? fromSaved(saved) : EMPTY);
   const individual = f.sellerType === "individual";
+  // A saved tax number stays unless the host types a new one (the browser never gets it back)
+  const formTinCountry = f.swedishTin ? "SE" : f.tinCountry.trim().toUpperCase();
+  const canKeepTin = !!saved?.tin_masked && saved.seller_type === f.sellerType && (saved.tin_country ?? "SE") === formTinCountry;
+  const keepTin = canKeepTin && !f.tin.trim();
+  const keepOtherTins = f.hasOtherTin && !f.otherTin.trim() && (saved?.other_tin_countries?.length ?? 0) > 0;
 
   const save = async () => {
     setSaving(true);
@@ -148,8 +160,9 @@ export function HostTaxDetails() {
         firstName: f.firstName,
         lastName: f.lastName,
         legalName: f.legalName,
-        tinCountry: f.swedishTin ? "SE" : f.tinCountry.toUpperCase(),
+        tinCountry: formTinCountry,
         tin: f.tin,
+        keepTin,
         dateOfBirth: f.swedishTin ? "" : f.dateOfBirth,
         birthPlace: f.birthPlace,
         street: f.street,
@@ -157,7 +170,8 @@ export function HostTaxDetails() {
         city: f.city,
         countryCode: f.countryCode.toUpperCase(),
         vatNumber: f.vatNumber,
-        otherTins: f.hasOtherTin ? [{ country: f.otherTinCountry.toUpperCase(), number: f.otherTin }] : [],
+        otherTins: f.hasOtherTin && !keepOtherTins ? [{ country: f.otherTinCountry.toUpperCase(), number: f.otherTin }] : [],
+        keepOtherTins,
         peEu: individual ? undefined : f.peEu,
         peCountries: f.peCountries.split(/[\s,]+/).filter(Boolean),
         confirm: f.confirm,
@@ -238,14 +252,14 @@ export function HostTaxDetails() {
                   "tax-tin",
                   individual ? "Personnummer" : "Organisationsnummer",
                   <Input id="tax-tin" value={f.tin} onChange={(e) => set("tin", e.target.value)} placeholder={individual ? "YYYYMMDD-NNNN" : "NNNNNN-NNNN"} autoComplete="off" inputMode="numeric" />,
-                  saved?.tin_masked && saved.tin_country === "SE" ? `Saved: ${saved.tin_masked}. Enter it again to save changes.` : individual ? "Your date of birth is taken from it." : undefined,
+                  canKeepTin ? `Saved: ${saved?.tin_masked}. Leave empty to keep it.` : individual ? "Your date of birth is taken from it." : undefined,
                 )
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {field("tax-tin-country", "Country of your tax number", <Input id="tax-tin-country" value={f.tinCountry} maxLength={2} onChange={(e) => set("tinCountry", e.target.value)} placeholder="e.g. NO" />, "Two-letter country code")}
-                  {field("tax-tin-foreign", "Tax number", <Input id="tax-tin-foreign" value={f.tin} onChange={(e) => set("tin", e.target.value)} autoComplete="off" />, individual ? "Leave empty only if you have none." : undefined)}
+                  {field("tax-tin-foreign", "Tax number", <Input id="tax-tin-foreign" value={f.tin} onChange={(e) => set("tin", e.target.value)} autoComplete="off" />, canKeepTin ? `Saved: ${saved?.tin_masked}. Leave empty to keep it.` : individual ? "Leave empty only if you have none." : undefined)}
                   {individual && field("tax-dob", "Date of birth", <Input id="tax-dob" type="date" value={f.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} />)}
-                  {individual && !f.tin.trim() && field("tax-birthplace", "Place of birth", <Input id="tax-birthplace" value={f.birthPlace} onChange={(e) => set("birthPlace", e.target.value)} />, "Needed when you have no tax number")}
+                  {individual && !f.tin.trim() && !keepTin && field("tax-birthplace", "Place of birth", <Input id="tax-birthplace" value={f.birthPlace} onChange={(e) => set("birthPlace", e.target.value)} />, "Needed when you have no tax number")}
                 </div>
               )}
             </div>
@@ -268,7 +282,7 @@ export function HostTaxDetails() {
               {f.hasOtherTin && (
                 <div className="grid gap-4 sm:grid-cols-[8rem_1fr]">
                   {field("tax-other-country", "Country", <Input id="tax-other-country" value={f.otherTinCountry} maxLength={2} onChange={(e) => set("otherTinCountry", e.target.value)} placeholder="e.g. NO" />)}
-                  {field("tax-other-number", "Tax number", <Input id="tax-other-number" value={f.otherTin} onChange={(e) => set("otherTin", e.target.value)} autoComplete="off" />)}
+                  {field("tax-other-number", "Tax number", <Input id="tax-other-number" value={f.otherTin} onChange={(e) => set("otherTin", e.target.value)} autoComplete="off" />, (saved?.other_tin_countries?.length ?? 0) > 0 ? `Saved for ${saved?.other_tin_countries?.join(", ")}. Leave empty to keep it.` : undefined)}
                 </div>
               )}
             </div>
@@ -297,8 +311,8 @@ export function HostTaxDetails() {
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              We store your tax number encrypted; only the last part is shown. A few admins can see it, and it is deleted
-              after the period the law requires (at least 7 years). See our{" "}
+              We store your tax number encrypted and only ever show the last part. The full number is used only for the
+              yearly report to Skatteverket, and it is deleted after the period the law requires (at least 7 years). See our{" "}
               <Link to="/privacy" className="underline">privacy policy</Link>.
             </p>
             <div className="flex justify-end gap-2">

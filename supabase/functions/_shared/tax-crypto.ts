@@ -14,6 +14,7 @@ const fromBase64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCo
 let keys: Promise<{ aes: CryptoKey; hmac: CryptoKey }> | null = null;
 
 function taxKeys() {
+  // A failed load (secret missing or wrong) is retried next time, not kept
   keys ??= (async () => {
     const secret = Deno.env.get("TAX_ID_KEY");
     if (!secret) throw new Error("TAX_ID_KEY is not set");
@@ -26,7 +27,10 @@ function taxKeys() {
       aes: await derive("nordic-getaways tax id aes-gcm v1", { name: "AES-GCM", length: 256 }, ["encrypt", "decrypt"]),
       hmac: await derive("nordic-getaways tax id hmac v1", { name: "HMAC", hash: "SHA-256", length: 256 }, ["sign"]),
     };
-  })();
+  })().catch((error) => {
+    keys = null;
+    throw error;
+  });
   return keys;
 }
 

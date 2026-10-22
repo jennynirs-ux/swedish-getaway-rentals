@@ -17,6 +17,9 @@ export interface BookingData {
   extras?: string[];
   /** Guest confirmed the listing's minimum age (and no parties, unless the host allows them) */
   rules_confirmed: boolean;
+  /** The cancellation policy and minimum age the form showed; the server refuses if the listing's differ now */
+  shown_policy?: string;
+  shown_min_age?: number;
 }
 
 export const useBooking = () => {
@@ -78,7 +81,9 @@ export const useBooking = () => {
           currency: bookingData.currency,
           couponId: bookingData.coupon_id,
           extras: bookingData.extras ?? [],
-          rulesConfirmed: bookingData.rules_confirmed
+          rulesConfirmed: bookingData.rules_confirmed,
+          shownPolicy: bookingData.shown_policy,
+          shownMinAge: bookingData.shown_min_age
         }
       });
 

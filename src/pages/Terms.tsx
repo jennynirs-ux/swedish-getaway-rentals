@@ -72,7 +72,7 @@ const Terms = () => {
           <li>
             Each place has its host's house rules, shown in the booking form before you pay: the minimum stay (which may
             be longer over Valborg, Midsummer Eve and New Year's Eve), whether pets, smoking, and parties or events are
-            allowed, and the minimum age of the person booking. The rules shown when you book apply to your stay.
+            allowed, and the minimum age of the person booking. You accept them when you book.
           </li>
           <li>
             The person booking must be at least {ADULT_AGE}, or the higher age the place asks for, and stay at the

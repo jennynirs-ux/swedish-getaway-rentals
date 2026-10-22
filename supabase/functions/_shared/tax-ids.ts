@@ -115,5 +115,8 @@ export function parseForeignTin(input: string): Parsed<string> {
   return { ok: true, value: v };
 }
 
-/** "••••1234" */
-export const maskTail = (value: string) => `••••${value.replace(/[^0-9A-Za-z]/g, "").slice(-4)}`;
+/** "••••1234": never more than half of a short number */
+export const maskTail = (value: string) => {
+  const clean = value.replace(/[^0-9A-Za-z]/g, "");
+  return `••••${clean.length >= 8 ? clean.slice(-4) : clean.length >= 5 ? clean.slice(-2) : ""}`;
+};

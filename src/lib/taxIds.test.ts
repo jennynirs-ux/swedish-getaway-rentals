@@ -57,5 +57,7 @@ describe("parseVatNumber and others", () => {
     expect(parseForeignTin(" 12345678901 ")).toEqual({ ok: true, value: "12345678901" });
     expect(parseForeignTin("x")).toMatchObject({ ok: false });
     expect(maskTail("DE-123 456 789")).toBe("••••6789");
+    expect(maskTail("AB12")).toBe("••••");
+    expect(maskTail("12345")).toBe("••••45");
   });
 });

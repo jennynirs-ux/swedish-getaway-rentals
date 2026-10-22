@@ -90,8 +90,8 @@ const HostTerms = () => {
           <li>
             You set your house rules in your host dashboard: the minimum stay (and a longer one over Valborg, Midsummer
             Eve and New Year's Eve if you like), whether pets, smoking, and parties or events are allowed, and the
-            minimum age of the person booking (at least {ADULT_AGE}). Guests see and accept them before they pay, and
-            the rules shown when a guest booked apply to that stay. Our booking terms for guests also apply to every
+            minimum age of the person booking (at least {ADULT_AGE}). Guests see and accept them before they pay. If
+            you change them, tell guests who have already booked. Our booking terms for guests also apply to every
             stay.
           </li>
           <li>

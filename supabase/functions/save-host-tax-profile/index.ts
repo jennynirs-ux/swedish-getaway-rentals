@@ -20,14 +20,20 @@ const json = (body: unknown, status = 200) =>
 const fail = (error: string) => json({ error }, 400);
 
 const text = (value: unknown, max = 200) => (typeof value === "string" ? value.trim().slice(0, max) : "");
+// The whole value must be a two-letter code ("Germany" is not "GE")
 const country = (value: unknown) => {
-  const c = text(value, 2).toUpperCase();
+  const c = typeof value === "string" ? value.trim().toUpperCase() : "";
   return /^[A-Z]{2}$/.test(c) ? c : null;
 };
+// A real date ("1990-02-30" is not), from 1900 on
 const isoDate = (value: unknown) => {
   const d = text(value, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(`${d}T00:00:00Z`)) ? d : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < "1900-01-01") return null;
+  const ms = Date.parse(`${d}T00:00:00Z`);
+  return !Number.isNaN(ms) && new Date(ms).toISOString().slice(0, 10) === d ? d : null;
 };
+// The same foreign number however it is typed, for the duplicate check
+const canonicalTin = (tin: string) => tin.toUpperCase().replace(/[^0-9A-Z]/g, "");
 
 /** Columns the host may see (the same the database lets the browser read) */
 const VISIBLE =
@@ -70,15 +76,32 @@ serve(async (req) => {
     const vat = parseVatNumber(text(body.vatNumber, 30));
     if (!vat.ok) return fail(vat.error);
 
+    // What is saved already: a host who changes their address keeps their
+    // tax numbers without typing them again (the browser never has them)
+    const { data: existing, error: existingError } = await supabase
+      .from("host_tax_profiles")
+      .select("seller_type, tin_country, tin_ciphertext, tin_hmac, tin_masked, date_of_birth, other_tins_ciphertext, other_tin_countries, verification_log")
+      .eq("profile_id", profile.id)
+      .maybeSingle();
+    if (existingError) throw new Error(`Reading the saved tax details failed: ${existingError.message}`);
+
     // The tax number: Swedish ones are checked and give the date of birth
-    const tinCountry = country(body.tinCountry) ?? "SE";
+    const tinCountry = body.tinCountry === undefined || body.tinCountry === "SE" ? "SE" : country(body.tinCountry);
+    if (!tinCountry) return fail("Choose the country of your tax number (a two-letter code, e.g. NO).");
+    const keepTin = body.keepTin === true && !!existing?.tin_ciphertext && existing.tin_country === tinCountry &&
+      existing.seller_type === sellerType;
     const checks: { check: string; result: string }[] = [];
     let tin: string | null = null;
     let tinMasked: string | null = null;
     let dateOfBirth: string | null = null;
     let birthPlace: string | null = null;
 
-    if (sellerType === "individual") {
+    if (keepTin) {
+      tinMasked = existing!.tin_masked;
+      // A Swedish number gave the date of birth; a foreign one came with it
+      dateOfBirth = sellerType === "individual" ? (tinCountry === "SE" ? existing!.date_of_birth : isoDate(body.dateOfBirth)) : null;
+      if (sellerType === "individual" && !dateOfBirth) return fail("Enter your date of birth.");
+    } else if (sellerType === "individual") {
       if (tinCountry === "SE") {
         const pnr = parsePersonnummer(text(body.tin, 20), today);
         if (!pnr.ok) return fail(pnr.error);
@@ -132,21 +155,18 @@ serve(async (req) => {
       if (peEu && !peCountries.length) return fail("Which EU countries?");
     }
 
-    // Tax numbers from other countries (all must be collected)
+    // Tax numbers from other countries (all must be collected); kept as saved
+    // unless the host enters new ones or removes them
+    const keepOtherTins = body.keepOtherTins === true && !!existing?.other_tins_ciphertext;
     const otherTins: { country: string; number: string }[] = [];
-    for (const item of Array.isArray(body.otherTins) ? body.otherTins.slice(0, 5) : []) {
+    for (const item of keepOtherTins ? [] : Array.isArray(body.otherTins) ? body.otherTins.slice(0, 5) : []) {
       const c = country(item?.country);
       const n = parseForeignTin(text(item?.number, 40));
       if (!c || !n.ok) return fail("Check the other country's tax number and its country.");
       otherTins.push({ country: c, number: n.value });
     }
 
-    const tinHmac = tin ? await taxIdHash(tinCountry, tin) : null;
-    const { data: existing } = await supabase
-      .from("host_tax_profiles")
-      .select("verification_log")
-      .eq("profile_id", profile.id)
-      .maybeSingle();
+    const tinHmac = keepTin ? existing!.tin_hmac : tin ? await taxIdHash(tinCountry, canonicalTin(tin)) : null;
     const now = new Date().toISOString();
     const log = [...((existing?.verification_log as unknown[]) ?? []), ...checks.map((c) => ({ ...c, at: now }))].slice(-20);
 
@@ -162,12 +182,14 @@ serve(async (req) => {
       postal_code: postalCode,
       city,
       country_code: countryCode,
-      tin_country: tin ? tinCountry : null,
-      tin_ciphertext: tin ? await encryptTaxId(tin) : null,
+      tin_country: keepTin || tin ? tinCountry : null,
+      tin_ciphertext: keepTin ? existing!.tin_ciphertext : tin ? await encryptTaxId(tin) : null,
       tin_hmac: tinHmac,
       tin_masked: tinMasked,
-      other_tins_ciphertext: otherTins.length ? await encryptTaxId(JSON.stringify(otherTins)) : null,
-      other_tin_countries: otherTins.map((t) => t.country),
+      other_tins_ciphertext: keepOtherTins
+        ? existing!.other_tins_ciphertext
+        : otherTins.length ? await encryptTaxId(JSON.stringify(otherTins)) : null,
+      other_tin_countries: keepOtherTins ? existing!.other_tin_countries : otherTins.map((t) => t.country),
       vat_number: vat.value,
       pe_eu: peEu,
       pe_countries: peCountries,

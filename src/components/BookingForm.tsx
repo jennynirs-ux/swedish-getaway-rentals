@@ -12,6 +12,7 @@ import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { usePricingRules } from "@/hooks/usePricingRules";
 import CouponInput from "@/components/CouponInput";
 import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDisplay";
+import { policyFor } from "../../supabase/functions/_shared/cancellation";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_STAY_RULES, houseRuleLines, minGuestAge, stayRuleError, type StayRules } from "@/lib/stayRules";
@@ -83,6 +84,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // The host's house rules and cancellation policy (checked again by the payment function)
   const [stayRules, setStayRules] = useState<StayRules>(DEFAULT_STAY_RULES);
   const [policyKey, setPolicyKey] = useState<string | null>(null);
+  // Nothing can be booked before the listing's own rules and policy are shown
+  const [rulesLoaded, setRulesLoaded] = useState(false);
   
   // Fetch property discounts, house rules and cancellation policy
   useEffect(() => {
@@ -100,6 +103,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         });
         setStayRules(data);
         setPolicyKey(data.cancellation_policy);
+        setRulesLoaded(true);
       }
     };
     fetchDiscounts();
@@ -278,7 +282,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
         coupon_id: appliedCoupon?.id,
         // Only extras still offered (a host may have removed one meanwhile)
         extras: selectedExtras.filter((id) => optionalExtras.some((extra) => extra.id === id)),
-        rules_confirmed: partyRulesAccepted
+        rules_confirmed: partyRulesAccepted,
+        shown_policy: policyFor(policyKey).key,
+        shown_min_age: minGuestAge(stayRules)
       });
       // No reset either way: on success the page is already going to Stripe,
       // and after an error (dates taken, price changed) the guest fixes one
@@ -661,7 +667,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || feeRate === null || totalAmount <= 0 || !!stayError || !houseRulesAccepted || !partyRulesAccepted}
+            disabled={loading || feeRate === null || !rulesLoaded || totalAmount <= 0 || !!stayError || !houseRulesAccepted || !partyRulesAccepted}
           >
             {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
           </Button>

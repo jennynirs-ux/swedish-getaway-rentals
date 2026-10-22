@@ -31,7 +31,7 @@ const DATA = [
   },
   {
     when: "You host on Nordic Getaways (tax details)",
-    data: "Name, home or registered address, personal identity number (personnummer or samordningsnummer) or organisationsnummer, date of birth, tax numbers from other countries, VAT number, each place's address and property designation (fastighetsbeteckning), and your rental income and number of rental days through us. Tax numbers are stored encrypted; only a few admins can see them in full.",
+    data: "Name, home or registered address, personal identity number (personnummer or samordningsnummer) or organisationsnummer, date of birth, tax numbers from other countries, VAT number, each place's address and property designation (fastighetsbeteckning), and your rental income and number of rental days through us. Tax numbers are stored encrypted and only shown masked; the full number is used only for the yearly report to Skatteverket.",
     why: "EU rules on reporting by platforms (DAC7), in Swedish law (lag 2022:1681 and chapter 22 c of the Tax Procedure Act), require us to collect these details and report them to Skatteverket once a year. Basis: legal obligation (GDPR art. 6.1 c).",
     kept: "At least seven years after the last year they were reported for, as the law requires; then deleted.",
   },
