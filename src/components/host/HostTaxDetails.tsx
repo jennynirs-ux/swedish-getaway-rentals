@@ -130,7 +130,9 @@ export function HostTaxDetails() {
   const { data: saved, isLoading } = useHostTaxDetails();
   const [form, setForm] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
-  const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => (f ? { ...f, [key]: value } : f));
+  // The first change starts from what is shown (the saved details, or an empty form)
+  const set = <K extends keyof Form>(key: K, value: Form[K]) =>
+    setForm((prev) => ({ ...(prev ?? (saved ? fromSaved(saved) : EMPTY)), [key]: value }));
 
   if (isLoading) return null;
   const editing = form !== null || !saved?.dac7_complete;
