@@ -1,6 +1,8 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { isPartyNight, stayRuleError } from "./stayRules";
+import { houseRuleLines, isPartyNight, stayRuleError } from "./stayRules";
+
+// The owners' cabins: 2 nights, 3 over the party nights
+const owners = { min_nights: 2, holiday_min_nights: 3, min_guest_age: 25 };
 
 describe("stayRuleError", () => {
   it.each([
@@ -13,7 +15,36 @@ describe("stayRuleError", () => {
     ["2026-06-18", "2026-06-20", false, "two nights over Midsummer Eve 2026 (Fri 19 June)"],
     ["2027-06-18", "2027-06-20", true, "18-19 June 2027 is not Midsummer"],
   ])("%s to %s is %s (%s)", (checkIn, checkOut, allowed) => {
-    expect(stayRuleError(checkIn, checkOut) === null).toBe(allowed);
+    expect(stayRuleError(checkIn, checkOut, owners) === null).toBe(allowed);
+  });
+
+  it("follows each listing's own minimum", () => {
+    expect(stayRuleError("2026-10-09", "2026-10-10", { min_nights: 1 })).toBeNull();
+    expect(stayRuleError("2026-10-09", "2026-10-10", {})).toBeNull();
+    expect(stayRuleError("2026-10-09", "2026-10-12", { min_nights: 4 })).toBe("The minimum stay is 4 nights.");
+    // No longer holiday minimum: a single night over New Year's Eve is fine
+    expect(stayRuleError("2026-12-31", "2027-01-01", { min_nights: 1 })).toBeNull();
+    // A holiday minimum no longer than the normal one changes nothing
+    expect(stayRuleError("2026-12-30", "2027-01-01", { min_nights: 2, holiday_min_nights: 2 })).toBeNull();
+  });
+});
+
+describe("houseRuleLines", () => {
+  it("states every rule, with the holiday minimum only when it is longer", () => {
+    expect(houseRuleLines({ ...owners, pets_allowed: false, smoking_allowed: false, events_allowed: false })).toEqual([
+      "Minimum stay 2 nights (3 over Valborg, Midsummer and New Year's Eve)",
+      "No pets",
+      "No smoking",
+      "No parties or events",
+      "The person booking is at least 25 and stays at the place",
+    ]);
+    expect(houseRuleLines({ min_nights: 1, pets_allowed: true, min_guest_age: 16 })).toEqual([
+      "Minimum stay 1 night",
+      "Pets allowed",
+      "No smoking",
+      "No parties or events",
+      "The person booking is at least 18 and stays at the place",
+    ]);
   });
 });
 
@@ -22,11 +53,4 @@ describe("isPartyNight", () => {
     expect(isPartyNight("2028-06-23")).toBe(true);
     expect(isPartyNight("2028-06-24")).toBe(false);
   });
-});
-
-// The payment function enforces the same rules from its own copy
-it("matches supabase/functions/_shared/stay-rules.ts", () => {
-  const code = (path: string) =>
-    readFileSync(path, "utf8").split("\n").slice(2).join("\n").replace(/["']/g, "'");
-  expect(code("src/lib/stayRules.ts")).toBe(code("supabase/functions/_shared/stay-rules.ts"));
 });

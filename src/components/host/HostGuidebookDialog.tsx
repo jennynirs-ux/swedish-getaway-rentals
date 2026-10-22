@@ -462,7 +462,7 @@ const sections: SectionDef[] = [
         },
         {
           q: "Guest wants to cancel",
-          a: "Ask them to contact Nordic Getaways: we handle cancellations and refunds. The guest gets back 90% of your price more than 21 days before arrival, 50% 8–21 days before, and nothing within 7 days. The refund is taken from that booking's payout; the guest service fee is not refunded.",
+          a: "Ask them to contact Nordic Getaways: we handle cancellations and refunds. The guest gets back what your cancellation policy gives (you choose it under Rules; Standard gives 90% of your price more than 21 days before arrival, 50% 8–21 days before, and nothing within 7 days). The refund is taken from that booking's payout; the guest service fee is not refunded.",
         },
         {
           q: "You have to cancel a booking",

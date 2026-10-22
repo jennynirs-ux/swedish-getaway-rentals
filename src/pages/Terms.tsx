@@ -2,18 +2,15 @@ import { Link } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import LegalPage from "@/components/LegalPage";
 import { COMPANY, COMPANY_ADDRESS, TERMS_UPDATED } from "@/content/company";
-import { MIN_LEAD_GUEST_AGE, MIN_NIGHTS, PARTY_NIGHT_MIN_NIGHTS } from "@/lib/stayRules";
+import { ADULT_AGE } from "@/lib/stayRules";
 import { FOUNDING_HOST_FEE_PCT, PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
+import { CANCELLATION_POLICIES, POLICY_KEYS } from "../../supabase/functions/_shared/cancellation";
 
-// Keep the refund tiers in line with platform_settings.cancellation_policy
-// (supabase/functions/_shared/cancellation.ts), which the refunds use. They are
-// shares of the stay price (bookings.host_amount): the service fee is kept when
-// the guest cancels, and refunded when the host or we cancel.
-const REFUNDS = [
-  ["More than 21 days before arrival", "90% of the price of the stay"],
-  ["21–8 days before arrival", "50% of the price of the stay"],
-  ["7 days or less before arrival", "No refund"],
-];
+// The four policies hosts choose from, as the refunds follow them
+// (supabase/functions/_shared/cancellation.ts). Refunds are shares of the stay
+// price (bookings.host_amount): the service fee is kept when the guest
+// cancels, and refunded when the host or we cancel.
+const POLICIES = POLICY_KEYS.map((key) => CANCELLATION_POLICIES[key]);
 // Stay price in the cancellation example (SEK)
 const EXAMPLE_STAY = 10000;
 const sek = (amount: number) => `${amount.toLocaleString("en-GB")} SEK`;
@@ -55,14 +52,17 @@ const Terms = () => {
           <li>You pay the full amount when you book, by card through Stripe. Prices are in Swedish kronor (SEK).</li>
           <li>
             The total shown before you pay is the full price: the nightly price, any extra-guest and cleaning fees,
-            and a service fee of up to {fee}% ({FOUNDING_HOST_FEE_PCT}% on listings from founding hosts in their first
-            year). A weekly or monthly discount is taken off the nightly price.
+            any extras you add, and a service fee of up to {fee}% ({FOUNDING_HOST_FEE_PCT}% on listings from founding
+            hosts in their first year). A weekly or monthly discount is taken off the nightly price.
           </li>
           <li>
             The service fee is our fee for the booking service. Everything else you pay is the price of the stay, which
             goes to the host.
           </li>
-          <li>Bed linen and towels are included when the cabin's listing says so.</li>
+          <li>
+            What is included in the price, for example bed linen and towels, is listed in the booking form. Other things
+            are included only when the listing says so.
+          </li>
         </ul>
       </section>
 
@@ -70,12 +70,15 @@ const Terms = () => {
         <h2>House rules</h2>
         <ul>
           <li>
-            The minimum stay is {MIN_NIGHTS} nights, and {PARTY_NIGHT_MIN_NIGHTS} nights over Valborg (30 April),
-            Midsummer Eve and New Year's Eve.
+            Each place has its host's house rules, shown in the booking form before you pay: the minimum stay (which may
+            be longer over Valborg, Midsummer Eve and New Year's Eve), whether pets, smoking, and parties or events are
+            allowed, and the minimum age of the person booking. The rules shown when you book apply to your stay.
           </li>
-          <li>The person booking must be at least {MIN_LEAD_GUEST_AGE} and stay at the property.</li>
+          <li>
+            The person booking must be at least {ADULT_AGE}, or the higher age the place asks for, and stay at the
+            property.
+          </li>
           <li>No more guests than booked, and never more than the property sleeps.</li>
-          <li>No parties or events. Pets and smoking: see each cabin's listing.</li>
           <li>Check-in and check-out times are on each cabin's page and in your booking confirmation.</li>
           <li>The rules on each property's page also apply.</li>
           <li>
@@ -88,31 +91,40 @@ const Terms = () => {
       <section>
         <h2>If you cancel</h2>
         <p className="mb-3">
-          Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> or reply to your booking confirmation. What you
-          get back depends on how many days before arrival your cancellation reaches us (Swedish time), and is a share
-          of the price of the stay. The service fee is not refunded when you cancel.
+          Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> or reply to your booking confirmation. Each place
+          has one of four cancellation policies, chosen by its host and shown in the booking form. The policy shown when
+          you booked applies to your booking, and it is in your confirmation. What you get back depends on how many days
+          before arrival your cancellation reaches us (Swedish time), and is a share of the price of the stay. The
+          service fee is not refunded when you cancel.
         </p>
         <div className="overflow-hidden rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left">
               <tr>
-                <th className="p-3 font-medium text-foreground">When you cancel</th>
-                <th className="p-3 font-medium text-foreground">Refund</th>
+                <th className="p-3 font-medium text-foreground">Policy</th>
+                <th className="p-3 font-medium text-foreground">Refund of the price of the stay</th>
               </tr>
             </thead>
             <tbody>
-              {REFUNDS.map(([when, refund]) => (
-                <tr key={when} className="border-t border-border">
-                  <td className="p-3 text-muted-foreground">{when}</td>
-                  <td className="p-3 text-muted-foreground">{refund}</td>
+              {POLICIES.map((policy) => (
+                <tr key={policy.key} className="border-t border-border align-top">
+                  <td className="p-3 font-medium text-foreground">{policy.name}</td>
+                  <td className="p-3 text-muted-foreground">
+                    {policy.tiers.map((tier) => (
+                      <div key={tier.label}>
+                        {tier.label}: {tier.refund_percentage > 0 ? `${tier.refund_percentage}%` : "no refund"}
+                      </div>
+                    ))}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p className="mt-3">
-          Example: the stay costs {sek(EXAMPLE_STAY)} and the service fee is {sek(exampleFee)}, so you paid{" "}
-          {sek(EXAMPLE_STAY + exampleFee)}. If you cancel 30 days before arrival, you get {sek(EXAMPLE_STAY * 0.9)} back.
+          Example, Standard policy: the stay costs {sek(EXAMPLE_STAY)} and the service fee is {sek(exampleFee)}, so you
+          paid {sek(EXAMPLE_STAY + exampleFee)}. If you cancel 30 days before arrival, you get {sek(EXAMPLE_STAY * 0.9)}{" "}
+          back.
         </p>
         <p className="mt-3">
           The refund goes back to the card you paid with. A stay is booked for specific dates, so the 14-day right of

@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.0.0";
 import { escapeHtml } from "../_shared/auth.ts";
 import { hhmm, longDate } from "../_shared/format.ts";
-import { loadCancellationPolicy, policySummary } from "../_shared/cancellation.ts";
+import { policyFor, policySummary } from "../_shared/cancellation.ts";
+import { houseRuleLines } from "../_shared/stay-rules.ts";
 import { alertAdminOnce } from "../_shared/alert.ts";
 import { dayAfterCheckIn, hostShareAmount, MAX_HOLD_DAYS, payoutDueOn } from "../_shared/payout.ts";
 
@@ -63,6 +64,7 @@ serve(async (req) => {
         guest_phone,
         number_of_guests,
         extras,
+        cancellation_policy,
         check_in_date,
         check_out_date,
         total_amount,
@@ -80,7 +82,12 @@ serve(async (req) => {
           country,
           check_in_time,
           check_out_time,
-          cancellation_policy,
+          min_nights,
+          holiday_min_nights,
+          pets_allowed,
+          smoking_allowed,
+          events_allowed,
+          min_guest_age,
           guidebook_sections,
           email_templates,
           host_id,
@@ -175,17 +182,20 @@ serve(async (req) => {
     // Extract house rules from guidebook sections
     const guidebookSections = property.guidebook_sections || [];
     const rulesSection = guidebookSections.find((s: any) => s.id === 'rules');
-    const houseRules = rulesSection?.blocks?.filter((b: any) => b.type === 'list')
-      .flatMap((b: any) => b.items || []) || [];
+    // The host's house rules for the listing, then any the guide adds
+    const houseRules = [
+      ...houseRuleLines(property),
+      ...(rulesSection?.blocks?.filter((b: any) => b.type === 'list').flatMap((b: any) => b.items || []) || []),
+    ];
 
-    // One policy for every stay, as shown in the booking form. The guest's
-    // written copy of it, so it says what the percentage applies to: the
-    // price of the stay, never the service fee (owner decision 21 Oct 2026)
-    const policy = await loadCancellationPolicy(supabase);
+    // The policy the guest booked on (the host's choice, saved on the
+    // booking). The guest's written copy of it, so it says what the
+    // percentage applies to: the price of the stay, never the service fee
+    const policy = policyFor(booking.cancellation_policy);
     const stayPrice = hostShareAmount(booking);
     const serviceFee = booking.service_fee ?? Math.max(0, booking.total_amount - stayPrice);
     const cancellationPolicy = {
-      title: "Cancellation policy",
+      title: `Cancellation policy (${policy.name})`,
       description:
         `${policySummary(policy)}. ` +
         `The percentage applies to the price of the stay (${formatAmount(stayPrice)} ${booking.currency}); ` +

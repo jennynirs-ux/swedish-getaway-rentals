@@ -3,7 +3,7 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { isAdminOrService } from "../_shared/auth.ts";
 import { alertAdminOnce, sendEmail } from "../_shared/alert.ts";
-import { daysBeforeArrival, loadCancellationPolicy, policySummary, refundPercentage } from "../_shared/cancellation.ts";
+import { daysBeforeArrival, policyFor, policySummary, refundPercentage } from "../_shared/cancellation.ts";
 import { stockholmToday } from "../_shared/format.ts";
 import { HOST_LOCK_BUSY_TEXT, HOST_LOCK_WAIT_MS, hostMoneyLock, type Lock, takeLock } from "../_shared/lock.ts";
 import { hostShareAmount, planCancellation, shareTakenBack, stableUuid } from "../_shared/payout.ts";
@@ -164,11 +164,11 @@ serve(async (req) => {
     const readBooking = async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select(`${MONEY_BOOKING_COLUMNS}, guest_email`)
+        .select(`${MONEY_BOOKING_COLUMNS}, guest_email, cancellation_policy`)
         .eq("id", bookingId)
         .maybeSingle();
       if (error) throw error;
-      return data as (MoneyBooking & { guest_email: string }) | null;
+      return data as (MoneyBooking & { guest_email: string; cancellation_policy: string | null }) | null;
     };
     let booking = await readBooking();
     if (!booking) return json({ error: "Booking not found" }, 404);
@@ -215,7 +215,8 @@ serve(async (req) => {
       return json({ error: "The request date is before the booking was made" }, 400);
     }
 
-    const policy = await loadCancellationPolicy(supabase);
+    // The policy the guest booked on (bookings from before hosts chose: Standard)
+    const policy = policyFor(booking.cancellation_policy);
     const days = daysBeforeArrival(booking.check_in_date, requestedOn);
     const policyPct = refundPercentage(policy, days);
     const alreadyRefunded = payment ? payment.amountRefunded : booking.refunded_amount ?? 0;
@@ -241,6 +242,7 @@ serve(async (req) => {
         requestedOn,
         daysBeforeArrival: days,
         policyPercentage: policyPct,
+        policyName: policy.name,
         hasPayment,
         currency,
         cardFee: cancelledBy === "host" ? payment?.cardFee ?? null : null,
@@ -428,7 +430,7 @@ serve(async (req) => {
       hasPayment,
       currency,
     };
-    const guestEmail = guestCancellationEmail(facts, policySummary(policy));
+    const guestEmail = guestCancellationEmail(facts, `${policy.name}: ${policySummary(policy)}`);
     if (!(await sendEmail(booking.guest_email, guestEmail.subject, guestEmail.html))) {
       notes.push(`The cancellation e-mail to the guest (${booking.guest_email}) could not be sent.`);
     }

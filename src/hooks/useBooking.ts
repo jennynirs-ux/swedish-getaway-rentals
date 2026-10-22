@@ -15,7 +15,7 @@ export interface BookingData {
   coupon_id?: string;
   /** Ids of the extras the guest added (properties_pricing_rules) */
   extras?: string[];
-  /** Guest confirmed: lead guest 25 or older, no parties or events */
+  /** Guest confirmed the listing's minimum age (and no parties, unless the host allows them) */
   rules_confirmed: boolean;
 }
 

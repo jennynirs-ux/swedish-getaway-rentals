@@ -4,7 +4,8 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import LegalPage from "@/components/LegalPage";
 import { COMPANY, COMPANY_ADDRESS } from "@/content/company";
 import { HOST_TERMS_PATH, HOST_TERMS_UPDATED, HOST_TERMS_VERSION } from "@/content/hostTerms";
-import { MIN_LEAD_GUEST_AGE, MIN_NIGHTS, PARTY_NIGHT_MIN_NIGHTS } from "@/lib/stayRules";
+import { ADULT_AGE } from "@/lib/stayRules";
+import { CANCELLATION_POLICIES, POLICY_KEYS } from "../../supabase/functions/_shared/cancellation";
 import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
 
 // Owner decisions of 21 Oct 2026 (see supabase/migrations/20261021220000_host_payout_after_checkin.sql):
@@ -14,17 +15,13 @@ import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, PLATFORM_SERVICE_FEE_RAT
 // host's next payout; the service fee is kept when a guest cancels; a host who
 // cancels gets nothing for the booking and pays the card fee; every host rents
 // out privately. Keep this page, the guest terms (/terms) and the cancel and
-// payout functions saying the same. HOST_TERMS_VERSION stays 2026-10-21: no
-// host had accepted these terms before this wording (they were not live).
+// payout functions saying the same. Version 2026-10-22: hosts choose their
+// cancellation policy (four fixed ones) and house rules, instead of one for all.
 
 // Lowest rate set_host_commission_rate accepts (it covers the card fee)
 const MIN_FEE_PCT = 4;
-// Same tiers as platform_settings.cancellation_policy and the guest terms
-const GUEST_REFUNDS = [
-  ["More than 21 days before arrival", "90% of the price of the stay"],
-  ["21–8 days before arrival", "50% of the price of the stay"],
-  ["7 days or less before arrival", "nothing"],
-];
+// The policies hosts choose from, as the refunds follow them (_shared/cancellation.ts)
+const POLICIES = POLICY_KEYS.map((key) => CANCELLATION_POLICIES[key]);
 // Host price in the cancellation example (SEK)
 const EXAMPLE_STAY = 10000;
 const sek = (amount: number) => `${amount.toLocaleString("en-GB")} SEK`;
@@ -87,13 +84,15 @@ const HostTerms = () => {
           </li>
           <li>
             Describe the place accurately and keep the listing up to date: photos, rooms and beds, how many guests it
-            sleeps, amenities, location, check-in and check-out times, and your house rules (for example pets and
-            smoking). What your listing says is what you promise the guest.
+            sleeps, amenities, location, check-in and check-out times, what is included and what guests can add, your
+            house rules and your cancellation policy. What your listing says is what you promise the guest.
           </li>
           <li>
-            Our booking terms for guests apply to every stay. Among other things: at least {MIN_NIGHTS} nights (
-            {PARTY_NIGHT_MIN_NIGHTS} over Valborg, Midsummer Eve and New Year's Eve), the person booking must be at
-            least {MIN_LEAD_GUEST_AGE} and stay at the place, and no parties or events.
+            You set your house rules in your host dashboard: the minimum stay (and a longer one over Valborg, Midsummer
+            Eve and New Year's Eve if you like), whether pets, smoking, and parties or events are allowed, and the
+            minimum age of the person booking (at least {ADULT_AGE}). Guests see and accept them before they pay, and
+            the rules shown when a guest booked apply to that stay. Our booking terms for guests also apply to every
+            stay.
           </li>
           <li>
             You are responsible for the place being safe to stay in, for example working smoke alarms, a fire
@@ -170,13 +169,19 @@ const HostTerms = () => {
       <section id="guest-cancels">
         <h2>When a guest cancels</h2>
         <p className="mb-3">
-          Every listing has the same cancellation policy, shown to guests before they book. Days are counted to the
-          arrival date from the day the guest's cancellation reaches us (Swedish time). The guest gets back:
+          You choose your listing's cancellation policy from these four, and can change it at any time. The policy
+          shown when a guest booked applies to that booking, even if you change it later. Days are counted to the
+          arrival date from the day the guest's cancellation reaches us (Swedish time). The guest gets back this share
+          of the price of the stay:
         </p>
         <ul>
-          {GUEST_REFUNDS.map(([when, refund]) => (
-            <li key={when}>
-              {when}: {refund}
+          {POLICIES.map((policy) => (
+            <li key={policy.key}>
+              <strong>{policy.name}:</strong>{" "}
+              {policy.tiers
+                .map((tier) => `${tier.label.charAt(0).toLowerCase()}${tier.label.slice(1)}, ${tier.refund_percentage > 0 ? `${tier.refund_percentage}%` : "nothing"}`)
+                .join("; ")}
+              .
             </li>
           ))}
         </ul>
@@ -184,8 +189,8 @@ const HostTerms = () => {
           The refund is taken from your share of that booking: before the payout, from that booking's payout; after
           it, as described in "Money taken back after a payout". The service fee is not refunded to the guest, and it
           never reduces your share. Example: your price for the stay is {sek(EXAMPLE_STAY)} and the guest also pays a{" "}
-          {sek(exampleFee)} service fee. If the guest cancels 30 days before arrival, the guest gets{" "}
-          {sek(EXAMPLE_STAY * 0.9)} back and you keep {sek(EXAMPLE_STAY * 0.1)}.
+          {sek(exampleFee)} service fee. On the Standard policy, if the guest cancels 30 days before arrival, the
+          guest gets {sek(EXAMPLE_STAY * 0.9)} back and you keep {sek(EXAMPLE_STAY * 0.1)}.
         </p>
         <p className="mt-3">
           Guests cancel through us; we handle the refund and the dates open again in your calendar. If a guest is

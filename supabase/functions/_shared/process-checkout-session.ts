@@ -4,6 +4,7 @@ import { alertAdmin, alertAdminOnce, sendEmail, SUPPORT_EMAIL } from "./alert.ts
 import { escapeHtml } from "./auth.ts";
 import { hostShareAmount, initialHostPayout } from "./payout.ts";
 import { MONEY_BOOKING_COLUMNS, type MoneyBooking, reconcileBookingMoney, reverseUnsavedPayment } from "./booking-money.ts";
+import { isPolicyKey } from "./cancellation.ts";
 
 // Shared by handle-payment-success (guest redirect), stripe-webhook and
 // reconcile-payments, which can all fire for the same Checkout session, often
@@ -290,6 +291,8 @@ async function saveSession(
           number_of_guests: parseInt(metadata.numberOfGuests),
           special_requests: metadata.specialRequests || null,
           extras,
+          // The policy the guest saw when booking (older sessions: none, i.e. Standard)
+          cancellation_policy: isPolicyKey(metadata.cancellationPolicy) ? metadata.cancellationPolicy : null,
           total_amount: parseInt(metadata.totalAmount),
           // Fee model A split (both in öre); older sessions carry no serviceFee
           service_fee: parseInt(metadata.serviceFee || "0"),

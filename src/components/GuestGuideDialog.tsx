@@ -40,6 +40,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
+import { houseRuleLines } from "@/lib/stayRules";
 
 const LeafletPropertyMapBasic = lazy(() => import("@/components/maps/LeafletPropertyMapBasic"));
 
@@ -159,7 +160,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
           blocks: custom.blocks || undefined,
         }];
       }
-      return GENERAL_SECTION_IDS.includes(section.id) ? [section] : [];
+      // House rules always: the host sets them for the listing (Rules tab)
+      return GENERAL_SECTION_IDS.includes(section.id) || section.id === "rules" ? [section] : [];
     });
   }, [customSections]);
 
@@ -311,6 +313,26 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
   };
 
   const renderSectionContent = (section: GuideSection) => {
+    // The listing's house rules (as the booking form showed them), then what
+    // the host wrote in the guide's rules section, if anything
+    if (section.id === "rules") {
+      const hostWrote =
+        (section.blocks || []).some(isFilledBlock) || section.content?.trim() || section.items?.some((i) => i?.trim());
+      return (
+        <div className="space-y-6">
+          <ul className="space-y-2">
+            {houseRuleLines(property).map((line) => (
+              <li key={line} className="flex items-start gap-2">
+                <CheckSquare className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                <span className="text-muted-foreground">{line}</span>
+              </li>
+            ))}
+          </ul>
+          {hostWrote && renderSectionContent({ ...section, id: "rules-from-host" })}
+        </div>
+      );
+    }
+
     // If the section has blocks (new format from GuidebookEditorEnhanced), render those
     const blocks = (section.blocks || []).filter(isFilledBlock);
     if (blocks.length > 0) {
@@ -460,35 +482,6 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
                     )
                   )}
                   <p className="text-xs text-primary font-medium mt-1">{cat.tip}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    if (section.id === "rules") {
-      const houseRules = [
-        { icon: Ban, rule: "No smoking indoors", description: "Smoking is only allowed outside" },
-        { icon: Volume2, rule: "No parties", description: "Respect the neighbors" },
-        { icon: SmilePlus, rule: "No pets", description: "Pets are not allowed" },
-        { icon: Clock, rule: "Quiet 22–07", description: "Respect quiet hours" },
-        { icon: Recycle, rule: "Recycle", description: "Separate waste properly" },
-        { icon: Heart, rule: "Enjoy!", description: "Relax and feel at home" },
-      ];
-      return (
-        <div className="grid gap-6">
-          {houseRules.map((rule, index) => {
-            const Icon = rule.icon;
-            return (
-              <div key={index} className="flex items-start gap-4 p-6 bg-card border rounded-lg">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{rule.rule}</h3>
-                  <p className="text-muted-foreground text-sm">{rule.description}</p>
                 </div>
               </div>
             );

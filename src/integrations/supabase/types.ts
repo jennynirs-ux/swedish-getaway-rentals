@@ -200,6 +200,7 @@ export type Database = {
           access_code: string | null
           access_code_expires_at: string | null
           cancel_requested_on: string | null
+          cancellation_policy: string | null
           cancelled_at: string | null
           cancelled_by: string | null
           check_in_date: string
@@ -236,6 +237,7 @@ export type Database = {
           access_code?: string | null
           access_code_expires_at?: string | null
           cancel_requested_on?: string | null
+          cancellation_policy?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           check_in_date: string
@@ -272,6 +274,7 @@ export type Database = {
           access_code?: string | null
           access_code_expires_at?: string | null
           cancel_requested_on?: string | null
+          cancellation_policy?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           check_in_date?: string
@@ -1290,7 +1293,7 @@ export type Database = {
           availability_text: string | null
           bathrooms: number
           bedrooms: number
-          cancellation_policy: string | null
+          cancellation_policy: string
           check_in_instructions: string | null
           check_in_time: string | null
           check_out_time: string | null
@@ -1303,6 +1306,7 @@ export type Database = {
           currency: string
           description: string | null
           email_templates: Json | null
+          events_allowed: boolean
           featured_amenities: Json | null
           footer_quick_links: Json | null
           gallery_images: string[] | null
@@ -1310,6 +1314,7 @@ export type Database = {
           get_in_touch_info: Json | null
           guidebook_sections: Json | null
           hero_image_url: string | null
+          holiday_min_nights: number | null
           host_id: string | null
           ical_export_secret: string | null
           id: string
@@ -1319,9 +1324,12 @@ export type Database = {
           location: string | null
           longitude: number | null
           max_guests: number
+          min_guest_age: number
+          min_nights: number
           monthly_discount_percentage: number | null
           parking_info: string | null
           pending_approval: boolean
+          pets_allowed: boolean
           postal_code: string | null
           pre_checkin_reminder_enabled: boolean
           pre_checkin_send_time: string
@@ -1334,6 +1342,7 @@ export type Database = {
           review_count: number | null
           review_rating: number | null
           slug: string | null
+          smoking_allowed: boolean
           special_amenities: string[] | null
           special_highlights: Json | null
           street: string | null
@@ -1355,7 +1364,7 @@ export type Database = {
           availability_text?: string | null
           bathrooms?: number
           bedrooms?: number
-          cancellation_policy?: string | null
+          cancellation_policy?: string
           check_in_instructions?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
@@ -1368,6 +1377,7 @@ export type Database = {
           currency?: string
           description?: string | null
           email_templates?: Json | null
+          events_allowed?: boolean
           featured_amenities?: Json | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
@@ -1375,6 +1385,7 @@ export type Database = {
           get_in_touch_info?: Json | null
           guidebook_sections?: Json | null
           hero_image_url?: string | null
+          holiday_min_nights?: number | null
           host_id?: string | null
           ical_export_secret?: string | null
           id?: string
@@ -1384,9 +1395,12 @@ export type Database = {
           location?: string | null
           longitude?: number | null
           max_guests?: number
+          min_guest_age?: number
+          min_nights?: number
           monthly_discount_percentage?: number | null
           parking_info?: string | null
           pending_approval?: boolean
+          pets_allowed?: boolean
           postal_code?: string | null
           pre_checkin_reminder_enabled?: boolean
           pre_checkin_send_time?: string
@@ -1399,6 +1413,7 @@ export type Database = {
           review_count?: number | null
           review_rating?: number | null
           slug?: string | null
+          smoking_allowed?: boolean
           special_amenities?: string[] | null
           special_highlights?: Json | null
           street?: string | null
@@ -1420,7 +1435,7 @@ export type Database = {
           availability_text?: string | null
           bathrooms?: number
           bedrooms?: number
-          cancellation_policy?: string | null
+          cancellation_policy?: string
           check_in_instructions?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
@@ -1433,6 +1448,7 @@ export type Database = {
           currency?: string
           description?: string | null
           email_templates?: Json | null
+          events_allowed?: boolean
           featured_amenities?: Json | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
@@ -1440,6 +1456,7 @@ export type Database = {
           get_in_touch_info?: Json | null
           guidebook_sections?: Json | null
           hero_image_url?: string | null
+          holiday_min_nights?: number | null
           host_id?: string | null
           ical_export_secret?: string | null
           id?: string
@@ -1449,9 +1466,12 @@ export type Database = {
           location?: string | null
           longitude?: number | null
           max_guests?: number
+          min_guest_age?: number
+          min_nights?: number
           monthly_discount_percentage?: number | null
           parking_info?: string | null
           pending_approval?: boolean
+          pets_allowed?: boolean
           postal_code?: string | null
           pre_checkin_reminder_enabled?: boolean
           pre_checkin_send_time?: string
@@ -1464,6 +1484,7 @@ export type Database = {
           review_count?: number | null
           review_rating?: number | null
           slug?: string | null
+          smoking_allowed?: boolean
           special_amenities?: string[] | null
           special_highlights?: Json | null
           street?: string | null

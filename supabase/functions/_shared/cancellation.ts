@@ -1,8 +1,13 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { stockholmToday } from "./format.ts";
+// Cancellation policies. Each listing has one of four fixed policies,
+// chosen by its host (properties.cancellation_policy); the policy shown when
+// the guest booked is saved on the booking (bookings.cancellation_policy) and
+// decides the refund if the guest cancels. The refund is a share of the price
+// of the stay; the guest service fee is not refunded when the guest cancels.
+// If the host or we cancel, the guest gets everything back (planCancellation
+// in payout.ts). The booking form, e-mails, cancel-booking and the terms all
+// read these tiers.
 
-// The cancellation policy lives in platform_settings.cancellation_policy (the
-// booking form shows it from there). E-mails and refunds read the same tiers.
+import { stockholmToday } from "./format.ts";
 
 export interface PolicyTier {
   label: string;
@@ -16,24 +21,73 @@ export interface CancellationPolicy {
   footer_note?: string;
 }
 
-// Only if the setting can't be read
-const FALLBACK: CancellationPolicy = {
-  tiers: [
-    { label: "More than 21 days before arrival", min_days: 22, refund_percentage: 90 },
-    { label: "21–8 days before arrival", min_days: 8, max_days: 21, refund_percentage: 50 },
-    { label: "7 days or less before arrival", min_days: 0, max_days: 7, refund_percentage: 0 },
-  ],
+export type PolicyKey = "flexible" | "moderate" | "standard" | "strict";
+
+export interface NamedPolicy extends CancellationPolicy {
+  key: PolicyKey;
+  name: string;
+  /** One line for hosts and guests, e.g. "Full refund up to 5 days before arrival, then 50%." */
+  summary: string;
+}
+
+export const POLICY_FOOTER =
+  "Days are counted to the arrival date from the day the cancellation reaches us (Swedish time). The service fee is not refunded when you cancel. We recommend travel insurance for the unforeseen.";
+
+export const CANCELLATION_POLICIES: Record<PolicyKey, NamedPolicy> = {
+  flexible: {
+    key: "flexible",
+    name: "Flexible",
+    summary: "Full refund up to 1 day before arrival.",
+    tiers: [
+      { label: "1 day or more before arrival", min_days: 1, refund_percentage: 100 },
+      { label: "On the day of arrival", min_days: 0, max_days: 0, refund_percentage: 0 },
+    ],
+    footer_note: POLICY_FOOTER,
+  },
+  moderate: {
+    key: "moderate",
+    name: "Moderate",
+    summary: "Full refund up to 5 days before arrival, then 50% until the day before.",
+    tiers: [
+      { label: "5 days or more before arrival", min_days: 5, refund_percentage: 100 },
+      { label: "4–1 days before arrival", min_days: 1, max_days: 4, refund_percentage: 50 },
+      { label: "On the day of arrival", min_days: 0, max_days: 0, refund_percentage: 0 },
+    ],
+    footer_note: POLICY_FOOTER,
+  },
+  standard: {
+    key: "standard",
+    name: "Standard",
+    summary: "90% refund more than 21 days before arrival, 50% from 21 to 8 days, then none.",
+    tiers: [
+      { label: "More than 21 days before arrival", min_days: 22, refund_percentage: 90 },
+      { label: "21–8 days before arrival", min_days: 8, max_days: 21, refund_percentage: 50 },
+      { label: "7 days or less before arrival", min_days: 0, max_days: 7, refund_percentage: 0 },
+    ],
+    footer_note: POLICY_FOOTER,
+  },
+  strict: {
+    key: "strict",
+    name: "Strict",
+    summary: "50% refund up to 14 days before arrival, then none.",
+    tiers: [
+      { label: "14 days or more before arrival", min_days: 14, refund_percentage: 50 },
+      { label: "13 days or less before arrival", min_days: 0, max_days: 13, refund_percentage: 0 },
+    ],
+    footer_note: POLICY_FOOTER,
+  },
 };
 
-export async function loadCancellationPolicy(supabase: SupabaseClient): Promise<CancellationPolicy> {
-  const { data } = await supabase
-    .from("platform_settings")
-    .select("setting_value")
-    .eq("setting_key", "cancellation_policy")
-    .maybeSingle();
-  const value = data?.setting_value as CancellationPolicy | undefined;
-  return value?.tiers?.length ? value : FALLBACK;
-}
+export const POLICY_KEYS = Object.keys(CANCELLATION_POLICIES) as PolicyKey[];
+
+/** New listings, and bookings made before hosts chose (they were all booked on it) */
+export const DEFAULT_POLICY: PolicyKey = "standard";
+
+export const isPolicyKey = (value: unknown): value is PolicyKey =>
+  typeof value === "string" && (POLICY_KEYS as string[]).includes(value);
+
+/** The policy for a booking or listing; anything unknown or missing is Standard */
+export const policyFor = (key: unknown): NamedPolicy => CANCELLATION_POLICIES[isPolicyKey(key) ? key : DEFAULT_POLICY];
 
 /** Whole days from today (Swedish date) until the check-in date */
 export function daysBeforeArrival(checkIn: string, today = stockholmToday()): number {
@@ -46,7 +100,7 @@ export function refundPercentage(policy: CancellationPolicy, days: number): numb
   return tier?.refund_percentage ?? 0;
 }
 
-/** "90% refund more than 21 days before arrival, 50% refund 21–8 days …" */
+/** "90% refund more than 21 days before arrival; 50% refund 21–8 days …" */
 export function policySummary(policy: CancellationPolicy): string {
   return policy.tiers
     .map((t) => `${t.refund_percentage > 0 ? `${t.refund_percentage}% refund` : "no refund"} ${t.label.charAt(0).toLowerCase()}${t.label.slice(1)}`)

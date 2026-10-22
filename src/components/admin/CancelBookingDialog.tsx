@@ -53,6 +53,8 @@ export interface CancellableBooking {
 interface Preview {
   daysBeforeArrival: number;
   policyPercentage: number;
+  /** The booking's cancellation policy (the one shown when the guest booked) */
+  policyName?: string;
   hasPayment?: boolean;
   cardFee?: number | null;
   /** Refunded to the guest so far, according to Stripe (öre) */
@@ -382,7 +384,8 @@ const CancelBookingDialog = ({ booking, onCancelled }: CancelBookingDialogProps)
             <p className="text-muted-foreground">Bokningen är inte betald via sajten, så inget återbetalas härifrån.</p>
           ) : !split ? (
             <p className="text-muted-foreground">
-              {current.daysBeforeArrival} dagar före ankomst ger villkoren {current.policyPercentage}% om gästen avbokar.
+              {current.daysBeforeArrival} dagar före ankomst ger {current.policyName ? `avbokningsregeln ${current.policyName}` : "villkoren"}{" "}
+              {current.policyPercentage}% om gästen avbokar.
               Välj vem som avbokar för att se beloppen.
             </p>
           ) : (
@@ -394,7 +397,9 @@ const CancelBookingDialog = ({ booking, onCancelled }: CancelBookingDialogProps)
               </p>
               {cancelledBy === "guest" && (
                 <p>
-                  {current.daysBeforeArrival} dagar före ankomst ger villkoren <strong>{current.policyPercentage}%</strong>{" "}
+                  {current.daysBeforeArrival} dagar före ankomst ger{" "}
+                  {current.policyName ? `avbokningsregeln ${current.policyName}` : "villkoren"}{" "}
+                  <strong>{current.policyPercentage}%</strong>{" "}
                   av värdens pris.
                 </p>
               )}

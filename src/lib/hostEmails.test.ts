@@ -72,7 +72,7 @@ describe("guest cancellation e-mail", () => {
     // 2 000 refunded earlier, then the guest cancels at 90 %: 7 000 more
     const withEarlier = { ...guestCancels, refundedEarlier: 200_000 };
     const body = text(guestCancellationEmail(withEarlier, "").html);
-    expect(body).toContain("Our cancellation policy gives 90% of the accommodation price (9 000 SEK)");
+    expect(body).toContain("The booking's cancellation policy gives 90% of the accommodation price (9 000 SEK)");
     expect(body).toContain("You had already been refunded 2 000 SEK, so we have now refunded the remaining 7 000 SEK. In total you get 9 000 SEK back.");
     expect(body).not.toContain("We have refunded 9 000 SEK: 90%");
   });
@@ -80,7 +80,7 @@ describe("guest cancellation e-mail", () => {
   it("an earlier refund larger than the policy refund: nothing more, and no wrong percentage", () => {
     const late = { ...guestCancels, daysBeforeArrival: 3, refundPercentage: 0, refundTarget: 0, refundAmount: 200_000, refundedEarlier: 200_000 };
     const body = text(guestCancellationEmail(late, "").html);
-    expect(body).toContain("Our cancellation policy gives 0% of the accommodation price (0 SEK)");
+    expect(body).toContain("The booking's cancellation policy gives 0% of the accommodation price (0 SEK)");
     expect(body).toContain("You had already been refunded 2 000 SEK, so nothing more is refunded. In total you get 2 000 SEK back.");
     expect(body).not.toContain("We have refunded 2 000 SEK: 0%");
   });

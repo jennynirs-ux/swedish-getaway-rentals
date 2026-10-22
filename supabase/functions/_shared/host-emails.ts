@@ -101,24 +101,24 @@ export function guestCancellationEmail(f: CancellationFacts, policySummaryText: 
     } else if (f.refundedEarlier > 0) {
       // The policy refund on its own, then what earlier refunds change
       lines.push(
-        `<p>Our cancellation policy gives ${escapeHtml(f.refundPercentage)}% of the accommodation price (${amount(f, f.refundTarget)}) for a cancellation received ${requestLine(f)}. You had already been refunded ${amount(f, f.refundedEarlier)}, so ${
+        `<p>The booking's cancellation policy gives ${escapeHtml(f.refundPercentage)}% of the accommodation price (${amount(f, f.refundTarget)}) for a cancellation received ${requestLine(f)}. You had already been refunded ${amount(f, f.refundedEarlier)}, so ${
           refundedNow > 0 ? `we have now refunded the remaining ${amount(f, refundedNow)}` : "nothing more is refunded"
         }. In total you get ${amount(f, f.refundAmount)} back.${refundedNow > 0 ? " It usually shows on your card within 5–10 business days." : ""}</p>`,
       );
     } else if (f.refundAmount > 0) {
       lines.push(
-        `<p>We have refunded ${amount(f, f.refundAmount)}: ${escapeHtml(f.refundPercentage)}% of the accommodation price, which our cancellation policy gives for a cancellation received ${requestLine(f)}. It usually shows on your card within 5–10 business days.</p>`,
+        `<p>We have refunded ${amount(f, f.refundAmount)}: ${escapeHtml(f.refundPercentage)}% of the accommodation price, which the booking's cancellation policy gives for a cancellation received ${requestLine(f)}. It usually shows on your card within 5–10 business days.</p>`,
       );
     } else {
       lines.push(
-        `<p>Under our cancellation policy, a cancellation received ${requestLine(f)} is not refunded.</p>`,
+        `<p>Under the booking's cancellation policy, a cancellation received ${requestLine(f)} is not refunded.</p>`,
       );
     }
     if (f.hasPayment && f.serviceFeeKept > 0) {
       lines.push(`<p>The service fee (${amount(f, f.serviceFeeKept)}) is not refunded when a guest cancels.</p>`);
     }
     lines.push(
-      `<p>Our policy: ${escapeHtml(policySummaryText)}. Refunds are a share of the accommodation price; the service fee is not refundable.</p>`,
+      `<p>The booking's cancellation policy, ${escapeHtml(policySummaryText)}. Refunds are a share of the accommodation price; the service fee is not refundable.</p>`,
     );
   } else {
     lines.push(

@@ -304,9 +304,9 @@ const BecomeHost = () => {
       question: "How do cancellations and refunds work?",
       answer: (
         <>
-          All stays share one cancellation policy, shown to guests before they book: guests get{" "}
-          <strong>90%</strong> of the price of the stay back more than 21 days before arrival, <strong>50%</strong>{" "}
-          8–21 days before, and <strong>nothing</strong> within 7 days. Our team handles cancellations and refunds.
+          You choose your cancellation policy: <strong>Flexible</strong>, <strong>Moderate</strong>,{" "}
+          <strong>Standard</strong> (90% back more than 21 days before arrival, 50% 8–21 days before, nothing within 7
+          days) or <strong>Strict</strong>. Guests see it before they book. Our team handles cancellations and refunds.
           The refund comes out of your payout for that booking; the service fee is not refunded to the guest and
           never reduces your share. If you have to cancel, the guest gets everything back, you get nothing for that
           booking and you pay the card fee. Details are in the {hostTermsLink("host terms", "guest-cancels")}.

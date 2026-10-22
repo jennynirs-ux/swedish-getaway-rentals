@@ -47,6 +47,7 @@ import PropertyPricingRules from "@/components/PropertyPricingRules";
 import { PropertySpecialPricingEnhanced } from "./PropertySpecialPricingEnhanced";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import { CancellationPolicyDisplay } from "../CancellationPolicyDisplay";
+import { CANCELLATION_POLICIES, DEFAULT_POLICY, POLICY_KEYS } from "../../../supabase/functions/_shared/cancellation";
 import { LocationEditor } from "../LocationEditor";
 import { HostBasicTab } from "../host/HostBasicTab";
 import { HostAmenitiesTab } from "../host/HostAmenitiesTab";
@@ -75,7 +76,7 @@ const PropertyDetailEditor = ({
     guidebook_sections: [] as any[],
     weekly_discount_percentage: "0",
     monthly_discount_percentage: "0",
-    cancellation_policy: "moderate" as "flexible" | "moderate" | "strict",
+    cancellation_policy: DEFAULT_POLICY as string,
     street: "",
     postal_code: "",
     city: "",
@@ -114,7 +115,7 @@ const PropertyDetailEditor = ({
         guidebook_sections: Array.isArray(data.guidebook_sections) ? data.guidebook_sections : [],
         weekly_discount_percentage: (data.weekly_discount_percentage ?? 0).toString(),
         monthly_discount_percentage: (data.monthly_discount_percentage ?? 0).toString(),
-        cancellation_policy: (data.cancellation_policy as "flexible" | "moderate" | "strict") || "moderate",
+        cancellation_policy: data.cancellation_policy || DEFAULT_POLICY,
         street: privateDetails?.street || "",
         postal_code: privateDetails?.postal_code || "",
         city: data.city || "",
@@ -145,7 +146,7 @@ const PropertyDetailEditor = ({
         longitude: typeof form.longitude === "number" ? form.longitude : (form.longitude ? Number(form.longitude) : null),
         weekly_discount_percentage: parseFloat(form.weekly_discount_percentage) || 0,
         monthly_discount_percentage: parseFloat(form.monthly_discount_percentage) || 0,
-        cancellation_policy: form.cancellation_policy || "moderate",
+        cancellation_policy: form.cancellation_policy || DEFAULT_POLICY,
         updated_at: new Date().toISOString(),
       };
 
@@ -418,19 +419,21 @@ const PropertyDetailEditor = ({
               <CardContent className="space-y-4">
                 <Label htmlFor="cancellation_policy">Policy Type</Label>
                 <Select
-                  value={form.cancellation_policy || "moderate"}
-                  onValueChange={(value: "flexible" | "moderate" | "strict") =>
+                  value={form.cancellation_policy || DEFAULT_POLICY}
+                  onValueChange={(value: string) =>
                     setForm((p: any) => ({ ...p, cancellation_policy: value }))
                   }
                 >
                   <SelectTrigger id="cancellation_policy"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="flexible">Flexible — Full refund up to 1 day before</SelectItem>
-                    <SelectItem value="moderate">Moderate — Full refund up to 5 days before</SelectItem>
-                    <SelectItem value="strict">Strict — 50% refund up to 7 days before</SelectItem>
+{POLICY_KEYS.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {CANCELLATION_POLICIES[key].name}: {CANCELLATION_POLICIES[key].summary}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <CancellationPolicyDisplay />
+                <CancellationPolicyDisplay policyKey={form.cancellation_policy} />
               </CardContent>
             </Card>
 

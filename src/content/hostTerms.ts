@@ -6,7 +6,7 @@
 // date on the page follows, and the app must compare it with
 // profiles.host_terms_version to ask again.
 
-export const HOST_TERMS_VERSION = "2026-10-21";
+export const HOST_TERMS_VERSION = "2026-10-22";
 
 export const HOST_TERMS_PATH = "/host-terms";
 

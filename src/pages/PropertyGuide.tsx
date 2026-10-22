@@ -30,7 +30,7 @@ const PropertyGuide = () => {
         .from("properties")
         // Public page: request only what the guide renders, never select("*")
         // (keeps any private/host-only columns out of the anonymous response).
-        .select("id, title, slug, guidebook_sections")
+        .select("id, title, slug, guidebook_sections, min_nights, holiday_min_nights, pets_allowed, smoking_allowed, events_allowed, min_guest_age")
         .eq(/^[0-9a-f-]{36}$/i.test(propertyId) ? "id" : "slug", propertyId)
         .single();
 

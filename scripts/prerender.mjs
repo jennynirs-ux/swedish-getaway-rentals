@@ -52,7 +52,7 @@ async function fetchRest(query) {
 
 async function fetchProperties() {
   const [properties, rules, fees] = await Promise.all([
-    fetchRest("properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at&active=eq.true"),
+    fetchRest("properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at,cancellation_policy,min_nights,holiday_min_nights,pets_allowed,smoking_allowed,events_allowed,min_guest_age&active=eq.true"),
     fetchRest("properties_pricing_rules?select=property_id,rule_type,name,price,is_per_night,guests_included,included,per_guest&is_active=eq.true&order=created_at"),
     // Guest fee per property (5 % on founding hosts' listings)
     fetchRest("rpc/property_service_fee_rates"),
@@ -132,6 +132,30 @@ ${items.join("\n")}
   return items.length;
 }
 
+// Name and summary of each cancellation policy, as in
+// supabase/functions/_shared/cancellation.ts (src/lib/prerenderText.test.ts checks they match)
+const POLICY_TEXT = {
+  flexible: "Flexible (Full refund up to 1 day before arrival.)",
+  moderate: "Moderate (Full refund up to 5 days before arrival, then 50% until the day before.)",
+  standard: "Standard (90% refund more than 21 days before arrival, 50% from 21 to 8 days, then none.)",
+  strict: "Strict (50% refund up to 14 days before arrival, then none.)",
+};
+
+// The host's house rules and cancellation policy, as houseRuleLines in
+// supabase/functions/_shared/stay-rules.ts words them
+const rulesText = (p) => {
+  const min = Math.max(1, p.min_nights ?? 1);
+  const holiday = p.holiday_min_nights && p.holiday_min_nights > min ? ` (${p.holiday_min_nights} over Valborg, Midsummer and New Year's Eve)` : "";
+  const rules = [
+    `minimum stay ${min} night${min !== 1 ? "s" : ""}${holiday}`,
+    p.pets_allowed ? "pets allowed" : "no pets",
+    p.smoking_allowed ? "smoking allowed" : "no smoking",
+    p.events_allowed ? "parties and events allowed" : "no parties or events",
+    `the person booking is at least ${Math.max(18, p.min_guest_age ?? 18)}`,
+  ];
+  return ` House rules: ${rules.join(", ")}. Cancellation policy: ${POLICY_TEXT[p.cancellation_policy] ?? POLICY_TEXT.standard}`;
+};
+
 // Same wording as extraServiceUnit in supabase/functions/_shared/booking-price.ts
 const extraUnit = (r) => (r.per_guest ? (r.is_per_night ? "per guest per night" : "per guest") : r.is_per_night ? "per night" : "per stay");
 
@@ -182,8 +206,8 @@ async function writeRedirects(properties) {
 
 // House facts for the owners' cabins that aren't columns yet
 const CABIN_FACTS = {
-  "lakefront-retreat": " Boats and paddle boards included. No pets. Parking for 2 cars.",
-  "lakehouse-getaway": " Rowing boat and paddle boards included. No pets. Parking for 1 car.",
+  "lakefront-retreat": " Boats and paddle boards included. Parking for 2 cars.",
+  "lakehouse-getaway": " Rowing boat and paddle boards included. Parking for 1 car.",
 };
 
 // The owners' cabins, whose ratings are Airbnb's. Same slugs as PROPERTY_CONTENT
@@ -202,7 +226,7 @@ async function writeLlmsTxt(properties) {
         ? ` Rated ${p.review_rating}/5 by ${p.review_count} guests${AIRBNB_RATED_SLUGS.has(p.slug) ? " on Airbnb" : ""}.`
         : "";
       const summary = (p.description ?? "").replace(/\s+/g, " ").trim();
-      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * (1 + (p.service_fee_rate ?? 10) / 100))} ${p.currency}/night incl. ${p.service_fee_rate ?? 10}% service fee.${feesText(p)}${CABIN_FACTS[p.slug] ?? ""}${rating} ${summary}`;
+      return `- [${p.title}](${SITE_URL}/property/${p.slug || p.id}): ${p.location}. Sleeps ${p.max_guests}, ${p.bedrooms} bedroom(s), from ${Math.round(p.price_per_night * (1 + (p.service_fee_rate ?? 10) / 100))} ${p.currency}/night incl. ${p.service_fee_rate ?? 10}% service fee.${feesText(p)}${rulesText(p)}${CABIN_FACTS[p.slug] ?? ""}${rating} ${summary}`;
     })
     .join("\n");
   const foundingOffer = FOUNDING_HOST_OFFER_OPEN

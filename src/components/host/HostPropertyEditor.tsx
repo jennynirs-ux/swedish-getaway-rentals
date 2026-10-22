@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropertyPreparationDays } from "@/components/admin/PropertyPreparationDays";
 import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, FileText, Sparkles, Banknote, BookOpen, Mail, MapPin, Image, KeyRound } from "lucide-react";
+import { Calendar, FileText, Sparkles, Banknote, BookOpen, Mail, MapPin, Image, KeyRound, ScrollText } from "lucide-react";
 import { CheckInOutTimes } from "@/components/admin/CheckInOutTimes";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
@@ -17,6 +17,7 @@ import { HostPricingCalculator } from "./HostPricingCalculator";
 import { HostDiscountSettings } from "./HostDiscountSettings";
 import { HostPriceSettings } from "./HostPriceSettings";
 import { HostExtrasSettings } from "./HostExtrasSettings";
+import { HostRulesSettings } from "./HostRulesSettings";
 import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
 import CouponForm from "@/components/CouponForm";
 import { PropertyCouponsList } from "@/components/PropertyCouponsList";
@@ -31,6 +32,7 @@ const EDITOR_TABS = [
   { value: "gallery", label: "Photos", icon: Image },
   { value: "location", label: "Location", icon: MapPin },
   { value: "pricing", label: "Pricing", icon: Banknote },
+  { value: "rules", label: "Rules", icon: ScrollText },
   { value: "calendar", label: "Calendar", icon: Calendar },
   { value: "amenities", label: "Amenities", icon: Sparkles },
   { value: "guide", label: "Guide", icon: BookOpen },
@@ -45,6 +47,7 @@ const EDITOR_TABS = [
  */
 const SECTION_TAB = {
   basic: "basic",
+  rules: "rules",
   amenities: "amenities",
   location: "location",
   price: "pricing",
@@ -255,7 +258,7 @@ export const HostPropertyEditor = ({
       <Tabs value={tab} onValueChange={changeTab} className="w-full">
         {/* Labels on every screen and one icon per tab: on phones the bar wraps
             into three rows instead of spilling over the heading */}
-        <TabsList className="grid h-auto w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1 mb-2">
+        <TabsList className="grid h-auto w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-1 mb-2">
           {EDITOR_TABS.map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="flex items-center gap-1.5 px-2 text-xs sm:text-sm">
               <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
@@ -308,6 +311,16 @@ export const HostPropertyEditor = ({
                 saved("location")();
               }}
             />
+          </Tracked>
+        </TabsContent>
+
+        <TabsContent value="rules" className="mt-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Rules</h2>
+            <p className="text-muted-foreground">Your cancellation policy and house rules</p>
+          </div>
+          <Tracked onEdit={markDirty("rules")}>
+            <HostRulesSettings propertyId={propertyId} onSaved={saved("rules")} />
           </Tracked>
         </TabsContent>
 

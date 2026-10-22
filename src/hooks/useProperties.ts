@@ -58,7 +58,15 @@ export interface Property {
   special_amenities?: string[];
   weekly_discount_percentage?: number;
   monthly_discount_percentage?: number;
-  cancellation_policy?: "flexible" | "moderate" | "strict";
+  /** One of the four policies in supabase/functions/_shared/cancellation.ts */
+  cancellation_policy?: string;
+  // House rules the host sets (supabase/functions/_shared/stay-rules.ts)
+  min_nights?: number | null;
+  holiday_min_nights?: number | null;
+  pets_allowed?: boolean | null;
+  smoking_allowed?: boolean | null;
+  events_allowed?: boolean | null;
+  min_guest_age?: number | null;
   preparation_days?: number;
   latitude?: number | null;
   longitude?: number | null;

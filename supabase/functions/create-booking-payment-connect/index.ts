@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { stayRuleError } from "../_shared/stay-rules.ts";
+import { minGuestAge, stayRuleError } from "../_shared/stay-rules.ts";
+import { policyFor } from "../_shared/cancellation.ts";
 import {
   applicableStayDiscount,
   extraGuestFee,
@@ -124,18 +125,6 @@ serve(async (req) => {
       return badRequest(`Special requests can be at most ${SPECIAL_REQUESTS_MAX} characters (yours has ${specialRequests.length}). Please shorten them.`);
     }
 
-    // House rules: minimum stay, and the guest confirms age 25+ and no parties
-    const houseRuleError = stayRuleError(checkInDate, checkOutDate) ?? (rulesConfirmed === true
-      ? null
-      : "Please confirm the house rules (lead guest 25 or older, no parties or events) and try again.");
-    if (houseRuleError) {
-      logStep("House rules not met", { checkInDate, checkOutDate, rulesConfirmed });
-      return new Response(JSON.stringify({ error: houseRuleError }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
-
     logStep("Request data validated", { propertyId, checkInDate, checkOutDate, numberOfGuests, couponId });
 
     // Supabase client with service role to bypass RLS
@@ -160,6 +149,7 @@ serve(async (req) => {
       .select(`
         id, title, currency, host_id, max_guests, price_per_night,
         weekly_discount_percentage, monthly_discount_percentage,
+        cancellation_policy, min_nights, holiday_min_nights, events_allowed, min_guest_age,
         profiles!properties_host_id_fkey(stripe_connect_account_id, commission_rate)
       `)
       .eq("id", propertyId)
@@ -181,6 +171,16 @@ serve(async (req) => {
       return badRequest("This cabin can't be booked online right now. Please contact support@mojjo.se.");
     }
     
+    // The listing's house rules: its minimum stay, and the guest confirms the
+    // minimum age (and no parties, unless the host allows them)
+    const houseRuleError = stayRuleError(checkInDate, checkOutDate, property) ?? (rulesConfirmed === true
+      ? null
+      : `Please confirm the house rules (the person booking is ${minGuestAge(property)} or older${property.events_allowed ? "" : ", no parties or events"}) and try again.`);
+    if (houseRuleError) {
+      logStep("House rules not met", { checkInDate, checkOutDate, rulesConfirmed });
+      return badRequest(houseRuleError);
+    }
+
     // Validate guest count against property max
     if (numberOfGuests > property.max_guests) {
       logStep("Too many guests", { numberOfGuests, maxGuests: property.max_guests });
@@ -600,6 +600,8 @@ serve(async (req) => {
         couponCode: validatedCoupon?.code || "",
         // "<rule id>:<öre>;…" (MAX_EXTRAS_PER_BOOKING keeps it under 500 characters); saved on the booking
         extras: extras.map((e) => `${e.id}:${e.amount}`).join(";"),
+        // The policy the guest saw; saved on the booking, it decides their refund
+        cancellationPolicy: policyFor(property.cancellation_policy).key,
         hostAmount: hostAmount.toString(),
         serviceFee: serviceFee.toString(),
         commissionRate: commissionRate.toString(),

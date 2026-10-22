@@ -14,7 +14,7 @@ import CouponInput from "@/components/CouponInput";
 import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDisplay";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
+import { DEFAULT_STAY_RULES, houseRuleLines, minGuestAge, stayRuleError, type StayRules } from "@/lib/stayRules";
 import { PHONE_INPUT_MAX, SPECIAL_REQUESTS_MAX, isValidGuestName, isValidGuestPhone } from "@/lib/guestDetails";
 import {
   applicableStayDiscount,
@@ -80,13 +80,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
     weekly_discount_percentage: 0,
     monthly_discount_percentage: 0
   });
+  // The host's house rules and cancellation policy (checked again by the payment function)
+  const [stayRules, setStayRules] = useState<StayRules>(DEFAULT_STAY_RULES);
+  const [policyKey, setPolicyKey] = useState<string | null>(null);
   
-  // Fetch property discounts
+  // Fetch property discounts, house rules and cancellation policy
   useEffect(() => {
     const fetchDiscounts = async () => {
       const { data } = await supabase
         .from('properties')
-        .select('weekly_discount_percentage, monthly_discount_percentage')
+        .select('weekly_discount_percentage, monthly_discount_percentage, cancellation_policy, min_nights, holiday_min_nights, pets_allowed, smoking_allowed, events_allowed, min_guest_age')
         .eq('id', propertyId)
         .single();
       
@@ -95,6 +98,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
           weekly_discount_percentage: data.weekly_discount_percentage || 0,
           monthly_discount_percentage: data.monthly_discount_percentage || 0
         });
+        setStayRules(data);
+        setPolicyKey(data.cancellation_policy);
       }
     };
     fetchDiscounts();
@@ -177,7 +182,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const toDateString = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   // Minimum stay (checked again by the payment function)
-  const stayError = checkIn && checkOut ? stayRuleError(toDateString(checkIn), toDateString(checkOut)) : null;
+  const stayError = checkIn && checkOut ? stayRuleError(toDateString(checkIn), toDateString(checkOut), stayRules) : null;
 
   const priceCalculation = calculateTotalAmount();
   const subtotalBeforeDiscount = priceCalculation?.total || 0;
@@ -548,6 +553,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
             )}
           </div>
 
+          {/* The host's house rules, as the payment function checks them */}
+          <div className="space-y-1">
+            <p className="text-sm font-medium">House rules</p>
+            <ul className="list-disc pl-5 text-sm text-muted-foreground">
+              {houseRuleLines(stayRules).map((line) => <li key={line}>{line}</li>)}
+            </ul>
+          </div>
+
           {/* House Rules Acceptance */}
           <div className="border rounded-lg p-4 bg-muted/30">
             <div className="flex items-start space-x-3">
@@ -615,11 +628,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
               />
               <div className="grid gap-1.5 leading-none">
                 <label htmlFor="partyRules" className="text-sm font-medium leading-snug cursor-pointer">
-                  I am {MIN_LEAD_GUEST_AGE} or older and will be staying at the property myself. There will be no parties or events.
+                  I am {minGuestAge(stayRules)} or older and will be staying at the property myself.
+                  {stayRules.events_allowed ? "" : " There will be no parties or events."}
                 </label>
-                <p className="text-sm text-muted-foreground">
-                  Cabins on Nordic Getaways are for quiet stays.
-                </p>
+                {!stayRules.events_allowed && (
+                  <p className="text-sm text-muted-foreground">This place is for quiet stays.</p>
+                )}
                 {validationErrors.partyRules && (
                   <p className="text-destructive text-sm">{validationErrors.partyRules}</p>
                 )}
@@ -628,7 +642,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           {/* Cancellation Policy */}
-          <CancellationPolicyDisplay />
+          <CancellationPolicyDisplay policyKey={policyKey} />
           {/* The policy's percentages are of the stay price: the service fee is
               kept when the guest cancels, and refunded when the host or we do (/terms) */}
           <p className="text-xs text-muted-foreground">

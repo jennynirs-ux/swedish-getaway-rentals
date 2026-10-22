@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Mail, Eye, Clock, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CANCELLATION_POLICIES, DEFAULT_POLICY, POLICY_KEYS } from "../../../supabase/functions/_shared/cancellation";
 
 interface Property {
   id: string;
@@ -34,7 +35,7 @@ export const BookingEmailSettings = () => {
   const [emailStats, setEmailStats] = useState<EmailTracking[]>([]);
   
   const [formData, setFormData] = useState({
-    cancellation_policy: "moderate" as "flexible" | "moderate" | "strict",
+    cancellation_policy: DEFAULT_POLICY as string,
     house_rules: [] as string[],
     guidebook_url: "",
   });
@@ -83,7 +84,7 @@ export const BookingEmailSettings = () => {
       .flatMap((b: any) => b.items || []) || [];
 
     setFormData({
-      cancellation_policy: (property.cancellation_policy || "moderate") as any,
+      cancellation_policy: property.cancellation_policy || DEFAULT_POLICY,
       house_rules: houseRules,
       guidebook_url: `${window.location.origin}/property/${property.id}/guide`,
     });
@@ -235,15 +236,11 @@ export const BookingEmailSettings = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="flexible">
-                      Flexible - Full refund up to 1 day before
-                    </SelectItem>
-                    <SelectItem value="moderate">
-                      Moderate - Full refund up to 5 days before
-                    </SelectItem>
-                    <SelectItem value="strict">
-                      Strict - 50% refund up to 7 days before
-                    </SelectItem>
+{POLICY_KEYS.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {CANCELLATION_POLICIES[key].name}: {CANCELLATION_POLICIES[key].summary}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
