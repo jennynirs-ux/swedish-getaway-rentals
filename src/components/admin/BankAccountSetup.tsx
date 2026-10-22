@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { HOST_PAYOUT_TIMING_TEXT, stockholmDate } from "@/lib/constants";
 // Pure rules, shared with the onboarding checklist and tested in src/lib/hostDashboard.test.ts
 import { formatSek, payoutState, payoutStatusPollMs, type PayoutStatus } from "@/lib/hostDashboard";
+import { StripeExplainer } from "@/components/host/StripeExplainer";
 
 export { payoutState };
 export type { PayoutState, PayoutStatus } from "@/lib/hostDashboard";
@@ -348,6 +349,8 @@ export const BankAccountSetup = () => {
             </p>
           </>
         )}
+        {/* Open until the account is connected: hosts meet Stripe here first */}
+        <StripeExplainer defaultOpen={state !== "ready"} />
         <Button
           onClick={() => refetch()}
           disabled={isFetching}

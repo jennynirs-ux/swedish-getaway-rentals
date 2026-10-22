@@ -199,6 +199,21 @@ const copy = (lang: Lang): Copy => {
           ),
         },
         {
+          question: "Vad är Stripe, och varför behöver jag ett konto där?",
+          answer: (
+            <>
+              Nordic Getaways använder <strong>Stripe</strong> för alla betalningar. Stripe är ett av världens största
+              betalföretag och ett reglerat betalinstitut i EU. Det är Stripe som tar emot gästens kortbetalning och
+              betalar ut dina pengar till din bank. Med ett eget Stripe-konto går dina pengar direkt till dig, inte via
+              oss: vi behåller bara serviceavgiften som gästen betalar ovanpå ditt pris. Kontot skapar du i värdpanelen
+              på ungefär fem minuter. Stripe frågar efter till exempel namn, adress, födelsedatum, mobilnummer och
+              bankkonto, och ibland en bild på din legitimation. Det kräver lagen mot penningtvätt, och uppgifterna går
+              till Stripe, inte till oss. Det kostar inget för dig: kortavgiften ingår i gästens serviceavgift. Det enda
+              undantaget är om du själv avbokar en bokning, då betalar du kortavgiften för den.
+            </>
+          ),
+        },
+        {
           question: "Vem bokar gästen hos?",
           answer:
             "Hos dig. Du hyr ut som privatperson, och gästen har kontakt med dig om vistelsen. Nordic Getaways (Mojjo AB) visar din annons och tar emot bokningen och betalningen i ditt namn.",
@@ -372,6 +387,21 @@ const copy = (lang: Lang): Copy => {
             Guests pay a {FEE_PCT}% service fee on top of your price
             {offer ? ` (${FOUNDING_HOST_FEE_PCT}% for founding hosts' first 12 months)` : ""}, so you receive your price
             in full. See {hostTermsLink("payouts in the host terms", "payouts")}.
+          </>
+        ),
+      },
+      {
+        question: "What is Stripe, and why do I need an account?",
+        answer: (
+          <>
+            Nordic Getaways uses <strong>Stripe</strong> for all payments. Stripe is one of the world's largest payment
+            companies and a regulated payment institution in the EU. Stripe takes the guest's card payment and pays your
+            money out to your bank. With your own Stripe account, your money goes straight to you, not through us: we
+            keep only the service fee the guest pays on top of your price. You create the account from your host
+            dashboard in about five minutes. Stripe asks for, for example, your name, address, date of birth, mobile
+            number and bank account, and sometimes a photo of your ID. Anti-money-laundering law requires this, and the
+            details go to Stripe, not to us. It costs you nothing: the card fee is included in the guest's service fee.
+            The only exception: if you cancel a booking yourself, you pay that booking's card fee.
           </>
         ),
       },
