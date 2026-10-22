@@ -2,7 +2,14 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { stayRuleError } from "../_shared/stay-rules.ts";
-import { applicableStayDiscount, extraGuestFee, serviceFeeAmount, stayDiscountAmount } from "../_shared/booking-price.ts";
+import {
+  applicableStayDiscount,
+  extraGuestFee,
+  extraServiceFee,
+  MAX_EXTRAS_PER_BOOKING,
+  serviceFeeAmount,
+  stayDiscountAmount,
+} from "../_shared/booking-price.ts";
 import { stockholmToday } from "../_shared/format.ts";
 import { alertAdminOnce } from "../_shared/alert.ts";
 
@@ -225,6 +232,26 @@ serve(async (req) => {
     if (rulesError) {
       logStep("Error fetching pricing rules", { error: rulesError });
     }
+
+    // Extras the guest added: each must be one this listing offers to add
+    // (not one included in the price), charged as the booking form shows it
+    const requestedExtras: unknown = requestData.extras ?? [];
+    if (
+      !Array.isArray(requestedExtras) ||
+      requestedExtras.length > MAX_EXTRAS_PER_BOOKING ||
+      requestedExtras.some((id) => typeof id !== "string" || !uuidRegex.test(id))
+    ) {
+      return badRequest("Please choose the extras again.");
+    }
+    if (requestedExtras.length && rulesError) {
+      throw new Error(`Loading the listing's extras failed: ${rulesError.message}`);
+    }
+    const offeredExtras = [...new Set(requestedExtras as string[])].map((id) =>
+      (pricingRules ?? []).find((r) => r.id === id && r.rule_type === "extra_service" && !r.included)
+    );
+    if (offeredExtras.some((rule) => !rule)) {
+      return badRequest("One of the extras you chose is no longer offered. Please refresh the page and choose again.");
+    }
     
     // Nightly prices: a host's special price for a night (availability.
     // seasonal_price, in SEK) replaces the base price - mirrors BookingForm
@@ -265,7 +292,15 @@ serve(async (req) => {
         });
     }
     
-    const subtotalBeforeStayDiscount = accommodationTotal + cleaningTotal + extraGuestTotal;
+    // What each extra costs for this stay (shared with BookingForm)
+    const extras = offeredExtras.map((rule) => ({
+      id: rule.id as string,
+      name: String(rule.name ?? "Extra"),
+      amount: extraServiceFee(rule, numberOfGuests, nightCount),
+    }));
+    const extrasTotal = extras.reduce((total, extra) => total + extra.amount, 0);
+
+    const subtotalBeforeStayDiscount = accommodationTotal + cleaningTotal + extraGuestTotal + extrasTotal;
 
     // Weekly/monthly stay discount on the nightly price only (shared with BookingForm)
     const discount = applicableStayDiscount(
@@ -282,6 +317,7 @@ serve(async (req) => {
       accommodationTotal,
       cleaningTotal,
       extraGuestTotal,
+      extrasTotal,
       stayDiscountPct,
       stayDiscount,
       subtotal
@@ -454,6 +490,9 @@ serve(async (req) => {
 
     // Build product description
     let productDescription = `Check-in: ${checkInDate}, Check-out: ${checkOutDate} (${nightCount} nights)`;
+    if (extras.length) {
+      productDescription += ` | Extras: ${extras.map((e) => e.name).join(", ")}`.slice(0, 300);
+    }
     if (validatedCoupon) {
       productDescription += ` | Coupon: ${validatedCoupon.code} (-${discountAmount / 100} ${property.currency || 'SEK'})`;
     }
@@ -559,6 +598,8 @@ serve(async (req) => {
         discountAmount: discountAmount.toString(),
         couponId: validatedCoupon?.id || "",
         couponCode: validatedCoupon?.code || "",
+        // "<rule id>:<öre>;…" (MAX_EXTRAS_PER_BOOKING keeps it under 500 characters); saved on the booking
+        extras: extras.map((e) => `${e.id}:${e.amount}`).join(";"),
         hostAmount: hostAmount.toString(),
         serviceFee: serviceFee.toString(),
         commissionRate: commissionRate.toString(),

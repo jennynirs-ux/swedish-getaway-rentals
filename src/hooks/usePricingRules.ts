@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { extraGuestFee } from '../../supabase/functions/_shared/booking-price';
+import { extraGuestFee, extraServiceFee } from '../../supabase/functions/_shared/booking-price';
 
 export interface PricingRule {
   id: string;
@@ -13,6 +13,10 @@ export interface PricingRule {
   is_active: boolean;
   /** extra_guest only: guests the nightly price covers */
   guests_included?: number | null;
+  /** extra_service only: part of the price (shown, never charged) */
+  included?: boolean | null;
+  /** extra_service only: charged for every guest */
+  per_guest?: boolean | null;
 }
 
 export interface PricingCalculation {
@@ -85,7 +89,7 @@ export const usePricingRules = (propertyId: string) => {
     // Find applicable rules
     const extraGuestRules = rules.filter(r => r.rule_type === 'extra_guest');
     const cleaningRules = rules.filter(r => r.rule_type === 'cleaning_fee');
-    const serviceRules = rules.filter(r => r.rule_type === 'extra_service' && selectedServices.includes(r.id));
+    const serviceRules = rules.filter(r => r.rule_type === 'extra_service' && !r.included && selectedServices.includes(r.id));
 
     // Guests beyond those the nightly price covers (shared with the payment function)
     let extraGuestTotal = 0;
@@ -102,11 +106,7 @@ export const usePricingRules = (propertyId: string) => {
     // Calculate extra services
     let servicesTotal = 0;
     serviceRules.forEach(rule => {
-      if (rule.is_per_night) {
-        servicesTotal += rule.price * nights;
-      } else {
-        servicesTotal += rule.price;
-      }
+      servicesTotal += extraServiceFee(rule, numberOfGuests, nights);
     });
 
     const total = totalAccommodation + extraGuestTotal + cleaningTotal + servicesTotal;
@@ -129,14 +129,18 @@ export const usePricingRules = (propertyId: string) => {
   };
 
   const getAvailableServices = () => {
-    return rules.filter(r => r.rule_type === 'extra_service');
+    // Extras guests can add; included ones are listed with getIncludedExtras
+    return rules.filter(r => r.rule_type === 'extra_service' && !r.included);
   };
+
+  const getIncludedExtras = () => rules.filter(r => r.rule_type === 'extra_service' && r.included);
 
   return {
     rules,
     loading,
     calculatePrice,
     getAvailableServices,
+    getIncludedExtras,
     reload: loadRules
   };
 };

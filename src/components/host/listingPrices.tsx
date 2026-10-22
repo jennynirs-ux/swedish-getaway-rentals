@@ -199,8 +199,8 @@ interface RuleRow {
   guests_included: number | null;
 }
 
-/** The listing's prices and its extras that guests can't book (see ExtrasNotice) */
-export async function loadPriceDraft(propertyId: string): Promise<{ draft: PriceDraft; maxGuests: number; extras: RuleRow[] }> {
+/** The listing's price per night, extra-guest fee and cleaning fee */
+export async function loadPriceDraft(propertyId: string): Promise<{ draft: PriceDraft; maxGuests: number }> {
   const [{ data: property, error }, { data: rules, error: rulesError }] = await Promise.all([
     supabase.from("properties").select("price_per_night, max_guests").eq("id", propertyId).single(),
     supabase
@@ -208,6 +208,7 @@ export async function loadPriceDraft(propertyId: string): Promise<{ draft: Price
       .select("id, rule_type, name, price, is_per_night, guests_included")
       .eq("property_id", propertyId)
       .eq("is_active", true)
+      .in("rule_type", ["extra_guest", "cleaning_fee"])
       .order("created_at"),
   ]);
   if (error) throw error;
@@ -218,7 +219,6 @@ export async function loadPriceDraft(propertyId: string): Promise<{ draft: Price
   const cleaning = all.find((r) => r.rule_type === "cleaning_fee");
   return {
     maxGuests,
-    extras: all.filter((r) => r.rule_type === "extra_service"),
     draft: {
       nightly: property?.price_per_night ? String(property.price_per_night) : "",
       chargeExtraGuests: !!extra,

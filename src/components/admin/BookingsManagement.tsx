@@ -28,6 +28,8 @@ interface Booking {
   total_amount: number;
   status: string;
   special_requests: string;
+  /** Extras the guest added, as charged (öre) */
+  extras?: { id: string; name: string; amount: number }[] | null;
   created_at: string;
   // Money split and the host's payout (amounts in öre)
   host_amount: number | null;
@@ -271,7 +273,8 @@ const BookingsManagement = () => {
       ]);
 
       if (error) throw error;
-      setBookings(data || []);
+      // extras is jsonb (Json in the generated types); it holds the shape above
+      setBookings((data || []) as unknown as Booking[]);
       if (chargesError) {
         // The bookings still work; only the deduction hint is missing
         console.error('Error fetching host charges:', chargesError);
@@ -778,6 +781,15 @@ const BookingsManagement = () => {
                                   </div>
                                 );
                               })()}
+
+                              {selectedBooking.extras?.length ? (
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium">Tillval</Label>
+                                  <p className="text-sm">
+                                    {selectedBooking.extras.map((e) => `${e.name} (${sek(e.amount)})`).join(", ")}
+                                  </p>
+                                </div>
+                              ) : null}
 
                               {selectedBooking.special_requests && (
                                 <div className="space-y-2">

@@ -3,6 +3,8 @@ import {
   applicableStayDiscount,
   extraGuestCount,
   extraGuestFee,
+  extraServiceFee,
+  extraServiceUnit,
   serviceFeeAmount,
   stayDiscountAmount,
 } from "../../supabase/functions/_shared/booking-price";
@@ -54,5 +56,22 @@ describe("extra guests", () => {
     expect(extraGuestFee({ price: 40_000, is_per_night: false, guests_included: 2 }, 4, 3)).toBe(80_000);
     expect(extraGuestFee({ price: 75_000, is_per_night: true }, 1, 3)).toBe(0);
     expect(extraGuestFee({ price: 75_000, is_per_night: true }, 8, 2)).toBe(1_050_000);
+  });
+});
+
+describe("extras", () => {
+  it("charges per stay, night, guest or guest and night; nothing when included", () => {
+    expect(extraServiceFee({ price: 40_000, is_per_night: false }, 4, 3)).toBe(40_000);
+    expect(extraServiceFee({ price: 40_000, is_per_night: true }, 4, 3)).toBe(120_000);
+    expect(extraServiceFee({ price: 20_000, is_per_night: false, per_guest: true }, 4, 3)).toBe(80_000);
+    expect(extraServiceFee({ price: 5_000, is_per_night: true, per_guest: true }, 4, 3)).toBe(60_000);
+    expect(extraServiceFee({ price: 20_000, is_per_night: false, included: true }, 4, 3)).toBe(0);
+  });
+
+  it("names the unit", () => {
+    expect(extraServiceUnit({ is_per_night: false })).toBe("per stay");
+    expect(extraServiceUnit({ is_per_night: true })).toBe("per night");
+    expect(extraServiceUnit({ is_per_night: false, per_guest: true })).toBe("per guest");
+    expect(extraServiceUnit({ is_per_night: true, per_guest: true })).toBe("per guest per night");
   });
 });

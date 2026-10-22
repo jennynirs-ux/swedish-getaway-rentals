@@ -13,6 +13,8 @@ export interface BookingData {
   special_requests?: string;
   total_amount: number;
   coupon_id?: string;
+  /** Ids of the extras the guest added (properties_pricing_rules) */
+  extras?: string[];
   /** Guest confirmed: lead guest 25 or older, no parties or events */
   rules_confirmed: boolean;
 }
@@ -75,6 +77,7 @@ export const useBooking = () => {
           totalAmount: bookingData.total_amount,
           currency: bookingData.currency,
           couponId: bookingData.coupon_id,
+          extras: bookingData.extras ?? [],
           rulesConfirmed: bookingData.rules_confirmed
         }
       });

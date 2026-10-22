@@ -53,7 +53,7 @@ async function fetchRest(query) {
 async function fetchProperties() {
   const [properties, rules, fees] = await Promise.all([
     fetchRest("properties?select=id,slug,title,location,description,max_guests,bedrooms,price_per_night,currency,review_rating,review_count,updated_at&active=eq.true"),
-    fetchRest("properties_pricing_rules?select=property_id,rule_type,price,is_per_night,guests_included&is_active=eq.true"),
+    fetchRest("properties_pricing_rules?select=property_id,rule_type,name,price,is_per_night,guests_included,included,per_guest&is_active=eq.true&order=created_at"),
     // Guest fee per property (5 % on founding hosts' listings)
     fetchRest("rpc/property_service_fee_rates"),
   ]);
@@ -132,25 +132,27 @@ ${items.join("\n")}
   return items.length;
 }
 
-// Only the owners' cabins promise linen; other hosts say so in their own
-// listing. Same ids as LINEN_INCLUDED_PROPERTY_IDS in src/content/propertyContent.ts
-const LINEN_INCLUDED_PROPERTY_IDS = new Set([
-  "6618e8ae-e1ff-4a3b-8f6b-b3287c881d12", // Villa Häcken
-  "3f0002c9-7564-46f3-af63-8c1c0aa9a162", // Lakehouse Getaway
-]);
+// Same wording as extraServiceUnit in supabase/functions/_shared/booking-price.ts
+const extraUnit = (r) => (r.per_guest ? (r.is_per_night ? "per guest per night" : "per guest") : r.is_per_night ? "per night" : "per stay");
 
 // Fees on top of the nightly price (rule prices are in öre), so AI answers
-// don't understate the total
-const feesText = (p) =>
-  p.rules
+// don't understate the total; then what the host includes (e.g. linen, which
+// the Terms promise only when the listing says so) and the extras guests can add
+const feesText = (p) => {
+  const fees = p.rules
     .map((r) =>
       r.rule_type === "extra_guest"
-        ? ` The price covers ${Math.max(1, r.guests_included ?? 1)} guest${Math.max(1, r.guests_included ?? 1) !== 1 ? "s" : ""}; each extra guest adds ${r.price / 100} ${p.currency}${r.is_per_night ? " per night" : " per stay"}.${LINEN_INCLUDED_PROPERTY_IDS.has(p.id) ? " Bed linen and towels for every guest are included." : ""}`
+        ? ` The price covers ${Math.max(1, r.guests_included ?? 1)} guest${Math.max(1, r.guests_included ?? 1) !== 1 ? "s" : ""}; each extra guest adds ${r.price / 100} ${p.currency}${r.is_per_night ? " per night" : " per stay"}.`
         : r.rule_type === "cleaning_fee"
           ? ` Cleaning fee ${r.price / 100} ${p.currency} per stay.`
           : "",
     )
     .join("");
+  const extras = p.rules.filter((r) => r.rule_type === "extra_service");
+  const included = extras.filter((r) => r.included).map((r) => r.name);
+  const optional = extras.filter((r) => !r.included).map((r) => `${r.name} (${r.price / 100} ${p.currency} ${extraUnit(r)})`);
+  return `${fees}${included.length ? ` Included: ${included.join(", ")}.` : ""}${optional.length ? ` Extras guests can add: ${optional.join(", ")}.` : ""}`;
+};
 
 async function writeSitemap(routes) {
   const today = new Date().toISOString().slice(0, 10);

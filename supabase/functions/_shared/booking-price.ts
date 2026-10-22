@@ -44,3 +44,25 @@ export const extraGuestCount = (guests: number, guestsIncluded?: number | null) 
 /** What one extra-guest rule adds to a stay, in öre */
 export const extraGuestFee = (rule: ExtraGuestRule, guests: number, nights: number) =>
   extraGuestCount(guests, rule.guests_included) * rule.price * (rule.is_per_night ? nights : 1);
+
+/** A listing's extra (properties_pricing_rules, rule_type extra_service) */
+export interface ExtraServiceRule {
+  /** Öre per unit */
+  price: number;
+  is_per_night: boolean;
+  /** Charged for every guest */
+  per_guest?: boolean | null;
+  /** Part of the price: shown to guests, never charged */
+  included?: boolean | null;
+}
+
+/** At most this many extras per booking (their ids travel in Stripe metadata, 500 characters) */
+export const MAX_EXTRAS_PER_BOOKING = 8;
+
+/** What an extra the guest added costs for the stay, in öre (0 for an included one) */
+export const extraServiceFee = (rule: ExtraServiceRule, guests: number, nights: number) =>
+  rule.included ? 0 : rule.price * (rule.per_guest ? guests : 1) * (rule.is_per_night ? nights : 1);
+
+/** "per stay", "per night", "per guest" or "per guest per night" */
+export const extraServiceUnit = (rule: Pick<ExtraServiceRule, "is_per_night" | "per_guest">) =>
+  rule.per_guest ? (rule.is_per_night ? "per guest per night" : "per guest") : rule.is_per_night ? "per night" : "per stay";

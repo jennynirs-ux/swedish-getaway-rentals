@@ -68,6 +68,8 @@ interface Booking {
   host_paid_out_at?: string | null;
   host_reversed_amount?: number | null;
   stripe_payment_intent_id?: string | null;
+  /** Extras the guest added when booking, as charged (öre) */
+  extras?: { id: string; name: string; amount: number }[] | null;
   properties: {
     title: string;
     host_id: string;
@@ -717,6 +719,11 @@ const HostDashboard = () => {
                               <p className="text-sm text-muted-foreground">
                                 {formatDay(booking.check_in_date)} – {formatDay(booking.check_out_date)}
                               </p>
+                              {booking.extras?.length ? (
+                                <p className="text-sm text-muted-foreground">
+                                  Extras: {booking.extras.map((e) => `${e.name} (${formatSek(e.amount)})`).join(", ")}
+                                </p>
+                              ) : null}
                               <p className="text-sm text-muted-foreground">
                                 {cancelled
                                   ? `Cancelled${booking.cancelled_by ? ` ${cancelledByText[booking.cancelled_by]}` : ""}${

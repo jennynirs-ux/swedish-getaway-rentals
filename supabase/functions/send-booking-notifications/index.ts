@@ -62,6 +62,7 @@ serve(async (req) => {
         guest_email,
         guest_phone,
         number_of_guests,
+        extras,
         check_in_date,
         check_out_date,
         total_amount,
@@ -192,6 +193,11 @@ serve(async (req) => {
         "If the host or we cancel, you get everything back, service fee included. To cancel, reply to this e-mail.",
     };
 
+    // Extras the guest added when booking ("Jacuzzi, one day (400 SEK)")
+    const extrasText = (Array.isArray(booking.extras) ? booking.extras : [])
+      .map((e: { name?: string; amount?: number }) => `${e.name ?? "Extra"} (${formatAmount(e.amount ?? 0)} ${booking.currency})`)
+      .join(", ");
+
     // Format check-in and check-out times
     const checkInDateTime = `${longDate(booking.check_in_date)}, from ${hhmm(property.check_in_time, '15:00')}`;
     const checkOutDateTime = `${longDate(booking.check_out_date)}, by ${hhmm(property.check_out_time, '11:00')}`;
@@ -255,6 +261,7 @@ serve(async (req) => {
               <p><strong>Check-out:</strong> ${checkOutDateTime}</p>
               ${propertyAddress ? `<p><strong>Address:</strong> ${escapeHtml(propertyAddress)}</p>` : ''}
               <p><strong>Guests:</strong> ${booking.number_of_guests}</p>
+              ${extrasText ? `<p><strong>Extras:</strong> ${escapeHtml(extrasText)}</p>` : ''}
               <p><strong>Booking reference:</strong> ${booking.id.slice(0, 8).toUpperCase()}</p>
               <p><strong>${cancellationPolicy.title}:</strong> ${escapeHtml(cancellationPolicy.description)}</p>
               <p><a href="${guidebookUrl}">Open the guest guide</a> – house rules, practical details and local tips.</p>
@@ -328,6 +335,10 @@ serve(async (req) => {
                     <span class="info-label">Guests:</span>
                     <span class="info-value">${booking.number_of_guests}</span>
                   </div>
+                  ${extrasText ? `<div class="info-row">
+                    <span class="info-label">Extras:</span>
+                    <span class="info-value">${escapeHtml(extrasText)}</span>
+                  </div>` : ''}
                 </div>
               </div>
 
@@ -401,7 +412,7 @@ ${providerText}
 CHECK-IN & CHECK-OUT:
 - Check-In: ${checkInDateTime}
 - Check-Out: ${checkOutDateTime}
-- Guests: ${booking.number_of_guests}
+- Guests: ${booking.number_of_guests}${extrasText ? `\n- Extras: ${extrasText}` : ''}
 
 PROPERTY LOCATION:
 ${propertyAddress || property.title}
@@ -546,6 +557,7 @@ The Nordic Getaways Team
                 <div class="info-row"><strong>Check-In:</strong> ${checkInDateTime}</div>
                 <div class="info-row"><strong>Check-Out:</strong> ${checkOutDateTime}</div>
                 <div class="info-row"><strong>Guests:</strong> ${booking.number_of_guests}</div>
+                ${extrasText ? `<div class="info-row"><strong>Extras the guest added:</strong> ${escapeHtml(extrasText)} (part of your price)</div>` : ''}
                 <div class="info-row"><strong>Booking reference:</strong> ${booking.id.slice(0, 8).toUpperCase()}</div>
               </div>
               <p style="text-align: center; margin: 30px 0;">

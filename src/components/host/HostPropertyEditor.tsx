@@ -16,6 +16,7 @@ import { EmailTemplatesEditor } from "@/components/admin/EmailTemplatesEditor";
 import { HostPricingCalculator } from "./HostPricingCalculator";
 import { HostDiscountSettings } from "./HostDiscountSettings";
 import { HostPriceSettings } from "./HostPriceSettings";
+import { HostExtrasSettings } from "./HostExtrasSettings";
 import { PropertySpecialPricingEnhanced } from "@/components/admin/PropertySpecialPricingEnhanced";
 import CouponForm from "@/components/CouponForm";
 import { PropertyCouponsList } from "@/components/PropertyCouponsList";
@@ -369,6 +370,8 @@ export const HostPropertyEditor = ({
               }}
             />
           </Tracked>
+
+          <HostExtrasSettings propertyId={propertyId} />
 
           {/* The price typed above, so the host sees its effect before saving */}
           <HostPricingCalculator

@@ -206,6 +206,7 @@ export type Database = {
           check_out_date: string
           created_at: string
           currency: string
+          extras: Json | null
           guest_email: string
           guest_name: string
           guest_phone: string | null
@@ -241,6 +242,7 @@ export type Database = {
           check_out_date: string
           created_at?: string
           currency?: string
+          extras?: Json | null
           guest_email: string
           guest_name: string
           guest_phone?: string | null
@@ -276,6 +278,7 @@ export type Database = {
           check_out_date?: string
           created_at?: string
           currency?: string
+          extras?: Json | null
           guest_email?: string
           guest_name?: string
           guest_phone?: string | null
@@ -1490,9 +1493,11 @@ export type Database = {
           currency: string
           guests_included: number
           id: string
+          included: boolean
           is_active: boolean
           is_per_night: boolean
           name: string
+          per_guest: boolean
           price: number
           property_id: string
           rule_type: string
@@ -1503,9 +1508,11 @@ export type Database = {
           currency?: string
           guests_included?: number
           id?: string
+          included?: boolean
           is_active?: boolean
           is_per_night?: boolean
           name: string
+          per_guest?: boolean
           price: number
           property_id: string
           rule_type: string
@@ -1516,9 +1523,11 @@ export type Database = {
           currency?: string
           guests_included?: number
           id?: string
+          included?: boolean
           is_active?: boolean
           is_per_night?: boolean
           name?: string
+          per_guest?: boolean
           price?: number
           property_id?: string
           rule_type?: string
@@ -1901,6 +1910,7 @@ export type Database = {
           check_out_date: string | null
           created_at: string | null
           currency: string | null
+          extras: Json | null
           guest_email: string | null
           guest_name: string | null
           guest_phone: string | null
@@ -1932,6 +1942,7 @@ export type Database = {
           check_out_date?: string | null
           created_at?: string | null
           currency?: string | null
+          extras?: Json | null
           guest_email?: never
           guest_name?: string | null
           guest_phone?: never
@@ -1963,6 +1974,7 @@ export type Database = {
           check_out_date?: string | null
           created_at?: string | null
           currency?: string | null
+          extras?: Json | null
           guest_email?: never
           guest_name?: string | null
           guest_phone?: never
@@ -2327,6 +2339,7 @@ export type Database = {
           check_out_date: string | null
           created_at: string | null
           currency: string | null
+          extras: Json | null
           guest_email: string | null
           guest_name: string | null
           guest_phone: string | null

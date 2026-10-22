@@ -15,9 +15,15 @@ import { CancellationPolicyDisplay } from "@/components/CancellationPolicyDispla
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { MIN_LEAD_GUEST_AGE, stayRuleError } from "@/lib/stayRules";
-import { LINEN_INCLUDED_PROPERTY_IDS } from "@/content/propertyContent";
 import { PHONE_INPUT_MAX, SPECIAL_REQUESTS_MAX, isValidGuestName, isValidGuestPhone } from "@/lib/guestDetails";
-import { applicableStayDiscount, extraGuestCount, serviceFeeAmount, stayDiscountAmount } from "../../supabase/functions/_shared/booking-price";
+import {
+  applicableStayDiscount,
+  extraGuestCount,
+  extraServiceFee,
+  extraServiceUnit,
+  serviceFeeAmount,
+  stayDiscountAmount,
+} from "../../supabase/functions/_shared/booking-price";
 
 interface BookingFormProps {
   propertyId: string;
@@ -42,7 +48,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
   onOpenGuidebook
 }) => {
   const { createBooking, loading } = useBooking();
-  const { calculatePrice, rules } = usePricingRules(propertyId);
+  const { calculatePrice, rules, getAvailableServices, getIncludedExtras } = usePricingRules(propertyId);
+  // Extras the host offers: included in the price, or added by the guest
+  const includedExtras = getIncludedExtras();
+  const optionalExtras = getAvailableServices();
+  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   // Special prices hosts set per night (availability.seasonal_price, in SEK)
   const [seasonalPrices, setSeasonalPrices] = useState<Record<string, number>>({});
   // The guest service fee for this property in percent (10, or 5 during the
@@ -154,7 +164,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
       checkIn,
       checkOut,
       formData.number_of_guests,
-      seasonalPrices
+      seasonalPrices,
+      selectedExtras
     );
     return calculation;
   };
@@ -183,9 +194,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Fee model A: service fee on top of the host's price (mirrors the payment function)
   const serviceFee = serviceFeeAmount(hostTotal, feeRate ?? 10);
   const totalAmount = hostTotal + serviceFee;
-  // Only promised for cabins whose host is known to include it (the Terms leave
-  // linen to each listing); matched by id since this form has no slug
-  const linenNote = LINEN_INCLUDED_PROPERTY_IDS.includes(propertyId) ? ' Bed linen and towels for every guest are included.' : '';
   const extraGuestRule = rules.find((r) => r.rule_type === 'extra_guest');
   const extraGuests = extraGuestRule ? extraGuestCount(formData.number_of_guests, extraGuestRule.guests_included) : 0;
 
@@ -263,6 +271,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
         number_of_guests: validatedData.number_of_guests,
         special_requests: validatedData.special_requests,
         coupon_id: appliedCoupon?.id,
+        // Only extras still offered (a host may have removed one meanwhile)
+        extras: selectedExtras.filter((id) => optionalExtras.some((extra) => extra.id === id)),
         rules_confirmed: partyRulesAccepted
       });
       // No reset either way: on success the page is already going to Stripe,
@@ -325,7 +335,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             {rules.filter((r) => r.rule_type === 'extra_guest' || r.rule_type === 'cleaning_fee').map((r) => (
               <p key={r.id} className="text-sm text-muted-foreground">
                 {r.rule_type === 'extra_guest'
-                  ? `The nightly price covers ${Math.max(1, r.guests_included ?? 1)} guest${Math.max(1, r.guests_included ?? 1) !== 1 ? 's' : ''}; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.${linenNote}`
+                  ? `The nightly price covers ${Math.max(1, r.guests_included ?? 1)} guest${Math.max(1, r.guests_included ?? 1) !== 1 ? 's' : ''}; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.`
                   : `A cleaning fee of ${(r.price / 100).toLocaleString()} ${currency} is added per stay.`}
               </p>
             ))}
@@ -339,7 +349,32 @@ const BookingForm: React.FC<BookingFormProps> = ({
               onChange={handleChange}
               required
             />
+            {/* The Terms promise linen and the like only when the listing says so: the host's included extras */}
+            {includedExtras.length > 0 && (
+              <p className="text-sm text-muted-foreground">Included: {includedExtras.map((e) => e.name).join(', ')}.</p>
+            )}
           </div>
+
+          {optionalExtras.length > 0 && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Extras</legend>
+              {optionalExtras.map((extra) => (
+                <div key={extra.id} className="flex items-start gap-2">
+                  <Checkbox
+                    id={`extra-${extra.id}`}
+                    checked={selectedExtras.includes(extra.id)}
+                    onCheckedChange={(on) => {
+                      setSubmitFailed(false);
+                      setSelectedExtras((list) => (on ? [...list, extra.id] : list.filter((id) => id !== extra.id)));
+                    }}
+                  />
+                  <Label htmlFor={`extra-${extra.id}`} className="text-sm font-normal leading-snug">
+                    {extra.name}: {(extra.price / 100).toLocaleString()} {currency} {extraServiceUnit(extra)}
+                  </Label>
+                </div>
+              ))}
+            </fieldset>
+          )}
 
           {/* Sammanställning */}
           {checkIn && checkOut && priceCalculation && (
@@ -381,12 +416,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   </div>
                 )}
                 
-                {priceCalculation.extraServices > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Additional services</span>
-                    <span>{(priceCalculation.extraServices / 100).toLocaleString()} {currency}</span>
-                  </div>
-                )}
+                {optionalExtras
+                  .filter((extra) => selectedExtras.includes(extra.id))
+                  .map((extra) => (
+                    <div key={extra.id} className="flex justify-between text-sm">
+                      <span>{extra.name}</span>
+                      <span>{(extraServiceFee(extra, formData.number_of_guests, nights) / 100).toLocaleString()} {currency}</span>
+                    </div>
+                  ))}
                 
                 {/* Weekly/Monthly Discount */}
                 {applicableDiscount && stayDiscount > 0 && (

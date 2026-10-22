@@ -275,6 +275,8 @@ async function saveSession(
         console.warn('Destination charge without a transfer id yet; the payout job can read it from the charge:', paymentIntentId);
       }
 
+      const extras = await chosenExtras(supabase, metadata.extras);
+
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -287,6 +289,7 @@ async function saveSession(
           check_out_date: metadata.checkOutDate,
           number_of_guests: parseInt(metadata.numberOfGuests),
           special_requests: metadata.specialRequests || null,
+          extras,
           total_amount: parseInt(metadata.totalAmount),
           // Fee model A split (both in öre); older sessions carry no serviceFee
           service_fee: parseInt(metadata.serviceFee || "0"),
@@ -415,4 +418,25 @@ async function alertManualPayout(
     `The whole payment is in the platform's Stripe balance. Pay the host by hand on ${booking.host_payout_due_on ?? 'the day after check-in'}, the day after check-in: the money is in our own account, so the 85-day rule for shares waiting in a host's Stripe account does not apply. Deduct what they owe in host_charges (card fees, refunds after payout), then set the booking's payout status to paid_out. It is listed in the daily health check until then.`,
     `Booking: ${booking.id}, Stripe session: ${sessionId}`,
   ]);
+}
+
+/**
+ * The extras the guest added, from the session's metadata ("<rule id>:<öre>;…",
+ * written by create-booking-payment-connect), with their names. The amount is
+ * what was charged; a name that can't be read stays "Extra" (the booking must
+ * still be saved). Null without extras.
+ */
+async function chosenExtras(supabase: SupabaseClient, raw: string | undefined): Promise<{ id: string; name: string; amount: number }[] | null> {
+  const parts = (raw ?? '')
+    .split(';')
+    .map((part) => part.split(':'))
+    .filter(([id, amount]) => id && /^\d+$/.test(amount ?? ''))
+    .map(([id, amount]) => ({ id, amount: parseInt(amount, 10) }));
+  if (!parts.length) return null;
+  const { data } = await supabase
+    .from('properties_pricing_rules')
+    .select('id, name')
+    .in('id', parts.map((p) => p.id));
+  const names = new Map((data ?? []).map((r: { id: string; name: string }) => [r.id, r.name]));
+  return parts.map((p) => ({ ...p, name: names.get(p.id) ?? 'Extra' }));
 }
