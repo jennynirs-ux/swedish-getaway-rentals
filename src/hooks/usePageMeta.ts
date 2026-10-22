@@ -20,6 +20,10 @@ interface PageMeta {
   ready?: boolean;
   /** Keep the page out of search results (pages only reached from a booking or an emailed link) */
   noindex?: boolean;
+  /** The page's language, e.g. "sv" (the site is in English otherwise) */
+  lang?: string;
+  /** The same page in other languages: { en: "/become-host", sv: "/bli-vard" } */
+  alternates?: Record<string, string>;
 }
 
 const setMeta = (attr: "name" | "property", key: string, content: string) => {
@@ -46,6 +50,8 @@ export const usePageMeta = ({
   jsonLd,
   ready = true,
   noindex = false,
+  lang = "en",
+  alternates,
 }: PageMeta) => {
   // Listing titles come from hosts unreviewed; an escaped "<" keeps a
   // "</script>" in one from ending the script tag in the prerendered HTML
@@ -92,6 +98,25 @@ export const usePageMeta = ({
 
     document.documentElement.dataset.metaReady = "true";
   }, [title, description, path, image, jsonLdString, ready]);
+
+  // Language, and links to the same page in other languages (hreflang), so
+  // search engines show Swedish speakers the Swedish page. Restored on the way out.
+  const alternatesKey = alternates ? JSON.stringify(alternates) : "";
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    const links = Object.entries(alternatesKey ? (JSON.parse(alternatesKey) as Record<string, string>) : {}).map(([hreflang, href]) => {
+      const link = document.createElement("link");
+      link.rel = "alternate";
+      link.hreflang = hreflang;
+      link.href = `${SITE_URL}${href}`;
+      document.head.appendChild(link);
+      return link;
+    });
+    return () => {
+      document.documentElement.lang = "en";
+      links.forEach((link) => link.remove());
+    };
+  }, [lang, alternatesKey]);
 
   // These pages load from the home page snapshot, so without this they'd be
   // indexed as near-copies of it. Removed again on the way out, like NotFound

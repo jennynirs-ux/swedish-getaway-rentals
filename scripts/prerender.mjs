@@ -23,6 +23,7 @@ const STATIC_ROUTES = [
   "/contact",
   "/pricing-guide",
   "/become-host",
+  "/bli-vard",
   "/shop",
   "/privacy",
   "/terms",

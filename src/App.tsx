@@ -93,6 +93,7 @@ const App = () => {
                 <Route path="/stora-harsjon-lerum" element={<LakeGuide />} />
                 <Route path="/pricing-guide" element={<PricingGuide />} />
                 <Route path="/become-host" element={<BecomeHost />} />
+                <Route path="/bli-vard" element={<BecomeHost lang="sv" />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/host-terms" element={<HostTerms />} />

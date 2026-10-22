@@ -94,7 +94,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                 <Link to="/cabins">Find a cabin</Link>
               </Button>
             )}
-            {location.pathname !== "/become-host" && (
+            {!["/become-host", "/bli-vard"].includes(location.pathname) && (
               <Button
                 asChild
                 variant="outline"
@@ -172,7 +172,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               <span>Find a cabin</span>
             </Link>
           )}
-          {location.pathname !== "/become-host" && (
+          {!["/become-host", "/bli-vard"].includes(location.pathname) && (
             <Link
               to="/become-host"
               onClick={() => setMenuOpen(false)}
