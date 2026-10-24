@@ -41,14 +41,14 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
     e.preventDefault();
     
     if (!formData.code || !formData.name || !formData.discount_value || !formData.valid_until) {
-      toast.error("Please fill in all required fields");
+      toast.error("Fyll i alla obligatoriska fält");
       return;
     }
 
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("You must be logged in to create a coupon");
+      if (!user) throw new Error("Du måste vara inloggad för att skapa en rabattkod");
 
       // Parse datetime-local value and convert to UTC timestamp
       // datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
@@ -89,7 +89,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
 
       if (error) throw error;
 
-      toast.success(propertyId ? "Property-specific coupon created successfully!" : "Global coupon created successfully!");
+      toast.success(propertyId ? "Rabattkoden för boendet är skapad!" : "Den globala rabattkoden är skapad!");
       setFormData({
         code: '',
         name: '',
@@ -115,11 +115,11 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
     <Card>
       <CardHeader>
         <CardTitle>
-          Create {propertyId ? 'Property-Specific' : 'Global'} Coupon
+          {propertyId ? 'Skapa rabattkod för boendet' : 'Skapa global rabattkod'}
         </CardTitle>
         {propertyId && (
           <CardDescription>
-            This coupon will only work for this property and will be visible to guests as long as it's marked as active.
+            Rabattkoden gäller bara för det här boendet och syns för gästerna så länge den är aktiv.
           </CardDescription>
         )}
       </CardHeader>
@@ -127,42 +127,42 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="code">Coupon Code *</Label>
+              <Label htmlFor="code">Rabattkod *</Label>
               <Input
                 id="code"
                 value={formData.code}
                 onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                placeholder="SUMMER2024"
+                placeholder="SOMMAR2026"
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="name">Coupon Name *</Label>
+              <Label htmlFor="name">Namn *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Summer Discount"
+                placeholder="Sommarrabatt"
                 required
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Beskrivning</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="A special summer discount for our guests"
+              placeholder="En extra sommarrabatt för våra gäster"
               rows={2}
             />
           </div>
 
           {!propertyId && (
             <div>
-              <Label htmlFor="applicable_to">Applicable To *</Label>
+              <Label htmlFor="applicable_to">Gäller för *</Label>
               <Select
                 value={formData.applicable_to}
                 onValueChange={(value: 'bookings' | 'products' | 'both') => 
@@ -173,9 +173,9 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bookings">Property Bookings Only</SelectItem>
-                  <SelectItem value="products">Shop Products Only</SelectItem>
-                  <SelectItem value="both">Both Bookings & Products</SelectItem>
+                  <SelectItem value="bookings">Bara bokningar av boenden</SelectItem>
+                  <SelectItem value="products">Bara produkter i butiken</SelectItem>
+                  <SelectItem value="both">Både bokningar och produkter</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -183,7 +183,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="discount_type">Discount Type *</Label>
+              <Label htmlFor="discount_type">Typ av rabatt *</Label>
               <Select
                 value={formData.discount_type}
                 onValueChange={(value: 'percentage' | 'fixed') => 
@@ -194,15 +194,15 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="fixed">Fixed Amount</SelectItem>
+                  <SelectItem value="percentage">Procent (%)</SelectItem>
+                  <SelectItem value="fixed">Fast belopp</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <Label htmlFor="discount_value">
-                Discount Value * {formData.discount_type === 'percentage' ? '(%)' : '(SEK)'}
+                Rabatt * {formData.discount_type === 'percentage' ? '(%)' : '(kr)'}
               </Label>
               <Input
                 id="discount_value"
@@ -219,7 +219,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="minimum_amount">Minimum Amount (SEK)</Label>
+              <Label htmlFor="minimum_amount">Lägsta belopp (kr)</Label>
               <Input
                 id="minimum_amount"
                 type="number"
@@ -231,7 +231,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
             </div>
 
             <div>
-              <Label htmlFor="maximum_discount_amount">Maximum Discount (SEK)</Label>
+              <Label htmlFor="maximum_discount_amount">Högsta rabatt (kr)</Label>
               <Input
                 id="maximum_discount_amount"
                 type="number"
@@ -245,7 +245,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="valid_until">Valid Until *</Label>
+              <Label htmlFor="valid_until">Giltig till *</Label>
               <Input
                 id="valid_until"
                 type="datetime-local"
@@ -256,7 +256,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
             </div>
 
             <div>
-              <Label htmlFor="usage_limit">Usage Limit</Label>
+              <Label htmlFor="usage_limit">Max antal användningar</Label>
               <Input
                 id="usage_limit"
                 type="number"
@@ -271,10 +271,10 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
           <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
             <div className="space-y-0.5">
               <Label htmlFor="is_active" className="text-base font-semibold cursor-pointer">
-                Coupon Active Status
+                Aktiv
               </Label>
               <p className="text-sm text-muted-foreground">
-                Control whether this coupon is available for use. Toggle off to pause without deleting.
+                Styr om rabattkoden går att använda. Stäng av den för att pausa den utan att ta bort den.
               </p>
             </div>
             <Switch
@@ -285,7 +285,7 @@ const CouponForm = ({ propertyId, onSubmitted }: CouponFormProps) => {
           </div>
 
           <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Coupon"}
+            {loading ? "Skapar…" : "Skapa rabattkod"}
           </Button>
         </form>
       </CardContent>

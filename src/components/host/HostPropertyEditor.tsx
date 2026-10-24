@@ -28,16 +28,16 @@ import { ImageUploadFolder } from "@/components/admin/ImageUpload";
 
 // In the order a host fills them in (like Airbnb's listing editor)
 const EDITOR_TABS = [
-  { value: "basic", label: "Details", icon: FileText },
-  { value: "gallery", label: "Photos", icon: Image },
-  { value: "location", label: "Location", icon: MapPin },
-  { value: "pricing", label: "Pricing", icon: Banknote },
-  { value: "rules", label: "Rules", icon: ScrollText },
-  { value: "calendar", label: "Calendar", icon: Calendar },
-  { value: "amenities", label: "Amenities", icon: Sparkles },
-  { value: "guide", label: "Guide", icon: BookOpen },
-  { value: "arrival", label: "Arrival", icon: KeyRound },
-  { value: "emails", label: "Emails", icon: Mail },
+  { value: "basic", label: "Detaljer", icon: FileText },
+  { value: "gallery", label: "Foton", icon: Image },
+  { value: "location", label: "Plats", icon: MapPin },
+  { value: "pricing", label: "Priser", icon: Banknote },
+  { value: "rules", label: "Regler", icon: ScrollText },
+  { value: "calendar", label: "Kalender", icon: Calendar },
+  { value: "amenities", label: "Bekvämligheter", icon: Sparkles },
+  { value: "guide", label: "Gästguide", icon: BookOpen },
+  { value: "arrival", label: "Ankomst", icon: KeyRound },
+  { value: "emails", label: "Mejl", icon: Mail },
 ] as const;
 
 /**
@@ -167,7 +167,7 @@ export const HostPropertyEditor = ({
     );
     if (lost.length) {
       const label = EDITOR_TABS.find((t) => t.value === tab)?.label ?? tab;
-      if (!window.confirm(`You have unsaved changes on the ${label} tab. Leave without saving them?`)) return;
+      if (!window.confirm(`Du har ändringar som inte är sparade under fliken ${label}. Vill du lämna utan att spara?`)) return;
       clearDirty(lost);
     }
     setTab(next);
@@ -237,15 +237,15 @@ export const HostPropertyEditor = ({
        if (error) throw error;
  
        toast({
-         title: 'Success',
-         description: 'Guest guide updated successfully'
+         title: 'Sparat',
+         description: 'Gästguiden är uppdaterad'
        });
         saved("guide")();
       } catch (error) {
         console.error('Error saving guidebook:', error);
         toast({
-          title: 'Error',
-          description: 'Failed to save guest guide',
+          title: 'Något gick fel',
+          description: 'Det gick inte att spara gästguiden',
           variant: 'destructive'
         });
       } finally {
@@ -270,7 +270,7 @@ export const HostPropertyEditor = ({
         <TabsContent value="basic" className="mt-6 space-y-4">
           <div>
             <h2 className="text-2xl font-bold mb-1">{propertyTitle}</h2>
-            <p className="text-muted-foreground">Name, description, guests and rooms</p>
+            <p className="text-muted-foreground">Namn, beskrivning, gäster och rum</p>
           </div>
           <Tracked onEdit={markDirty("basic")}>
             <HostBasicTab propertyId={propertyId} onUpdate={saved("basic")} />
@@ -279,8 +279,8 @@ export const HostPropertyEditor = ({
 
         <TabsContent value="amenities" className="mt-6 space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Amenities</h2>
-            <p className="text-muted-foreground">Configure property features and highlights</p>
+            <h2 className="text-2xl font-bold mb-1">Bekvämligheter</h2>
+            <p className="text-muted-foreground">Vad boendet har och vad som gör det speciellt</p>
           </div>
           {/* Hosts may only upload into their listing's own folder (storage policy) */}
           <ImageUploadFolder.Provider value={`${propertyId}/amenities`}>
@@ -292,16 +292,16 @@ export const HostPropertyEditor = ({
 
         <TabsContent value="gallery" className="mt-6 space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Photos</h2>
-            <p className="text-muted-foreground">Guests decide on the photos: put your best one first</p>
+            <h2 className="text-2xl font-bold mb-1">Foton</h2>
+            <p className="text-muted-foreground">Gästerna väljer efter fotona, så lägg ditt bästa först</p>
           </div>
           <HostGalleryTab propertyId={propertyId} onUpdate={onUpdate} />
         </TabsContent>
 
         <TabsContent value="location" className="mt-6 space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Location</h2>
-            <p className="text-muted-foreground">Set location and nearby points of interest</p>
+            <h2 className="text-2xl font-bold mb-1">Plats</h2>
+            <p className="text-muted-foreground">Var boendet ligger och vad som finns i närheten</p>
           </div>
           <Tracked onEdit={markDirty("location")}>
             <HostLocationTab
@@ -316,8 +316,8 @@ export const HostPropertyEditor = ({
 
         <TabsContent value="rules" className="mt-6 space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Rules</h2>
-            <p className="text-muted-foreground">Your cancellation policy and house rules</p>
+            <h2 className="text-2xl font-bold mb-1">Regler</h2>
+            <p className="text-muted-foreground">Din avbokningsregel och dina husregler</p>
           </div>
           <Tracked onEdit={markDirty("rules")}>
             <HostRulesSettings propertyId={propertyId} onSaved={saved("rules")} />
@@ -326,14 +326,14 @@ export const HostPropertyEditor = ({
 
         <TabsContent value="calendar" className="mt-6 space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Calendar</h2>
-            <p className="text-muted-foreground">Manage availability and booking dates</p>
+            <h2 className="text-2xl font-bold mb-1">Kalender</h2>
+            <p className="text-muted-foreground">Vilka datum som går att boka</p>
           </div>
           
           <Card>
             <CardHeader>
-              <CardTitle>Availability Calendar</CardTitle>
-              <CardDescription>Block dates or adjust availability (synced dates are read-only)</CardDescription>
+              <CardTitle>Tillgänglighet</CardTitle>
+              <CardDescription>Blockera datum eller ändra tillgängligheten (synkade datum går inte att ändra här)</CardDescription>
             </CardHeader>
             <CardContent>
               <AvailabilityCalendar defaultPropertyId={propertyId} />
@@ -344,8 +344,8 @@ export const HostPropertyEditor = ({
 
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Preparation Days</CardTitle>
-              <CardDescription>Set days needed between bookings</CardDescription>
+              <CardTitle>Förberedelsedagar</CardTitle>
+              <CardDescription>Hur många dagar du behöver mellan bokningar</CardDescription>
             </CardHeader>
             <CardContent>
               <PropertyPreparationDays 
@@ -358,8 +358,8 @@ export const HostPropertyEditor = ({
 
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Check-in / Check-out Times</CardTitle>
-              <CardDescription>Set your property's check-in and check-out times</CardDescription>
+              <CardTitle>Tider för incheckning och utcheckning</CardTitle>
+              <CardDescription>När gästerna kan checka in och ska checka ut</CardDescription>
             </CardHeader>
             <CardContent>
               <CheckInOutTimes propertyId={propertyId} onUpdate={onUpdate} />
@@ -369,8 +369,8 @@ export const HostPropertyEditor = ({
 
         <TabsContent value="pricing" className="mt-6 space-y-6">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Pricing</h2>
-            <p className="text-muted-foreground">Your price per night, extra guests and cleaning; then discounts and special dates</p>
+            <h2 className="text-2xl font-bold mb-1">Priser</h2>
+            <p className="text-muted-foreground">Ditt pris per natt, extra gäster och städning, sedan rabatter och särskilda priser</p>
           </div>
 
           <Tracked onEdit={markDirty("price")}>
@@ -406,8 +406,8 @@ export const HostPropertyEditor = ({
 
           <Card>
             <CardHeader>
-              <CardTitle>Coupons</CardTitle>
-              <CardDescription>Create discount coupons for your guests</CardDescription>
+              <CardTitle>Rabattkoder</CardTitle>
+              <CardDescription>Skapa rabattkoder till dina gäster</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Display existing coupons */}
@@ -415,7 +415,7 @@ export const HostPropertyEditor = ({
               
               {/* Create new coupon */}
               <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Create New Coupon</h3>
+                <h3 className="text-lg font-semibold mb-4">Ny rabattkod</h3>
                 <CouponForm onSubmitted={onUpdate} propertyId={propertyId} />
               </div>
             </CardContent>
@@ -424,11 +424,11 @@ export const HostPropertyEditor = ({
 
         <TabsContent value="guide" className="mt-6 space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Guest Guide</h2>
-            <p className="text-muted-foreground">Create helpful information for your guests</p>
+            <h2 className="text-2xl font-bold mb-1">Gästguide</h2>
+            <p className="text-muted-foreground">Bra att veta för dina gäster</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Anyone can read the guide, so keep door codes and the Wi-Fi password in the Arrival tab: only booked
-              guests get those.
+              Alla kan läsa gästguiden, så lägg dörrkoder och wifi-lösenord under fliken Ankomst. Bara gäster med
+              en bokning får dem.
             </p>
           </div>
           <ImageUploadFolder.Provider value={`${propertyId}/guide`}>

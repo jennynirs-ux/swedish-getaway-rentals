@@ -157,12 +157,39 @@ const DEFAULT_BLOCKS: Record<string, GuidebookBlock[]> = {
   ],
 };
 
+// The example texts are saved with the blocks in English; the editor shows
+// them in Swedish (an unknown, e.g. older, example is shown as saved)
+const PLACEHOLDERS_SV: Record<string, string> = {
+  "Which road to take, the last turn-off and where to park.": "Vilken väg man tar, sista avfarten och var man parkerar.",
+  "Nearest train station or bus stop and how to get from there to the cabin.": "Närmaste tågstation eller busshållplats och hur man tar sig därifrån till stugan.",
+  "e.g. The nearest supermarket – groceries": "t.ex. Närmaste matbutik – mat och dagligvaror",
+  "When guests can arrive, e.g. from 15:00.": "När gästerna kan komma, t.ex. från 15:00.",
+  "How guests get in, e.g. a key box by the door. Put codes in the Arrival tab – only booked guests get those.":
+    "Hur gästerna kommer in, t.ex. en nyckelbox vid dörren. Lägg koder under fliken Ankomst – bara gäster med bokning får dem.",
+  "Where guests can park.": "Var gästerna kan parkera.",
+  "Where the router is and where the signal is weak. Put the network name and password in the Arrival tab – only booked guests get those.":
+    "Var routern står och var signalen är svag. Lägg nätverksnamn och lösenord under fliken Ankomst – bara gäster med bokning får dem.",
+  "e.g. Dishwasher": "t.ex. Diskmaskin",
+  "e.g. Heating: the thermostat is in the hall. Turn it down when you leave.": "t.ex. Värme: termostaten sitter i hallen. Sänk den när du åker.",
+  "Where the bins are and how to sort. Leave it empty and guests see a general guide to Swedish recycling.":
+    "Var soptunnorna står och hur man sorterar. Lämnar du fältet tomt ser gästerna en allmän guide till svensk sopsortering.",
+  "e.g. The local pizzeria – 10 minutes by car": "t.ex. Pizzerian i byn – 10 minuter med bil",
+  "e.g. Best swimming spot, a nature reserve or the nearest town": "t.ex. Bästa badplatsen, ett naturreservat eller närmaste stad",
+  "e.g. Quiet after 22:00": "t.ex. Tyst efter 22:00",
+  "e.g. Check-out by 11:00.": "t.ex. Utcheckning senast 11:00.",
+  "e.g. Take out the rubbish": "t.ex. Ta ut soporna",
+  "A few sentences about you and the place.": "Några meningar om dig och platsen.",
+};
+
+const placeholderSv = (placeholder?: string) =>
+  placeholder ? PLACEHOLDERS_SV[placeholder] ?? placeholder : placeholder;
+
 export const GuidebookEditor = ({
   sections = [],
   onChange,
   onSave,
   saving = false,
-  propertyTitle = "Property",
+  propertyTitle = "ditt boende",
   center,
 }: GuidebookEditorProps) => {
   const { toast } = useToast();
@@ -303,7 +330,7 @@ export const GuidebookEditor = ({
       // given another address while the lookup ran
       if (findPin(sectionId, blockId, pinIndex)?.address !== address) return;
       if (!result) {
-        toast({ title: "Address not found", description: "Check the spelling or add the town name.", variant: "destructive" });
+        toast({ title: "Adressen hittades inte", description: "Kolla stavningen eller lägg till orten.", variant: "destructive" });
         return;
       }
       updateMapPin(sectionId, blockId, pinIndex, { lat: result.latitude, lng: result.longitude, geocoded: true });
@@ -361,9 +388,9 @@ export const GuidebookEditor = ({
     if (onSave) {
       try {
         await onSave();
-        toast({ title: "Success", description: "Guest guide saved successfully" });
+        toast({ title: "Klart", description: "Gästguiden är sparad" });
       } catch {
-        toast({ title: "Error", description: "Failed to save guide", variant: "destructive" });
+        toast({ title: "Något gick fel", description: "Det gick inte att spara gästguiden", variant: "destructive" });
       }
     }
   };
@@ -372,22 +399,22 @@ export const GuidebookEditor = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-base font-medium">Guest Guide for {propertyTitle}</Label>
-          <p className="text-sm text-muted-foreground">Fill in the guidebook for your guests</p>
+          <Label className="text-base font-medium">Gästguide för {propertyTitle}</Label>
+          <p className="text-sm text-muted-foreground">Fyll i gästguiden för dina gäster</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Share className="h-4 w-4 mr-2" /> Share</Button>
+          <Button variant="outline" size="sm"><Share className="h-4 w-4 mr-2" /> Dela</Button>
           <Button 
             variant="default" 
             size="lg"
             className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
           >
-            <Download className="h-5 w-5 mr-2" /> Download PDF
+            <Download className="h-5 w-5 mr-2" /> Ladda ner PDF
           </Button>
           {onSave && (
             <Button variant="default" size="sm" onClick={handleSave} disabled={saving || pendingGeocodes > 0}>
               <Save className="h-4 w-4 mr-2" />{" "}
-              {pendingGeocodes > 0 ? "Finding address..." : saving ? "Saving..." : "Save"}
+              {pendingGeocodes > 0 ? "Söker adress..." : saving ? "Sparar..." : "Spara"}
             </Button>
           )}
         </div>
@@ -409,7 +436,7 @@ export const GuidebookEditor = ({
             </CardHeader>
             <CardContent className="space-y-4">
               <ImageUpload
-                label="Section Image (optional)"
+                label="Bild för avsnittet (valfritt)"
                 value={section.image_url || ""}
                 onChange={(url) => updateSection(section.id, { image_url: url })}
                 onRemove={() => updateSection(section.id, { image_url: '' })}
@@ -420,7 +447,7 @@ export const GuidebookEditor = ({
                     <Input
                       value={block.title || ""}
                       onChange={(e) => updateBlock(section.id, block.id, { title: e.target.value })}
-                      placeholder="Block title (optional)"
+                      placeholder="Rubrik (valfritt)"
                       className="font-medium bg-transparent border-none shadow-none p-0 h-auto focus-visible:ring-1"
                     />
                     <Button
@@ -437,7 +464,7 @@ export const GuidebookEditor = ({
                     <Textarea
                       value={block.content}
                       onChange={(e) => updateBlock(section.id, block.id, { content: e.target.value })}
-                      placeholder={block.placeholder}
+                      placeholder={placeholderSv(block.placeholder)}
                       rows={3}
                     />
                   )}
@@ -455,7 +482,7 @@ export const GuidebookEditor = ({
                                 ),
                               })
                             }
-                            placeholder={block.placeholder}
+                            placeholder={placeholderSv(block.placeholder)}
                           />
                           <Button
                             size="icon"
@@ -471,7 +498,7 @@ export const GuidebookEditor = ({
                         variant="outline"
                         onClick={() => addBlockItem(section.id, block.id)}
                       >
-                        <Plus className="h-4 w-4 mr-2" /> Add item
+                        <Plus className="h-4 w-4 mr-2" /> Lägg till rad
                       </Button>
                     </div>
                   )}
@@ -490,7 +517,7 @@ export const GuidebookEditor = ({
                                 ),
                               })
                             }
-                            placeholder={block.placeholder}
+                            placeholder={placeholderSv(block.placeholder)}
                           />
                           <Button
                             size="icon"
@@ -506,7 +533,7 @@ export const GuidebookEditor = ({
                         variant="outline"
                         onClick={() => addBlockItem(section.id, block.id)}
                       >
-                        <Plus className="h-4 w-4 mr-2" /> Add checklist item
+                        <Plus className="h-4 w-4 mr-2" /> Lägg till punkt
                       </Button>
                     </div>
                   )}
@@ -516,8 +543,8 @@ export const GuidebookEditor = ({
                       <div className="h-48 rounded-md bg-muted/30 border-2 border-dashed flex items-center justify-center">
                         <div className="text-center text-muted-foreground">
                           <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Map will be shown to guests</p>
-                          <p className="text-xs">Add pins by address below</p>
+                          <p className="text-sm">Gästerna ser en karta här</p>
+                          <p className="text-xs">Lägg till platser med adress nedan</p>
                         </div>
                       </div>
                       {block.mapPins?.map((pin, i) => (
@@ -527,18 +554,18 @@ export const GuidebookEditor = ({
                             <Input
                               value={pin.label}
                               onChange={(e) => updateMapPin(section.id, block.id, i, { label: e.target.value })}
-                              placeholder="Location name"
+                              placeholder="Platsens namn"
                             />
                             <Input
                               value={pin.address || ""}
                               onChange={(e) => updateMapPin(section.id, block.id, i, { address: e.target.value, geocoded: false })}
                               onBlur={(e) => geocodePin(section.id, block.id, i, e.target.value)}
-                              placeholder="Address (e.g. Storgatan 1, Åre)"
+                              placeholder="Adress (t.ex. Storgatan 1, Åre)"
                             />
                             <p className="text-xs text-muted-foreground">
                               {pin.geocoded
-                                ? "Found on the map."
-                                : "Enter an address. Guests see the pin once the address is found on the map."}
+                                ? "Hittad på kartan."
+                                : "Skriv en adress. Gästerna ser platsen när adressen har hittats på kartan."}
                             </p>
                           </div>
                           <Button
@@ -556,7 +583,7 @@ export const GuidebookEditor = ({
                         variant="outline"
                         onClick={() => addMapPin(section.id, block.id)}
                       >
-                        <Plus className="h-4 w-4 mr-2" /> Add map pin
+                        <Plus className="h-4 w-4 mr-2" /> Lägg till plats
                       </Button>
                     </div>
                   )}
@@ -569,28 +596,28 @@ export const GuidebookEditor = ({
                   variant="outline"
                   onClick={() => addBlock(section.id, "text")}
                 >
-                  <Plus className="h-4 w-4 mr-2" /> Add Text
+                  <Plus className="h-4 w-4 mr-2" /> Lägg till text
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => addBlock(section.id, "list")}
                 >
-                  <Plus className="h-4 w-4 mr-2" /> Add List
+                  <Plus className="h-4 w-4 mr-2" /> Lägg till lista
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => addBlock(section.id, "checkbox")}
                 >
-                  <Plus className="h-4 w-4 mr-2" /> Add Checklist
+                  <Plus className="h-4 w-4 mr-2" /> Lägg till checklista
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => addBlock(section.id, "map")}
                 >
-                  <Plus className="h-4 w-4 mr-2" /> Add Map
+                  <Plus className="h-4 w-4 mr-2" /> Lägg till karta
                 </Button>
               </div>
             </CardContent>

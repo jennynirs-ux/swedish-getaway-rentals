@@ -18,6 +18,18 @@ interface HostBasicTabProps {
 
 const PROPERTY_TYPES = ["Cabin", "Cottage", "House", "Villa", "Apartment", "Studio", "Chalet", "Loft"];
 
+/** Swedish labels for the host panel; the stored value (shown to guests) stays English */
+export const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  Cabin: "Stuga",
+  Cottage: "Torp",
+  House: "Hus",
+  Villa: "Villa",
+  Apartment: "Lägenhet",
+  Studio: "Studio",
+  Chalet: "Fjällstuga",
+  Loft: "Loft",
+};
+
 /**
  * The Details tab, like Airbnb's listing details: name, description, type,
  * guests and rooms first; the rest (a headline on the page, an introduction,
@@ -92,7 +104,7 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
 
   const handleSave = async () => {
     if (formData.title.trim().length < 3) {
-      toast({ title: 'Give your place a name', description: 'At least 3 characters.', variant: 'destructive' });
+      toast({ title: 'Ge ditt boende ett namn', description: 'Minst 3 tecken.', variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -123,12 +135,12 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
 
       if (error) throw error;
 
-      toast({ title: 'Details saved' });
+      toast({ title: 'Detaljerna är sparade' });
       onUpdate?.();
     } catch (error) {
       console.error('Error saving:', error);
       toast({
-        title: 'Could not save',
+        title: 'Det gick inte att spara',
         description: (error as { message?: string })?.message,
         variant: 'destructive'
       });
@@ -140,99 +152,99 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Listing details</CardTitle>
-        <CardDescription>What guests see first about your place</CardDescription>
+        <CardTitle>Om annonsen</CardTitle>
+        <CardDescription>Det här ser gästerna först om ditt boende</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="title">Name</Label>
+          <Label htmlFor="title">Namn</Label>
           <Input
             id="title"
             value={formData.title}
             maxLength={60}
             onChange={(e) => set("title", e.target.value)}
-            placeholder="e.g. Lakeside cabin with sauna in Dalarna"
+            placeholder="t.ex. Stuga vid sjön med bastu i Dalarna"
           />
-          <p className="text-xs text-muted-foreground">{formData.title.length}/60. Short and specific works best.</p>
+          <p className="text-xs text-muted-foreground">{formData.title.length}/60. Kort och konkret fungerar bäst.</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">Beskrivning</Label>
           <Textarea
             id="description"
             value={formData.description}
             onChange={(e) => set("description", e.target.value)}
-            placeholder="The place, the area and what guests can do there"
+            placeholder="Boendet, omgivningen och vad gästerna kan göra där"
             rows={6}
           />
-          <p className="text-xs text-muted-foreground">Shown on your listing and in search results.</p>
+          <p className="text-xs text-muted-foreground">Visas i din annons och i sökresultaten.</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="property_type">Type of place</Label>
+          <Label htmlFor="property_type">Typ av boende</Label>
           <Select value={formData.property_type} onValueChange={(v) => set("property_type", v)}>
-            <SelectTrigger id="property_type"><SelectValue placeholder="Choose a type" /></SelectTrigger>
+            <SelectTrigger id="property_type"><SelectValue placeholder="Välj en typ" /></SelectTrigger>
             <SelectContent>
               {[...new Set([...PROPERTY_TYPES, formData.property_type].filter(Boolean))].map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
+                <SelectItem key={t} value={t}>{PROPERTY_TYPE_LABELS[t] ?? t}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         <div className="divide-y rounded-lg border px-4">
-          <Stepper id="details-guests" label="Guests" hint="The most people who can stay" value={formData.max_guests} min={1} max={30} onChange={(n) => set("max_guests", n)} />
-          <Stepper id="details-bedrooms" label="Bedrooms" hint="0 for a studio" value={formData.bedrooms} min={0} max={20} onChange={(n) => set("bedrooms", n)} />
-          <Stepper id="details-bathrooms" label="Bathrooms" hint="Half: a toilet without a shower" value={formData.bathrooms} min={0} max={10} step={0.5} onChange={(n) => set("bathrooms", n)} />
+          <Stepper id="details-guests" label="Gäster" hint="Så många som mest kan bo här" value={formData.max_guests} min={1} max={30} onChange={(n) => set("max_guests", n)} />
+          <Stepper id="details-bedrooms" label="Sovrum" hint="0 för en studio" value={formData.bedrooms} min={0} max={20} onChange={(n) => set("bedrooms", n)} />
+          <Stepper id="details-bathrooms" label="Badrum" hint="Ett halvt: toalett utan dusch" value={formData.bathrooms} min={0} max={10} step={0.5} onChange={(n) => set("bathrooms", n)} />
         </div>
 
         <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="-ml-3 gap-1">
               <ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
-              More (optional)
+              Mer (valfritt)
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-5 pt-3">
             <div className="space-y-2">
-              <Label htmlFor="tagline">Headline at the top of your page</Label>
-              <Input id="tagline" value={formData.tagline_line1} onChange={(e) => set("tagline_line1", e.target.value)} placeholder="e.g. Wake up to the lake" />
-              <Input id="tagline2" aria-label="Headline, second line" value={formData.tagline_line2} onChange={(e) => set("tagline_line2", e.target.value)} placeholder="Second line" />
+              <Label htmlFor="tagline">Rubrik högst upp på din sida</Label>
+              <Input id="tagline" value={formData.tagline_line1} onChange={(e) => set("tagline_line1", e.target.value)} placeholder="t.ex. Vakna vid sjön" />
+              <Input id="tagline2" aria-label="Rubrik, andra raden" value={formData.tagline_line2} onChange={(e) => set("tagline_line2", e.target.value)} placeholder="Andra raden" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="introduction">Introduction above the description</Label>
+              <Label htmlFor="introduction">Inledning ovanför beskrivningen</Label>
               <Textarea id="introduction" value={formData.introduction_text} onChange={(e) => set("introduction_text", e.target.value)} rows={3} />
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="availability_text">Availability note</Label>
-                <Input id="availability_text" value={formData.availability_text} onChange={(e) => set("availability_text", e.target.value)} placeholder="e.g. Open all year" />
+                <Label htmlFor="availability_text">Om tillgänglighet</Label>
+                <Input id="availability_text" value={formData.availability_text} onChange={(e) => set("availability_text", e.target.value)} placeholder="t.ex. Öppet året runt" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contact_response_time">Response time</Label>
-                <Input id="contact_response_time" value={formData.contact_response_time} onChange={(e) => set("contact_response_time", e.target.value)} placeholder="e.g. Usually within a few hours" />
+                <Label htmlFor="contact_response_time">Svarstid</Label>
+                <Input id="contact_response_time" value={formData.contact_response_time} onChange={(e) => set("contact_response_time", e.target.value)} placeholder="t.ex. Oftast inom några timmar" />
               </div>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="contact_email">Contact e-mail on your page</Label>
+                <Label htmlFor="contact_email">Mejladress på din sida</Label>
                 <Input id="contact_email" type="email" value={formData.contact_email} onChange={(e) => set("contact_email", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contact_phone">Contact phone on your page</Label>
+                <Label htmlFor="contact_phone">Telefonnummer på din sida</Label>
                 <Input id="contact_phone" type="tel" value={formData.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="registration_number">Registration number</Label>
-              <Input id="registration_number" value={formData.registration_number} onChange={(e) => set("registration_number", e.target.value)} placeholder="If your municipality requires one" />
+              <Label htmlFor="registration_number">Registreringsnummer</Label>
+              <Input id="registration_number" value={formData.registration_number} onChange={(e) => set("registration_number", e.target.value)} placeholder="Om din kommun kräver det" />
             </div>
           </CollapsibleContent>
         </Collapsible>
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save details'}
+            {saving ? 'Sparar…' : 'Spara detaljer'}
           </Button>
         </div>
       </CardContent>

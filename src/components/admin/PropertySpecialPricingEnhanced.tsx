@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, addDays, differenceInDays, isSameDay } from "date-fns";
+import { sv } from "date-fns/locale";
 import { usePricingRules } from "@/hooks/usePricingRules";
 import { applicableStayDiscount, stayDiscountAmount } from "../../../supabase/functions/_shared/booking-price";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,9 @@ export const PropertySpecialPricingEnhanced = ({
     }
   };
 
+  // "1 500 kr"
+  const money = (amount: number) => `${amount.toLocaleString("sv-SE")} ${currency === "SEK" ? "kr" : currency}`;
+
   const getDateAvailability = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
     return availability.find((a) => a.date === dateStr);
@@ -67,8 +71,8 @@ export const PropertySpecialPricingEnhanced = ({
   const saveSpecialPrice = async () => {
     if (selectedDates.length === 0) {
       toast({
-        title: "No dates selected",
-        description: "Please select at least one date",
+        title: "Inga datum valda",
+        description: "Välj minst ett datum",
         variant: "destructive",
       });
       return;
@@ -112,8 +116,8 @@ export const PropertySpecialPricingEnhanced = ({
 
       const saved = existing.length + fresh.length;
       toast({
-        title: "Success",
-        description: `Special price set for ${saved} date(s)${skipped > 0 ? ` (skipped ${skipped} booked or synced date(s))` : ""}`,
+        title: "Sparat",
+        description: `Särskilt pris satt för ${saved} datum${skipped > 0 ? ` (hoppade över ${skipped} bokade eller synkade datum)` : ""}`,
       });
 
       loadAvailability();
@@ -122,8 +126,8 @@ export const PropertySpecialPricingEnhanced = ({
     } catch (error) {
       console.error("Error saving special price:", error);
       toast({
-        title: "Error",
-        description: "Failed to save special price",
+        title: "Något gick fel",
+        description: "Det gick inte att spara det särskilda priset",
         variant: "destructive",
       });
     } finally {
@@ -192,14 +196,15 @@ export const PropertySpecialPricingEnhanced = ({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Special Pricing</CardTitle>
+          <CardTitle>Särskilda priser</CardTitle>
           <CardDescription>
-            Select multiple dates to set special pricing
+            Välj ett eller flera datum för att sätta ett särskilt pris
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Calendar
             mode="multiple"
+            locale={sv}
             selected={selectedDates}
             onSelect={(dates) => setSelectedDates(dates || [])}
             className="rounded-md border"
@@ -230,7 +235,7 @@ export const PropertySpecialPricingEnhanced = ({
             <div className="p-4 bg-muted rounded-lg space-y-3">
               <div>
                 <Label htmlFor="special-price">
-                  Special Price ({currency}/night)
+                  Särskilt pris ({currency === "SEK" ? "kr" : currency} per natt)
                 </Label>
                 <Input
                   id="special-price"
@@ -238,16 +243,16 @@ export const PropertySpecialPricingEnhanced = ({
                   min="0"
                   value={specialPrice}
                   onChange={(e) => setSpecialPrice(e.target.value)}
-                  placeholder={`Base price: ${basePrice} ${currency}`}
+                  placeholder={`Grundpris: ${money(basePrice)}`}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {selectedDates.length} date(s) selected
+                  {selectedDates.length} datum valda
                 </p>
               </div>
 
               <div className="flex gap-2">
                 <Button onClick={saveSpecialPrice} disabled={loading} className="flex-1">
-                  {loading ? "Saving..." : "Save Special Price"}
+                  {loading ? "Sparar…" : "Spara särskilt pris"}
                 </Button>
                 <Button
                   variant="outline"
@@ -256,7 +261,7 @@ export const PropertySpecialPricingEnhanced = ({
                     setSpecialPrice("");
                   }}
                 >
-                  Clear
+                  Rensa
                 </Button>
               </div>
             </div>
@@ -265,15 +270,15 @@ export const PropertySpecialPricingEnhanced = ({
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-primary rounded"></div>
-              <span>Selected</span>
+              <span>Valda</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
-              <span>Special Price</span>
+              <span>Särskilt pris</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-destructive/20 rounded"></div>
-              <span>Unavailable</span>
+              <span>Inte tillgängligt</span>
             </div>
           </div>
         </CardContent>
@@ -282,44 +287,42 @@ export const PropertySpecialPricingEnhanced = ({
       {calculation && (
         <Card>
           <CardHeader>
-            <CardTitle>Price Calculation</CardTitle>
+            <CardTitle>Prisberäkning</CardTitle>
             <CardDescription>
-              Based on selected dates in calendar above
+              Utifrån de datum du valt i kalendern ovan
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Nights:</span>
+              <span className="text-muted-foreground">Nätter:</span>
               <span className="font-medium">{calculation.nights}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal:</span>
+              <span className="text-muted-foreground">Delsumma:</span>
               <span className="font-medium">
-                {calculation.subtotal} {currency}
+                {money(calculation.subtotal)}
               </span>
             </div>
             {calculation.weeklyDiscount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>Weekly Discount ({calculation.weeklyDiscount}% of nightly price):</span>
+                <span>Veckorabatt ({calculation.weeklyDiscount} % av priset per natt):</span>
                 <span>
-                  -{calculation.discountAmount}{" "}
-                  {currency}
+                  -{money(calculation.discountAmount)}
                 </span>
               </div>
             )}
             {calculation.monthlyDiscount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>Monthly Discount ({calculation.monthlyDiscount}% of nightly price):</span>
+                <span>Månadsrabatt ({calculation.monthlyDiscount} % av priset per natt):</span>
                 <span>
-                  -{calculation.discountAmount}{" "}
-                  {currency}
+                  -{money(calculation.discountAmount)}
                 </span>
               </div>
             )}
             <div className="border-t pt-3 flex justify-between font-bold">
-              <span>Total:</span>
+              <span>Totalt:</span>
               <span>
-                {Math.round(calculation.total)} {currency}
+                {money(Math.round(calculation.total))}
               </span>
             </div>
           </CardContent>

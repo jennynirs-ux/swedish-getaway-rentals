@@ -39,12 +39,12 @@ const kr = (n: number) => `${n.toLocaleString("sv-SE")} kr`;
 
 /** Why the draft can't be saved yet, or null */
 export function priceDraftProblem(draft: PriceDraft, maxGuests: number): string | null {
-  if (parseKronor(draft.nightly, 1) === null) return "Enter the price per night in whole kronor.";
+  if (parseKronor(draft.nightly, 1) === null) return "Skriv in priset per natt i hela kronor.";
   if (draft.chargeExtraGuests && maxGuests > 1) {
-    if (parseKronor(draft.extraGuestFee, 1) === null) return "Enter what each extra guest pays per night, or turn extra guests off.";
-    if (draft.guestsIncluded >= maxGuests) return `The price can cover at most ${maxGuests - 1} guests if extra guests pay more (your place sleeps ${maxGuests}).`;
+    if (parseKronor(draft.extraGuestFee, 1) === null) return "Skriv in vad varje extra gäst betalar per natt, eller stäng av extra gäster.";
+    if (draft.guestsIncluded >= maxGuests) return `Priset kan gälla högst ${maxGuests - 1} gäster om extra gäster betalar mer (ditt boende har plats för ${maxGuests}).`;
   }
-  if (draft.cleaningFee.trim() && parseKronor(draft.cleaningFee) === null) return "Enter the cleaning fee in whole kronor, or leave it empty.";
+  if (draft.cleaningFee.trim() && parseKronor(draft.cleaningFee) === null) return "Skriv in städavgiften i hela kronor, eller lämna fältet tomt.";
   return null;
 }
 
@@ -81,7 +81,7 @@ export function Stepper({
           variant="outline"
           size="icon"
           className="h-8 w-8 rounded-full"
-          aria-label={`Fewer: ${label}`}
+          aria-label={`Minska: ${label}`}
           disabled={value <= min}
           onClick={() => set(value - step)}
         >
@@ -93,7 +93,7 @@ export function Stepper({
           variant="outline"
           size="icon"
           className="h-8 w-8 rounded-full"
-          aria-label={`More: ${label}`}
+          aria-label={`Öka: ${label}`}
           disabled={value >= max}
           onClick={() => set(value + step)}
         >
@@ -132,10 +132,10 @@ export function PriceFields({ value, onChange, maxGuests }: { value: PriceDraft;
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="price-nightly" className="text-base">Price per night</Label>
-        <KronorInput id="price-nightly" value={value.nightly} onChange={(v) => set("nightly", v)} suffix="kr per night" placeholder="1500" />
+        <Label htmlFor="price-nightly" className="text-base">Pris per natt</Label>
+        <KronorInput id="price-nightly" value={value.nightly} onChange={(v) => set("nightly", v)} suffix="kr per natt" placeholder="1500" />
         <p className="text-xs text-muted-foreground">
-          What you receive per night. Guests pay a small service fee on top. You can set other prices for single dates later.
+          Det du får per natt. Gästerna betalar en liten serviceavgift ovanpå. Du kan sätta andra priser för enskilda datum senare.
         </p>
       </div>
 
@@ -143,11 +143,11 @@ export function PriceFields({ value, onChange, maxGuests }: { value: PriceDraft;
         <div className="space-y-3 rounded-lg border p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <Label htmlFor="price-extra-toggle" className="text-base">Extra guests</Label>
+              <Label htmlFor="price-extra-toggle" className="text-base">Extra gäster</Label>
               <p className="text-xs text-muted-foreground">
                 {value.chargeExtraGuests
-                  ? "Larger groups pay more per night."
-                  : `Off: the price per night is the same for 1 to ${maxGuests} guests.`}
+                  ? "Större sällskap betalar mer per natt."
+                  : `Av: priset per natt är detsamma för 1 till ${maxGuests} gäster.`}
               </p>
             </div>
             <Switch
@@ -160,20 +160,20 @@ export function PriceFields({ value, onChange, maxGuests }: { value: PriceDraft;
             <>
               <Stepper
                 id="price-guests-included"
-                label="Guests included in the price"
+                label="Gäster som ingår i priset"
                 value={included}
                 min={1}
                 max={maxGuests - 1}
                 onChange={(n) => set("guestsIncluded", n)}
               />
               <div className="space-y-2">
-                <Label htmlFor="price-extra-fee">Each extra guest pays</Label>
-                <KronorInput id="price-extra-fee" value={value.extraGuestFee} onChange={(v) => set("extraGuestFee", v)} suffix="kr per night" placeholder="300" />
+                <Label htmlFor="price-extra-fee">Varje extra gäst betalar</Label>
+                <KronorInput id="price-extra-fee" value={value.extraGuestFee} onChange={(v) => set("extraGuestFee", v)} suffix="kr per natt" placeholder="300" />
               </div>
               {nightly !== null && fee !== null && exampleExtra > 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Example: {included + exampleExtra} guests pay {kr(nightly)} + {exampleExtra} × {kr(fee)} ={" "}
-                  <strong>{kr(nightly + exampleExtra * fee)}</strong> per night.
+                  Exempel: {included + exampleExtra} gäster betalar {kr(nightly)} + {exampleExtra} × {kr(fee)} ={" "}
+                  <strong>{kr(nightly + exampleExtra * fee)}</strong> per natt.
                 </p>
               )}
             </>
@@ -182,9 +182,9 @@ export function PriceFields({ value, onChange, maxGuests }: { value: PriceDraft;
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="price-cleaning" className="text-base">Cleaning fee <span className="font-normal text-muted-foreground">(optional)</span></Label>
-        <KronorInput id="price-cleaning" value={value.cleaningFee} onChange={(v) => set("cleaningFee", v)} suffix="kr per stay" placeholder="0" />
-        <p className="text-xs text-muted-foreground">Charged once per booking. Leave empty for none.</p>
+        <Label htmlFor="price-cleaning" className="text-base">Städavgift <span className="font-normal text-muted-foreground">(valfritt)</span></Label>
+        <KronorInput id="price-cleaning" value={value.cleaningFee} onChange={(v) => set("cleaningFee", v)} suffix="kr per vistelse" placeholder="0" />
+        <p className="text-xs text-muted-foreground">Tas ut en gång per bokning. Lämna tomt om du inte vill ha någon.</p>
       </div>
     </div>
   );
@@ -232,7 +232,7 @@ export async function loadPriceDraft(propertyId: string): Promise<{ draft: Price
 /** Saves the nightly price and the extra-guest and cleaning rules (one of each, or none) */
 export async function savePriceDraft(propertyId: string, draft: PriceDraft, maxGuests: number) {
   const nightly = parseKronor(draft.nightly, 1);
-  if (nightly === null) throw new Error("Enter the price per night in whole kronor.");
+  if (nightly === null) throw new Error("Skriv in priset per natt i hela kronor.");
   const { error } = await supabase
     .from("properties")
     .update({ price_per_night: nightly, currency: "SEK", updated_at: new Date().toISOString() })

@@ -69,10 +69,10 @@ export interface TaxReport {
 export function assertTaxReport(data: unknown): TaxReport {
   const report = data as TaxReport | null;
   if (!report || typeof report !== "object" || !Array.isArray(report.properties) || !report.summary || !report.skatteverket) {
-    throw new Error("The tax report came back incomplete. Please try again.");
+    throw new Error("Skatterapporten kom tillbaka ofullständig. Försök igen.");
   }
   if (report.amounts_in != null && report.amounts_in !== "ore") {
-    throw new Error(`The tax report came back in an unexpected unit (${String(report.amounts_in)}).`);
+    throw new Error(`Skatterapporten kom tillbaka i en oväntad enhet (${String(report.amounts_in)}).`);
   }
   return report;
 }
@@ -113,21 +113,21 @@ export function csvCell(value: string | number | null | undefined): string {
 
 /** Explains the scope of the report, for the CSV and the PDF */
 export const TAX_REPORT_SCOPE_NOTE =
-  `${NORDIC_GETAWAYS_ONLY_LABEL}, by check-in date. The 40 000 kr deduction is per person and year across all ` +
-  "your private rentals, so add income from other channels yourself. Actual costs are not deductible on top of the " +
-  "standard deductions; expenses are shown for your own records.";
+  `${NORDIC_GETAWAYS_ONLY_LABEL}, efter incheckningsdatum. Avdraget på 40 000 kr gäller per person och år för all ` +
+  "din privata uthyrning, så lägg själv till inkomst från andra kanaler. Faktiska kostnader går inte att dra av " +
+  "utöver schablonavdragen. Utgifterna visas bara för din egen översikt.";
 
 /** The CSV file (amounts in whole kronor) */
 export function taxReportCsv(report: TaxReport): string {
   const headers = [
-    "Property",
-    "Registration #",
-    "Stays",
-    "Nights",
-    "Gross income (SEK)",
-    "of which cancellations (SEK)",
-    "Expenses (SEK)",
-    "Net (SEK)",
+    "Boende",
+    "Registreringsnummer",
+    "Vistelser",
+    "Nätter",
+    "Bruttoinkomst (kr)",
+    "varav avbokningar (kr)",
+    "Utgifter (kr)",
+    "Netto (kr)",
   ];
   const width = headers.length;
   const labelled = (label: string, ore: number) => {
@@ -150,7 +150,7 @@ export function taxReportCsv(report: TaxReport): string {
   const s = report.summary;
   rows.push([]);
   rows.push([
-    "TOTAL",
+    "TOTALT",
     "",
     s.total_bookings,
     s.total_nights,
@@ -160,13 +160,13 @@ export function taxReportCsv(report: TaxReport): string {
     wholeKr(s.total_net_income),
   ]);
   rows.push([]);
-  rows.push(labelled("Gross rental income", s.total_gross_revenue));
-  rows.push(labelled("Schablonavdrag (standard deduction)", -report.skatteverket.schablonavdrag));
+  rows.push(labelled("Hyresintäkter", s.total_gross_revenue));
+  rows.push(labelled("Schablonavdrag", -report.skatteverket.schablonavdrag));
   if (report.skatteverket.additional_deduction != null) {
-    rows.push(labelled("20% avdrag (20% of gross income)", -report.skatteverket.additional_deduction));
+    rows.push(labelled("Avdrag 20 % av hyresintäkterna", -report.skatteverket.additional_deduction));
   }
-  rows.push(labelled("Taxable amount", report.skatteverket.taxable_amount));
-  rows.push(labelled("Estimated tax (30%)", estimatedTaxOre(report)));
+  rows.push(labelled("Beskattningsbart belopp", report.skatteverket.taxable_amount));
+  rows.push(labelled("Uppskattad skatt (30 %)", estimatedTaxOre(report)));
   rows.push([]);
   rows.push([TAX_REPORT_SCOPE_NOTE]);
 

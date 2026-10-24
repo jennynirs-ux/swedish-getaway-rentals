@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInCalendarDays, format, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
+import { sv } from "date-fns/locale";
 import { resolveScope, type FinancialScope } from "@/components/financials/scope";
 
 interface OccupancyPoint {
@@ -87,7 +88,8 @@ const OccupancyTrend = ({ scope }: Props) => {
         const occupancy = totalNights > 0 ? Math.round((bookedNights / totalNights) * 100) : 0;
 
         return {
-          month: format(monthStart, "MMM yy"),
+          // "okt 2026": date-fns writes "okt.", the period is dropped
+          month: format(monthStart, "MMM yyyy", { locale: sv }).replace(".", ""),
           occupancy: Math.min(occupancy, 100),
           bookedNights,
           totalNights,
@@ -118,32 +120,32 @@ const OccupancyTrend = ({ scope }: Props) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h3 className="text-lg font-semibold">Occupancy Trend</h3>
+          <h3 className="text-lg font-semibold">Beläggning över tid</h3>
           <p className="text-sm text-muted-foreground">
-            Average: {avgOccupancy}%
+            Snitt: {avgOccupancy} %
             {data.length >= 3 && (
               <span className={`ml-2 inline-flex items-center gap-1 ${trendColor}`}>
                 <TrendIcon className="h-3 w-3" />
-                Last 3 months: {recentAvg}%
+                Senaste 3 månaderna: {recentAvg} %
               </span>
             )}
           </p>
         </div>
         <div className="flex gap-2">
           <Select value={propertyId} onValueChange={setPropertyId}>
-            <SelectTrigger className="w-48"><SelectValue placeholder="All properties" /></SelectTrigger>
+            <SelectTrigger className="w-48"><SelectValue placeholder="Alla boenden" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All properties</SelectItem>
+              <SelectItem value="all">Alla boenden</SelectItem>
               {properties.map((p) => (
                 <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={period} onValueChange={(v) => setPeriod(v as "6m" | "12m")}>
-            <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="6m">6 months</SelectItem>
-              <SelectItem value="12m">12 months</SelectItem>
+              <SelectItem value="6m">6 månader</SelectItem>
+              <SelectItem value="12m">12 månader</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -151,28 +153,28 @@ const OccupancyTrend = ({ scope }: Props) => {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Monthly Occupancy %</CardTitle>
+          <CardTitle className="text-sm">Beläggning per månad (%)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Loading...</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Laddar...</p>
           ) : data.length === 0 || data.every((d) => d.totalNights === 0) ? (
             <p className="text-sm text-muted-foreground text-center py-12">
-              No occupancy data yet. Confirmed bookings will appear here.
+              Ingen beläggning att visa än. Bekräftade bokningar dyker upp här.
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
+                <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} unit=" %" />
                 <Tooltip
                   formatter={(value: number, _name: string, props: any) => [
-                    `${value}% (${props.payload.bookedNights} / ${props.payload.totalNights} nights)`,
-                    "Occupancy",
+                    `${value} % (${props.payload.bookedNights} av ${props.payload.totalNights} nätter)`,
+                    "Beläggning",
                   ]}
                 />
-                <ReferenceLine y={60} stroke="#10b981" strokeDasharray="4 4" label={{ value: "Target 60%", fontSize: 10, fill: "#10b981" }} />
+                <ReferenceLine y={60} stroke="#10b981" strokeDasharray="4 4" label={{ value: "Mål 60 %", fontSize: 10, fill: "#10b981" }} />
                 <Line type="monotone" dataKey="occupancy" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>

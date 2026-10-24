@@ -55,7 +55,7 @@ export const HostTaxReport = () => {
       if (id === request.current) setReport(checked);
     } catch (err) {
       // Show the function's own reason (e.g. "You have no listings yet"), not supabase-js's generic non-2xx message
-      const message = await functionErrorMessage(err, 'Could not generate the tax report');
+      const message = await functionErrorMessage(err, 'Det gick inte att skapa skatterapporten');
       if (id === request.current) {
         setReport(null);
         setError(message);
@@ -71,7 +71,7 @@ export const HostTaxReport = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `skatteverket-tax-report-${report.tax_year}.csv`;
+    a.download = `skatterapport-${report.tax_year}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -82,7 +82,7 @@ export const HostTaxReport = () => {
       const { generateTaxReportPdf } = await import('@/lib/generateFinancialPdf');
       await generateTaxReportPdf(report);
     } catch (err) {
-      setError(err instanceof Error && err.message ? `Could not create the PDF: ${err.message}` : 'Could not create the PDF');
+      setError(err instanceof Error && err.message ? `Det gick inte att skapa PDF:en: ${err.message}` : 'Det gick inte att skapa PDF:en');
     }
   };
 
@@ -97,32 +97,32 @@ export const HostTaxReport = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Tax Report (Skatteverket)
+            Skatterapport (Skatteverket)
           </CardTitle>
           <CardDescription>
-            An annual summary of your rental income for Swedish tax filing, as a private person renting out
+            En årlig sammanställning av dina hyresintäkter till deklarationen, när du hyr ut som privatperson
             (privatuthyrning, inkomst av kapital).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
             <li>
-              {NORDIC_GETAWAYS_ONLY_LABEL}, counted by check-in date. Income from Airbnb, Booking.com or other channels
-              is not included: add it yourself.
+              {NORDIC_GETAWAYS_ONLY_LABEL}, räknat efter incheckningsdatum. Inkomst från Airbnb, Booking.com eller andra
+              kanaler ingår inte, så lägg till den själv.
             </li>
             <li>
-              The standard deduction is 40 000 kr per person and year across all your private rentals, plus 20% of the
-              rental income for a house you own. If you also rent out elsewhere, the deduction shown here is too high.
+              Schablonavdraget är 40 000 kr per person och år för all din privata uthyrning, plus 20 % av hyresintäkterna
+              för ett hus du äger. Hyr du även ut någon annanstans blir avdraget som visas här för högt.
             </li>
             <li>
-              Rent out through a company or as a sole trader? Then this calculation does not apply: the income belongs
-              in your business accounts.
+              Hyr du ut via ett bolag eller med enskild firma? Då gäller inte den här beräkningen, utan inkomsten hör
+              hemma i företagets bokföring.
             </li>
           </ul>
           <div className="flex items-center gap-3">
             <YearSelect years={years} value={selectedYear} onChange={selectYear} />
             <Button onClick={generateReport} disabled={loading}>
-              {loading ? 'Generating...' : 'Generate Report'}
+              {loading ? 'Skapar...' : 'Skapa rapport'}
             </Button>
           </div>
         </CardContent>
@@ -141,37 +141,37 @@ export const HostTaxReport = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground">Gross Income</p>
+                <p className="text-xs text-muted-foreground">Bruttoinkomst</p>
                 <p className="text-xl font-bold">{formatKr(report.summary.total_gross_revenue)}</p>
                 {cancellationIncome > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    incl. {formatKr(cancellationIncome)} kept from cancellations
+                    varav {formatKr(cancellationIncome)} från avbokningar
                   </p>
                 )}
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground">Expenses</p>
+                <p className="text-xs text-muted-foreground">Utgifter</p>
                 <p className="text-xl font-bold text-destructive">{formatCost(report.summary.total_expenses)}</p>
-                <p className="text-xs text-muted-foreground">for your records, not deductible here</p>
+                <p className="text-xs text-muted-foreground">för din översikt, inte avdragsgilla här</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground">Net Income</p>
+                <p className="text-xs text-muted-foreground">Nettoinkomst</p>
                 <p className="text-xl font-bold">{formatKr(report.summary.total_net_income)}</p>
               </CardContent>
             </Card>
             <Card className="border-primary">
               <CardContent className="pt-6">
-                <p className="text-xs text-muted-foreground font-semibold">Taxable Amount</p>
+                <p className="text-xs text-muted-foreground font-semibold">Beskattningsbart belopp</p>
                 <p className="text-xl font-bold text-primary">{formatKr(report.skatteverket.taxable_amount)}</p>
                 <p className="text-xs text-muted-foreground">
-                  after {formatKr(report.skatteverket.schablonavdrag)}
-                  {additionalDeduction != null && <> and 20% ({formatKr(additionalDeduction)})</>} deductions
+                  efter avdrag på {formatKr(report.skatteverket.schablonavdrag)}
+                  {additionalDeduction != null && <> och 20 % ({formatKr(additionalDeduction)})</>}
                 </p>
-                <p className="text-xs text-muted-foreground">Tax ~{formatKr(estimatedTaxOre(report))}</p>
+                <p className="text-xs text-muted-foreground">Skatt ca {formatKr(estimatedTaxOre(report))}</p>
               </CardContent>
             </Card>
           </div>
@@ -180,7 +180,7 @@ export const HostTaxReport = () => {
           <Alert>
             <TrendingUp className="h-4 w-4" />
             <AlertDescription>
-              <strong>Skatteverket — {report.skatteverket.inkomstslag}</strong>
+              <strong>Skatteverket – {report.skatteverket.inkomstslag}</strong>
               <br />
               {report.skatteverket.note}
             </AlertDescription>
@@ -190,8 +190,8 @@ export const HostTaxReport = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Property Breakdown — {report.tax_year}</CardTitle>
-                <CardDescription>{NORDIC_GETAWAYS_ONLY_LABEL}, by check-in date</CardDescription>
+                <CardTitle className="text-lg">Per boende – {report.tax_year}</CardTitle>
+                <CardDescription>{NORDIC_GETAWAYS_ONLY_LABEL}, efter incheckningsdatum</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={downloadCSV}>
@@ -209,12 +209,12 @@ export const HostTaxReport = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 pr-4">Property</th>
-                      <th className="text-right py-2 px-2">Stays</th>
-                      <th className="text-right py-2 px-2">Nights</th>
-                      <th className="text-right py-2 px-2">Gross</th>
-                      <th className="text-right py-2 px-2">Expenses</th>
-                      <th className="text-right py-2 pl-2">Net</th>
+                      <th className="text-left py-2 pr-4">Boende</th>
+                      <th className="text-right py-2 px-2">Vistelser</th>
+                      <th className="text-right py-2 px-2">Nätter</th>
+                      <th className="text-right py-2 px-2">Brutto</th>
+                      <th className="text-right py-2 px-2">Utgifter</th>
+                      <th className="text-right py-2 pl-2">Netto</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -226,7 +226,7 @@ export const HostTaxReport = () => {
                             <div>
                               <p className="font-medium">{p.property_title}</p>
                               {p.registration_number && (
-                                <p className="text-xs text-muted-foreground">Reg: {p.registration_number}</p>
+                                <p className="text-xs text-muted-foreground">Reg.nr: {p.registration_number}</p>
                               )}
                             </div>
                           </div>
@@ -237,7 +237,7 @@ export const HostTaxReport = () => {
                           {formatKr(p.total_revenue)}
                           {(p.cancellation_income ?? 0) > 0 && (
                             <p className="text-xs text-muted-foreground font-normal">
-                              incl. {formatKr(p.cancellation_income)} cancellations
+                              varav {formatKr(p.cancellation_income)} avbokningar
                             </p>
                           )}
                         </td>
@@ -248,7 +248,7 @@ export const HostTaxReport = () => {
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 font-bold">
-                      <td className="py-2 pr-4">Total</td>
+                      <td className="py-2 pr-4">Totalt</td>
                       <td className="text-right py-2 px-2">{report.summary.total_bookings}</td>
                       <td className="text-right py-2 px-2">{report.summary.total_nights}</td>
                       <td className="text-right py-2 px-2">{formatKr(report.summary.total_gross_revenue)}</td>

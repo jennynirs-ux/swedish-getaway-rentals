@@ -61,9 +61,9 @@ describe("tax report amounts", () => {
   });
 
   it("refuses a report in another unit and accepts older reports without one", () => {
-    expect(() => assertTaxReport({ ...report, amounts_in: "sek" })).toThrow(/unexpected unit/);
+    expect(() => assertTaxReport({ ...report, amounts_in: "sek" })).toThrow(/oväntad enhet/);
     expect(assertTaxReport({ ...report, amounts_in: undefined }).tax_year).toBe(2025);
-    expect(() => assertTaxReport({ error: "x" })).toThrow(/incomplete/);
+    expect(() => assertTaxReport({ error: "x" })).toThrow(/ofullständig/);
   });
 });
 
@@ -81,11 +81,11 @@ describe("tax report CSV", () => {
     const lines = taxReportCsv(report).split("\n");
     expect(lines[0]).not.toContain("Platform");
     expect(lines[1]).toBe(`"Stuga ""Fjället"", Åre","'=HYPERLINK(1)",8,30,100000,5000,12501,87500`);
-    expect(lines).toContain(`"TOTAL","",8,30,100000,5000,12501,87500`);
-    expect(lines).toContain(`"Schablonavdrag (standard deduction)","","","","","","",-40000`);
-    expect(lines).toContain(`"20% avdrag (20% of gross income)","","","","","","",-20000`);
-    expect(lines).toContain(`"Taxable amount","","","","","","",40000`);
-    expect(lines).toContain(`"Estimated tax (30%)","","","","","","",12000`);
+    expect(lines).toContain(`"TOTALT","",8,30,100000,5000,12501,87500`);
+    expect(lines).toContain(`"Schablonavdrag","","","","","","",-40000`);
+    expect(lines).toContain(`"Avdrag 20 % av hyresintäkterna","","","","","","",-20000`);
+    expect(lines).toContain(`"Beskattningsbart belopp","","","","","","",40000`);
+    expect(lines).toContain(`"Uppskattad skatt (30 %)","","","","","","",12000`);
   });
 });
 
@@ -97,7 +97,8 @@ describe("tax report PDF", () => {
     expect(pdf).toContain("(-40 000 kr)");
     expect(pdf).toContain("(-20 000 kr)");
     expect(pdf).toContain("(12 000 kr)");
-    expect(pdf).toContain("kept from cancellations");
+    expect(pdf).toContain("från avbokningar");
+    expect(pdf).toContain("10 januari 2026");
     expect(pdf).not.toContain("10 000 000");
     expect(pdf).not.toContain("Platform");
   });

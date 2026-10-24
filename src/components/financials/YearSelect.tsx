@@ -12,7 +12,7 @@ interface YearSelectProps {
 
 export const YearSelect = ({ years, value, onChange }: YearSelectProps) => (
   <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
-    <SelectTrigger className="w-28" aria-label="Year">
+    <SelectTrigger className="w-28" aria-label="År">
       <SelectValue />
     </SelectTrigger>
     <SelectContent>

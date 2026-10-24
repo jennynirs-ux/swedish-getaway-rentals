@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { LocationEditor } from "@/components/LocationEditor";
 import { savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
 import { CountySelect, publicAreaFrom } from "./CountySelect";
+import { PROPERTY_TYPE_LABELS } from "./HostBasicTab";
 import { emptyPriceDraft, parseKronor, PriceFields, priceDraftProblem, savePriceDraft, Stepper, type PriceDraft } from "./listingPrices";
 
 interface Props {
@@ -41,11 +42,11 @@ const PROPERTY_TYPES = [
 ] as const;
 
 const STEPS = [
-  { id: "type", title: "Which of these best describes your place?" },
-  { id: "location", title: "Where is your place?" },
-  { id: "basics", title: "How many guests, bedrooms and bathrooms?" },
-  { id: "title", title: "Give your place a name" },
-  { id: "price", title: "Set your price" },
+  { id: "type", title: "Vilket av de här passar bäst in på ditt boende?" },
+  { id: "location", title: "Var ligger ditt boende?" },
+  { id: "basics", title: "Hur många gäster, sovrum och badrum?" },
+  { id: "title", title: "Ge ditt boende ett namn" },
+  { id: "price", title: "Sätt ditt pris" },
 ] as const;
 
 const EMPTY_PLACE: Place = { street: "", postal_code: "", city: "", country: "Sweden", latitude: null, longitude: null };
@@ -74,15 +75,15 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
   const problem = (): string | null => {
     switch (STEPS[step].id) {
       case "type":
-        return propertyType ? null : "Choose the type that fits best.";
+        return propertyType ? null : "Välj den typ som passar bäst.";
       case "location":
-        if (!county) return "Choose the county.";
-        if (place.city.trim().length < 2) return "Enter the town or village.";
+        if (!county) return "Välj län.";
+        if (place.city.trim().length < 2) return "Skriv in ort.";
         return null;
       case "basics":
         return null;
       case "title":
-        return title.trim().length >= 3 ? null : "Give your place a name (at least 3 characters).";
+        return title.trim().length >= 3 ? null : "Ge ditt boende ett namn (minst 3 tecken).";
       case "price":
         return priceDraftProblem(price, guests);
       default:
@@ -107,9 +108,9 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Please sign in again.");
+      if (!userData.user) throw new Error("Logga in igen.");
       const { data: profile } = await supabase.from("profiles").select("id").eq("user_id", userData.user.id).single();
-      if (!profile) throw new Error("Your host profile was not found.");
+      if (!profile) throw new Error("Vi hittade inte din värdprofil.");
 
       const { data, error } = await supabase
         .from("properties")
@@ -145,15 +146,15 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
         savePriceDraft(data.id, price, guests),
       ]);
       if (followUps.some((r) => r.status === "rejected")) {
-        toast.warning("Your draft is saved, but check the address and prices in the editor.");
+        toast.warning("Utkastet är sparat, men kontrollera adressen och priserna i redigeraren.");
       } else {
-        toast.success(hasPin ? "Draft saved! Now add photos." : "Draft saved! Now pin your place on the map.");
+        toast.success(hasPin ? "Utkastet är sparat! Lägg nu till foton." : "Utkastet är sparat! Markera nu ditt boende på kartan.");
       }
       reset();
       onOpenChange(false);
       onCreated(data.id, hasPin ? "gallery" : "location");
     } catch (e) {
-      toast.error((e as { message?: string })?.message || "Could not create your listing");
+      toast.error((e as { message?: string })?.message || "Det gick inte att skapa din annons");
     } finally {
       setSaving(false);
     }
@@ -174,7 +175,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogDescription>
-            Step {step + 1} of {STEPS.length}
+            Steg {step + 1} av {STEPS.length}
           </DialogDescription>
           <DialogTitle className="text-2xl">{current.title}</DialogTitle>
           <Progress value={((step + 1) / STEPS.length) * 100} className="mt-2 h-1.5" />
@@ -194,7 +195,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
                   }`}
                 >
                   <Icon className="h-7 w-7" />
-                  <span className="font-medium">{value}</span>
+                  <span className="font-medium">{PROPERTY_TYPE_LABELS[value] ?? value}</span>
                 </button>
               ))}
             </div>
@@ -222,36 +223,36 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
 
           {current.id === "basics" && (
             <div className="divide-y">
-              <Stepper id="wizard-guests" label="Guests" hint="The most people who can stay" value={guests} min={1} max={30} onChange={(n) => {
+              <Stepper id="wizard-guests" label="Gäster" hint="Så många som mest kan bo här" value={guests} min={1} max={30} onChange={(n) => {
                 setGuests(n);
                 setPrice((p) => ({ ...p, guestsIncluded: Math.min(p.guestsIncluded, Math.max(1, n - 1)) }));
               }} />
-              <Stepper id="wizard-bedrooms" label="Bedrooms" hint="0 for a studio" value={bedrooms} min={0} max={20} onChange={setBedrooms} />
-              <Stepper id="wizard-bathrooms" label="Bathrooms" hint="Half: a toilet without a shower" value={bathrooms} min={0} max={10} step={0.5} onChange={setBathrooms} />
+              <Stepper id="wizard-bedrooms" label="Sovrum" hint="0 för en studio" value={bedrooms} min={0} max={20} onChange={setBedrooms} />
+              <Stepper id="wizard-bathrooms" label="Badrum" hint="Ett halvt: toalett utan dusch" value={bathrooms} min={0} max={10} step={0.5} onChange={setBathrooms} />
             </div>
           )}
 
           {current.id === "title" && (
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="wizard-title">Name</Label>
+                <Label htmlFor="wizard-title">Namn</Label>
                 <Input
                   id="wizard-title"
                   value={title}
                   maxLength={60}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Lakeside cabin with sauna in Dalarna"
+                  placeholder="t.ex. Stuga vid sjön med bastu i Dalarna"
                   autoFocus
                 />
-                <p className="text-xs text-muted-foreground">{title.length}/60. Short and specific works best.</p>
+                <p className="text-xs text-muted-foreground">{title.length}/60. Kort och konkret fungerar bäst.</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="wizard-description">Description <span className="font-normal text-muted-foreground">(optional now)</span></Label>
+                <Label htmlFor="wizard-description">Beskrivning <span className="font-normal text-muted-foreground">(valfritt just nu)</span></Label>
                 <Textarea
                   id="wizard-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What makes your place special? You can write more later."
+                  placeholder="Vad gör ditt boende speciellt? Du kan skriva mer senare."
                   rows={4}
                 />
               </div>
@@ -263,19 +264,19 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
 
         <div className="flex items-center justify-between gap-3 border-t pt-4">
           <Button variant="ghost" disabled={step === 0 || saving} onClick={() => setStep((s) => Math.max(0, s - 1))}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            <ArrowLeft className="h-4 w-4 mr-1" /> Tillbaka
           </Button>
           <div className="flex items-center gap-3">
             {blocked && <span className="hidden text-xs text-muted-foreground sm:inline">{blocked}</span>}
             {!last ? (
               <Button disabled={!!blocked} onClick={() => setStep((s) => s + 1)}>
-                Next <ArrowRight className="h-4 w-4 ml-1" />
+                Nästa <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
               <Button disabled={!!blocked || saving} onClick={handleCreate}>
-                {saving ? "Saving…" : (
+                {saving ? "Sparar…" : (
                   <>
-                    <Check className="h-4 w-4 mr-1" /> Save draft
+                    <Check className="h-4 w-4 mr-1" /> Spara utkast
                   </>
                 )}
               </Button>
@@ -284,7 +285,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
         </div>
         {blocked && <p className="text-xs text-muted-foreground sm:hidden">{blocked}</p>}
         {current.id === "location" && !hasPin && (
-          <p className="text-xs text-muted-foreground">You can also place the pin later, but your place can't be published without it.</p>
+          <p className="text-xs text-muted-foreground">Du kan också sätta ut nålen senare, men ditt boende kan inte publiceras utan den.</p>
         )}
       </DialogContent>
     </Dialog>

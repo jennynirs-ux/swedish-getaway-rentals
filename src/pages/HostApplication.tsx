@@ -10,8 +10,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import MainNavigation from "@/components/MainNavigation";
 import { Gift, CheckCircle, ArrowRight } from "lucide-react";
-import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, HOST_PAYOUT_TIMING_TEXT, foundingHostOfferOpen } from "@/lib/constants";
+import { FOUNDING_HOST_DEADLINE, FOUNDING_HOST_FEE_PCT, foundingHostOfferOpen } from "@/lib/constants";
+import { HOST_PAYOUT_TIMING_SV } from "@/lib/hostDashboard";
 import { HOST_TERMS_PATH, HOST_TERMS_VERSION } from "@/content/hostTerms";
+
+// "31 December 2026" → "31 december 2026" (as on /bli-vard)
+const FOUNDING_HOST_DEADLINE_SV = FOUNDING_HOST_DEADLINE.replace("December", "december");
 
 // Publishing needs accepted host terms (prevent_self_publish); a failure here
 // is not fatal, as the dashboard checklist asks again
@@ -19,7 +23,7 @@ const recordTermsAcceptance = async () => {
   const { error } = await supabase.rpc('accept_host_terms', { _version: HOST_TERMS_VERSION });
   if (error) {
     console.error('Error saving host terms acceptance:', error);
-    toast.warning('We could not save that you accepted the host terms. Please accept them again in your dashboard.');
+    toast.warning('Vi kunde inte spara att du godkände värdvillkoren. Godkänn dem igen i din värdpanel.');
   }
 };
 
@@ -42,7 +46,7 @@ const HostApplication = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!termsAccepted) {
-      toast.error('Please accept the host terms to continue.');
+      toast.error('Godkänn värdvillkoren för att fortsätta.');
       return;
     }
     setLoading(true);
@@ -50,7 +54,7 @@ const HostApplication = () => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) {
-        toast.error('Please log in first');
+        toast.error('Logga in först');
         navigate('/auth?redirect=/host-application');
         return;
       }
@@ -64,7 +68,7 @@ const HostApplication = () => {
 
       if (profile?.is_host && profile?.host_approved) {
         await recordTermsAcceptance();
-        toast.success('You are already a host!');
+        toast.success('Du är redan värd!');
         navigate('/host-dashboard');
         return;
       }
@@ -98,12 +102,12 @@ const HostApplication = () => {
         body: { userId: user.user.id }
       }).catch(() => {});
 
-      toast.success('Welcome! You are now a host. Let\'s set up your first property.');
+      toast.success('Välkommen! Nu är du värd. Dags att lägga till ditt första boende.');
       navigate('/host-dashboard');
     } catch (error) {
       console.error('Error becoming host:', error);
       const message = (error as { message?: string } | null)?.message;
-      toast.error(message ? `Something went wrong: ${message}` : 'Something went wrong. Please try again.');
+      toast.error(message ? `Något gick fel: ${message}` : 'Något gick fel. Försök igen.');
     } finally {
       setLoading(false);
     }
@@ -117,41 +121,41 @@ const HostApplication = () => {
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-4">
-              Start Hosting
+              Bli värd
             </h1>
             <p className="text-lg text-muted-foreground">
-              Create your host account in a minute, add your place and publish it when you're ready.
+              Skapa ditt värdkonto på en minut, lägg till ditt boende och publicera det när du är redo.
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Quick Setup</CardTitle>
+              <CardTitle>Kom igång</CardTitle>
             </CardHeader>
             <CardContent>
               {referralCode && (
                 <Alert className="mb-6 border-primary/20 bg-primary/5">
                   <Gift className="h-4 w-4 text-primary" />
                   <AlertDescription className="text-sm">
-                    Referral code applied.
+                    Din inbjudningskod är tillagd.
                   </AlertDescription>
                 </Alert>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <Label htmlFor="businessName">Property or Business Name *</Label>
+                  <Label htmlFor="businessName">Boendets eller företagets namn *</Label>
                   <Input
                     id="businessName"
                     value={formData.businessName}
                     onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
                     required
-                    placeholder="e.g., Lakeside Cabin Dalarna"
+                    placeholder="t.ex. Stugan vid sjön, Dalarna"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="contactPhone">Your Phone (optional)</Label>
+                  <Label htmlFor="contactPhone">Ditt telefonnummer (valfritt)</Label>
                   <Input
                     id="contactPhone"
                     type="tel"
@@ -163,15 +167,15 @@ const HostApplication = () => {
 
                 {/* What you get */}
                 <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-sm">What's included:</h3>
+                  <h3 className="font-semibold text-sm">Det här ingår:</h3>
                   <div className="space-y-2">
                     {[
-                      'Your own host dashboard',
-                      'Calendar sync with Airbnb & Booking.com',
-                      'Automatic booking confirmations',
-                      'Secure payments via Stripe',
-                      `Your price paid out to your bank ${HOST_PAYOUT_TIMING_TEXT}`,
-                      'Digital guidebook for your guests',
+                      'Din egen värdpanel',
+                      'Kalendersynk med Airbnb och Booking.com',
+                      'Automatiska bokningsbekräftelser',
+                      'Säkra betalningar via Stripe',
+                      `Ditt pris betalas ut till din bank ${HOST_PAYOUT_TIMING_SV}`,
+                      'Digital gästguide för dina gäster',
                     ].map((item) => (
                       <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
@@ -180,9 +184,9 @@ const HostApplication = () => {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground pt-1">
-                    You set the price. We add a 10% service fee for guests
+                    Du sätter priset. Gästen betalar en serviceavgift på 10 % ovanpå
                     {foundingHostOfferOpen()
-                      ? ` (founding-host offer: only ${FOUNDING_HOST_FEE_PCT}% for your first 12 months if you join by ${FOUNDING_HOST_DEADLINE})`
+                      ? ` (erbjudande för nya värdar: bara ${FOUNDING_HOST_FEE_PCT} % under dina första 12 månader om du ansluter senast ${FOUNDING_HOST_DEADLINE_SV})`
                       : ""}
                     .
                   </p>
@@ -197,23 +201,23 @@ const HostApplication = () => {
                     aria-required="true"
                   />
                   <Label htmlFor="acceptHostTerms" className="text-sm font-normal leading-snug">
-                    I accept the{' '}
+                    Jag godkänner{' '}
                     <a
                       href={HOST_TERMS_PATH}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary underline underline-offset-2"
                     >
-                      host terms
+                      värdvillkoren
                     </a>{' '}
-                    (fees, payouts, cancellations and refunds) *
+                    (på engelska: avgifter, utbetalningar, avbokningar och återbetalningar) *
                   </Label>
                 </div>
 
                 <Button type="submit" className="w-full" size="lg" disabled={loading || !termsAccepted}>
-                  {loading ? 'Setting up...' : (
+                  {loading ? 'Skapar ditt konto …' : (
                     <>
-                      Start Hosting Now
+                      Bli värd nu
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}

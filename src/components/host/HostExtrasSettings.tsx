@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { extraServiceUnit, MAX_EXTRAS_PER_BOOKING } from "../../../supabase/functions/_shared/booking-price";
+import { MAX_EXTRAS_PER_BOOKING } from "../../../supabase/functions/_shared/booking-price";
 import { parseKronor } from "./listingPrices";
 
 interface Extra {
@@ -21,12 +21,16 @@ interface Extra {
 }
 
 const UNITS = [
-  { value: "stay", label: "per stay", is_per_night: false, per_guest: false },
-  { value: "night", label: "per night", is_per_night: true, per_guest: false },
-  { value: "guest", label: "per guest", is_per_night: false, per_guest: true },
-  { value: "guest-night", label: "per guest per night", is_per_night: true, per_guest: true },
+  { value: "stay", label: "per vistelse", is_per_night: false, per_guest: false },
+  { value: "night", label: "per natt", is_per_night: true, per_guest: false },
+  { value: "guest", label: "per gäst", is_per_night: false, per_guest: true },
+  { value: "guest-night", label: "per gäst och natt", is_per_night: true, per_guest: true },
 ] as const;
 type Unit = (typeof UNITS)[number]["value"];
+
+/** The unit in Swedish for the host, read like extraServiceUnit (which guests see, in English) */
+const unitLabel = (e: Pick<Extra, "is_per_night" | "per_guest">) =>
+  e.per_guest ? (e.is_per_night ? "per gäst och natt" : "per gäst") : e.is_per_night ? "per natt" : "per vistelse";
 
 const unitOf = (e: Pick<Extra, "is_per_night" | "per_guest">): Unit =>
   UNITS.find((u) => u.is_per_night === e.is_per_night && u.per_guest === e.per_guest)?.value ?? "stay";
@@ -79,17 +83,17 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
     if (!draft) return;
     const name = draft.name.trim();
     if (name.length < 2) {
-      toast({ title: "Give the extra a name", variant: "destructive" });
+      toast({ title: "Ge tillvalet ett namn", variant: "destructive" });
       return;
     }
     const price = draft.included ? 0 : parseKronor(draft.price, 1);
     if (price === null) {
-      toast({ title: "Enter the price in whole kronor", variant: "destructive" });
+      toast({ title: "Skriv in priset i hela kronor", variant: "destructive" });
       return;
     }
     const wasOptional = draft.id ? extras.some((e) => e.id === draft.id && !e.included) : false;
     if (!draft.included && !wasOptional && optionalCount >= MAX_EXTRAS_PER_BOOKING) {
-      toast({ title: `You can offer up to ${MAX_EXTRAS_PER_BOOKING} extras guests can add`, variant: "destructive" });
+      toast({ title: `Du kan erbjuda upp till ${MAX_EXTRAS_PER_BOOKING} tillval som gästerna kan lägga till`, variant: "destructive" });
       return;
     }
     const unit = UNITS.find((u) => u.value === draft.unit) ?? UNITS[0];
@@ -108,7 +112,7 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
           .insert({ ...row, property_id: propertyId, rule_type: "extra_service", currency: "SEK", is_active: true });
     setSaving(false);
     if (error) {
-      toast({ title: "Could not save the extra", description: error.message, variant: "destructive" });
+      toast({ title: "Det gick inte att spara tillvalet", description: error.message, variant: "destructive" });
       return;
     }
     setDraft(null);
@@ -118,7 +122,7 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
   const remove = async (id: string) => {
     const { error } = await supabase.from("properties_pricing_rules").update({ is_active: false }).eq("id", id);
     if (error) {
-      toast({ title: "Could not remove it", description: error.message, variant: "destructive" });
+      toast({ title: "Det gick inte att ta bort det", description: error.message, variant: "destructive" });
       return;
     }
     if (draft?.id === id) setDraft(null);
@@ -128,10 +132,10 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Extras</CardTitle>
+        <CardTitle>Tillval</CardTitle>
         <CardDescription>
-          You decide what comes with a stay: things included in your price (like bed linen and towels), and extras guests
-          can add when they book (like a hot tub or firewood).
+          Du bestämmer vad som ingår i en vistelse: saker som ingår i ditt pris (som sängkläder och handdukar) och tillval
+          som gästerna kan lägga till när de bokar (som badtunna eller ved).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -143,22 +147,22 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
                   <p className="font-medium">{e.name}</p>
                   <p className="text-sm text-muted-foreground">
                     {e.included
-                      ? "Included in the price"
-                      : `Guests can add it: ${Math.round(e.price / 100).toLocaleString("sv-SE")} kr ${extraServiceUnit(e)}`}
+                      ? "Ingår i priset"
+                      : `Gästerna kan lägga till det: ${Math.round(e.price / 100).toLocaleString("sv-SE")} kr ${unitLabel(e)}`}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
-                    aria-label={`Change ${e.name}`}
+                    aria-label={`Ändra ${e.name}`}
                     onClick={() =>
                       setDraft({ id: e.id, name: e.name, included: e.included, price: e.included ? "" : String(Math.round(e.price / 100)), unit: unitOf(e) })
                     }
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" aria-label={`Remove ${e.name}`} onClick={() => remove(e.id)}>
+                  <Button variant="ghost" size="sm" aria-label={`Ta bort ${e.name}`} onClick={() => remove(e.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -170,13 +174,13 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
         {draft ? (
           <div className="space-y-4 rounded-lg border p-4">
             <div className="space-y-2">
-              <Label htmlFor="extra-name">What is it?</Label>
+              <Label htmlFor="extra-name">Vad är det?</Label>
               <Input
                 id="extra-name"
                 value={draft.name}
                 maxLength={80}
                 onChange={(ev) => setDraft({ ...draft, name: ev.target.value })}
-                placeholder="e.g. Bed linen and towels, Hot tub, Firewood"
+                placeholder="t.ex. Sängkläder och handdukar, Badtunna, Ved"
                 autoFocus
               />
             </div>
@@ -187,17 +191,17 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
             >
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="included" id="extra-included" />
-                <Label htmlFor="extra-included" className="font-normal">Included in the price</Label>
+                <Label htmlFor="extra-included" className="font-normal">Ingår i priset</Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="optional" id="extra-optional" />
-                <Label htmlFor="extra-optional" className="font-normal">Guests can add it when they book</Label>
+                <Label htmlFor="extra-optional" className="font-normal">Gästerna kan lägga till det när de bokar</Label>
               </div>
             </RadioGroup>
             {!draft.included && (
               <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="extra-price">Price</Label>
+                  <Label htmlFor="extra-price">Pris</Label>
                   <div className="flex items-center gap-2">
                     <Input
                       id="extra-price"
@@ -211,7 +215,7 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="extra-unit">Charged</Label>
+                  <Label htmlFor="extra-unit">Debiteras</Label>
                   <Select value={draft.unit} onValueChange={(v) => setDraft({ ...draft, unit: v as Unit })}>
                     <SelectTrigger id="extra-unit" className="w-48"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -222,13 +226,13 @@ export function HostExtrasSettings({ propertyId }: { propertyId: string }) {
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setDraft(null)}>Cancel</Button>
-              <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save extra"}</Button>
+              <Button variant="ghost" onClick={() => setDraft(null)}>Avbryt</Button>
+              <Button onClick={save} disabled={saving}>{saving ? "Sparar…" : "Spara tillval"}</Button>
             </div>
           </div>
         ) : (
           <Button variant="outline" onClick={() => setDraft(NEW_DRAFT)}>
-            <Plus className="mr-2 h-4 w-4" /> Add an extra
+            <Plus className="mr-2 h-4 w-4" /> Lägg till tillval
           </Button>
         )}
       </CardContent>

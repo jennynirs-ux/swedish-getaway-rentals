@@ -35,25 +35,25 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ICON_OPTIONS = [
-  { value: "Flame", label: "Fire", icon: Flame },
-  { value: "Waves", label: "Water", icon: Waves },
-  { value: "Mountain", label: "Mountain", icon: Mountain },
-  { value: "Sparkles", label: "Sauna/Spa", icon: Sparkles },
-  { value: "Activity", label: "Activity", icon: Activity },
-  { value: "Palmtree", label: "Nature", icon: Palmtree },
-  { value: "Fish", label: "Fishing", icon: Fish },
-  { value: "Wine", label: "Wine", icon: Wine },
-  { value: "Coffee", label: "Coffee", icon: Coffee },
-  { value: "Wifi", label: "WiFi", icon: Wifi },
-  { value: "ParkingCircle", label: "Parking", icon: ParkingCircle },
-  { value: "Dog", label: "Pet Friendly", icon: Dog },
-  { value: "Users", label: "Family", icon: Users },
-  { value: "Lock", label: "Secure", icon: Lock },
-  { value: "Trees", label: "Forest", icon: Trees },
-  { value: "Sunrise", label: "View", icon: Sunrise },
-  { value: "Home", label: "Home", icon: Home },
-  { value: "Star", label: "Premium", icon: Star },
-  { value: "Heart", label: "Special", icon: Heart },
+  { value: "Flame", label: "Eld", icon: Flame },
+  { value: "Waves", label: "Vatten", icon: Waves },
+  { value: "Mountain", label: "Berg", icon: Mountain },
+  { value: "Sparkles", label: "Bastu/spa", icon: Sparkles },
+  { value: "Activity", label: "Aktivitet", icon: Activity },
+  { value: "Palmtree", label: "Natur", icon: Palmtree },
+  { value: "Fish", label: "Fiske", icon: Fish },
+  { value: "Wine", label: "Vin", icon: Wine },
+  { value: "Coffee", label: "Kaffe", icon: Coffee },
+  { value: "Wifi", label: "Wifi", icon: Wifi },
+  { value: "ParkingCircle", label: "Parkering", icon: ParkingCircle },
+  { value: "Dog", label: "Husdjur välkomna", icon: Dog },
+  { value: "Users", label: "Familj", icon: Users },
+  { value: "Lock", label: "Säkert", icon: Lock },
+  { value: "Trees", label: "Skog", icon: Trees },
+  { value: "Sunrise", label: "Utsikt", icon: Sunrise },
+  { value: "Home", label: "Hem", icon: Home },
+  { value: "Star", label: "Lyx", icon: Star },
+  { value: "Heart", label: "Speciellt", icon: Heart },
 ];
 
 interface HostAmenitiesTabProps {
@@ -86,6 +86,75 @@ const AMENITY_CATEGORIES = {
     "WiFi", "Heating", "Air Conditioning", "Workspace", "Iron",
     "Pet Friendly", "Family Friendly", "First Aid Kit", "Fire Extinguisher"
   ]
+};
+
+// The amenities are saved in English (guests see them on the listing);
+// the host editor shows them in Swedish
+const CATEGORY_LABELS_SV: Record<string, string> = {
+  Kitchen: "Kök",
+  Bedroom: "Sovrum",
+  "Living Room": "Vardagsrum",
+  Bathroom: "Badrum",
+  Outside: "Utomhus",
+  General: "Allmänt",
+};
+
+const AMENITY_LABELS_SV: Record<string, string> = {
+  "Coffee Maker": "Kaffebryggare",
+  Dishwasher: "Diskmaskin",
+  Microwave: "Mikrovågsugn",
+  Oven: "Ugn",
+  Refrigerator: "Kylskåp",
+  Stove: "Spis",
+  Toaster: "Brödrost",
+  "Dining Table": "Matbord",
+  Kitchenware: "Köksutrustning",
+  "Espresso Machine": "Espressomaskin",
+  "Queen Bed": "Stor dubbelsäng",
+  "King Bed": "Extra stor dubbelsäng",
+  "Single Bed": "Enkelsäng",
+  "Extra Beds": "Extrasängar",
+  "Linens Provided": "Sängkläder ingår",
+  Wardrobe: "Garderob",
+  Hangers: "Galgar",
+  "Bedside Lamps": "Sänglampor",
+  "Blackout Curtains": "Mörkläggningsgardiner",
+  TV: "TV",
+  Sofa: "Soffa",
+  Fireplace: "Öppen spis",
+  "Board Games": "Sällskapsspel",
+  Books: "Böcker",
+  "Sound System": "Ljudanläggning",
+  "Streaming Services": "Streamingtjänster",
+  "Coffee Table": "Soffbord",
+  "Hair Dryer": "Hårtork",
+  "Towels Provided": "Handdukar ingår",
+  Shower: "Dusch",
+  Bathtub: "Badkar",
+  "Hot Tub": "Badtunna/bubbelpool",
+  Sauna: "Bastu",
+  Toiletries: "Hygienartiklar",
+  Washer: "Tvättmaskin",
+  Dryer: "Torktumlare",
+  Garden: "Trädgård",
+  "BBQ Grill": "Grill",
+  "Outdoor Furniture": "Utemöbler",
+  "Lake Access": "Tillgång till sjö",
+  "Beach Access": "Tillgång till strand",
+  Parking: "Parkering",
+  Balcony: "Balkong",
+  Terrace: "Terrass",
+  "Fire Pit": "Eldplats",
+  "Boat Dock": "Brygga",
+  WiFi: "Wifi",
+  Heating: "Värme",
+  "Air Conditioning": "Luftkonditionering",
+  Workspace: "Arbetsplats",
+  Iron: "Strykjärn",
+  "Pet Friendly": "Husdjur välkomna",
+  "Family Friendly": "Barnvänligt",
+  "First Aid Kit": "Förbandslåda",
+  "Fire Extinguisher": "Brandsläckare",
 };
 
 export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps) => {
@@ -155,15 +224,15 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Amenities updated successfully'
+        title: 'Klart',
+        description: 'Bekvämligheterna är sparade'
       });
       onUpdate?.();
     } catch (error) {
       console.error('Error saving amenities:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save amenities',
+        title: 'Något gick fel',
+        description: 'Det gick inte att spara bekvämligheterna',
         variant: 'destructive'
       });
     } finally {
@@ -187,8 +256,8 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
         return [...prev, title];
       } else {
         toast({
-          title: 'Limit reached',
-          description: 'You can only select up to 3 special amenities',
+          title: 'Max 3',
+          description: 'Du kan välja högst 3 utvalda bekvämligheter',
           variant: 'destructive'
         });
         return prev;
@@ -223,8 +292,8 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Select Amenities</CardTitle>
-          <CardDescription>Choose from standard amenities</CardDescription>
+          <CardTitle>Välj bekvämligheter</CardTitle>
+          <CardDescription>Välj bland vanliga bekvämligheter</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {Object.entries(AMENITY_CATEGORIES).map(([category, amenities]) => (
@@ -241,9 +310,9 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
             >
               <CollapsibleTrigger asChild>
                 <Button variant="outline" className="w-full justify-between">
-                  <span className="font-semibold">{category}</span>
+                  <span className="font-semibold">{CATEGORY_LABELS_SV[category] ?? category}</span>
                   <span className="text-xs text-muted-foreground">
-                    {selectedAmenities.filter(a => amenities.includes(a)).length} selected
+                    {selectedAmenities.filter(a => amenities.includes(a)).length} valda
                   </span>
                 </Button>
               </CollapsibleTrigger>
@@ -255,7 +324,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                         checked={selectedAmenities.includes(amenity)}
                         onCheckedChange={() => toggleAmenity(amenity)}
                       />
-                      <span>{amenity}</span>
+                      <span>{AMENITY_LABELS_SV[amenity] ?? amenity}</span>
                     </label>
                   ))}
                 </div>
@@ -267,8 +336,8 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
 
       <Card>
         <CardHeader>
-          <CardTitle>Custom Amenities</CardTitle>
-          <CardDescription>Add unique amenities with details (use arrows to reorder)</CardDescription>
+          <CardTitle>Egna bekvämligheter</CardTitle>
+          <CardDescription>Lägg till något extra med egen beskrivning (ändra ordning med pilarna)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {customAmenities.map((amenity, index) => (
@@ -284,7 +353,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                       [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
                       setCustomAmenities(updated);
                     }}
-                    title="Move up"
+                    title="Flytta upp"
                   >
                     <span>↑</span>
                   </Button>
@@ -299,7 +368,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                       [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
                       setCustomAmenities(updated);
                     }}
-                    title="Move down"
+                    title="Flytta ned"
                   >
                     <span>↓</span>
                   </Button>
@@ -309,7 +378,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                   size="icon"
                   className="h-8 w-8 text-destructive hover:text-destructive"
                   onClick={() => removeCustomAmenity(index)}
-                  title="Remove"
+                  title="Ta bort"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -317,13 +386,13 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
 
               <div className="flex gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Icon</Label>
+                  <Label className="text-sm">Ikon</Label>
                   <Select
                     value={amenity.icon || undefined}
                     onValueChange={(v) => updateCustomAmenity(index, 'icon', v)}
                   >
                     <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="Choose icon" />
+                      <SelectValue placeholder="Välj ikon" />
                     </SelectTrigger>
                     <SelectContent>
                       {ICON_OPTIONS.map((option) => (
@@ -339,32 +408,32 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                 </div>
 
                 <div className="space-y-1.5 flex-1">
-                  <Label className="text-sm">Title</Label>
+                  <Label className="text-sm">Rubrik</Label>
                   <Input
                     value={amenity.title || ""}
                     onChange={(e) => updateCustomAmenity(index, 'title', e.target.value)}
-                    placeholder="Amenity name"
+                    placeholder="Namn"
                     className="text-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm">Tagline</Label>
+                <Label className="text-sm">Underrubrik</Label>
                 <Input
                   value={amenity.tagline || ""}
                   onChange={(e) => updateCustomAmenity(index, 'tagline', e.target.value)}
-                  placeholder="Short description"
+                  placeholder="Kort beskrivning"
                   className="text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm">Description</Label>
+                <Label className="text-sm">Beskrivning</Label>
                 <Textarea
                   value={amenity.description || ""}
                   onChange={(e) => updateCustomAmenity(index, 'description', e.target.value)}
-                  placeholder="Full description"
+                  placeholder="Längre beskrivning"
                   rows={2}
                   className="text-sm"
                 />
@@ -372,7 +441,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
 
               <div className="space-y-1.5">
                 <ImageUpload
-                  label="Amenity Image (optional)"
+                  label="Bild (valfritt)"
                   value={amenity.image_url || ""}
                   onChange={(url) => updateCustomAmenity(index, 'image_url', url)}
                   onRemove={() => updateCustomAmenity(index, 'image_url', '')}
@@ -380,7 +449,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm">Features (optional)</Label>
+                <Label className="text-sm">Detaljer (valfritt)</Label>
                 {(amenity.features || []).map((feature: string, featureIndex: number) => (
                   <div key={featureIndex} className="flex gap-2">
                     <Input
@@ -390,7 +459,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                         updatedFeatures[featureIndex] = e.target.value;
                         updateCustomAmenity(index, 'features', updatedFeatures);
                       }}
-                      placeholder="Feature description"
+                      placeholder="Beskriv en detalj"
                       className="text-sm"
                     />
                     <Button
@@ -415,7 +484,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                     updateCustomAmenity(index, 'features', updatedFeatures);
                   }}
                 >
-                  + Add Feature
+                  + Lägg till detalj
                 </Button>
               </div>
             </div>
@@ -423,7 +492,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
 
           {customAmenities.length < 11 && (
             <Button onClick={addCustomAmenity} variant="outline" className="w-full">
-              + Add Custom Amenity
+              + Lägg till egen bekvämlighet
             </Button>
           )}
         </CardContent>
@@ -431,13 +500,13 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
 
       <Card>
         <CardHeader>
-          <CardTitle>Special Amenities (max 3)</CardTitle>
-          <CardDescription>Highlight your best amenities</CardDescription>
+          <CardTitle>Utvalda bekvämligheter (max 3)</CardTitle>
+          <CardDescription>Lyft fram det bästa med ditt boende</CardDescription>
         </CardHeader>
         <CardContent>
           {customAmenities.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
-              Add custom amenities above first, then select up to 3 here.
+              Lägg först till egna bekvämligheter ovan och välj sedan upp till 3 här.
             </p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -447,7 +516,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
                     checked={featuredAmenities.includes(amenity.title)}
                     onCheckedChange={() => toggleFeatured(amenity.title)}
                   />
-                  <span>{amenity.title || `Amenity ${index + 1}`}</span>
+                  <span>{amenity.title || `Bekvämlighet ${index + 1}`}</span>
                 </label>
               ))}
             </div>
@@ -457,7 +526,7 @@ export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? 'Sparar...' : 'Spara ändringar'}
         </Button>
       </div>
     </div>

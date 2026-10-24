@@ -56,16 +56,16 @@ export const CheckInOutTimes = ({ propertyId, onUpdate }: CheckInOutTimesProps) 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Check-in/out times updated successfully',
+        title: 'Klart',
+        description: 'Tiderna för in- och utcheckning är sparade',
       });
 
       onUpdate?.();
     } catch (error) {
       console.error('Error updating times:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update times',
+        title: 'Något gick fel',
+        description: 'Det gick inte att spara tiderna',
         variant: 'destructive',
       });
     } finally {
@@ -78,16 +78,16 @@ export const CheckInOutTimes = ({ propertyId, onUpdate }: CheckInOutTimesProps) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Check-in & Check-out Times
+          Tider för incheckning och utcheckning
         </CardTitle>
         <CardDescription>
-          Set the default check-in and check-out times for this property
+          Ange vilka tider som gäller för incheckning och utcheckning i det här boendet
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="checkIn">Check-in Time</Label>
+            <Label htmlFor="checkIn">Incheckningstid</Label>
             <Input
               id="checkIn"
               type="time"
@@ -97,7 +97,7 @@ export const CheckInOutTimes = ({ propertyId, onUpdate }: CheckInOutTimesProps) 
           </div>
 
           <div>
-            <Label htmlFor="checkOut">Check-out Time</Label>
+            <Label htmlFor="checkOut">Utcheckningstid</Label>
             <Input
               id="checkOut"
               type="time"
@@ -109,14 +109,14 @@ export const CheckInOutTimes = ({ propertyId, onUpdate }: CheckInOutTimesProps) 
 
         <div className="bg-muted p-4 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            These times will be displayed to guests during booking and included in confirmation emails. 
-            Access codes for smart locks will automatically expire {' '}
-            <span className="font-medium">after the check-out time + configured buffer hours</span>.
+            Gästerna ser tiderna när de bokar och i bekräftelsemejlet.
+            Koder till smarta lås slutar gälla automatiskt{' '}
+            <span className="font-medium">efter utcheckningstiden plus den marginal du har ställt in</span>.
           </p>
         </div>
 
         <Button onClick={handleSave} disabled={loading} className="w-full">
-          {loading ? 'Saving...' : 'Save Times'}
+          {loading ? 'Sparar...' : 'Spara tider'}
         </Button>
       </CardContent>
     </Card>

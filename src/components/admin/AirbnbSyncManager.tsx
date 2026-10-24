@@ -23,6 +23,7 @@ import {
   Clock
 } from "lucide-react";
 import { format, addDays } from 'date-fns';
+import { sv } from 'date-fns/locale';
 
 interface ICalFeed {
   id: string;
@@ -99,8 +100,8 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
   const addIcalFeed = async () => {
     if (!newFeed.name.trim() || !newFeed.url.trim()) {
       toast({
-        title: "Missing information",
-        description: "Please provide both a name and URL for the iCal feed",
+        title: "Uppgifter saknas",
+        description: "Fyll i både namn och kalenderlänk",
         variant: "destructive"
       });
       return;
@@ -124,8 +125,8 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
       setIcalFeeds(prev => [...prev, data]);
 
       toast({
-        title: "iCal feed added",
-        description: "The feed will be synced automatically"
+        title: "Kalenderlänken är tillagd",
+        description: "Kalendern synkas automatiskt"
       });
 
       setNewFeed({ name: '', url: '' });
@@ -136,8 +137,8 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
     } catch (error) {
       console.error('Error adding iCal feed:', error);
       toast({
-        title: "Error",
-        description: "Failed to add iCal feed",
+        title: "Något gick fel",
+        description: "Det gick inte att lägga till kalenderlänken",
         variant: "destructive"
       });
     }
@@ -155,8 +156,8 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
       setIcalFeeds(prev => prev.filter(f => f.id !== feedId));
 
       toast({
-        title: "Feed removed",
-        description: "iCal feed has been removed"
+        title: "Borttagen",
+        description: "Kalenderlänken är borttagen"
       });
     } catch (error) {
       console.error('Error removing feed:', error);
@@ -177,8 +178,8 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
       ));
 
       toast({
-        title: active ? "Feed enabled" : "Feed disabled",
-        description: `iCal feed has been ${active ? 'enabled' : 'disabled'}`
+        title: active ? "Synk på" : "Synk av",
+        description: `Kalenderlänken är ${active ? 'påslagen' : 'avstängd'}`
       });
     } catch (error) {
       console.error('Error toggling feed:', error);
@@ -197,15 +198,15 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
       await loadIcalFeeds(); // Refresh the feeds
 
       toast({
-        title: "Sync completed",
-        description: `Calendar synchronized. ${data.datesUpdated} date(s) blocked, ${data.datesReleased ?? 0} released after cancellations.`
+        title: "Synken är klar",
+        description: `Kalendern är synkad. ${data.datesUpdated} datum blockerade, ${data.datesReleased ?? 0} lediga igen efter avbokningar.`
       });
     } catch (error) {
       console.error('Error syncing feed:', error);
       await loadIcalFeeds(); // Shows the feed's error message
       toast({
-        title: "Sync failed",
-        description: "Failed to synchronize calendar",
+        title: "Synken misslyckades",
+        description: "Det gick inte att synka kalendern",
         variant: "destructive"
       });
     } finally {
@@ -227,8 +228,8 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
   const copyExportUrl = () => {
     navigator.clipboard.writeText(exportUrl).then(() => {
       toast({
-        title: "URL copied",
-        description: "Export URL copied to clipboard"
+        title: "Kopierad",
+        description: "Kalenderlänken är kopierad"
       });
     });
   };
@@ -249,9 +250,9 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold">Airbnb & Calendar Sync</h3>
+        <h3 className="text-lg font-semibold">Airbnb och kalendersynk</h3>
         <p className="text-sm text-muted-foreground">
-          Synchronize your calendar with Airbnb and other platforms
+          Synka din kalender med Airbnb och andra bokningssajter
         </p>
       </div>
 
@@ -260,14 +261,14 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Export Calendar
+            Exportera kalender
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Your property's iCal URL</Label>
+            <Label>Kalenderlänk för ditt boende (iCal)</Label>
             <p className="text-sm text-muted-foreground mb-2">
-              Use this URL to import your calendar into Airbnb, VRBO, or other platforms
+              Använd länken för att importera din kalender till Airbnb, VRBO eller andra bokningssajter
             </p>
             <div className="flex gap-2">
               <Input 
@@ -276,18 +277,18 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
                 className="font-mono text-sm"
               />
               <Button onClick={copyExportUrl} size="sm">
-                Copy
+                Kopiera
               </Button>
             </div>
           </div>
           
           <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
+            <h4 className="font-medium text-blue-900 mb-2">Så här gör du:</h4>
             <ol className="text-sm text-blue-800 space-y-1">
-              <li>1. Copy the URL above</li>
-              <li>2. Go to your Airbnb calendar settings</li>
-              <li>3. Choose "Import calendar" and paste the URL</li>
-              <li>4. Your Nordic Getaways bookings will appear on Airbnb</li>
+              <li>1. Kopiera länken ovan</li>
+              <li>2. Gå till kalenderinställningarna på Airbnb</li>
+              <li>3. Välj ”Importera kalender” och klistra in länken</li>
+              <li>4. Dina bokningar på Nordic Getaways syns nu på Airbnb</li>
             </ol>
           </div>
         </CardContent>
@@ -299,7 +300,7 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5" />
-              Import Calendars
+              Importera kalendrar
             </CardTitle>
             <div className="flex gap-2">
               <Button 
@@ -309,30 +310,30 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
                 disabled={syncing || icalFeeds.length === 0}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                Sync All
+                Synka alla
               </Button>
               <Dialog open={showAddFeed} onOpenChange={setShowAddFeed}>
                 <DialogTrigger asChild>
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Feed
+                    Lägg till kalenderlänk
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add iCal Feed</DialogTitle>
+                    <DialogTitle>Lägg till kalenderlänk</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Feed Name</Label>
+                      <Label>Namn</Label>
                       <Input
                         value={newFeed.name}
                         onChange={(e) => setNewFeed({ ...newFeed, name: e.target.value })}
-                        placeholder="e.g., Airbnb Calendar"
+                        placeholder="t.ex. Airbnb"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>iCal URL</Label>
+                      <Label>Kalenderlänk (iCal)</Label>
                       <Textarea
                         value={newFeed.url}
                         onChange={(e) => setNewFeed({ ...newFeed, url: e.target.value })}
@@ -340,15 +341,15 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
                         rows={3}
                       />
                       <p className="text-sm text-muted-foreground">
-                        Get this URL from your Airbnb calendar export settings
+                        Du hittar länken under export av kalender i kalenderinställningarna på Airbnb
                       </p>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setShowAddFeed(false)}>
-                        Cancel
+                        Avbryt
                       </Button>
                       <Button onClick={addIcalFeed}>
-                        Add Feed
+                        Lägg till
                       </Button>
                     </div>
                   </div>
@@ -368,8 +369,8 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
                       <div className="font-medium">{feed.name}</div>
                       <div className="text-sm text-muted-foreground">
                         {feed.last_sync 
-                          ? `Last synced: ${format(new Date(feed.last_sync), 'MMM dd, HH:mm')}`
-                          : 'Never synced'
+                          ? `Senast synkad: ${format(new Date(feed.last_sync), 'd MMMM HH:mm', { locale: sv })}`
+                          : 'Inte synkad än'
                         }
                       </div>
                       {feed.error_message && (
@@ -406,13 +407,13 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
           ) : (
             <div className="text-center py-8">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h4 className="font-medium mb-2">No calendar feeds added</h4>
+              <h4 className="font-medium mb-2">Inga kalendrar tillagda</h4>
               <p className="text-sm text-muted-foreground mb-4">
-                Import calendars from Airbnb, VRBO, and other platforms to avoid double bookings
+                Importera kalendrar från Airbnb, VRBO och andra bokningssajter så slipper du dubbelbokningar
               </p>
               <Button onClick={() => setShowAddFeed(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Your First Feed
+                Lägg till din första kalender
               </Button>
             </div>
           )}
@@ -424,15 +425,15 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Sync Settings
+            Synkinställningar
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label>Automatic sync</Label>
+              <Label>Automatisk synk</Label>
               <p className="text-sm text-muted-foreground">
-                Automatically sync calendars at regular intervals
+                Synka kalendrarna automatiskt med jämna mellanrum
               </p>
             </div>
             <Switch checked={autoSync} onCheckedChange={setAutoSync} />
@@ -440,7 +441,7 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
           
           {autoSync && (
             <div>
-              <Label>Sync interval (minutes)</Label>
+              <Label>Synkintervall (minuter)</Label>
               <Input
                 type="number"
                 value={syncInterval}
@@ -450,7 +451,7 @@ export const AirbnbSyncManager = ({ propertyId, propertyTitle }: AirbnbSyncManag
                 className="w-32"
               />
               <p className="text-sm text-muted-foreground">
-                How often to check for calendar updates (5-60 minutes)
+                Hur ofta kalendrarna ska kollas efter ändringar (5–60 minuter)
               </p>
             </div>
           )}

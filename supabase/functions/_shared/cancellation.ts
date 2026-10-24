@@ -28,6 +28,10 @@ export interface NamedPolicy extends CancellationPolicy {
   name: string;
   /** One line for hosts and guests, e.g. "Full refund up to 5 days before arrival, then 50%." */
   summary: string;
+  /** Swedish name for the host panel, e.g. "Måttlig" (guests see `name`) */
+  nameSv: string;
+  /** Swedish one-line summary for the host panel (guests see `summary`) */
+  summarySv: string;
 }
 
 export const POLICY_FOOTER =
@@ -38,6 +42,8 @@ export const CANCELLATION_POLICIES: Record<PolicyKey, NamedPolicy> = {
     key: "flexible",
     name: "Flexible",
     summary: "Full refund up to 1 day before arrival.",
+    nameSv: "Flexibel",
+    summarySv: "Full återbetalning fram till dagen före ankomst.",
     tiers: [
       { label: "1 day or more before arrival", min_days: 1, refund_percentage: 100 },
       { label: "On the day of arrival", min_days: 0, max_days: 0, refund_percentage: 0 },
@@ -48,6 +54,8 @@ export const CANCELLATION_POLICIES: Record<PolicyKey, NamedPolicy> = {
     key: "moderate",
     name: "Moderate",
     summary: "Full refund up to 5 days before arrival, then 50% until the day before.",
+    nameSv: "Måttlig",
+    summarySv: "Full återbetalning fram till 5 dagar före ankomst, sedan 50 % fram till dagen före.",
     tiers: [
       { label: "5 days or more before arrival", min_days: 5, refund_percentage: 100 },
       { label: "4–1 days before arrival", min_days: 1, max_days: 4, refund_percentage: 50 },
@@ -59,6 +67,8 @@ export const CANCELLATION_POLICIES: Record<PolicyKey, NamedPolicy> = {
     key: "standard",
     name: "Standard",
     summary: "90% refund more than 21 days before arrival, 50% from 21 to 8 days, then none.",
+    nameSv: "Standard",
+    summarySv: "90 % tillbaka mer än 21 dagar före ankomst, 50 % 21–8 dagar före, sedan inget.",
     tiers: [
       { label: "More than 21 days before arrival", min_days: 22, refund_percentage: 90 },
       { label: "21–8 days before arrival", min_days: 8, max_days: 21, refund_percentage: 50 },
@@ -70,6 +80,8 @@ export const CANCELLATION_POLICIES: Record<PolicyKey, NamedPolicy> = {
     key: "strict",
     name: "Strict",
     summary: "50% refund up to 14 days before arrival, then none.",
+    nameSv: "Strikt",
+    summarySv: "50 % tillbaka fram till 14 dagar före ankomst, sedan inget.",
     tiers: [
       { label: "14 days or more before arrival", min_days: 14, refund_percentage: 50 },
       { label: "13 days or less before arrival", min_days: 0, max_days: 13, refund_percentage: 0 },

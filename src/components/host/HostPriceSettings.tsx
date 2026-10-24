@@ -39,17 +39,17 @@ export function HostPriceSettings({ propertyId, onPriceChange, onSaved }: Props)
     if (!draft) return;
     const problem = priceDraftProblem(draft, maxGuests);
     if (problem) {
-      toast({ title: "Check your prices", description: problem, variant: "destructive" });
+      toast({ title: "Kontrollera dina priser", description: problem, variant: "destructive" });
       return;
     }
     setSaving(true);
     try {
       await savePriceDraft(propertyId, draft, maxGuests);
-      toast({ title: "Prices saved" });
+      toast({ title: "Priserna är sparade" });
       onSaved?.();
     } catch (error) {
       console.error("Error saving prices:", error);
-      toast({ title: "Could not save your prices", description: (error as { message?: string })?.message, variant: "destructive" });
+      toast({ title: "Det gick inte att spara dina priser", description: (error as { message?: string })?.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -58,17 +58,17 @@ export function HostPriceSettings({ propertyId, onPriceChange, onSaved }: Props)
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your prices</CardTitle>
+        <CardTitle>Dina priser</CardTitle>
         <CardDescription>
-          Your place sleeps {maxGuests} {maxGuests === 1 ? "guest" : "guests"} (change that under Details).
+          Ditt boende har plats för {maxGuests} {maxGuests === 1 ? "gäst" : "gäster"} (ändra det under Detaljer).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {draft ? <PriceFields value={draft} onChange={change} maxGuests={maxGuests} /> : <p className="text-sm text-muted-foreground">Loading…</p>}
+        {draft ? <PriceFields value={draft} onChange={change} maxGuests={maxGuests} /> : <p className="text-sm text-muted-foreground">Laddar…</p>}
 
         <div className="flex justify-end">
           <Button onClick={save} disabled={!draft || saving}>
-            {saving ? "Saving…" : "Save prices"}
+            {saving ? "Sparar…" : "Spara priser"}
           </Button>
         </div>
       </CardContent>

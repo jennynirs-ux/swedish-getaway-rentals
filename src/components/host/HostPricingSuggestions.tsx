@@ -159,20 +159,20 @@ const HostPricingSuggestions = () => {
     if (s === "raise") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-          <TrendingUp className="h-3 w-3 mr-1" /> Raise price
+          <TrendingUp className="h-3 w-3 mr-1" /> Höj priset
         </Badge>
       );
     }
     if (s === "lower") {
       return (
         <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
-          <TrendingDown className="h-3 w-3 mr-1" /> Lower price
+          <TrendingDown className="h-3 w-3 mr-1" /> Sänk priset
         </Badge>
       );
     }
     return (
       <Badge variant="secondary">
-        <Minus className="h-3 w-3 mr-1" /> On target
+        <Minus className="h-3 w-3 mr-1" /> Rätt nivå
       </Badge>
     );
   };
@@ -182,17 +182,17 @@ const HostPricingSuggestions = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Lightbulb className="h-4 w-4 text-primary" />
-          Pricing Suggestions
+          Prisförslag
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Based on your past 12 months of bookings and similar properties on the platform.
+          Baserat på dina bokningar de senaste 12 månaderna och liknande boenden på Nordic Getaways.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Analyzing your prices...</p>
+          <p className="text-sm text-muted-foreground">Analyserar dina priser...</p>
         ) : data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No properties yet.</p>
+          <p className="text-sm text-muted-foreground">Du har inga boenden än.</p>
         ) : (
           data.map((d) => (
             <div
@@ -203,8 +203,8 @@ const HostPricingSuggestions = () => {
                 <div>
                   <p className="font-medium">{d.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    Base: {fmt(d.basePrice)} kr/night
-                    {d.bookingCount > 0 && ` · ${d.bookingCount} bookings last 12mo`}
+                    Grundpris: {fmt(d.basePrice)} kr/natt
+                    {d.bookingCount > 0 && ` · ${d.bookingCount} ${d.bookingCount === 1 ? "bokning" : "bokningar"} senaste 12 mån`}
                   </p>
                 </div>
                 <SuggestionBadge s={d.suggestion} />
@@ -213,19 +213,19 @@ const HostPricingSuggestions = () => {
               {/* Signals */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                 <div className="rounded bg-muted/50 p-2">
-                  <p className="text-xs text-muted-foreground">Your avg booked</p>
+                  <p className="text-xs text-muted-foreground">Ditt snittpris per natt</p>
                   <p className="font-medium">
                     {d.avgBookedRate > 0 ? `${fmt(d.avgBookedRate)} kr` : "--"}
                   </p>
                 </div>
                 <div className="rounded bg-muted/50 p-2">
-                  <p className="text-xs text-muted-foreground">Market median</p>
+                  <p className="text-xs text-muted-foreground">Marknadens median</p>
                   <p className="font-medium">
                     {d.marketMedian > 0 ? `${fmt(d.marketMedian)} kr` : "--"}
                   </p>
                 </div>
                 <div className="rounded bg-muted/50 p-2">
-                  <p className="text-xs text-muted-foreground">vs Market</p>
+                  <p className="text-xs text-muted-foreground">Mot marknaden</p>
                   <p
                     className={`font-medium ${
                       d.marginToMarket > 10
@@ -235,18 +235,18 @@ const HostPricingSuggestions = () => {
                         : "text-green-600"
                     }`}
                   >
-                    {d.marketMedian > 0 ? `${d.marginToMarket > 0 ? "+" : ""}${d.marginToMarket}%` : "--"}
+                    {d.marketMedian > 0 ? `${d.marginToMarket > 0 ? "+" : ""}${d.marginToMarket} %` : "--"}
                   </p>
                 </div>
               </div>
 
               {d.suggestion !== "on_target" && d.suggestedPrice !== d.basePrice && (
                 <p className="text-sm pt-1 border-t">
-                  <span className="text-muted-foreground">Suggested:</span>{" "}
-                  <strong>{fmt(d.suggestedPrice)} kr/night</strong>{" "}
+                  <span className="text-muted-foreground">Förslag:</span>{" "}
+                  <strong>{fmt(d.suggestedPrice)} kr/natt</strong>{" "}
                   <span className="text-muted-foreground">
                     ({d.suggestedPrice > d.basePrice ? "+" : ""}
-                    {Math.round(((d.suggestedPrice - d.basePrice) / d.basePrice) * 100)}%)
+                    {Math.round(((d.suggestedPrice - d.basePrice) / d.basePrice) * 100)} %)
                   </span>
                 </p>
               )}
@@ -257,9 +257,9 @@ const HostPricingSuggestions = () => {
         <div className="flex items-start gap-2 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
           <Info className="h-3 w-3 mt-0.5 shrink-0" />
           <p>
-            These are suggestions based on historical data. You can always apply seasonal pricing
-            rules from the Properties tab. Market median compares against properties with the same
-            type and similar capacity.
+            Det här är förslag baserade på tidigare bokningar. Du kan alltid lägga in säsongspriser
+            under Priser när du redigerar ditt boende. Marknadens median jämför med boenden av samma
+            typ och för ungefär lika många gäster.
           </p>
         </div>
       </CardContent>

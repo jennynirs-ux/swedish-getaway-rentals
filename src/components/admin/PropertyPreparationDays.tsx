@@ -33,16 +33,16 @@ export const PropertyPreparationDays = ({
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: `Preparation days updated to ${preparationDays} day${preparationDays !== 1 ? 's' : ''}`,
+        title: "Klart",
+        description: `Förberedelsedagar ändrade till ${preparationDays} ${preparationDays !== 1 ? 'dagar' : 'dag'}`,
       });
 
       onUpdate?.();
     } catch (error: any) {
       console.error('Error updating preparation days:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update preparation days",
+        title: "Något gick fel",
+        description: error.message || "Det gick inte att spara förberedelsedagarna",
         variant: "destructive",
       });
     } finally {
@@ -55,16 +55,16 @@ export const PropertyPreparationDays = ({
       <CardHeader>
         <div className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-primary" />
-          <CardTitle>Preparation Days</CardTitle>
+          <CardTitle>Förberedelsedagar</CardTitle>
         </div>
         <CardDescription>
-          Set how many days are needed between bookings for cleaning and preparation. 
-          These days will be automatically blocked in the calendar.
+          Ange hur många dagar du behöver mellan bokningar för städning och förberedelser.
+          De dagarna blockeras automatiskt i kalendern.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="prep-days">Number of Preparation Days</Label>
+          <Label htmlFor="prep-days">Antal förberedelsedagar</Label>
           <Input
             id="prep-days"
             type="number"
@@ -75,14 +75,14 @@ export const PropertyPreparationDays = ({
           />
           <p className="text-sm text-muted-foreground">
             {preparationDays === 0 
-              ? "No buffer days between bookings" 
-              : `${preparationDays} day${preparationDays !== 1 ? 's' : ''} will be blocked before and after each booking`}
+              ? "Inga dagar mellan bokningar"
+              : `${preparationDays} ${preparationDays !== 1 ? 'dagar' : 'dag'} blockeras före och efter varje bokning`}
           </p>
         </div>
 
         <Button onClick={handleSave} disabled={loading} className="w-full">
           <Save className="h-4 w-4 mr-2" />
-          {loading ? 'Saving...' : 'Save Preparation Days'}
+          {loading ? 'Sparar...' : 'Spara förberedelsedagar'}
         </Button>
       </CardContent>
     </Card>

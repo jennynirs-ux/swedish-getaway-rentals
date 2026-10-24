@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from "react";
 import { format, formatDistanceToNow } from "date-fns";
+import { sv } from "date-fns/locale";
 import { MessageCircle, Filter, Search, CheckCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +29,8 @@ interface ChatRow {
 const SOURCE_LABELS: Record<string, string> = {
   airbnb: "Airbnb",
   booking_com: "Booking.com",
-  direct: "Direct",
-  blocked: "Blocked",
+  direct: "Direkt",
+  blocked: "Blockerad",
 };
 
 const SOURCE_COLORS: Record<string, string> = {
@@ -122,8 +123,8 @@ const HostUnifiedInbox = () => {
         return {
           booking_id: b.id,
           property_id: b.property_id,
-          property_title: b.properties?.title || "Unknown",
-          guest_name: b.guest_name || "Guest",
+          property_title: b.properties?.title || "Okänt boende",
+          guest_name: b.guest_name || "Gäst",
           check_in_date: b.check_in_date,
           check_out_date: b.check_out_date,
           source: b.source || "direct",
@@ -186,9 +187,9 @@ const HostUnifiedInbox = () => {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <MessageCircle className="h-4 w-4" />
-              Unified Inbox
+              Inkorg
               {totalUnread > 0 && (
-                <Badge variant="destructive" className="ml-1">{totalUnread} unread</Badge>
+                <Badge variant="destructive" className="ml-1">{totalUnread} olästa</Badge>
               )}
             </CardTitle>
           </div>
@@ -197,7 +198,7 @@ const HostUnifiedInbox = () => {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search guest or property..."
+                placeholder="Sök gäst eller boende..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 h-9"
@@ -209,17 +210,17 @@ const HostUnifiedInbox = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All channels</SelectItem>
+                <SelectItem value="all">Alla kanaler</SelectItem>
                 <SelectItem value="airbnb">Airbnb</SelectItem>
                 <SelectItem value="booking_com">Booking.com</SelectItem>
-                <SelectItem value="direct">Direct</SelectItem>
+                <SelectItem value="direct">Direkt</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterRead} onValueChange={(v) => setFilterRead(v as any)}>
               <SelectTrigger className="w-32 h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="unread">Unread</SelectItem>
+                <SelectItem value="all">Alla</SelectItem>
+                <SelectItem value="unread">Olästa</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -234,11 +235,11 @@ const HostUnifiedInbox = () => {
               <MessageCircle className="h-10 w-10 mx-auto mb-2 opacity-30" />
               {chats.length === 0 ? (
                 <>
-                  <p className="font-medium">No conversations yet</p>
-                  <p className="text-sm">Guest messages from all channels will appear here.</p>
+                  <p className="font-medium">Inga konversationer än</p>
+                  <p className="text-sm">Meddelanden från gäster i alla kanaler dyker upp här.</p>
                 </>
               ) : (
-                <p className="text-sm">No conversations match your filters.</p>
+                <p className="text-sm">Inga konversationer matchar dina filter.</p>
               )}
             </div>
           ) : (
@@ -268,8 +269,8 @@ const HostUnifiedInbox = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground truncate mb-1">
-                      {chat.property_title} · {format(new Date(chat.check_in_date), "MMM d")} –{" "}
-                      {format(new Date(chat.check_out_date), "MMM d, yyyy")}
+                      {chat.property_title} · {format(new Date(chat.check_in_date), "d MMM", { locale: sv }).replace(".", "")} –{" "}
+                      {format(new Date(chat.check_out_date), "d MMM yyyy", { locale: sv }).replace(".", "")}
                     </p>
                     {chat.last_message && (
                       <p className="text-sm truncate text-foreground/80">
@@ -278,7 +279,7 @@ const HostUnifiedInbox = () => {
                     )}
                     {chat.last_message_at && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(chat.last_message_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(chat.last_message_at), { addSuffix: true, locale: sv })}
                       </p>
                     )}
                   </button>

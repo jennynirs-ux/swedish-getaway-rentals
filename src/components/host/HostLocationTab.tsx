@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 // The designation Skatteverket's yearly report asks for (DAC7), by kind of place
 const DESIGNATION_KINDS = [
-  { value: "fastighet", label: "A house or cabin with its own property designation", placeholder: "e.g. Lerum Exempel 1:23" },
-  { value: "lagenhet", label: "A flat (give the apartment number)", placeholder: "e.g. lgh 1102" },
-  { value: "stuga", label: "A cabin in a cabin village (give the cabin number)", placeholder: "e.g. stuga 14" },
-  { value: "none", label: "It has no designation of its own", placeholder: "" },
+  { value: "fastighet", label: "Ett hus eller en stuga med egen fastighetsbeteckning", placeholder: "t.ex. Lerum Exempel 1:23" },
+  { value: "lagenhet", label: "En lägenhet (ange lägenhetsnumret)", placeholder: "t.ex. lgh 1102" },
+  { value: "stuga", label: "En stuga i en stugby (ange stugans nummer)", placeholder: "t.ex. stuga 14" },
+  { value: "none", label: "Den har ingen egen beteckning", placeholder: "" },
 ] as const;
 import { MapPin } from "lucide-react";
 
@@ -115,15 +115,15 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
       });
 
       toast({
-        title: "Success",
-        description: "Location updated",
+        title: "Sparat",
+        description: "Platsen är uppdaterad",
       });
       onUpdate?.();
     } catch (error) {
       console.error("Error saving location:", error);
       toast({
-        title: "Error",
-        description: "Failed to save location",
+        title: "Något gick fel",
+        description: "Det gick inte att spara platsen",
         variant: "destructive",
       });
     } finally {
@@ -157,16 +157,16 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="w-5 h-5" />
-            Area shown to guests
+            Område som gästerna ser
           </CardTitle>
           <CardDescription>
-            Shown on your listing and in search instead of the address, e.g. "Åre, Sweden". Filled in from the town
-            above; change it if a nearby better-known place says more.
+            Visas i din annons och i sökningen i stället för adressen, t.ex. "Åre, Sweden". Fylls i från orten ovan.
+            Ändra det om en mer känd plats i närheten säger mer.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="public-location" className="sr-only">Area shown to guests</Label>
+            <Label htmlFor="public-location" className="sr-only">Område som gästerna ser</Label>
             <Input
               id="public-location"
               value={publicLocation}
@@ -179,17 +179,17 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
 
       <Card>
         <CardHeader>
-          <CardTitle>Property designation</CardTitle>
+          <CardTitle>Fastighetsbeteckning</CardTitle>
           <CardDescription>
-            For the yearly report to Skatteverket that Swedish law requires (DAC7). Private: guests never see it. You
-            find it on your title deed, in your tax return or on lantmateriet.se.
+            Behövs för den årliga rapporten till Skatteverket som lagen kräver (DAC7). Den är privat och gästerna ser
+            den aldrig. Du hittar den i ditt lagfartsbevis, i din deklaration eller på lantmateriet.se.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="designation-kind">What kind of place is it?</Label>
+            <Label htmlFor="designation-kind">Vad är det för typ av boende?</Label>
             <Select value={designationKind} onValueChange={setDesignationKind}>
-              <SelectTrigger id="designation-kind"><SelectValue placeholder="Choose" /></SelectTrigger>
+              <SelectTrigger id="designation-kind"><SelectValue placeholder="Välj" /></SelectTrigger>
               <SelectContent>
                 {DESIGNATION_KINDS.map((k) => (
                   <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
@@ -199,7 +199,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
           </div>
           {designationKind && designationKind !== "none" && (
             <div className="space-y-2">
-              <Label htmlFor="designation">{designationKind === "fastighet" ? "Fastighetsbeteckning" : designationKind === "lagenhet" ? "Apartment number" : "Cabin number"}</Label>
+              <Label htmlFor="designation">{designationKind === "fastighet" ? "Fastighetsbeteckning" : designationKind === "lagenhet" ? "Lägenhetsnummer" : "Stugans nummer"}</Label>
               <Input
                 id="designation"
                 value={designation}
@@ -213,7 +213,7 @@ export const HostLocationTab = ({ propertyId, onUpdate }: HostLocationTabProps) 
 
       <div className="flex justify-end">
         <Button onClick={handleSaveLocation} disabled={saving}>
-          {saving ? "Saving…" : "Save location"}
+          {saving ? "Sparar…" : "Spara plats"}
         </Button>
       </div>
     </div>

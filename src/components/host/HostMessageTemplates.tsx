@@ -32,22 +32,24 @@ interface Template {
 }
 
 const TRIGGER_OPTIONS: { value: TriggerType; label: string; needsDays: boolean }[] = [
-  { value: "booking_confirmed", label: "Right after booking is confirmed", needsDays: false },
-  { value: "days_before_checkin", label: "X days before check-in", needsDays: true },
-  { value: "day_of_checkin", label: "On check-in day (morning)", needsDays: false },
-  { value: "day_after_checkout", label: "Day after check-out (review request)", needsDays: false },
+  { value: "booking_confirmed", label: "Direkt när bokningen är bekräftad", needsDays: false },
+  { value: "days_before_checkin", label: "X dagar före incheckning", needsDays: true },
+  { value: "day_of_checkin", label: "På incheckningsdagen (morgon)", needsDays: false },
+  { value: "day_after_checkout", label: "Dagen efter utcheckning (be om omdöme)", needsDays: false },
 ];
 
 const TRIGGER_LABEL_SHORT: Record<TriggerType, string> = {
-  booking_confirmed: "On booking",
-  days_before_checkin: "Before check-in",
-  day_of_checkin: "Check-in day",
-  day_after_checkout: "After check-out",
+  booking_confirmed: "Vid bokning",
+  days_before_checkin: "Före incheckning",
+  day_of_checkin: "Incheckningsdag",
+  day_after_checkout: "Efter utcheckning",
 };
 
+// The template names are the host's own labels and are in Swedish; the
+// subjects and bodies go to guests and stay in English.
 const DEFAULT_TEMPLATES = [
   {
-    name: "Booking confirmation",
+    name: "Bokningsbekräftelse",
     trigger_type: "booking_confirmed" as TriggerType,
     trigger_days: null,
     subject: "Thanks for booking {property_title}!",
@@ -61,7 +63,7 @@ Best,
 {host_name}`,
   },
   {
-    name: "Pre-arrival info",
+    name: "Info före ankomst",
     trigger_type: "days_before_checkin" as TriggerType,
     trigger_days: 3,
     subject: "Check-in info for {property_title}",
@@ -78,7 +80,7 @@ Looking forward to welcoming you!
 {host_name}`,
   },
   {
-    name: "Welcome on arrival day",
+    name: "Välkommen på ankomstdagen",
     trigger_type: "day_of_checkin" as TriggerType,
     trigger_days: null,
     subject: "Welcome! Arrival info for today",
@@ -92,7 +94,7 @@ Hope you have a wonderful time!
 {host_name}`,
   },
   {
-    name: "Review request",
+    name: "Be om omdöme",
     trigger_type: "day_after_checkout" as TriggerType,
     trigger_days: null,
     subject: "Hope you enjoyed {property_title}!",
@@ -208,7 +210,7 @@ const HostMessageTemplates = () => {
 
   const save = async () => {
     if (!form.name.trim() || !form.body.trim()) {
-      toast.error("Name and body are required");
+      toast.error("Fyll i namn och meddelande");
       return;
     }
 
@@ -239,29 +241,29 @@ const HostMessageTemplates = () => {
           .update(payload)
           .eq("id", editing.id);
         if (error) throw error;
-        toast.success("Template updated");
+        toast.success("Mallen är uppdaterad");
       } else {
         const { error } = await supabase.from("host_message_templates").insert(payload);
         if (error) throw error;
-        toast.success("Template created");
+        toast.success("Mallen är skapad");
       }
 
       setDialogOpen(false);
       load();
     } catch (e) {
-      toast.error((e as Error).message || "Failed to save template");
+      toast.error((e as Error).message || "Det gick inte att spara mallen");
     }
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Delete this template?")) return;
+    if (!confirm("Vill du ta bort mallen?")) return;
     try {
       const { error } = await supabase.from("host_message_templates").delete().eq("id", id);
       if (error) throw error;
-      toast.success("Template deleted");
+      toast.success("Mallen är borttagen");
       load();
     } catch {
-      toast.error("Failed to delete");
+      toast.error("Det gick inte att ta bort mallen");
     }
   };
 
@@ -283,11 +285,11 @@ const HostMessageTemplates = () => {
 
       const { error } = await supabase.from("host_message_templates").insert(rows);
       if (error) throw error;
-      // "Pre-arrival info" has blanks for the times, which differ per cabin
-      toast.success("4 starter templates added. Fill in your check-in and check-out times in \"Pre-arrival info\".");
+      // "Info före ankomst" (Pre-arrival info) has blanks for the times, which differ per cabin
+      toast.success("4 startmallar har lagts till. Fyll i dina tider för in- och utcheckning i \"Info före ankomst\".");
       load();
     } catch (e) {
-      toast.error((e as Error).message || "Failed to seed templates");
+      toast.error((e as Error).message || "Det gick inte att lägga till startmallarna");
     }
   };
 
@@ -299,15 +301,15 @@ const HostMessageTemplates = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" /> Message Templates
+            <MessageSquare className="h-4 w-4" /> Meddelandemallar
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md bg-muted/50 p-4 text-sm space-y-2">
-            <p className="font-medium">Database migration needed</p>
+            <p className="font-medium">Databasen behöver uppdateras</p>
             <p className="text-muted-foreground">
-              The <code>host_message_templates</code> table hasn't been created yet. Run the
-              migration in Supabase SQL Editor to enable this feature.
+              Tabellen <code>host_message_templates</code> finns inte än. Kör migreringen i
+              Supabase SQL Editor för att slå på funktionen.
             </p>
           </div>
         </CardContent>
@@ -321,36 +323,36 @@ const HostMessageTemplates = () => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            Message Templates
+            Meddelandemallar
             <Badge variant="secondary">{templates.length}</Badge>
           </CardTitle>
           <div className="flex gap-2">
             {templates.length === 0 && !loading && (
               <Button variant="outline" size="sm" onClick={seedDefaults}>
-                Load starter templates
+                Lägg till startmallar
               </Button>
             )}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" onClick={openNew}>
-                  <Plus className="h-4 w-4 mr-1" /> New template
+                  <Plus className="h-4 w-4 mr-1" /> Ny mall
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xl">
                 <DialogHeader>
-                  <DialogTitle>{editing ? "Edit template" : "New template"}</DialogTitle>
+                  <DialogTitle>{editing ? "Redigera mall" : "Ny mall"}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-2">
                   <div>
-                    <Label>Name *</Label>
+                    <Label>Namn *</Label>
                     <Input
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="e.g., Pre-arrival info"
+                      placeholder="t.ex. Info före ankomst"
                     />
                   </div>
                   <div>
-                    <Label>Trigger *</Label>
+                    <Label>Tidpunkt *</Label>
                     <Select
                       value={form.trigger_type}
                       onValueChange={(v) => setForm({ ...form, trigger_type: v as TriggerType })}
@@ -365,7 +367,7 @@ const HostMessageTemplates = () => {
                   </div>
                   {needsDays && (
                     <div>
-                      <Label>Days before check-in</Label>
+                      <Label>Dagar före incheckning</Label>
                       <Input
                         type="number"
                         min={1}
@@ -376,7 +378,7 @@ const HostMessageTemplates = () => {
                     </div>
                   )}
                   <div>
-                    <Label>Subject</Label>
+                    <Label>Ämne</Label>
                     <Input
                       value={form.subject}
                       onChange={(e) => setForm({ ...form, subject: e.target.value })}
@@ -384,7 +386,7 @@ const HostMessageTemplates = () => {
                     />
                   </div>
                   <div>
-                    <Label>Message body *</Label>
+                    <Label>Meddelande *</Label>
                     <Textarea
                       value={form.body}
                       onChange={(e) => setForm({ ...form, body: e.target.value })}
@@ -411,10 +413,10 @@ const HostMessageTemplates = () => {
                         checked={form.enabled}
                         onCheckedChange={(c) => setForm({ ...form, enabled: c })}
                       />
-                      Enabled
+                      Aktiv
                     </Label>
                     <Button onClick={save}>
-                      {editing ? "Update" : "Create"}
+                      {editing ? "Spara" : "Skapa"}
                     </Button>
                   </div>
                 </div>
@@ -425,12 +427,12 @@ const HostMessageTemplates = () => {
       </CardHeader>
       <CardContent className="space-y-2">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading templates...</p>
+          <p className="text-sm text-muted-foreground">Laddar mallar...</p>
         ) : templates.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
             <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="font-medium">No templates yet</p>
-            <p className="text-sm">Create templates to save time on recurring messages.</p>
+            <p className="font-medium">Inga mallar än</p>
+            <p className="text-sm">Skapa mallar så sparar du tid på meddelanden du skickar ofta.</p>
           </div>
         ) : (
           templates.map((t) => (
@@ -443,10 +445,10 @@ const HostMessageTemplates = () => {
                   <p className="font-medium">{t.name}</p>
                   <Badge variant="outline" className="text-xs">
                     {TRIGGER_LABEL_SHORT[t.trigger_type]}
-                    {t.trigger_days ? ` (${t.trigger_days}d)` : ""}
+                    {t.trigger_days ? ` (${t.trigger_days} ${t.trigger_days === 1 ? "dag" : "dagar"})` : ""}
                   </Badge>
                   {!t.enabled && (
-                    <Badge variant="secondary" className="text-xs">Disabled</Badge>
+                    <Badge variant="secondary" className="text-xs">Inaktiv</Badge>
                   )}
                 </div>
                 {t.subject && (
@@ -471,8 +473,8 @@ const HostMessageTemplates = () => {
         <div className="flex items-start gap-2 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground mt-2">
           <Info className="h-3 w-3 mt-0.5 shrink-0" />
           <p>
-            Templates are stored now. Automatic sending requires a scheduled edge function
-            (deployable later) — for now templates can be used as quick-insert snippets.
+            Mallarna sparas redan nu. Automatiskt utskick kräver en schemalagd funktion som kommer
+            senare. Fram till dess kan du använda mallarna som färdiga textblock.
           </p>
         </div>
       </CardContent>

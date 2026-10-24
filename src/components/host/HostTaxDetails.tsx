@@ -184,7 +184,7 @@ export function HostTaxDetails() {
       toast.error(message);
       return;
     }
-    toast.success("Tax details saved");
+    toast.success("Skatteuppgifterna är sparade");
     setForm(null);
     queryClient.invalidateQueries({ queryKey: HOST_TAX_KEY });
     queryClient.invalidateQueries({ queryKey: HOST_CHECKLIST_KEY });
@@ -194,13 +194,13 @@ export function HostTaxDetails() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
-          <CardTitle>Tax details</CardTitle>
-          {saved?.dac7_complete ? <Badge variant="secondary">Done</Badge> : <Badge variant="destructive">Needed to publish</Badge>}
+          <CardTitle>Skatteuppgifter</CardTitle>
+          {saved?.dac7_complete ? <Badge variant="secondary">Klart</Badge> : <Badge variant="destructive">Krävs för att publicera</Badge>}
         </div>
         <CardDescription>
-          Under EU rules (DAC7) we must collect a few details from every host and report your rental income from Nordic
-          Getaways to Skatteverket once a year. Skatteverket may share it with tax authorities in other EU countries. You
-          get a copy of what we report by 31 January.
+          Enligt EU:s regler (DAC7) måste vi samla in några uppgifter från alla värdar och rapportera dina hyresinkomster
+          via Nordic Getaways till Skatteverket en gång per år. Skatteverket kan dela dem med skattemyndigheter i andra
+          EU-länder. Du får en kopia av det vi rapporterar senast 31 januari.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -209,115 +209,115 @@ export function HostTaxDetails() {
             <p>
               <strong>{saved.seller_type === "entity" ? saved.legal_name : `${saved.first_name} ${saved.last_name}`}</strong>
               {saved.tin_masked && <span className="text-muted-foreground"> · {saved.tin_masked}</span>}
-              {saved.date_of_birth && <span className="text-muted-foreground"> · born {saved.date_of_birth}</span>}
+              {saved.date_of_birth && <span className="text-muted-foreground"> · född {saved.date_of_birth}</span>}
             </p>
             <p className="text-muted-foreground">
               {saved.street}, {saved.postal_code} {saved.city}, {saved.country_code}
-              {saved.vat_number ? ` · VAT ${saved.vat_number}` : ""}
+              {saved.vat_number ? ` · momsnr ${saved.vat_number}` : ""}
             </p>
-            <Button variant="outline" onClick={startEditing}>Change</Button>
+            <Button variant="outline" onClick={startEditing}>Ändra</Button>
           </div>
         ) : (
           <>
             <RadioGroup value={f.sellerType} onValueChange={(v) => set("sellerType", v as Form["sellerType"])} className="space-y-2">
-              <p className="text-sm font-medium">Do you rent out as a private person or through a company?</p>
+              <p className="text-sm font-medium">Hyr du ut som privatperson eller via ett företag?</p>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="individual" id="tax-individual" />
-                <Label htmlFor="tax-individual" className="font-normal">Private person</Label>
+                <Label htmlFor="tax-individual" className="font-normal">Privatperson</Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="entity" id="tax-entity" />
-                <Label htmlFor="tax-entity" className="font-normal">Company (e.g. AB)</Label>
+                <Label htmlFor="tax-entity" className="font-normal">Företag (t.ex. AB)</Label>
               </div>
             </RadioGroup>
 
             {individual ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                {field("tax-first", "First name", <Input id="tax-first" value={f.firstName} onChange={(e) => set("firstName", e.target.value)} autoComplete="given-name" />)}
-                {field("tax-last", "Last name", <Input id="tax-last" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} autoComplete="family-name" />)}
+                {field("tax-first", "Förnamn", <Input id="tax-first" value={f.firstName} onChange={(e) => set("firstName", e.target.value)} autoComplete="given-name" />)}
+                {field("tax-last", "Efternamn", <Input id="tax-last" value={f.lastName} onChange={(e) => set("lastName", e.target.value)} autoComplete="family-name" />)}
               </div>
             ) : (
-              field("tax-legal", "Company name", <Input id="tax-legal" value={f.legalName} onChange={(e) => set("legalName", e.target.value)} placeholder="e.g. Exempel AB" />, "The full name, including AB or similar.")
+              field("tax-legal", "Företagsnamn", <Input id="tax-legal" value={f.legalName} onChange={(e) => set("legalName", e.target.value)} placeholder="t.ex. Exempel AB" />, "Hela namnet, med AB eller liknande.")
             )}
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Checkbox id="tax-swedish" checked={f.swedishTin} onCheckedChange={(on) => set("swedishTin", on === true)} />
                 <Label htmlFor="tax-swedish" className="font-normal">
-                  {individual ? "I have a Swedish personnummer or samordningsnummer" : "The company is registered in Sweden"}
+                  {individual ? "Jag har ett svenskt personnummer eller samordningsnummer" : "Företaget är registrerat i Sverige"}
                 </Label>
               </div>
               {f.swedishTin ? (
                 field(
                   "tax-tin",
                   individual ? "Personnummer" : "Organisationsnummer",
-                  <Input id="tax-tin" value={f.tin} onChange={(e) => set("tin", e.target.value)} placeholder={individual ? "YYYYMMDD-NNNN" : "NNNNNN-NNNN"} autoComplete="off" inputMode="numeric" />,
-                  canKeepTin ? `Saved: ${saved?.tin_masked}. Leave empty to keep it.` : individual ? "Your date of birth is taken from it." : undefined,
+                  <Input id="tax-tin" value={f.tin} onChange={(e) => set("tin", e.target.value)} placeholder={individual ? "ÅÅÅÅMMDD-XXXX" : "XXXXXX-XXXX"} autoComplete="off" inputMode="numeric" />,
+                  canKeepTin ? `Sparat: ${saved?.tin_masked}. Lämna tomt för att behålla det.` : individual ? "Ditt födelsedatum hämtas från numret." : undefined,
                 )
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {field("tax-tin-country", "Country of your tax number", <Input id="tax-tin-country" value={f.tinCountry} maxLength={2} onChange={(e) => set("tinCountry", e.target.value)} placeholder="e.g. NO" />, "Two-letter country code")}
-                  {field("tax-tin-foreign", "Tax number", <Input id="tax-tin-foreign" value={f.tin} onChange={(e) => set("tin", e.target.value)} autoComplete="off" />, canKeepTin ? `Saved: ${saved?.tin_masked}. Leave empty to keep it.` : individual ? "Leave empty only if you have none." : undefined)}
-                  {individual && field("tax-dob", "Date of birth", <Input id="tax-dob" type="date" value={f.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} />)}
-                  {individual && !f.tin.trim() && !keepTin && field("tax-birthplace", "Place of birth", <Input id="tax-birthplace" value={f.birthPlace} onChange={(e) => set("birthPlace", e.target.value)} />, "Needed when you have no tax number")}
+                  {field("tax-tin-country", "Land för ditt skattenummer", <Input id="tax-tin-country" value={f.tinCountry} maxLength={2} onChange={(e) => set("tinCountry", e.target.value)} placeholder="t.ex. NO" />, "Landskod med två bokstäver")}
+                  {field("tax-tin-foreign", "Skattenummer", <Input id="tax-tin-foreign" value={f.tin} onChange={(e) => set("tin", e.target.value)} autoComplete="off" />, canKeepTin ? `Sparat: ${saved?.tin_masked}. Lämna tomt för att behålla det.` : individual ? "Lämna tomt bara om du inte har något." : undefined)}
+                  {individual && field("tax-dob", "Födelsedatum", <Input id="tax-dob" type="date" value={f.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} />)}
+                  {individual && !f.tin.trim() && !keepTin && field("tax-birthplace", "Födelseort", <Input id="tax-birthplace" value={f.birthPlace} onChange={(e) => set("birthPlace", e.target.value)} />, "Behövs om du inte har något skattenummer")}
                 </div>
               )}
             </div>
 
             <div className="space-y-4">
-              <p className="text-sm font-medium">{individual ? "Home address" : "Registered address"}</p>
-              {field("tax-street", "Street address", <Input id="tax-street" value={f.street} onChange={(e) => set("street", e.target.value)} autoComplete="street-address" />)}
+              <p className="text-sm font-medium">{individual ? "Hemadress" : "Registrerad adress"}</p>
+              {field("tax-street", "Gatuadress", <Input id="tax-street" value={f.street} onChange={(e) => set("street", e.target.value)} autoComplete="street-address" />)}
               <div className="grid gap-4 sm:grid-cols-[9rem_1fr_6rem]">
-                {field("tax-postal", "Postal code", <Input id="tax-postal" value={f.postalCode} onChange={(e) => set("postalCode", e.target.value)} autoComplete="postal-code" />)}
-                {field("tax-city", "Town", <Input id="tax-city" value={f.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" />)}
-                {field("tax-country", "Country", <Input id="tax-country" value={f.countryCode} maxLength={2} onChange={(e) => set("countryCode", e.target.value)} />)}
+                {field("tax-postal", "Postnummer", <Input id="tax-postal" value={f.postalCode} onChange={(e) => set("postalCode", e.target.value)} autoComplete="postal-code" />)}
+                {field("tax-city", "Ort", <Input id="tax-city" value={f.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" />)}
+                {field("tax-country", "Land", <Input id="tax-country" value={f.countryCode} maxLength={2} onChange={(e) => set("countryCode", e.target.value)} />)}
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Checkbox id="tax-other" checked={f.hasOtherTin} onCheckedChange={(on) => set("hasOtherTin", on === true)} />
-                <Label htmlFor="tax-other" className="font-normal">{individual ? "I" : "The company"} also {individual ? "have" : "has"} a tax number in another country</Label>
+                <Label htmlFor="tax-other" className="font-normal">{individual ? "Jag" : "Företaget"} har också ett skattenummer i ett annat land</Label>
               </div>
               {f.hasOtherTin && (
                 <div className="grid gap-4 sm:grid-cols-[8rem_1fr]">
-                  {field("tax-other-country", "Country", <Input id="tax-other-country" value={f.otherTinCountry} maxLength={2} onChange={(e) => set("otherTinCountry", e.target.value)} placeholder="e.g. NO" />)}
-                  {field("tax-other-number", "Tax number", <Input id="tax-other-number" value={f.otherTin} onChange={(e) => set("otherTin", e.target.value)} autoComplete="off" />, (saved?.other_tin_countries?.length ?? 0) > 0 ? `Saved for ${saved?.other_tin_countries?.join(", ")}. Leave empty to keep it.` : undefined)}
+                  {field("tax-other-country", "Land", <Input id="tax-other-country" value={f.otherTinCountry} maxLength={2} onChange={(e) => set("otherTinCountry", e.target.value)} placeholder="t.ex. NO" />)}
+                  {field("tax-other-number", "Skattenummer", <Input id="tax-other-number" value={f.otherTin} onChange={(e) => set("otherTin", e.target.value)} autoComplete="off" />, (saved?.other_tin_countries?.length ?? 0) > 0 ? `Sparat för ${saved?.other_tin_countries?.join(", ")}. Lämna tomt för att behålla det.` : undefined)}
                 </div>
               )}
             </div>
 
-            {field("tax-vat", "VAT number (only if you have one)", <Input id="tax-vat" value={f.vatNumber} onChange={(e) => set("vatNumber", e.target.value)} placeholder="e.g. SE559477391201" />)}
+            {field("tax-vat", "Momsregistreringsnummer (bara om du har ett)", <Input id="tax-vat" value={f.vatNumber} onChange={(e) => set("vatNumber", e.target.value)} placeholder="t.ex. SE559477391201" />)}
 
             {!individual && (
               <RadioGroup value={f.peEu === null ? "" : f.peEu ? "yes" : "no"} onValueChange={(v) => set("peEu", v === "yes")} className="space-y-2">
-                <p className="text-sm font-medium">Does the company rent out through a fixed place of business in another EU country?</p>
+                <p className="text-sm font-medium">Hyr företaget ut via ett fast driftställe i ett annat EU-land?</p>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="no" id="tax-pe-no" />
-                  <Label htmlFor="tax-pe-no" className="font-normal">No</Label>
+                  <Label htmlFor="tax-pe-no" className="font-normal">Nej</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="yes" id="tax-pe-yes" />
-                  <Label htmlFor="tax-pe-yes" className="font-normal">Yes</Label>
+                  <Label htmlFor="tax-pe-yes" className="font-normal">Ja</Label>
                 </div>
-                {f.peEu && field("tax-pe-countries", "Which countries?", <Input id="tax-pe-countries" value={f.peCountries} onChange={(e) => set("peCountries", e.target.value)} placeholder="e.g. DE, FI" />)}
+                {f.peEu && field("tax-pe-countries", "Vilka länder?", <Input id="tax-pe-countries" value={f.peCountries} onChange={(e) => set("peCountries", e.target.value)} placeholder="t.ex. DE, FI" />)}
               </RadioGroup>
             )}
 
             <div className="flex items-start gap-2">
               <Checkbox id="tax-confirm" checked={f.confirm} onCheckedChange={(on) => set("confirm", on === true)} />
               <Label htmlFor="tax-confirm" className="font-normal leading-snug">
-                I confirm the details are correct and will update them if anything changes.
+                Jag bekräftar att uppgifterna stämmer och att jag uppdaterar dem om något ändras.
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              We store your tax number encrypted and only ever show the last part. The full number is used only for the
-              yearly report to Skatteverket, and it is deleted after the period the law requires (at least 7 years). See our{" "}
-              <Link to="/privacy" className="underline">privacy policy</Link>.
+              Vi sparar ditt skattenummer krypterat och visar aldrig mer än den sista delen. Hela numret används bara för den
+              årliga rapporten till Skatteverket och raderas efter den tid som lagen kräver (minst 7 år). Läs mer i vår{" "}
+              <Link to="/privacy" className="underline">integritetspolicy</Link>.
             </p>
             <div className="flex justify-end gap-2">
-              {form && saved?.dac7_complete && <Button variant="ghost" onClick={() => setForm(null)}>Cancel</Button>}
-              <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save tax details"}</Button>
+              {form && saved?.dac7_complete && <Button variant="ghost" onClick={() => setForm(null)}>Avbryt</Button>}
+              <Button onClick={save} disabled={saving}>{saving ? "Sparar …" : "Spara skatteuppgifter"}</Button>
             </div>
           </>
         )}
@@ -333,5 +333,5 @@ async function readError(error: unknown): Promise<string> {
     const body = await context.json().catch(() => null);
     if (body?.error) return String(body.error);
   }
-  return "Your tax details could not be saved. Please try again.";
+  return "Det gick inte att spara dina skatteuppgifter. Försök igen.";
 }

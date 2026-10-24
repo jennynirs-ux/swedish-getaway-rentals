@@ -6,13 +6,13 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { usePricingRules } from "@/hooks/usePricingRules";
 import { Calculator } from "lucide-react";
-import { HOST_PAYOUT_TIMING_TEXT } from "@/lib/constants";
 import {
   applicableStayDiscount,
   extraGuestCount,
   serviceFeeAmount,
   stayDiscountAmount,
 } from "../../../supabase/functions/_shared/booking-price";
+import { HOST_PAYOUT_TIMING_SV } from "@/lib/hostDashboard";
 
 interface HostPricingCalculatorProps {
   propertyId: string;
@@ -22,6 +22,7 @@ interface HostPricingCalculatorProps {
 }
 
 const clampInt = (raw: string, min: number, max: number) => Math.min(max, Math.max(min, parseInt(raw, 10) || min));
+
 
 /**
  * What a stay costs the guest and what the host receives, worked out like
@@ -68,24 +69,24 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
   const serviceFee = serviceFeeAmount(hostTotal, rate);
   const guestPays = hostTotal + serviceFee;
 
-  const money = (ore: number) => `${Math.round(ore / 100).toLocaleString("sv-SE")} ${currency}`;
-  const nightsLabel = `${nights} night${nights > 1 ? "s" : ""}`;
+  const money = (ore: number) => `${Math.round(ore / 100).toLocaleString("sv-SE")} ${currency === "SEK" ? "kr" : currency}`;
+  const nightsLabel = `${nights} ${nights > 1 ? "nätter" : "natt"}`;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calculator className="h-5 w-5" />
-          Price Calculator
+          Priskalkylator
         </CardTitle>
         <CardDescription>
-          See what guests pay and what you receive for a stay at your base price
+          Se vad gästerna betalar och vad du får för en vistelse till ditt grundpris
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="calc-guests">Number of Guests</Label>
+            <Label htmlFor="calc-guests">Antal gäster</Label>
             <Input
               id="calc-guests"
               type="number"
@@ -96,7 +97,7 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="calc-nights">Number of Nights</Label>
+            <Label htmlFor="calc-nights">Antal nätter</Label>
             <Input
               id="calc-nights"
               type="number"
@@ -112,20 +113,20 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
 
         <div className="space-y-3">
           <div className="flex justify-between gap-4 text-sm">
-            <span>Your price ({nightsLabel})</span>
+            <span>Ditt pris ({nightsLabel})</span>
             <span>{money(calc.breakdown.accommodation)}</span>
           </div>
 
           {calc.breakdown.extraGuests > 0 && (
             <div className="flex justify-between gap-4 text-sm text-muted-foreground">
-              <span>Extra guests ({extraGuestCount(guests, rules.find((r) => r.rule_type === "extra_guest")?.guests_included)})</span>
+              <span>Extra gäster ({extraGuestCount(guests, rules.find((r) => r.rule_type === "extra_guest")?.guests_included)})</span>
               <span>{money(calc.breakdown.extraGuests)}</span>
             </div>
           )}
 
           {calc.breakdown.cleaning > 0 && (
             <div className="flex justify-between gap-4 text-sm text-muted-foreground">
-              <span>Cleaning</span>
+              <span>Städning</span>
               <span>{money(calc.breakdown.cleaning)}</span>
             </div>
           )}
@@ -133,7 +134,7 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
           {stayDiscount > 0 && discount && (
             <div className="flex justify-between gap-4 text-sm text-muted-foreground">
               <span>
-                {discount.type === "monthly" ? "Monthly" : "Weekly"} discount ({discount.percentage}%)
+                {discount.type === "monthly" ? "Månadsrabatt" : "Veckorabatt"} ({discount.percentage} %)
               </span>
               <span>−{money(stayDiscount)}</span>
             </div>
@@ -142,25 +143,25 @@ export const HostPricingCalculator = ({ propertyId, basePrice, currency }: HostP
           <Separator />
 
           <div className="flex justify-between gap-4 text-lg font-bold text-green-600">
-            <span>You receive</span>
+            <span>Du får</span>
             <span>{money(hostTotal)}</span>
           </div>
 
           <div className="flex justify-between gap-4 text-sm text-muted-foreground">
-            <span>Guest service fee ({rate}%)</span>
+            <span>Gästens serviceavgift ({rate} %)</span>
             <span>+{money(serviceFee)}</span>
           </div>
 
           <div className="flex justify-between gap-4 font-medium">
-            <span>Guest pays</span>
+            <span>Gästen betalar</span>
             <span>{money(guestPays)}</span>
           </div>
         </div>
 
         <div className="mt-4 p-3 bg-muted rounded-lg">
           <p className="text-xs text-muted-foreground">
-            Guests pay {rate}% on top; you receive your price in full. It is paid out to your bank{" "}
-            {HOST_PAYOUT_TIMING_TEXT}.
+            Gästerna betalar {rate} % ovanpå, och du får hela ditt pris. Det betalas ut till ditt bankkonto{" "}
+            {HOST_PAYOUT_TIMING_SV}.
           </p>
         </div>
       </CardContent>

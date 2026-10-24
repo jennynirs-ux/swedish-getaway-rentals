@@ -17,7 +17,7 @@ export const HostInvitationDialog = () => {
     e.preventDefault();
     
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address");
+      toast.error("Skriv en giltig e-postadress");
       return;
     }
 
@@ -30,11 +30,11 @@ export const HostInvitationDialog = () => {
       if (error) throw error;
 
       setReferralCode(data.referralCode);
-      toast.success("Invitation sent successfully!");
+      toast.success("Inbjudan är skickad!");
       setEmail("");
     } catch (error: any) {
       console.error("Error sending invitation:", error);
-      toast.error(error.message || "Failed to send invitation");
+      toast.error(error.message || "Det gick inte att skicka inbjudan");
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export const HostInvitationDialog = () => {
 
   const copyReferralCode = () => {
     navigator.clipboard.writeText(referralCode);
-    toast.success("Referral code copied to clipboard!");
+    toast.success("Inbjudningskoden är kopierad!");
   };
 
   const handleClose = () => {
@@ -55,27 +55,27 @@ export const HostInvitationDialog = () => {
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <UserPlus className="h-4 w-4" />
-          Invite Host
+          Bjud in värd
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite a New Host</DialogTitle>
+          <DialogTitle>Bjud in en ny värd</DialogTitle>
           <DialogDescription>
-            Invite someone to become a host. When they join, you'll receive a 20% discount coupon for the Nordic Collection shop!
+            Bjud in någon att bli värd. När personen har gått med får du en rabattkod på 20 % till butiken Nordic Collection!
           </DialogDescription>
         </DialogHeader>
 
         {!referralCode ? (
           <form onSubmit={handleSendInvitation} className="space-y-4">
             <div>
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">E-postadress</Label>
               <div className="relative mt-1">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="host@example.com"
+                  placeholder="namn@exempel.se"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -85,15 +85,15 @@ export const HostInvitationDialog = () => {
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending..." : "Send Invitation"}
+              {loading ? "Skickar …" : "Skicka inbjudan"}
             </Button>
           </form>
         ) : (
           <div className="space-y-4">
             <div className="bg-muted p-4 rounded-lg space-y-2">
-              <p className="text-sm font-medium">Invitation Sent! 🎉</p>
+              <p className="text-sm font-medium">Inbjudan är skickad! 🎉</p>
               <p className="text-sm text-muted-foreground">
-                Your referral code has been sent to {email}. They can also use this code directly:
+                Din inbjudningskod har skickats till {email}. Koden kan också användas direkt:
               </p>
               <div className="flex items-center gap-2 mt-2">
                 <code className="flex-1 bg-background px-3 py-2 rounded border font-mono text-sm">
@@ -103,13 +103,14 @@ export const HostInvitationDialog = () => {
                   variant="outline"
                   size="icon"
                   onClick={copyReferralCode}
+                  aria-label="Kopiera inbjudningskoden"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
             </div>
             <Button onClick={handleClose} className="w-full">
-              Done
+              Klar
             </Button>
           </div>
         )}

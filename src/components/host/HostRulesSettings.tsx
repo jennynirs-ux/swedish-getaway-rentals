@@ -47,8 +47,8 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
       });
   }, [propertyId]);
 
-  if (loadFailed) return <p className="text-sm text-destructive">Your rules could not be loaded. Reload the page to try again.</p>;
-  if (!rules) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (loadFailed) return <p className="text-sm text-destructive">Det gick inte att läsa in dina regler. Ladda om sidan och försök igen.</p>;
+  if (!rules) return <p className="text-sm text-muted-foreground">Laddar…</p>;
   const set = <K extends keyof Rules>(key: K, value: Rules[K]) => setRules({ ...rules, [key]: value });
   const holidayOn = rules.holiday_min_nights !== null;
 
@@ -65,10 +65,10 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
       .eq("id", propertyId);
     setSaving(false);
     if (error) {
-      toast({ title: "Could not save your rules", description: error.message, variant: "destructive" });
+      toast({ title: "Det gick inte att spara dina regler", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Rules saved" });
+    toast({ title: "Reglerna är sparade" });
     onSaved?.();
   };
 
@@ -76,14 +76,14 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Cancellation policy</CardTitle>
+          <CardTitle>Avbokningsregel</CardTitle>
           <CardDescription>
-            What guests get back if they cancel. The policy shown when a guest books applies to that booking, even if you
-            change it later. The guest service fee is never refunded when a guest cancels.
+            Vad gästerna får tillbaka om de avbokar. Regeln som visas när en gäst bokar gäller för den bokningen, även om du
+            ändrar den senare. Gästens serviceavgift betalas aldrig tillbaka när en gäst avbokar.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div role="radiogroup" aria-label="Cancellation policy" className="grid gap-3 sm:grid-cols-2">
+          <div role="radiogroup" aria-label="Avbokningsregel" className="grid gap-3 sm:grid-cols-2">
             {POLICY_KEYS.map((key) => {
               const policy = CANCELLATION_POLICIES[key];
               const chosen = rules.cancellation_policy === key;
@@ -98,8 +98,8 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
                     chosen ? "border-foreground bg-muted" : "border-border"
                   }`}
                 >
-                  <p className="font-medium">{policy.name}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{policy.summary}</p>
+                  <p className="font-medium">{policy.nameSv}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{policy.summarySv}</p>
                 </button>
               );
             })}
@@ -109,14 +109,14 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
 
       <Card>
         <CardHeader>
-          <CardTitle>House rules</CardTitle>
-          <CardDescription>Guests see these and accept them before they pay.</CardDescription>
+          <CardTitle>Husregler</CardTitle>
+          <CardDescription>Gästerna ser dem och godkänner dem innan de betalar.</CardDescription>
         </CardHeader>
         <CardContent className="divide-y">
           <Stepper
             id="rules-min-nights"
-            label="Minimum stay"
-            hint={`${rules.min_nights} night${rules.min_nights !== 1 ? "s" : ""}`}
+            label="Minsta antal nätter"
+            hint={`${rules.min_nights} ${rules.min_nights === 1 ? "natt" : "nätter"}`}
             value={rules.min_nights}
             min={1}
             max={holidayOn ? 29 : 30}
@@ -127,8 +127,8 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
           <div className="space-y-2 py-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <Label htmlFor="rules-holiday" className="text-base font-normal">Longer stays over Valborg, Midsummer and New Year's Eve</Label>
-                <p className="text-xs text-muted-foreground">The nights most often booked for parties</p>
+                <Label htmlFor="rules-holiday" className="text-base font-normal">Fler nätter kring valborg, midsommar och nyårsafton</Label>
+                <p className="text-xs text-muted-foreground">De nätter som oftast bokas för fester</p>
               </div>
               <Switch
                 id="rules-holiday"
@@ -139,7 +139,7 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
             {holidayOn && (
               <Stepper
                 id="rules-holiday-nights"
-                label="Minimum stay then"
+                label="Minsta antal nätter då"
                 value={rules.holiday_min_nights ?? rules.min_nights + 1}
                 min={rules.min_nights + 1}
                 max={30}
@@ -149,9 +149,9 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
           </div>
           {(
             [
-              ["pets_allowed", "Pets allowed"],
-              ["smoking_allowed", "Smoking allowed"],
-              ["events_allowed", "Parties and events allowed"],
+              ["pets_allowed", "Husdjur tillåtna"],
+              ["smoking_allowed", "Rökning tillåten"],
+              ["events_allowed", "Fester och evenemang tillåtna"],
             ] as const
           ).map(([key, label]) => (
             <div key={key} className="flex items-center justify-between gap-4 py-3">
@@ -161,8 +161,8 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
           ))}
           <Stepper
             id="rules-min-age"
-            label="Minimum age of the person booking"
-            hint="They must also stay at the place"
+            label="Lägsta ålder för den som bokar"
+            hint="Personen måste också bo i boendet"
             value={rules.min_guest_age}
             min={ADULT_AGE}
             max={30}
@@ -172,7 +172,7 @@ export function HostRulesSettings({ propertyId, onSaved }: { propertyId: string;
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save rules"}</Button>
+        <Button onClick={save} disabled={saving}>{saving ? "Sparar…" : "Spara regler"}</Button>
       </div>
     </div>
   );

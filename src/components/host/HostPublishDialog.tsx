@@ -49,7 +49,7 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
         supabase.from("ical_feeds").select("id", { count: "exact", head: true }).eq("property_id", propertyId!),
       ]);
       return {
-        title: property?.title ?? "your listing",
+        title: property?.title ?? "din annons",
         hasLocation: property?.latitude != null && property?.longitude != null && !!property?.county,
         termsAccepted: !!profile?.host_terms_accepted_at && profile?.host_terms_version === HOST_TERMS_VERSION,
         hasCalendarFeed: (count ?? 0) > 0,
@@ -66,56 +66,56 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
   const steps: { id: string; title: string; done: boolean; body?: ReactNode }[] = [
     {
       id: "location",
-      title: "Map pin and county",
+      title: "Plats på kartan och län",
       done: !!listing?.hasLocation,
       body: (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Guests find places by region, so the pin and county are needed.</p>
+          <p className="text-sm text-muted-foreground">Gäster söker boenden efter region, så platsen på kartan och länet behövs.</p>
           <Button variant="outline" size="sm" onClick={() => onOpenEditor(propertyId, "location")}>
-            Open Location
+            Ange plats
           </Button>
         </div>
       ),
     },
     {
       id: "terms",
-      title: "Accept the host terms",
+      title: "Godkänn värdvillkoren",
       done: !!listing?.termsAccepted,
       body: <HostTermsAcceptance idSuffix="publish-window" onAccepted={() => refetch()} />,
     },
     {
       id: "tax",
-      title: "Tax details",
+      title: "Skatteuppgifter",
       done: !!tax?.dac7_complete,
       body: <HostTaxDetails />,
     },
     {
       id: "payouts",
-      title: "Payouts with Stripe",
+      title: "Utbetalningar via Stripe",
       done: stripe === "ready",
       body: payoutLoading ? (
-        <p className="text-sm text-muted-foreground">Checking with Stripe…</p>
+        <p className="text-sm text-muted-foreground">Kollar med Stripe …</p>
       ) : stripe === "verifying" ? (
         <p className="text-sm text-muted-foreground">
-          Stripe is checking your details. That usually takes a few minutes; this window checks again by itself.
+          Stripe kontrollerar dina uppgifter. Det brukar ta några minuter, och det här fönstret kollar igen av sig självt.
         </p>
       ) : stripe === "action_needed" ? (
         <p className="text-sm text-muted-foreground">
-          Stripe has stopped your account. Email support@mojjo.se and we will sort it out with Stripe.
+          Stripe har stoppat ditt konto. Mejla support@mojjo.se så löser vi det med Stripe.
         </p>
       ) : (
         <div className="space-y-2">
           {stripe === "details_missing" && stripeRequirementLabels(payout?.currentlyDue).length > 0 ? (
             <>
-              <p className="text-sm text-muted-foreground">Stripe still needs:</p>
+              <p className="text-sm text-muted-foreground">Stripe behöver fortfarande:</p>
               <ul className="list-disc pl-5 text-sm">
                 {stripeRequirementLabels(payout?.currentlyDue).map((label) => <li key={label}>{label}</li>)}
               </ul>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">
-              A free Stripe account pays your share of each booking to your bank. It takes about five minutes, and
-              Stripe brings you back here when you're done.
+              Ett kostnadsfritt Stripe-konto betalar ut din del av varje bokning till din bank. Det tar ungefär fem
+              minuter, och Stripe skickar dig tillbaka hit när du är klar.
             </p>
           )}
           <Button
@@ -132,25 +132,25 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
             }}
           >
             {openingStripe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {stripe === "details_missing" ? "Finish setup on Stripe" : "Set up payouts with Stripe"}
+            {stripe === "details_missing" ? "Slutför hos Stripe" : "Ställ in utbetalningar via Stripe"}
           </Button>
         </div>
       ),
     },
     {
       id: "calendar",
-      title: "Other booking sites",
+      title: "Andra bokningssajter",
       done: calendarAnswered,
       body: (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Bookings here are confirmed instantly. Is this place also on Airbnb or Booking.com? Then link the calendars
-            first, so nobody can book the same night twice.
+            Bokningar här bekräftas direkt. Finns boendet också på Airbnb eller Booking.com? Koppla då ihop
+            kalendrarna först, så att ingen kan boka samma natt två gånger.
           </p>
           <CalendarExportLink propertyId={propertyId} />
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => onOpenEditor(propertyId, "calendar")}>
-              Add calendar links
+              Lägg till kalenderlänkar
             </Button>
             <Button
               variant="outline"
@@ -160,7 +160,7 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
                 setOnlyHere(true);
               }}
             >
-              I only rent it here
+              Jag hyr bara ut här
             </Button>
           </div>
         </div>
@@ -174,9 +174,9 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Publish {listing?.title ?? "your listing"}</DialogTitle>
+          <DialogTitle>Publicera {listing?.title ?? "din annons"}</DialogTitle>
           <DialogDescription>
-            {allDone ? "Everything is ready. Guests can book as soon as you publish." : "A few steps before guests can book it."}
+            {allDone ? "Allt är klart. Gäster kan boka så fort du publicerar." : "Några steg kvar innan gäster kan boka."}
           </DialogDescription>
         </DialogHeader>
 
@@ -199,7 +199,7 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Later
+            Senare
           </Button>
           <Button
             disabled={!allDone || publishing}
@@ -208,7 +208,7 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
               else queryClient.invalidateQueries({ queryKey: [READINESS_KEY, propertyId] });
             }}
           >
-            {publishing ? "Publishing…" : "Publish now"}
+            {publishing ? "Publicerar …" : "Publicera nu"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -59,7 +59,7 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
       setCoupons(data || []);
     } catch (error) {
       console.error('Error fetching coupons:', error);
-      toast.error('Failed to load coupons');
+      toast.error('Det gick inte att läsa in rabattkoderna');
     } finally {
       setLoading(false);
     }
@@ -74,12 +74,12 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
 
       if (error) throw error;
 
-      toast.success(`Coupon ${!currentStatus ? 'activated' : 'deactivated'}`);
+      toast.success(`Rabattkoden är ${!currentStatus ? 'aktiverad' : 'avaktiverad'}`);
       fetchCoupons();
       onUpdate?.();
     } catch (error) {
       console.error('Error updating coupon:', error);
-      toast.error('Failed to update coupon status');
+      toast.error('Det gick inte att ändra rabattkodens status');
     }
   };
 
@@ -92,19 +92,20 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
 
       if (error) throw error;
 
-      toast.success('Coupon deleted successfully');
+      toast.success('Rabattkoden är borttagen');
       fetchCoupons();
       onUpdate?.();
     } catch (error) {
       console.error('Error deleting coupon:', error);
-      toast.error('Failed to delete coupon');
+      toast.error('Det gick inte att ta bort rabattkoden');
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // "24 oktober 2026"
+    return new Date(dateString).toLocaleDateString('sv-SE', {
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric',
     });
   };
@@ -114,16 +115,16 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
   };
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading coupons...</div>;
+    return <div className="text-sm text-muted-foreground">Laddar rabattkoder…</div>;
   }
 
   if (coupons.length === 0) {
     return (
       <div className="text-center p-6 border border-dashed rounded-lg">
         <Tag className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-        <h3 className="text-lg font-semibold mb-2">No Coupons Yet</h3>
+        <h3 className="text-lg font-semibold mb-2">Inga rabattkoder än</h3>
         <p className="text-sm text-muted-foreground">
-          Create your first coupon below to offer discounts to your guests.
+          Skapa din första rabattkod nedan för att ge dina gäster rabatt.
         </p>
       </div>
     );
@@ -131,7 +132,7 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Active Property Coupons</h3>
+      <h3 className="text-lg font-semibold mb-4">Boendets rabattkoder</h3>
       <div className="space-y-4">
         {coupons.map((coupon) => {
           const expired = isExpired(coupon.valid_until);
@@ -159,7 +160,7 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
                     
                     <div className="flex items-center gap-2">
                       <Badge variant={isVisible ? "default" : "secondary"}>
-                        {isVisible ? "Visible to Guests" : expired ? "Expired" : "Inactive"}
+                        {isVisible ? "Syns för gästerna" : expired ? "Har gått ut" : "Inaktiv"}
                       </Badge>
                     </div>
                   </div>
@@ -170,8 +171,8 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
                       <Percent className="h-4 w-4 text-muted-foreground" />
                       <span>
                         {coupon.discount_type === 'percentage' 
-                          ? `${coupon.discount_value}% off`
-                          : `${coupon.discount_value} SEK off`
+                          ? `${coupon.discount_value.toLocaleString('sv-SE')} % rabatt`
+                          : `${coupon.discount_value.toLocaleString('sv-SE')} kr rabatt`
                         }
                       </span>
                     </div>
@@ -179,7 +180,7 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className={expired ? "text-destructive" : ""}>
-                        Valid until {formatDate(coupon.valid_until)}
+                        Giltig till {formatDate(coupon.valid_until)}
                       </span>
                     </div>
 
@@ -187,7 +188,7 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
                       <div className="flex items-center gap-1.5">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>
-                          {coupon.used_count || 0} / {coupon.usage_limit} uses
+                          {coupon.used_count || 0} av {coupon.usage_limit} använda
                         </span>
                       </div>
                     )}
@@ -197,10 +198,10 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
                   {(coupon.minimum_amount || coupon.maximum_discount_amount) && (
                     <div className="text-xs text-muted-foreground flex flex-wrap gap-3">
                       {coupon.minimum_amount && (
-                        <span>Min. booking: {coupon.minimum_amount} SEK</span>
+                        <span>Lägsta bokning: {coupon.minimum_amount.toLocaleString('sv-SE')} kr</span>
                       )}
                       {coupon.maximum_discount_amount && (
-                        <span>Max. discount: {coupon.maximum_discount_amount} SEK</span>
+                        <span>Högsta rabatt: {coupon.maximum_discount_amount.toLocaleString('sv-SE')} kr</span>
                       )}
                     </div>
                   )}
@@ -209,7 +210,7 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
                 {/* Actions */}
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Active</span>
+                    <span className="text-xs text-muted-foreground">Aktiv</span>
                     <Switch
                       checked={coupon.is_active}
                       onCheckedChange={() => toggleCouponStatus(coupon.id, coupon.is_active)}
@@ -219,24 +220,24 @@ export const PropertyCouponsList = ({ propertyId, onUpdate }: PropertyCouponsLis
 
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-destructive">
+                      <Button variant="ghost" size="sm" className="text-destructive" aria-label={`Ta bort ${coupon.code}`}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Coupon</AlertDialogTitle>
+                        <AlertDialogTitle>Ta bort rabattkod</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete the coupon "{coupon.code}"? This action cannot be undone.
+                          Vill du ta bort rabattkoden "{coupon.code}"? Det går inte att ångra.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Avbryt</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => deleteCoupon(coupon.id)}
                           className="bg-destructive hover:bg-destructive/90"
                         >
-                          Delete
+                          Ta bort
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

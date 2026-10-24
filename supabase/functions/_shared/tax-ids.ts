@@ -42,7 +42,7 @@ export function parsePersonnummer(input: string, today: string): Parsed<Personnu
   const centenarian = raw.includes("+");
   const digits = raw.replace(/[-+]/g, "");
   if (!/^\d{10}(\d{2})?$/.test(digits)) {
-    return { ok: false, error: "Write your personnummer as YYYYMMDD-NNNN." };
+    return { ok: false, error: "Skriv ditt personnummer som ÅÅÅÅMMDD-XXXX." };
   }
   let full = digits;
   if (digits.length === 10) {
@@ -60,14 +60,14 @@ export function parsePersonnummer(input: string, today: string): Parsed<Personnu
   const samordningsnummer = day > 60;
   if (samordningsnummer) day -= 60;
   if (!validDate(year, month, day)) {
-    return { ok: false, error: "The date in your personnummer is not a real date." };
+    return { ok: false, error: "Datumet i ditt personnummer finns inte." };
   }
   const dateOfBirth = `${full.slice(0, 4)}-${full.slice(4, 6)}-${String(day).padStart(2, "0")}`;
   if (dateOfBirth > today) {
-    return { ok: false, error: "The date in your personnummer is in the future." };
+    return { ok: false, error: "Datumet i ditt personnummer ligger i framtiden." };
   }
   if (!luhnOk(full.slice(2))) {
-    return { ok: false, error: "That personnummer does not add up. Check the last four digits." };
+    return { ok: false, error: "Personnumret stämmer inte. Kontrollera de fyra sista siffrorna." };
   }
   return { ok: true, value: { normalized: full, dateOfBirth, masked: `${full.slice(0, 8)}-••••`, samordningsnummer } };
 }
@@ -84,14 +84,14 @@ export function parseOrgNumber(input: string): Parsed<OrgNumber> {
   let digits = input.trim().replace(/[\s-]/g, "");
   if (/^16\d{10}$/.test(digits)) digits = digits.slice(2);
   if (!/^\d{10}$/.test(digits)) {
-    return { ok: false, error: "Write the organisationsnummer as NNNNNN-NNNN." };
+    return { ok: false, error: "Skriv organisationsnumret som XXXXXX-XXXX." };
   }
   // Legal entities have 20 or more in the "month" digits; a sole trader uses their personnummer
   if (Number(digits.slice(2, 4)) < 20) {
-    return { ok: false, error: "That looks like a personnummer. A sole trader rents out as a private person here." };
+    return { ok: false, error: "Det ser ut som ett personnummer. Har du enskild firma hyr du ut som privatperson här." };
   }
   if (!luhnOk(digits)) {
-    return { ok: false, error: "That organisationsnummer does not add up. Check the digits." };
+    return { ok: false, error: "Organisationsnumret stämmer inte. Kontrollera siffrorna." };
   }
   return { ok: true, value: { normalized: digits, formatted: `${digits.slice(0, 6)}-${digits.slice(6)}` } };
 }
@@ -101,7 +101,7 @@ export function parseVatNumber(input: string): Parsed<string | null> {
   const v = input.trim().replace(/[\s.-]/g, "").toUpperCase();
   if (!v) return { ok: true, value: null };
   if (v.startsWith("SE") ? !/^SE\d{10}01$/.test(v) : !/^[A-Z]{2}[0-9A-Z+*]{2,13}$/.test(v)) {
-    return { ok: false, error: "Write the VAT number with its country code, e.g. SE559477391201." };
+    return { ok: false, error: "Skriv momsregistreringsnumret med landskod, t.ex. SE559477391201." };
   }
   return { ok: true, value: v };
 }
@@ -110,7 +110,7 @@ export function parseVatNumber(input: string): Parsed<string | null> {
 export function parseForeignTin(input: string): Parsed<string> {
   const v = input.trim().replace(/\s+/g, " ");
   if (!/^[0-9A-Za-z][0-9A-Za-z ./-]{2,29}$/.test(v)) {
-    return { ok: false, error: "Write the tax number as it appears on your tax documents." };
+    return { ok: false, error: "Skriv skattenumret som det står i dina skattehandlingar." };
   }
   return { ok: true, value: v };
 }

@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar as CalendarIcon, Settings, DollarSign, Ban } from 'lucide-react';
 import { format, addDays, isSameDay } from 'date-fns';
+import { sv } from 'date-fns/locale';
 
 interface Property {
   id: string;
@@ -110,8 +111,8 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
        }
 
        toast({
-         title: 'Success',
-         description: `Updated ${filteredDates.length} date(s)${skipped > 0 ? ` (skipped ${skipped} booked or synced date(s))` : ''}`,
+         title: 'Klart',
+         description: `${filteredDates.length} datum uppdaterade${skipped > 0 ? ` (${skipped} bokade eller synkade datum hoppades över)` : ''}`,
        });
 
        fetchAvailability();
@@ -119,8 +120,8 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
      } catch (error) {
       console.error('Error updating availability:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update availability',
+        title: 'Något gick fel',
+        description: 'Det gick inte att uppdatera kalendern',
         variant: 'destructive',
       });
     } finally {
@@ -170,9 +171,9 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Calendar</CardTitle>
+                  <CardTitle>Kalender</CardTitle>
                   <CardDescription>
-                    Click on dates to select days to update. Booked dates and dates synced from other calendars cannot be modified.
+                    Klicka på datum för att välja dagar att ändra. Bokade datum och datum som synkats från andra kalendrar går inte att ändra.
                   </CardDescription>
                 </div>
               </div>
@@ -185,6 +186,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                   onSelect={(dates) => setSelectedDates(dates || [])}
                   className="rounded-md border"
                   weekStartsOn={1}
+                  locale={sv}
                   modifiers={{
                     blocked: modifiers.blocked,
                     special: modifiers.special,
@@ -222,11 +224,11 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle>Snabbval</CardTitle>
               <CardDescription>
                 {selectedDates.length > 0 
-                  ? `${selectedDates.length} days selected`
-                  : 'Select days in the calendar'
+                  ? (selectedDates.length === 1 ? '1 dag vald' : `${selectedDates.length} dagar valda`)
+                  : 'Välj dagar i kalendern'
                 }
               </CardDescription>
             </CardHeader>
@@ -237,7 +239,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                 onClick={() => updateAvailability(selectedDates, false)}
               >
                 <Ban className="h-4 w-4 mr-2" />
-                Block Dates
+                Blockera datum
               </Button>
               
                <Button 
@@ -246,7 +248,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                  onClick={() => updateAvailability(selectedDates, true)}
                >
                 <CalendarIcon className="h-4 w-4 mr-2" />
-                Make Available
+                Markera som lediga
               </Button>
 
               <Dialog>
@@ -257,31 +259,31 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                     disabled={selectedDates.length === 0}
                   >
                     <Settings className="h-4 w-4 mr-2" />
-                    Advanced Settings
+                    Avancerade inställningar
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Advanced Settings</DialogTitle>
+                    <DialogTitle>Avancerade inställningar</DialogTitle>
                     <DialogDescription>
-                      Set seasonal prices and minimum nights for selected dates
+                      Ange säsongspris och minsta antal nätter för valda datum
                     </DialogDescription>
                   </DialogHeader>
                   
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="seasonal-price">Seasonal Price (per night)</Label>
+                      <Label htmlFor="seasonal-price">Säsongspris (per natt)</Label>
                       <Input
                         id="seasonal-price"
                         type="number"
                         value={seasonalPrice}
                         onChange={(e) => setSeasonalPrice(e.target.value)}
-                        placeholder={`Default: ${selectedProperty_obj?.price_per_night || 0}`}
+                        placeholder={`Standard: ${(selectedProperty_obj?.price_per_night || 0).toLocaleString('sv-SE')}`}
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="minimum-nights">Minimum nights</Label>
+                      <Label htmlFor="minimum-nights">Minsta antal nätter</Label>
                       <Input
                         id="minimum-nights"
                         type="number"
@@ -302,7 +304,7 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
                       )}
                     >
                       <DollarSign className="h-4 w-4 mr-2" />
-                      Update Prices & Rules
+                      Uppdatera pris och regler
                     </Button>
                   </div>
                 </DialogContent>
@@ -312,28 +314,28 @@ const AvailabilityCalendar = ({ defaultPropertyId }: { defaultPropertyId?: strin
 
           <Card>
             <CardHeader>
-              <CardTitle>Legend</CardTitle>
+              <CardTitle>Förklaring</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-green-100 rounded"></div>
-                <span className="text-sm">Available</span>
+                <span className="text-sm">Ledig</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-blue-100 rounded"></div>
-                <span className="text-sm">Seasonal Price</span>
+                <span className="text-sm">Säsongspris</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-red-100 rounded"></div>
-                <span className="text-sm">Blocked</span>
+                <span className="text-sm">Blockerad</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-primary rounded"></div>
-                <span className="text-sm">Selected</span>
+                <span className="text-sm">Vald</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-orange-100 rounded"></div>
-                <span className="text-sm">Booked or synced (read-only)</span>
+                <span className="text-sm">Bokad eller synkad (går inte att ändra)</span>
               </div>
             </CardContent>
           </Card>

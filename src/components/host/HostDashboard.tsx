@@ -20,10 +20,10 @@ import HostExpenses from "./HostExpenses";
 import HostRevenueByChannel from "./HostRevenueByChannel";
 import HostProfitability from "./HostProfitability";
 import { HostTaxReport } from "./HostTaxReport";
-import { HOST_PAYOUT_TIMING_TEXT, stockholmDate } from "@/lib/constants";
+import { stockholmDate } from "@/lib/constants";
 // What the host keeps of a booking: the same rule as the Financials tabs and the tax report
 import { hostNetAmount, hostShareAmount, type HostPayoutStatus } from "../../../supabase/functions/_shared/payout";
-import { chargesTakenFrom, formatDay, formatSek, hostPayoutText, nextPayoutId } from "@/lib/hostDashboard";
+import { HOST_PAYOUT_TIMING_SV, chargesTakenFrom, formatDay, formatSek, hostPayoutText, nextPayoutId } from "@/lib/hostDashboard";
 import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
@@ -79,7 +79,16 @@ const UNPAID_STATUSES = ["pending", "payment_pending"];
 /** What the host keeps of a booking, in öre (hostNetAmount: refunds, cancellations) */
 const hostNet = (b: Booking) => hostNetAmount(b);
 
-const cancelledByText = { guest: "by the guest", host: "by you", platform: "by Nordic Getaways" } as const;
+const cancelledByText = { guest: "av gästen", host: "av dig", platform: "av Nordic Getaways" } as const;
+
+// Booking statuses (DB values) as the host reads them; an unknown one is shown as stored
+const statusText: Record<string, string> = {
+  confirmed: "Bekräftad",
+  completed: "Genomförd",
+  pending: "Väntar",
+  refunded: "Återbetald",
+  expired: "Utgången",
+};
 
 
 // Wrapper: använder PropertyCard men lägger till Edit-knapp
@@ -108,7 +117,7 @@ const HostPropertyCard = ({
             live ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
           }`}
         >
-          {live ? "Live" : "Draft"}
+          {live ? "Publicerad" : "Utkast"}
         </span>
       </div>
       <div className="absolute top-2 right-2 flex gap-2">
@@ -122,7 +131,7 @@ const HostPropertyCard = ({
             onTogglePublish(property.id, !live);
           }}
         >
-          {live ? "Unpublish" : "Publish"}
+          {live ? "Avpublicera" : "Publicera"}
         </Button>
         <Button
           size="sm"
@@ -133,11 +142,13 @@ const HostPropertyCard = ({
             onEdit(property.id);
           }}
         >
-          Edit
+          Redigera
         </Button>
         <Button
           size="sm"
           variant="destructive"
+          aria-label="Ta bort boendet"
+          title="Ta bort"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -293,20 +304,20 @@ const HostDashboard = () => {
       if (error) {
         // Bookings keep a property from being deleted (foreign key restrict)
         if (error.code === "23503") {
-          toast.error("This property has bookings, so it can't be deleted. Unpublish it instead.");
+          toast.error("Boendet har bokningar och kan inte tas bort. Avpublicera det i stället.");
           setDeletingPropertyId(null);
           return;
         }
         throw error;
       }
-      toast.success("Property deleted successfully");
+      toast.success("Boendet är borttaget");
       setDeletingPropertyId(null);
       refetchProperties();
       fetchHostStats();
       refreshChecklist();
     } catch (error) {
       console.error("Error deleting property:", error);
-      toast.error("Failed to delete property");
+      toast.error("Det gick inte att ta bort boendet");
     }
   };
 
@@ -342,16 +353,16 @@ const HostDashboard = () => {
       // The window shows the step that is missing; nothing closes
       const blocker = publishBlocker(error.message);
       toast.error(
-        blocker === "terms" ? "Accept the host terms first."
-          : blocker === "bank" ? "Set up payouts with Stripe first, so you can be paid for bookings."
-          : blocker === "tax" ? "Add your tax details first: Swedish law requires them."
-          : blocker === "location" ? "Pin your place on the map and choose its county first."
-          : `Could not publish: ${error.message}`,
+        blocker === "terms" ? "Godkänn värdvillkoren först."
+          : blocker === "bank" ? "Ställ in utbetalningar via Stripe först, så att du kan få betalt för bokningar."
+          : blocker === "tax" ? "Lägg till dina skatteuppgifter först. Svensk lag kräver dem."
+          : blocker === "location" ? "Sätt ut ditt boende på kartan och välj län först."
+          : `Det gick inte att publicera: ${error.message}`,
       );
       refreshChecklist();
       return false;
     }
-    toast.success("Published! Guests can now find and book your place.");
+    toast.success("Publicerad! Nu kan gäster hitta och boka ditt boende.");
     refetchProperties();
     refreshChecklist();
     return true;
@@ -368,10 +379,10 @@ const HostDashboard = () => {
     exclusive(async () => {
       const { error } = await supabase.from("properties").update({ active: false }).eq("id", id);
       if (error) {
-        toast.error(`Could not unpublish: ${error.message}`);
+        toast.error(`Det gick inte att avpublicera: ${error.message}`);
         return;
       }
-      toast.success("Unpublished. Guests can no longer book it.");
+      toast.success("Avpublicerad. Gäster kan inte längre boka boendet.");
       refetchProperties();
       refreshChecklist();
     });
@@ -380,7 +391,7 @@ const HostDashboard = () => {
   const closeEditor = () => {
     if (
       editorDirtyRef.current &&
-      !window.confirm("You have changes that are not saved yet. Close the editor without saving them?")
+      !window.confirm("Du har ändringar som inte är sparade. Vill du stänga utan att spara?")
     ) {
       return;
     }
@@ -402,8 +413,8 @@ const HostDashboard = () => {
         <MainNavigation />
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2">Loading your dashboard...</h2>
-            <p className="text-muted-foreground">Please wait while we fetch your data</p>
+            <h2 className="text-xl font-semibold mb-2">Laddar din värdpanel …</h2>
+            <p className="text-muted-foreground">Vänta medan vi hämtar dina uppgifter</p>
           </div>
         </div>
       </div>
@@ -419,8 +430,8 @@ const HostDashboard = () => {
         <div className="container mx-auto px-4 py-8 sm:py-12">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Host Dashboard</h1>
-              <p className="text-muted-foreground text-lg">Manage your properties and bookings</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Värdpanel</h1>
+              <p className="text-muted-foreground text-lg">Hantera dina boenden och bokningar</p>
             </div>
             <Button 
               variant="default" 
@@ -429,7 +440,7 @@ const HostDashboard = () => {
               className="flex items-center gap-2 self-start sm:self-auto"
             >
               <BookOpen className="w-5 h-5" />
-              Host Guidebook
+              Värdguide
             </Button>
           </div>
         </div>
@@ -441,7 +452,7 @@ const HostDashboard = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Properties</CardTitle>
+                <CardTitle className="text-sm font-medium">Boenden</CardTitle>
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -450,7 +461,7 @@ const HostDashboard = () => {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                <CardTitle className="text-sm font-medium">Bokningar totalt</CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -460,18 +471,18 @@ const HostDashboard = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  Your income this month
+                  Din inkomst den här månaden
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button type="button" aria-label="What counts as this month's income">
+                      <button type="button" aria-label="Vad som räknas som månadens inkomst">
                         <HelpCircle className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>
-                        Your price for stays that check in this month, minus any refunds, the same as in Financials.
-                        The guest service fee is paid by the guest on top and is not included. Each booking is paid
-                        out {HOST_PAYOUT_TIMING_TEXT}.
+                        Ditt pris för vistelser med incheckning den här månaden, minus eventuella återbetalningar,
+                        samma som under Ekonomi. Serviceavgiften betalar gästen ovanpå, och den ingår inte. Varje
+                        bokning betalas ut {HOST_PAYOUT_TIMING_SV}.
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -480,14 +491,14 @@ const HostDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {Math.round(stats.monthly_revenue).toLocaleString("sv-SE")} SEK
+                  {Math.round(stats.monthly_revenue).toLocaleString("sv-SE")} kr
                 </div>
-                <p className="text-xs text-muted-foreground">By check-in date</p>
+                <p className="text-xs text-muted-foreground">Räknat på incheckningsdatum</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Upcoming stays</CardTitle>
+                <CardTitle className="text-sm font-medium">Kommande vistelser</CardTitle>
                 <CalendarCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -511,18 +522,18 @@ const HostDashboard = () => {
             {/* Phones: the tab row scrolls on its own instead of widening the page */}
             <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
               <TabsList className="w-max">
-                <TabsTrigger value="properties">Properties</TabsTrigger>
-                <TabsTrigger value="bookings">Bookings</TabsTrigger>
+                <TabsTrigger value="properties">Boenden</TabsTrigger>
+                <TabsTrigger value="bookings">Bokningar</TabsTrigger>
                 <TabsTrigger value="analytics" className="flex items-center gap-1">
                   <BarChart3 className="w-4 h-4" />
-                  Analytics
+                  Statistik
                 </TabsTrigger>
                 <TabsTrigger value="financials" className="flex items-center gap-1">
                   <Receipt className="w-4 h-4" />
-                  Financials
+                  Ekonomi
                 </TabsTrigger>
-                <TabsTrigger value="messages">Messages</TabsTrigger>
-                <TabsTrigger value="payouts">Payouts & tax</TabsTrigger>
+                <TabsTrigger value="messages">Meddelanden</TabsTrigger>
+                <TabsTrigger value="payouts">Utbetalning & skatt</TabsTrigger>
               </TabsList>
             </div>
 
@@ -536,10 +547,10 @@ const HostDashboard = () => {
               <Tabs defaultValue="profitability" className="space-y-4">
                 <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
                   <TabsList className="w-max">
-                    <TabsTrigger value="profitability">Profitability</TabsTrigger>
-                    <TabsTrigger value="revenue">Revenue by Channel</TabsTrigger>
-                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
-                    <TabsTrigger value="tax">Tax Report</TabsTrigger>
+                    <TabsTrigger value="profitability">Lönsamhet</TabsTrigger>
+                    <TabsTrigger value="revenue">Intäkter per kanal</TabsTrigger>
+                    <TabsTrigger value="expenses">Utgifter</TabsTrigger>
+                    <TabsTrigger value="tax">Skatterapport</TabsTrigger>
                   </TabsList>
                 </div>
 
@@ -569,12 +580,12 @@ const HostDashboard = () => {
 
             <TabsContent value="properties" className="space-y-6">
               <div className="flex flex-wrap justify-between items-center gap-2">
-                <h2 className="text-xl font-semibold">Your Properties</h2>
+                <h2 className="text-xl font-semibold">Dina boenden</h2>
                 <div className="flex flex-wrap gap-2">
                   <HostInvitationDialog />
                   <Button onClick={() => setWizardOpen(true)} className="flex items-center gap-2">
                     <Plus className="w-4 h-4" />
-                    Add Property
+                    Lägg till boende
                   </Button>
                 </div>
               </div>
@@ -583,10 +594,10 @@ const HostDashboard = () => {
                 {properties.length === 0 ? (
                   <div className="text-center py-16 col-span-full">
                     <h3 className="text-xl font-semibold text-foreground mb-2">
-                      No properties yet
+                      Inga boenden än
                     </h3>
                     <p className="text-muted-foreground">
-                      Create your first property to get started.
+                      Lägg till ditt första boende för att komma igång.
                     </p>
                   </div>
                 ) : (
@@ -620,12 +631,12 @@ const HostDashboard = () => {
             </TabsContent>
 
             <TabsContent value="bookings" className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4">Recent Bookings</h2>
+              <h2 className="text-xl font-semibold mb-4">Senaste bokningarna</h2>
               {bookings.length === 0 ? (
                 <Card>
                   <CardContent className="py-16 text-center">
                     <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No bookings yet</p>
+                    <p className="text-muted-foreground">Inga bokningar än</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -656,41 +667,41 @@ const HostDashboard = () => {
                           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
                             <div className="min-w-0">
                               <h3 className="font-semibold">{booking.properties.title}</h3>
-                              <p className="text-sm text-muted-foreground">Guest: {booking.guest_name}</p>
+                              <p className="text-sm text-muted-foreground">Gäst: {booking.guest_name}</p>
                               <p className="text-sm text-muted-foreground">
                                 {formatDay(booking.check_in_date)} – {formatDay(booking.check_out_date)}
                               </p>
                               {booking.extras?.length ? (
                                 <p className="text-sm text-muted-foreground">
-                                  Extras: {booking.extras.map((e) => `${e.name} (${formatSek(e.amount)})`).join(", ")}
+                                  Tillval: {booking.extras.map((e) => `${e.name} (${formatSek(e.amount)})`).join(", ")}
                                 </p>
                               ) : null}
                               <p className="text-sm text-muted-foreground">
                                 {cancelled
-                                  ? `Cancelled${booking.cancelled_by ? ` ${cancelledByText[booking.cancelled_by]}` : ""}${
-                                      booking.cancelled_at ? ` on ${formatDay(stockholmDate(booking.cancelled_at))}` : ""
+                                  ? `Avbokad${booking.cancelled_by ? ` ${cancelledByText[booking.cancelled_by]}` : ""}${
+                                      booking.cancelled_at ? ` den ${formatDay(stockholmDate(booking.cancelled_at))}` : ""
                                     }`
-                                  : <span className="capitalize">{booking.status}</span>}
+                                  : <span className="capitalize">{statusText[booking.status] ?? booking.status}</span>}
                               </p>
                             </div>
                             <div className="sm:text-right">
-                              <p className="text-xs text-muted-foreground">You receive</p>
+                              <p className="text-xs text-muted-foreground">Du får</p>
                               <p className="font-semibold text-lg">{formatSek(net)}</p>
                               {cancelled && net !== share && (
                                 <p className="text-xs text-muted-foreground">
-                                  of {formatSek(share)} before the refund
+                                  av {formatSek(share)} före återbetalningen
                                 </p>
                               )}
                               <p className="text-xs text-muted-foreground">
-                                Guest paid {formatSek(booking.total_amount)}
-                                {refunded > 0 ? `, ${formatSek(refunded)} refunded` : ""}
+                                Gästen betalade {formatSek(booking.total_amount)}
+                                {refunded > 0 ? `, ${formatSek(refunded)} återbetalt` : ""}
                               </p>
                               {payout && <p className="text-xs text-muted-foreground">{payout}</p>}
                               {deductedOre > 0 && (
                                 <p className="text-xs text-amber-700">
-                                  {formatSek(deductedOre)} you owe us is taken from this payout
-                                  {deductedInPart ? "; the rest of what you owe comes from your later payouts" : ""} (see
-                                  the Bank Account tab)
+                                  {formatSek(deductedOre)} som du är skyldig oss dras från den här utbetalningen
+                                  {deductedInPart ? "; resten dras från dina kommande utbetalningar" : ""} (se fliken
+                                  Utbetalning & skatt)
                                 </p>
                               )}
                             </div>
@@ -712,14 +723,14 @@ const HostDashboard = () => {
                 <div className="container mx-auto px-4 py-8">
                   <div className="flex justify-end gap-2 mb-4">
                     {(property as { active?: boolean }).active ? (
-                      <span className="self-center rounded-full bg-emerald-500/10 px-3 py-1 text-sm text-emerald-700">Live</span>
+                      <span className="self-center rounded-full bg-emerald-500/10 px-3 py-1 text-sm text-emerald-700">Publicerad</span>
                     ) : (
                       <Button onClick={() => requestPublish(editingPropertyId)} disabled={publishing}>
-                        Publish
+                        Publicera
                       </Button>
                     )}
                     <Button variant="outline" onClick={closeEditor}>
-                      Close
+                      Stäng
                     </Button>
                   </div>
                   <HostPropertyEditor
@@ -778,15 +789,15 @@ const HostDashboard = () => {
           <AlertDialog open={!!deletingPropertyId} onOpenChange={(open) => !open && setDeletingPropertyId(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                <AlertDialogTitle>Ta bort boende</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete this property? This action cannot be undone and will remove all associated data.
+                  Vill du verkligen ta bort boendet? Det går inte att ångra, och allt som hör till boendet tas bort.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>Avbryt</AlertDialogCancel>
                 <AlertDialogAction onClick={deleteProperty} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
+                  Ta bort
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

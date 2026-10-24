@@ -6,10 +6,10 @@ import { REGIONS_BY_NAME } from "@/content/regions";
 export function CountySelect({ value, onChange }: { value: string; onChange: (code: string) => void }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor="county">County (län)</Label>
+      <Label htmlFor="county">Län</Label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger id="county">
-          <SelectValue placeholder="Choose a county" />
+          <SelectValue placeholder="Välj län" />
         </SelectTrigger>
         <SelectContent>
           {REGIONS_BY_NAME.map((r) => (

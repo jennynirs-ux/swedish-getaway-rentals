@@ -65,38 +65,38 @@ describe("hostPayoutText: where the host's money is, in plain words", () => {
 
   it("held: paid out the day after check-in", () => {
     expect(hostPayoutText({ ...booking, host_payout_status: "held" }, 1_000_000, today)).toBe(
-      "Your price is paid out to your bank on 25 Oct 2026",
+      "Ditt pris betalas ut till din bank den 25 oktober 2026",
     );
     expect(hostPayoutText({ ...booking, host_payout_status: "held", host_payout_due_on: "2026-10-20" }, 1_000_000, today)).toBe(
-      "Your price is on its way to your bank (due 20 Oct 2026)",
+      "Ditt pris är på väg till din bank (planerad utbetalning 20 oktober 2026)",
     );
     expect(
       hostPayoutText({ ...booking, status: "cancelled", host_payout_status: "held" }, 500_000, today),
-    ).toBe("What you keep is paid out to your bank on 25 Oct 2026");
-    expect(hostPayoutText({ ...booking, host_payout_status: "held" }, 0, today)).toBe("Nothing to pay out for this booking");
+    ).toBe("Det du behåller betalas ut till din bank den 25 oktober 2026");
+    expect(hostPayoutText({ ...booking, host_payout_status: "held" }, 0, today)).toBe("Inget att betala ut för den här bokningen");
   });
 
   it("paid_out: paid by the daily payout job, with the date when known", () => {
     expect(hostPayoutText({ ...booking, host_payout_status: "paid_out", paidOutOn: "2026-10-26" }, 1_000_000, today)).toBe(
-      "Paid out to your bank on 26 Oct 2026",
+      "Utbetalt till din bank den 26 oktober 2026",
     );
-    expect(hostPayoutText({ ...booking, host_payout_status: "paid_out" }, 1_000_000, today)).toBe("Paid out to your bank");
+    expect(hostPayoutText({ ...booking, host_payout_status: "paid_out" }, 1_000_000, today)).toBe("Utbetalt till din bank");
   });
 
   it("reversed: everything went back to the guest", () => {
     expect(hostPayoutText({ ...booking, status: "cancelled", host_payout_status: "reversed" }, 0, today)).toBe(
-      "Nothing to pay out: your share went back to the guest with the refund",
+      "Inget att betala ut: din del gick tillbaka till gästen med återbetalningen",
     );
   });
 
   it("manual and older bookings: our team", () => {
     expect(hostPayoutText({ ...booking, host_payout_status: "manual" }, 1_000_000, today)).toBe(
-      "Our team pays this one to you directly by bank transfer",
+      "Vi betalar den här bokningen direkt till dig med banköverföring",
     );
     expect(hostPayoutText({ ...booking, status: "cancelled", host_payout_status: "manual" }, 0, today)).toBe(
-      "Our team will settle this payout with you directly",
+      "Vi gör upp om den här utbetalningen direkt med dig",
     );
-    expect(hostPayoutText({ ...booking, host_payout_status: "platform" }, 1_000_000, today)).toMatch(/^Settled by our team/);
+    expect(hostPayoutText({ ...booking, host_payout_status: "platform" }, 1_000_000, today)).toMatch(/^Hanteras av oss/);
     expect(hostPayoutText({ ...booking, host_payout_status: null }, 1_000_000, today)).toBeNull();
   });
 });
@@ -150,8 +150,8 @@ describe("open host charges (e.g. the card fee when the host cancelled)", () => 
 
 describe("formatSek", () => {
   it("shows öre as whole kronor", () => {
-    expect(formatSek(1_000_000).replace(/\s/g, " ")).toBe("10 000 SEK");
-    expect(formatSek(31_249)).toBe("312 SEK");
+    expect(formatSek(1_000_000).replace(/\s/g, " ")).toBe("10 000 kr");
+    expect(formatSek(31_249)).toBe("312 kr");
   });
 });
 
@@ -168,17 +168,17 @@ describe("stripeRequirementLabels", () => {
         "tos_acceptance.ip",
       ]),
     ).toEqual([
-      "Your date of birth",
-      "Your bank account",
-      "A photo of your ID (passport, ID card or driving licence)",
-      "Accepting Stripe's terms",
+      "Ditt födelsedatum",
+      "Ditt bankkonto",
+      "En bild på din legitimation (pass, id-kort eller körkort)",
+      "Godkännande av Stripes villkor",
     ]);
   });
 
   it("groups unknown fields into one line at the end", () => {
     expect(stripeRequirementLabels(["something.new", "external_account", "another.new"])).toEqual([
-      "Your bank account",
-      "A few more details Stripe asks for",
+      "Ditt bankkonto",
+      "Några fler uppgifter som Stripe ber om",
     ]);
     expect(stripeRequirementLabels([])).toEqual([]);
     expect(stripeRequirementLabels()).toEqual([]);

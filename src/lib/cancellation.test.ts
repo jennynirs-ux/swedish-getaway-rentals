@@ -63,6 +63,13 @@ describe("the other policies", () => {
     }
   });
 
+  it("has a Swedish name and summary for the host panel", () => {
+    for (const key of POLICY_KEYS) {
+      expect(CANCELLATION_POLICIES[key].nameSv.trim(), key).not.toBe("");
+      expect(CANCELLATION_POLICIES[key].summarySv.trim(), key).not.toBe("");
+    }
+  });
+
   it("falls back to Standard for a missing or unknown key", () => {
     expect(policyFor(null).key).toBe("standard");
     expect(policyFor("lenient").key).toBe("standard");

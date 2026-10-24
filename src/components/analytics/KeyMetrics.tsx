@@ -115,7 +115,7 @@ const KeyMetrics = ({ scope }: Props) => {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Key Metrics</h3>
+          <h3 className="text-lg font-semibold">Nyckeltal</h3>
           <p className="text-xs text-muted-foreground">
             {NORDIC_GETAWAYS_ONLY_LABEL}. {STAY_BASIS_LABEL}.
           </p>
@@ -127,14 +127,14 @@ const KeyMetrics = ({ scope }: Props) => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-muted-foreground">Total Bookings</p>
+              <p className="text-xs text-muted-foreground">Bokningar</p>
               <Home className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">{loading ? "--" : metrics.totalBookings}</p>
-            <p className="text-xs text-muted-foreground mt-1">stays checking in {year}</p>
+            <p className="text-xs text-muted-foreground mt-1">vistelser med incheckning {year}</p>
             {!loading && metrics.cancellations > 0 && (
               <p className="text-xs text-muted-foreground">
-                + {metrics.cancellations} cancelled ({fmtSek(metrics.cancellationIncomeOre)} kr kept)
+                + {metrics.cancellations} avbokade, {fmtSek(metrics.cancellationIncomeOre)} kr i inkomst
               </p>
             )}
           </CardContent>
@@ -143,12 +143,12 @@ const KeyMetrics = ({ scope }: Props) => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-muted-foreground">Nights Booked</p>
+              <p className="text-xs text-muted-foreground">Bokade nätter</p>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">{loading ? "--" : metrics.totalNights}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Avg stay: {loading ? "--" : metrics.avgStayLength} nights
+              Snittvistelse: {loading ? "--" : metrics.avgStayLength.toLocaleString("sv-SE")} nätter
             </p>
           </CardContent>
         </Card>
@@ -156,26 +156,26 @@ const KeyMetrics = ({ scope }: Props) => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-muted-foreground">Avg Nightly Rate</p>
+              <p className="text-xs text-muted-foreground">Snittpris per natt</p>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">
               {loading ? "--" : `${fmtSek(metrics.avgNightlyRateOre)} kr`}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">host income per night stayed</p>
+            <p className="text-xs text-muted-foreground mt-1">värdens inkomst per bokad natt</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-muted-foreground">Avg Lead Time</p>
+              <p className="text-xs text-muted-foreground">Framförhållning</p>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold">
-              {loading ? "--" : `${metrics.avgLeadTimeDays} days`}
+              {loading ? "--" : `${metrics.avgLeadTimeDays} dagar`}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">booking to check-in</p>
+            <p className="text-xs text-muted-foreground mt-1">i snitt från bokning till incheckning</p>
           </CardContent>
         </Card>
       </div>

@@ -31,12 +31,12 @@ export const CalendarExportLink = ({ propertyId }: { propertyId: string }) => {
   if (!url) return null;
   return (
     <div className="space-y-1">
-      <p className="text-sm font-medium">Your calendar link for Airbnb and Booking.com</p>
+      <p className="text-sm font-medium">Din kalenderlänk för Airbnb och Booking.com</p>
       <div className="flex gap-2">
         <input
           readOnly
           value={url}
-          aria-label="Your calendar link"
+          aria-label="Din kalenderlänk"
           className="min-w-0 flex-1 rounded-md border bg-muted px-2 py-1 text-xs"
           onFocus={(e) => e.currentTarget.select()}
         />
@@ -46,17 +46,18 @@ export const CalendarExportLink = ({ propertyId }: { propertyId: string }) => {
           variant="outline"
           onClick={() =>
             navigator.clipboard.writeText(url).then(
-              () => toast.success("Calendar link copied"),
-              () => toast.error("Could not copy. Select the link and copy it by hand."),
+              () => toast.success("Kalenderlänken är kopierad"),
+              () => toast.error("Det gick inte att kopiera. Markera länken och kopiera den själv."),
             )
           }
         >
           <Copy className="h-4 w-4 mr-1" />
-          Copy
+          Kopiera
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Paste it as an imported calendar there, and add theirs in this listing's Calendar tab.
+        Klistra in den som en importerad kalender där, och lägg till deras kalenderlänk under fliken Kalender i den här
+        annonsen.
       </p>
     </div>
   );

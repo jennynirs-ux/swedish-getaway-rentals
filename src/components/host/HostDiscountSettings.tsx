@@ -45,16 +45,16 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
     // Validate percentages
     if (weeklyDiscount < 0 || weeklyDiscount > 100) {
       toast({
-        title: 'Invalid discount',
-        description: 'Weekly discount must be between 0 and 100%',
+        title: 'Ogiltig rabatt',
+        description: 'Veckorabatten måste vara mellan 0 och 100 %',
         variant: 'destructive'
       });
       return;
     }
     if (monthlyDiscount < 0 || monthlyDiscount > 100) {
       toast({
-        title: 'Invalid discount',
-        description: 'Monthly discount must be between 0 and 100%',
+        title: 'Ogiltig rabatt',
+        description: 'Månadsrabatten måste vara mellan 0 och 100 %',
         variant: 'destructive'
       });
       return;
@@ -74,15 +74,15 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
       if (error) throw error;
 
       toast({
-        title: 'Discounts saved',
-        description: 'Weekly and monthly discounts have been updated'
+        title: 'Rabatterna är sparade',
+        description: 'Vecko- och månadsrabatten är uppdaterade'
       });
       onUpdate?.();
     } catch (error) {
       console.error('Error saving discounts:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save discounts',
+        title: 'Något gick fel',
+        description: 'Det gick inte att spara rabatterna',
         variant: 'destructive'
       });
     } finally {
@@ -108,10 +108,10 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Percent className="h-5 w-5" />
-          Length of Stay Discounts
+          Rabatt för längre vistelser
         </CardTitle>
         <CardDescription>
-          Offer discounts for longer bookings to attract more guests
+          Ge rabatt på längre bokningar för att locka fler gäster
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -121,7 +121,7 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
               <Label htmlFor="weekly-discount" className="font-medium">
-                Weekly Discount (7+ nights)
+                Veckorabatt (7 nätter eller fler)
               </Label>
             </div>
             <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
               <span className="text-muted-foreground">%</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Applied automatically for stays of 7 nights or more
+              Dras av automatiskt för vistelser på 7 nätter eller fler
             </p>
           </div>
 
@@ -146,7 +146,7 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
               <Label htmlFor="monthly-discount" className="font-medium">
-                Monthly Discount (28+ nights)
+                Månadsrabatt (28 nätter eller fler)
               </Label>
             </div>
             <div className="flex items-center gap-2">
@@ -162,7 +162,7 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
               <span className="text-muted-foreground">%</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Applied automatically for stays of 28 nights or more
+              Dras av automatiskt för vistelser på 28 nätter eller fler
             </p>
           </div>
         </div>
@@ -170,20 +170,20 @@ export const HostDiscountSettings = ({ propertyId, onUpdate }: HostDiscountSetti
         {/* Preview */}
         {(weeklyDiscount > 0 || monthlyDiscount > 0) && (
           <div className="p-4 bg-muted/50 rounded-lg">
-            <p className="text-sm font-medium mb-2">Discount Preview</p>
+            <p className="text-sm font-medium mb-2">Så blir rabatten</p>
             <ul className="text-sm text-muted-foreground space-y-1">
               {weeklyDiscount > 0 && (
-                <li>• Guests booking 7+ nights save {weeklyDiscount}%</li>
+                <li>• Gäster som bokar 7 nätter eller fler sparar {weeklyDiscount} %</li>
               )}
               {monthlyDiscount > 0 && (
-                <li>• Guests booking 28+ nights save {monthlyDiscount}%</li>
+                <li>• Gäster som bokar 28 nätter eller fler sparar {monthlyDiscount} %</li>
               )}
             </ul>
           </div>
         )}
 
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Discounts'}
+          {saving ? 'Sparar…' : 'Spara rabatter'}
         </Button>
       </CardContent>
     </Card>

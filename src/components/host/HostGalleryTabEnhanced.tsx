@@ -71,13 +71,13 @@ const SortableImage = ({ id, image, onSetHero, onEdit, onRemove }: {
       </div>
       {/* Always visible on touch screens, which have no hover */}
       <div className="absolute bottom-2 right-2 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-        <Button size="sm" variant="outline" onClick={onSetHero} title="Use as main photo" aria-label="Use as main photo">
+        <Button size="sm" variant="outline" onClick={onSetHero} title="Använd som huvudbild" aria-label="Använd som huvudbild">
           <Star className="h-3 w-3" />
         </Button>
-        <Button size="sm" variant="outline" onClick={onEdit} title="Edit title and description" aria-label="Edit">
+        <Button size="sm" variant="outline" onClick={onEdit} title="Ändra rubrik och beskrivning" aria-label="Ändra">
           <Edit className="h-3 w-3" />
         </Button>
-        <Button size="sm" variant="destructive" onClick={onRemove} title="Remove" aria-label="Remove">
+        <Button size="sm" variant="destructive" onClick={onRemove} title="Ta bort" aria-label="Ta bort">
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
@@ -146,8 +146,8 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
     } catch (error) {
       console.error('Error loading gallery:', error);
       toast({
-        title: 'Could not load the photos',
-        description: error instanceof Error ? error.message : 'Please reload the page.',
+        title: 'Det gick inte att hämta fotona',
+        description: error instanceof Error ? error.message : 'Ladda om sidan.',
         variant: 'destructive',
       });
     }
@@ -175,13 +175,13 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
     setSaveState("saving");
     const run = saveChain.current.then(async () => {
       const error = await writeGallery(next).catch((e: unknown) => ({
-        message: e instanceof Error ? e.message : "Network error",
+        message: e instanceof Error ? e.message : "Nätverksfel",
       }));
       if (error) {
         console.error('Error saving gallery:', error);
         setSaveState("error");
         setSaveError(error.message);
-        toast({ title: 'Could not save the photos', description: error.message, variant: 'destructive' });
+        toast({ title: 'Det gick inte att spara fotona', description: error.message, variant: 'destructive' });
         return false;
       }
       setSaveState("saved");
@@ -232,9 +232,9 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
                 images: [...current.images, added],
               };
         if (await persist(next, false)) saved++;
-        else problems.push(`${file.name}: uploaded but not saved`);
+        else problems.push(`${file.name}: uppladdad men inte sparad`);
       } catch (error) {
-        problems.push(error instanceof Error ? error.message : `${file.name}: upload failed`);
+        problems.push(error instanceof Error ? error.message : `${file.name}: uppladdningen misslyckades`);
       }
       setUploading({ done: i + 1, total: files.length });
     }
@@ -242,11 +242,11 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
 
     if (saved > 0) {
       onUpdate?.();
-      toast({ title: saved === 1 ? 'Photo saved' : `${saved} photos saved` });
+      toast({ title: saved === 1 ? 'Fotot är sparat' : `${saved} foton sparade` });
     }
     if (problems.length > 0) {
       toast({
-        title: problems.length === 1 ? 'One photo could not be added' : `${problems.length} photos could not be added`,
+        title: problems.length === 1 ? 'Ett foto kunde inte läggas till' : `${problems.length} foton kunde inte läggas till`,
         description: problems.slice(0, 4).join(' ') + (problems.length > 4 ? ' …' : ''),
         variant: 'destructive',
       });
@@ -306,9 +306,9 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Main photo</CardTitle>
+          <CardTitle>Huvudbild</CardTitle>
           <CardDescription>
-            Shown on listing cards and at the top of your page. Tip: the star on any photo below makes it the main one.
+            Visas på annonskorten och högst upp på din sida. Tips: stjärnan på ett foto nedan gör det till huvudbild.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -322,7 +322,7 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
           />
           {hero.url ? (
             <div className="relative">
-              <img src={hero.url} alt="Main photo" className="w-full h-64 object-cover rounded-lg border" />
+              <img src={hero.url} alt="Huvudbild" className="w-full h-64 object-cover rounded-lg border" />
               <Button
                 variant="outline"
                 className="absolute bottom-4 right-4"
@@ -330,13 +330,13 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
                 onClick={() => document.getElementById('hero-upload')?.click()}
               >
                 <ImageIcon className="h-4 w-4 mr-2" />
-                Change
+                Byt
               </Button>
             </div>
           ) : (
             <Button disabled={busy} onClick={() => document.getElementById('hero-upload')?.click()}>
               <ImageIcon className="h-4 w-4 mr-2" />
-              Upload main photo
+              Ladda upp huvudbild
             </Button>
           )}
         </CardContent>
@@ -344,10 +344,10 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
 
       <Card>
         <CardHeader>
-          <CardTitle>All photos</CardTitle>
+          <CardTitle>Alla foton</CardTitle>
           <CardDescription>
-            The first 4 show on your property page. Drag to reorder (on a phone: press and hold). Photos are made
-            smaller for fast loading and saved automatically.
+            De 4 första visas på sidan för ditt boende. Dra för att ändra ordning (på mobilen: håll inne). Fotona
+            görs mindre så att de laddas snabbt. Allt sparas automatiskt.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -363,7 +363,7 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
               <div className="space-y-4">
                 {propertyPageImages.length > 0 && (
                   <div>
-                    <Label className="text-sm font-semibold mb-2 block">Property page (first 4)</Label>
+                    <Label className="text-sm font-semibold mb-2 block">Sidan för boendet (de 4 första)</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {propertyPageImages.map((img, index) => renderImage(img, index))}
                     </div>
@@ -372,7 +372,7 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
 
                 {galleryImages.length > 0 && (
                   <div>
-                    <Label className="text-sm font-semibold mb-2 block">Gallery</Label>
+                    <Label className="text-sm font-semibold mb-2 block">Galleri</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {galleryImages.map((img, i) => renderImage(img, propertyPageImages.length + i))}
                     </div>
@@ -413,7 +413,7 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
               <div className="space-y-2">
                 <p className="text-sm font-medium flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Uploading {Math.min(uploading.done + 1, uploading.total)} of {uploading.total}…
+                  Laddar upp {Math.min(uploading.done + 1, uploading.total)} av {uploading.total}…
                 </p>
                 <Progress value={(uploading.done / uploading.total) * 100} className="h-2" />
               </div>
@@ -421,11 +421,11 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
               <>
                 <Upload className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground mb-3">
-                  Drag photos here, or pick several at once. JPG, PNG or WebP, up to 15 MB each.
+                  Dra hit foton eller välj flera på en gång. JPG, PNG eller WebP, högst 15 MB per foto.
                 </p>
                 <Button variant="outline" onClick={() => document.getElementById('gallery-upload')?.click()}>
                   <ImageIcon className="h-4 w-4 mr-2" />
-                  Add photos
+                  Lägg till foton
                 </Button>
               </>
             )}
@@ -436,60 +436,60 @@ export const HostGalleryTab = ({ propertyId, onUpdate }: HostGalleryTabProps) =>
       <div className="flex min-h-9 items-center justify-end gap-2 text-sm text-muted-foreground" aria-live="polite">
         {saveState === "saving" && (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+            <Loader2 className="h-4 w-4 animate-spin" /> Sparar…
           </>
         )}
         {saveState === "saved" && (
           <>
-            <Check className="h-4 w-4 text-emerald-600" /> All changes saved
+            <Check className="h-4 w-4 text-emerald-600" /> Alla ändringar är sparade
           </>
         )}
         {saveState === "error" && (
           <>
             <AlertCircle className="h-4 w-4 text-destructive" />
-            <span className="text-destructive">Not saved: {saveError}</span>
+            <span className="text-destructive">Inte sparat: {saveError}</span>
             <Button size="sm" variant="outline" onClick={() => persist(latest.current)}>
-              Try again
+              Försök igen
             </Button>
           </>
         )}
-        {saveState === "idle" && <span>Changes are saved automatically.</span>}
+        {saveState === "idle" && <span>Ändringar sparas automatiskt.</span>}
       </div>
 
       <Dialog open={!!editingImage} onOpenChange={() => setEditingImage(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit photo</DialogTitle>
+            <DialogTitle>Ändra foto</DialogTitle>
           </DialogHeader>
           {editingImage && (
             <div className="space-y-4">
               <img src={editingImage.image.url} alt="" className="w-full h-48 object-cover rounded" />
               <div className="space-y-2">
-                <Label>Title</Label>
+                <Label>Rubrik</Label>
                 <Input
                   value={editingImage.image.title || ""}
                   onChange={(e) => setEditingImage({
                     ...editingImage,
                     image: { ...editingImage.image, title: e.target.value }
                   })}
-                  placeholder="Image title"
+                  placeholder="Rubrik för fotot"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label>Beskrivning</Label>
                 <Textarea
                   value={editingImage.image.description || ""}
                   onChange={(e) => setEditingImage({
                     ...editingImage,
                     image: { ...editingImage.image, description: e.target.value }
                   })}
-                  placeholder="Image description"
+                  placeholder="Beskrivning av fotot"
                   rows={3}
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditingImage(null)}>Cancel</Button>
-                <Button onClick={saveEditedImage}>Save</Button>
+                <Button variant="outline" onClick={() => setEditingImage(null)}>Avbryt</Button>
+                <Button onClick={saveEditedImage}>Spara</Button>
               </div>
             </div>
           )}

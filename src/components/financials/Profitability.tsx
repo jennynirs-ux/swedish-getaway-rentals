@@ -159,9 +159,9 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Profitability</h3>
+          <h3 className="text-lg font-semibold">Lönsamhet</h3>
           <p className="text-xs text-muted-foreground">
-            {NORDIC_GETAWAYS_ONLY_LABEL}. Bookings {STAY_BASIS_LABEL.toLowerCase()}, expenses by expense date.
+            {NORDIC_GETAWAYS_ONLY_LABEL}. Bokningar {STAY_BASIS_LABEL.toLowerCase()}, utgifter efter utgiftsdatum.
           </p>
         </div>
         <YearSelect years={years} value={year} onChange={setYear} />
@@ -170,25 +170,25 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
       <div className={`grid grid-cols-2 ${summaryGridCols} gap-4`}>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-xs text-muted-foreground">Total Revenue</p>
+            <p className="text-xs text-muted-foreground">Totala intäkter</p>
             <p className="text-lg font-bold text-green-600">{fmt(totalRevenue)} kr</p>
             {totalCancellationIncome > 0 && (
-              <p className="text-xs text-muted-foreground">incl. {fmt(totalCancellationIncome)} kr kept from cancellations</p>
+              <p className="text-xs text-muted-foreground">varav {fmt(totalCancellationIncome)} kr från avbokningar</p>
             )}
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-xs text-muted-foreground">Total Expenses</p>
+            <p className="text-xs text-muted-foreground">Totala utgifter</p>
             <p className="text-lg font-bold text-red-600">{fmt(totalExpenses)} kr</p>
             {totalHostCharges > 0 && (
-              <p className="text-xs text-muted-foreground">incl. {fmt(totalHostCharges)} kr card fees from host cancellations</p>
+              <p className="text-xs text-muted-foreground">varav {fmt(totalHostCharges)} kr i kortavgifter när värden avbokat</p>
             )}
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <p className="text-xs text-muted-foreground">Net Profit</p>
+            <p className="text-xs text-muted-foreground">Vinst</p>
             <p className={`text-lg font-bold ${totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
               {fmt(totalProfit)} kr
             </p>
@@ -197,11 +197,11 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
         {showMarginCard && (
           <Card>
             <CardContent className="pt-4 text-center">
-              <p className="text-xs text-muted-foreground">Margin</p>
+              <p className="text-xs text-muted-foreground">Marginal</p>
               <div className="flex items-center justify-center gap-1">
                 <MarginIcon margin={overallMargin} />
                 <p className={`text-lg font-bold ${overallMargin >= 50 ? "text-green-600" : overallMargin >= 0 ? "text-yellow-600" : "text-red-600"}`}>
-                  {overallMargin}%
+                  {overallMargin} %
                 </p>
               </div>
             </CardContent>
@@ -212,15 +212,15 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
       {data.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Net Profit by Property</CardTitle>
+            <CardTitle className="text-sm">Vinst per boende</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={data.map((d) => ({ name: d.title, profit: Math.round(oreToSek(d.profit)) }))}>
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: number) => `${value.toLocaleString("sv-SE")} SEK`} />
-                <Bar dataKey="profit" name="Net Profit">
+                <Tooltip formatter={(value: number) => `${value.toLocaleString("sv-SE")} kr`} />
+                <Bar dataKey="profit" name="Vinst">
                   {data.map((d, i) => (
                     <Cell key={i} fill={d.profit >= 0 ? "#22c55e" : "#ef4444"} />
                   ))}
@@ -236,29 +236,29 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Property</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-                <TableHead className="text-right">Expenses</TableHead>
-                <TableHead className="text-right">Profit</TableHead>
-                <TableHead className="text-right">Margin</TableHead>
-                <TableHead className="text-right">Stays</TableHead>
+                <TableHead>Boende</TableHead>
+                <TableHead className="text-right">Intäkter</TableHead>
+                <TableHead className="text-right">Utgifter</TableHead>
+                <TableHead className="text-right">Vinst</TableHead>
+                <TableHead className="text-right">Marginal</TableHead>
+                <TableHead className="text-right">Vistelser</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8">Laddar...</TableCell></TableRow>
               ) : failed ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                    <p className="font-medium">Could not load {year}</p>
-                    <p className="text-sm mt-1">Please reload the page or try again later.</p>
+                    <p className="font-medium">Det gick inte att ladda {year}</p>
+                    <p className="text-sm mt-1">Ladda om sidan eller försök igen senare.</p>
                   </TableCell>
                 </TableRow>
               ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                    <p className="font-medium">No data yet</p>
-                    <p className="text-sm mt-1">Add expenses and receive bookings to see your profitability.</p>
+                    <p className="font-medium">Inget att visa än</p>
+                    <p className="text-sm mt-1">Lägg till utgifter och ta emot bokningar så ser du din lönsamhet här.</p>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -272,7 +272,7 @@ const Profitability = ({ scope, showMarginCard = true }: Props) => {
                     </TableCell>
                     <TableCell className="text-right">
                       <Badge variant="outline" className={d.margin >= 50 ? "text-green-700" : d.margin >= 0 ? "text-yellow-700" : "text-red-700"}>
-                        {d.margin}%
+                        {d.margin} %
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">{d.bookings}</TableCell>

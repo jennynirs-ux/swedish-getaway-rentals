@@ -63,24 +63,24 @@ export const payoutState = (status?: PayoutStatus | null): PayoutState => {
 /**
  * What Stripe still needs, in words a host understands: Stripe names each
  * missing field ("individual.dob.day", "external_account"); several fields
- * make one line ("Date of birth"). Unknown fields share one line at the end.
+ * make one line ("Ditt födelsedatum"). Unknown fields share one line at the end.
  */
 export const stripeRequirementLabels = (fields: string[] = []): string[] => {
   const rules: [RegExp, string][] = [
-    [/^business_type$/, "Whether you rent out as a private person or a company"],
-    [/^(individual|representative)\.(first_name|last_name|full_name_aliases)/, "Your name"],
-    [/^(individual|representative)\.dob/, "Your date of birth"],
-    [/^(individual|representative)\.address/, "Your home address"],
-    [/^(individual|representative)\.(phone|email)/, "Your phone number and email"],
-    [/^(individual|representative)\.(id_number|ssn_last_4)/, "Your personal identity number"],
-    [/^(individual|representative)\.verification\.(document|additional_document)/, "A photo of your ID (passport, ID card or driving licence)"],
-    [/^(individual|representative)\.verification/, "Confirming your identity"],
-    [/^(individual|representative)\.relationship/, "Your role in the company"],
-    [/^company\./, "Company details (name, address, organisationsnummer)"],
-    [/^(owners|directors|executives|representative|person_)/, "The company's owners and representative"],
-    [/^business_profile\./, "About your rentals (website or a short description)"],
-    [/^external_account/, "Your bank account"],
-    [/^tos_acceptance/, "Accepting Stripe's terms"],
+    [/^business_type$/, "Om du hyr ut som privatperson eller företag"],
+    [/^(individual|representative)\.(first_name|last_name|full_name_aliases)/, "Ditt namn"],
+    [/^(individual|representative)\.dob/, "Ditt födelsedatum"],
+    [/^(individual|representative)\.address/, "Din hemadress"],
+    [/^(individual|representative)\.(phone|email)/, "Ditt telefonnummer och din e-post"],
+    [/^(individual|representative)\.(id_number|ssn_last_4)/, "Ditt personnummer"],
+    [/^(individual|representative)\.verification\.(document|additional_document)/, "En bild på din legitimation (pass, id-kort eller körkort)"],
+    [/^(individual|representative)\.verification/, "En bekräftelse av din identitet"],
+    [/^(individual|representative)\.relationship/, "Din roll i företaget"],
+    [/^company\./, "Företagsuppgifter (namn, adress, organisationsnummer)"],
+    [/^(owners|directors|executives|representative|person_)/, "Företagets ägare och företrädare"],
+    [/^business_profile\./, "Om din uthyrning (webbplats eller en kort beskrivning)"],
+    [/^external_account/, "Ditt bankkonto"],
+    [/^tos_acceptance/, "Godkännande av Stripes villkor"],
   ];
   const labels: string[] = [];
   let other = false;
@@ -89,7 +89,7 @@ export const stripeRequirementLabels = (fields: string[] = []): string[] => {
     if (!label) other = true;
     else if (!labels.includes(label)) labels.push(label);
   }
-  if (other) labels.push("A few more details Stripe asks for");
+  if (other) labels.push("Några fler uppgifter som Stripe ber om");
   return labels;
 };
 
@@ -112,16 +112,23 @@ export const publishBlocker = (message: string): PublishBlocker => {
 // ---------------------------------------------------------------------------
 // Bookings list
 
-/** "2026-10-23" (or a timestamp's first 10 characters) as "23 Oct 2026" */
+/** "2026-10-23" (or a timestamp's first 10 characters) as "23 oktober 2026" */
 export const formatDay = (isoDate: string) =>
-  new Date(`${isoDate.slice(0, 10)}T12:00:00`).toLocaleDateString("en-GB", {
+  new Date(`${isoDate.slice(0, 10)}T12:00:00`).toLocaleDateString("sv-SE", {
     day: "numeric",
-    month: "short",
+    month: "long",
     year: "numeric",
   });
 
-/** Öre as "10 000 SEK" */
-export const formatSek = (ore: number) => `${Math.round(ore / 100).toLocaleString("sv-SE")} SEK`;
+/** Öre as "10 000 kr" */
+export const formatSek = (ore: number) => `${Math.round(ore / 100).toLocaleString("sv-SE")} kr`;
+
+/**
+ * When a booking is paid out, in Swedish: HOST_PAYOUT_TIMING_TEXT in
+ * src/lib/constants.ts says the same in English. Same rule as payoutDueOn in
+ * supabase/functions/_shared/payout.ts.
+ */
+export const HOST_PAYOUT_TIMING_SV = "dagen efter incheckning, eller 85 dagar efter att gästen betalade om det kommer först";
 
 export interface BookingPayout {
   status: string;
@@ -140,23 +147,23 @@ export const hostPayoutText = (b: BookingPayout, netOre: number, today: string):
   const cancelled = b.status === "cancelled";
   switch (b.host_payout_status) {
     case "held": {
-      if (netOre <= 0) return "Nothing to pay out for this booking";
-      const what = cancelled ? "What you keep is" : "Your price is";
-      if (!b.host_payout_due_on) return `${what} paid out to your bank the day after check-in`;
-      if (b.host_payout_due_on < today) return `${what} on its way to your bank (due ${formatDay(b.host_payout_due_on)})`;
-      return `${what} paid out to your bank on ${formatDay(b.host_payout_due_on)}`;
+      if (netOre <= 0) return "Inget att betala ut för den här bokningen";
+      const what = cancelled ? "Det du behåller" : "Ditt pris";
+      if (!b.host_payout_due_on) return `${what} betalas ut till din bank dagen efter incheckning`;
+      if (b.host_payout_due_on < today) return `${what} är på väg till din bank (planerad utbetalning ${formatDay(b.host_payout_due_on)})`;
+      return `${what} betalas ut till din bank den ${formatDay(b.host_payout_due_on)}`;
     }
     case "paid_out":
       // Set by the daily payout job (or by our team after paying by hand)
-      return b.paidOutOn ? `Paid out to your bank on ${formatDay(b.paidOutOn)}` : "Paid out to your bank";
+      return b.paidOutOn ? `Utbetalt till din bank den ${formatDay(b.paidOutOn)}` : "Utbetalt till din bank";
     case "reversed":
-      return "Nothing to pay out: your share went back to the guest with the refund";
+      return "Inget att betala ut: din del gick tillbaka till gästen med återbetalningen";
     case "manual":
       return cancelled
-        ? "Our team will settle this payout with you directly"
-        : "Our team pays this one to you directly by bank transfer";
+        ? "Vi gör upp om den här utbetalningen direkt med dig"
+        : "Vi betalar den här bokningen direkt till dig med banköverföring";
     case "platform":
-      return "Settled by our team (booked before payouts moved to your Stripe account)";
+      return "Hanteras av oss (bokad innan utbetalningarna flyttade till ditt Stripe-konto)";
     default:
       return null;
   }

@@ -60,14 +60,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       onChange(data.publicUrl);
 
       toast({
-        title: "Image uploaded",
-        description: "Remember to save this section.",
+        title: "Bilden är uppladdad",
+        description: "Glöm inte att spara.",
       });
     } catch (error) {
       console.error('Upload error:', error);
       toast({
-        title: "Could not upload the image",
-        description: error instanceof Error && error.message ? error.message : "Please try again.",
+        title: "Det gick inte att ladda upp bilden",
+        description: error instanceof Error && error.message ? error.message : "Försök igen.",
         variant: "destructive",
       });
     } finally {
@@ -112,7 +112,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         <div className="relative">
           <img
             src={value}
-            alt="Uploaded image"
+            alt="Uppladdad bild"
             className="w-full h-48 object-cover rounded-lg border"
           />
           {onRemove && (
@@ -157,12 +157,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 htmlFor={inputId}
                 className="cursor-pointer text-primary hover:text-primary/80"
               >
-                Click to upload
+                Klicka för att ladda upp
               </label>
-              <p className="text-sm text-gray-500">or drag and drop</p>
+              <p className="text-sm text-gray-500">eller dra och släpp här</p>
             </div>
 
-            <p className="text-xs text-gray-400">JPG, PNG or WEBP up to 15 MB</p>
+            <p className="text-xs text-gray-400">JPG, PNG eller WEBP, högst 15 MB</p>
           </div>
         </div>
       )}

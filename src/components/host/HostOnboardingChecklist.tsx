@@ -8,7 +8,7 @@ import { Check, Circle, X, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { HOST_TERMS_PATH, HOST_TERMS_VERSION } from "@/content/hostTerms";
-import { HOST_PAYOUT_TIMING_TEXT } from "@/lib/constants";
+import { HOST_PAYOUT_TIMING_SV } from "@/lib/hostDashboard";
 import { useHostPayoutStatus } from "@/components/admin/BankAccountSetup";
 
 /** Invalidate this after anything that changes a step (wizard, editor saves, publishing, terms) */
@@ -60,10 +60,10 @@ export const HostTermsAcceptance = ({ onAccepted, idSuffix = "checklist" }: { on
     const { error } = await supabase.rpc("accept_host_terms", { _version: HOST_TERMS_VERSION });
     setSaving(false);
     if (error) {
-      toast.error(`Could not save your acceptance: ${error.message}`);
+      toast.error(`Det gick inte att spara ditt godkännande: ${error.message}`);
       return;
     }
-    toast.success("Thank you, the host terms are accepted.");
+    toast.success("Tack! Du har godkänt värdvillkoren.");
     onAccepted();
   };
 
@@ -72,19 +72,20 @@ export const HostTermsAcceptance = ({ onAccepted, idSuffix = "checklist" }: { on
       <div className="flex items-start gap-2">
         <Checkbox id={id} checked={checked} onCheckedChange={(v) => setChecked(v === true)} className="mt-0.5" />
         <label htmlFor={id} className="text-sm leading-snug">
-          I have read and accept the{" "}
+          Jag har läst och godkänner{" "}
           <a
             href={HOST_TERMS_PATH}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary underline underline-offset-2"
           >
-            host terms
-          </a>
+            värdvillkoren
+          </a>{" "}
+          (på engelska)
         </label>
       </div>
       <Button size="sm" onClick={accept} disabled={!checked || saving} className="shrink-0">
-        {saving ? "Saving..." : "Accept"}
+        {saving ? "Sparar …" : "Godkänn"}
       </Button>
     </div>
   );
@@ -224,53 +225,53 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty, onEditProperty, 
   const items: ChecklistItem[] = [
     {
       id: "create",
-      label: "Create your first property",
-      description: "Add a cabin, cottage, or apartment to start hosting.",
+      label: "Lägg till ditt första boende",
+      description: "Lägg till en stuga, ett fritidshus eller en lägenhet för att börja hyra ut.",
       done: !!target,
-      actionLabel: "Create property",
+      actionLabel: "Lägg till boende",
       action: onCreateProperty,
     },
     {
       id: "photo",
-      label: "Add photos",
-      description: "Pick a main photo and a few more: listings with photos get far more bookings.",
+      label: "Lägg till bilder",
+      description: "Välj en huvudbild och några till. Annonser med bilder får många fler bokningar.",
       done: !!target?.hero_image_url,
-      actionLabel: "Add photos",
+      actionLabel: "Lägg till bilder",
       action: edit("gallery"),
     },
     {
       id: "description",
-      label: "Write a description",
-      description: "Tell guests what makes your place special.",
+      label: "Skriv en beskrivning",
+      description: "Berätta för gästerna vad som gör ditt boende speciellt.",
       done: (target?.description?.trim().length ?? 0) > 30,
-      actionLabel: "Edit description",
+      actionLabel: "Redigera beskrivning",
       action: edit("basic"),
     },
     {
       id: "pricing",
-      label: "Set your nightly rate",
-      description: "Base price that shows in search results.",
+      label: "Ange ditt pris per natt",
+      description: "Grundpriset som visas i sökresultaten.",
       done: (target?.price_per_night ?? 0) > 0,
-      actionLabel: "Set pricing",
+      actionLabel: "Ange pris",
       action: edit("pricing"),
     },
     {
       id: "location",
-      label: "Pin your location",
-      description: "Put the pin on the map and choose the county, so your place appears in the right region.",
+      label: "Sätt ut boendet på kartan",
+      description: "Placera nålen på kartan och välj län, så att ditt boende visas i rätt region.",
       done: hasLocation,
-      actionLabel: "Set location",
+      actionLabel: "Ange plats",
       action: edit("location"),
     },
     {
       id: "calendar",
-      label: "Sync your other calendars",
+      label: "Synka dina andra kalendrar",
       description:
-        "Also on Airbnb, Booking.com or elsewhere? Link the calendars both ways so nobody can book the same night twice.",
+        "Hyr du också ut via Airbnb, Booking.com eller någon annanstans? Koppla ihop kalendrarna åt båda hållen, så att ingen kan boka samma natt två gånger.",
       done: !!target && (data.targetHasCalendarFeed || isOnlyRentedHere(target.id)),
-      actionLabel: "Add calendar links",
+      actionLabel: "Lägg till kalenderlänkar",
       action: edit("calendar"),
-      secondaryLabel: target ? "I only rent here" : undefined,
+      secondaryLabel: target ? "Jag hyr bara ut här" : undefined,
       secondaryAction: target
         ? () => {
             markOnlyRentedHere(target.id);
@@ -280,33 +281,33 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty, onEditProperty, 
     },
     {
       id: "terms",
-      label: "Accept the host terms",
-      description: "How fees, payouts, cancellations and refunds work.",
+      label: "Godkänn värdvillkoren",
+      description: "Hur avgifter, utbetalningar, avbokningar och återbetalningar fungerar.",
       done: data.termsAccepted,
       body: <HostTermsAcceptance onAccepted={refresh} />,
     },
     {
       id: "tax",
-      label: "Add your tax details",
-      description: "Swedish law (DAC7) requires a few details from every host before a listing goes live. We then fill in your name and address on Stripe for you.",
+      label: "Lägg till dina skatteuppgifter",
+      description: "Svensk lag (DAC7) kräver några uppgifter från alla värdar innan en annons publiceras. Sedan fyller vi i ditt namn och din adress hos Stripe åt dig.",
       done: data.taxDone,
-      actionLabel: "Add tax details",
+      actionLabel: "Lägg till skatteuppgifter",
       action: () => onGoToTab("payouts"),
     },
     {
       id: "payout",
-      label: "Set up payouts with Stripe",
-      description: `A free Stripe account pays your price to your bank ${HOST_PAYOUT_TIMING_TEXT}. About five minutes.`,
+      label: "Ställ in utbetalningar via Stripe",
+      description: `Ett kostnadsfritt Stripe-konto betalar ut ditt pris till din bank ${HOST_PAYOUT_TIMING_SV}. Det tar ungefär fem minuter.`,
       done: payoutReady,
-      actionLabel: "Set up payouts",
+      actionLabel: "Ställ in utbetalningar",
       action: () => onGoToTab("payouts"),
     },
     {
       id: "publish",
-      label: "Publish your listing",
-      description: "Your place goes live straight away and guests can book it.",
+      label: "Publicera din annons",
+      description: "Ditt boende publiceras direkt och gäster kan boka det.",
       done: !!target?.active,
-      actionLabel: publishing ? "Publishing..." : "Publish",
+      actionLabel: publishing ? "Publicerar …" : "Publicera",
       action: target ? () => onPublish(target.id) : onCreateProperty,
       actionDisabled: !!target && publishing,
     },
@@ -324,13 +325,13 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty, onEditProperty, 
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <CardTitle className="text-base">Getting started as a host</CardTitle>
+            <CardTitle className="text-base">Kom igång som värd</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              {completed}/{total} complete
-              {target && !target.active ? ` for "${target.title}"` : ""}. Finish setup to start receiving bookings.
+              {completed} av {total} klara
+              {target && !target.active ? ` för ”${target.title}”` : ""}. Gör klart resten så kan du börja ta emot bokningar.
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={dismiss} title="Dismiss" aria-label="Hide the checklist">
+          <Button variant="ghost" size="sm" onClick={dismiss} title="Dölj" aria-label="Dölj checklistan">
             <X className="h-4 w-4" />
           </Button>
         </div>

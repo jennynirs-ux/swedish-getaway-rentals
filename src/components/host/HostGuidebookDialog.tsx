@@ -152,380 +152,380 @@ const iconFromName = (name?: string): LucideIcon => {
 const sections: SectionDef[] = [
   {
     id: "price-guide",
-    title: "Price Guide",
+    title: "Prisguide",
     icon: DollarSign,
     content: {
-      title: "Pricing Guide for Hosts",
+      title: "Prisguide för värdar",
       description:
-        "Master the art of pricing your property for maximum bookings and revenue.",
+        "Så sätter du priser som ger fler bokningar och högre intäkter.",
       sections: [
         {
           type: "intro",
-          title: "Understanding Pricing Strategy",
+          title: "Förstå prissättningen",
           icon: "DollarSign",
           body:
-            "Setting the right price for your property is both an art and a science. Your pricing strategy can make or break your success as a host. This overview helps you understand market dynamics, guest psychology, and pricing techniques.",
+            "Att sätta rätt pris på ditt boende är både konst och vetenskap, och priset kan avgöra hur det går för dig som värd. Här får du en överblick över marknaden, hur gäster tänker och olika sätt att sätta priser.",
           serviceFeeExample: {
-            base: "2,000 SEK",
-            fee: "200 SEK (10%)",
-            guest: "2,200 SEK / night",
+            base: "2 000 kr",
+            fee: "200 kr (10 %)",
+            guest: "2 200 kr/natt",
             note:
-              "Guests pay a service fee on top of your price (10%, or 5% during the founding-host offer). Guests see the total including the fee; you receive your price in full, paid out the day after check-in, or 85 days after the guest paid if that comes first. Your exact rate is in the Bank Account tab.",
+              "Gästen betalar en serviceavgift ovanpå ditt pris (10 %, eller 5 % under erbjudandet för nya värdar). Gästen ser totalpriset inklusive avgiften. Du får hela ditt pris, utbetalt dagen efter incheckning, eller 85 dagar efter att gästen betalade om det kommer först. Din exakta avgift ser du under Utbetalningar via Stripe.",
           },
         },
         {
           type: "tiers",
-          title: "Market Pricing Tiers in Sweden",
+          title: "Prisnivåer i Sverige",
           items: [
             {
               tier: "Budget",
-              range: "800–1,500 SEK / night",
+              range: "800–1 500 kr/natt",
               icon: "Users",
               color: "text-blue-600",
               points: [
-                "Basic amenities",
-                "Shared or simple private facilities",
-                "Rural or less central locations",
-                "Good for budget travelers",
+                "Grundläggande bekvämligheter",
+                "Delade eller enkla egna utrymmen",
+                "Landsbygd eller mindre centralt läge",
+                "Passar gäster med liten budget",
               ],
             },
             {
-              tier: "Mid-Range",
-              range: "1,500–3,500 SEK / night",
+              tier: "Mellanklass",
+              range: "1 500–3 500 kr/natt",
               icon: "Star",
               color: "text-amber-600",
               points: [
-                "Private facilities",
-                "Good location and amenities",
-                "Most popular segment",
-                "Ideal for families and couples",
+                "Egna utrymmen",
+                "Bra läge och bra bekvämligheter",
+                "Det mest populära segmentet",
+                "Passar familjer och par",
               ],
             },
             {
               tier: "Premium",
-              range: "3,500+ SEK / night",
+              range: "3 500+ kr/natt",
               icon: "Lightbulb",
               color: "text-purple-600",
               points: [
-                "Luxury amenities (sauna, hot tub, etc.)",
-                "Unique or prime locations",
-                "High-end furnishings and design",
-                "Exceptional guest experience",
+                "Lyxiga bekvämligheter (bastu, badtunna m.m.)",
+                "Unikt läge eller toppläge",
+                "Påkostad inredning och design",
+                "En gästupplevelse utöver det vanliga",
               ],
             },
           ],
         },
         {
           type: "factors",
-          title: "Key Pricing Factors",
+          title: "Det som påverkar priset mest",
           items: [
             {
               icon: "Users",
-              title: "Number of Bedrooms",
+              title: "Antal sovrum",
               text:
-                "Each additional bedroom can add ~500–1,000 SEK per night. Consider total capacity and flexible sleeping.",
+                "Varje extra sovrum kan ge cirka 500–1 000 kr mer per natt. Tänk på hur många som får plats totalt och på flexibla sovplatser.",
             },
             {
               icon: "Calendar",
-              title: "Seasonality",
+              title: "Säsong",
               text:
-                "Summer (Jun–Aug) and holidays command premiums. Shoulder seasons may require 20–30% discounts.",
+                "Sommaren (juni–augusti) och helgdagar ger högre priser. Under mellansäsong kan du behöva sänka med 20–30 %.",
             },
             {
               icon: "Target",
-              title: "Location",
+              title: "Läge",
               text:
-                "Proximity to attractions or nature matters. Waterfront, mountain views, or forest settings justify higher rates.",
+                "Närhet till sevärdheter och natur spelar roll. Sjötomt, fjällutsikt eller ett läge i skogen motiverar högre priser.",
             },
             {
               icon: "Star",
-              title: "Amenities & Unique Features",
+              title: "Bekvämligheter och unika detaljer",
               text:
-                "Sauna, hot tub, lake access, or striking design can add 30–50% to your base rate.",
+                "Bastu, badtunna, tillgång till sjön eller en speciell design kan höja grundpriset med 30–50 %.",
             },
             {
               icon: "BarChart3",
-              title: "Local Competition",
+              title: "Konkurrensen i området",
               text:
-                "Research comparable properties. Look at booking rates, not only list prices.",
+                "Kolla in jämförbara boenden. Titta på vilka priser som faktiskt bokas, inte bara på de utannonserade priserna.",
             },
             {
               icon: "TrendingUp",
-              title: "Guest Reviews & Rating",
+              title: "Omdömen och betyg",
               text:
-                "4.8+ average ratings can support 10–20% higher pricing. Service quality compounds over time.",
+                "Ett snittbetyg på 4,8 eller högre kan motivera 10–20 % högre priser. God service lönar sig mer och mer över tid.",
             },
           ],
         },
         {
           type: "psychology",
-          title: "The Psychology of Pricing",
+          title: "Prispsykologi",
           items: [
             {
-              title: "Charm Pricing (ending in 9)",
+              title: "Charmpriser (som slutar på 9)",
               text:
-                "2,499 SEK feels cheaper than 2,500 SEK. This effect often increases conversions.",
+                "2 499 kr känns billigare än 2 500 kr. Det ger ofta fler bokningar.",
             },
             {
-              title: "Anchor Pricing",
+              title: "Ankarpriser",
               text:
-                "Show a higher anchor (e.g., weekend/high season) so weekday/low season feels like a deal.",
+                "Visa ett högre ankarpris (t.ex. helg eller högsäsong) så känns vardagar och lågsäsong som ett fynd.",
             },
             {
-              title: "Round Numbers for Luxury",
+              title: "Jämna priser för lyx",
               text:
-                "Premium properties can use round numbers to signal confidence and exclusivity.",
+                "Exklusiva boenden kan använda jämna belopp för att signalera självförtroende och exklusivitet.",
             },
           ],
         },
         {
           type: "dynamic",
-          title: "Dynamic Pricing Strategies",
+          title: "Rörliga priser",
           items: [
             {
               icon: "Calendar",
-              title: "Weekend vs. Weekday",
+              title: "Helg eller vardag",
               text:
-                "Charge 20–40% more for Fri–Sat. Leisure budgets differ from weekday demand.",
+                "Ta 20–40 % mer för fredag–lördag. Fritidsresenärer har en annan budget än de som bokar på vardagar.",
             },
             {
               icon: "Percent",
-              title: "Length-of-Stay Discounts",
+              title: "Rabatt för längre vistelser",
               text:
-                "Offer 10–15% for week-long stays, 20–25% for monthly. Longer stays lower turnover cost.",
+                "Ge 10–15 % rabatt för en vecka och 20–25 % för en månad. Längre vistelser ger färre gästbyten och lägre kostnader.",
             },
             {
               icon: "TrendingUp",
-              title: "Last-Minute & Early-Bird",
+              title: "Sista minuten och tidig bokning",
               text:
-                "Drop 15–25% within 2 weeks to fill gaps; reward early bookers with 5–10% discounts.",
+                "Sänk med 15–25 % inom 2 veckor för att fylla luckor. Belöna dem som bokar tidigt med 5–10 % rabatt.",
             },
             {
               icon: "Star",
-              title: "Peak Season Premiums",
+              title: "Högre pris i högsäsong",
               text:
-                "Charge 30–50% more during Midsummer, Christmas/New Year, and school holidays.",
+                "Ta 30–50 % mer under midsommar, jul och nyår samt under skolloven.",
             },
           ],
         },
         {
           type: "currency",
-          title: "Currency & International Guests",
+          title: "Valuta och internationella gäster",
           currencies: [
             { currency: "EUR", amount: "~220" },
             { currency: "USD", amount: "~240" },
             { currency: "GBP", amount: "~190" },
-            { currency: "NOK", amount: "~2,650" },
+            { currency: "NOK", amount: "~2 650" },
           ],
           note:
-            "Prices that look neat in SEK may look awkward in other currencies. Consider common price points in key markets.",
+            "Priser som ser jämna ut i kronor kan se konstiga ut i andra valutor. Tänk på vanliga prisnivåer på dina viktigaste marknader.",
         },
         {
           type: "final",
-          title: "Final Tips",
+          title: "Sista tipsen",
           tips: [
-            "Review and adjust pricing every 2–4 weeks",
-            "Test price points during low-demand periods",
-            "Don’t race to the bottom—focus on value",
-            "Great photos & copy justify premium pricing",
-            "Respond quickly to inquiries to boost rating",
-            "Be transparent about what’s included",
-            "Consider add-ons (firewood, breakfast, late checkout)",
+            "Se över och justera priserna var 2–4:e vecka",
+            "Testa olika prisnivåer när efterfrågan är låg",
+            "Tävla inte om att vara billigast, fokusera på värdet",
+            "Bra bilder och texter motiverar ett högre pris",
+            "Svara snabbt på förfrågningar så får du bättre betyg",
+            "Var tydlig med vad som ingår",
+            "Erbjud gärna tillval (ved, frukost, sen utcheckning)",
           ],
         },
       ],
-      formula: "Guest pays: Your price + the guest service fee (10%, or 5% during the founding-host offer)",
+      formula: "Gästen betalar: ditt pris + gästens serviceavgift (10 %, eller 5 % under erbjudandet för nya värdar)",
       example:
-        "If you set 1,000 SEK/night, guest sees 1,100 SEK/night; you receive 1,000 SEK.",
+        "Om du sätter 1 000 kr/natt ser gästen 1 100 kr/natt och du får 1 000 kr.",
     },
   },
   {
     id: "gallery",
-    title: "Photos Guide",
+    title: "Fotoguide",
     icon: Camera,
     content: {
-      title: "Taking Great Property Photos",
-      description: "High-quality photos are crucial for attracting guests.",
+      title: "Ta bra bilder på ditt boende",
+      description: "Bra bilder är avgörande för att locka gäster.",
       tips: [
-        "Shoot during golden hour (morning/evening light)",
-        "Clean and declutter all spaces before shooting",
-        "Use a wide-angle lens for interior shots",
-        "Capture your Hero Image - the most stunning view",
-        "Mark your best photo as 'Hero' in the gallery",
-        "Show amenities in action (fire in fireplace, set table)",
-        "Include exterior and surrounding nature",
-        "Take photos from multiple angles",
+        "Fotografera under gyllene timmen (morgon- eller kvällsljus)",
+        "Städa och plocka undan överallt innan du fotograferar",
+        "Använd vidvinkelobjektiv inomhus",
+        "Ta en riktigt bra huvudbild, med den mest fantastiska vyn",
+        "Markera din bästa bild som huvudbild i galleriet",
+        "Visa bekvämligheterna i bruk (eld i kaminen, dukat bord)",
+        "Ta med utsidan och naturen runt omkring",
+        "Fotografera från flera vinklar",
       ],
       photoOrder: [
-        "1. Hero Image (marked in gallery)",
-        "2. Exterior/Entrance",
-        "3. Living Room",
-        "4. Kitchen",
-        "5. Bedrooms",
-        "6. Bathrooms",
-        "7. Outdoor spaces",
-        "8. Special amenities (sauna, hot tub, etc.)",
+        "1. Huvudbild (markerad i galleriet)",
+        "2. Utsida/entré",
+        "3. Vardagsrum",
+        "4. Kök",
+        "5. Sovrum",
+        "6. Badrum",
+        "7. Uteplatser och trädgård",
+        "8. Extra bekvämligheter (bastu, badtunna m.m.)",
       ],
     },
   },
   {
     id: "basic-info",
-    title: "Basic Information",
+    title: "Grundinformation",
     icon: FileText,
     content: {
-      title: "Writing Strong Listings",
-      description: "Your title and description are the first things guests see.",
+      title: "Skriv en bra annons",
+      description: "Rubriken och beskrivningen är det första gästerna ser.",
       tips: [
-        "Title: Keep it under 60 characters",
-        "Title: Include location and property type",
-        "Title: Highlight your unique feature",
-        "Description: Start with your best selling point",
-        "Description: Use specific details (not just 'cozy')",
-        "Description: Mention nearby attractions",
-        "Description: Be honest about the space",
-        "Description: Include what makes you special",
+        "Rubrik: Håll den under 60 tecken",
+        "Rubrik: Ta med plats och typ av boende",
+        "Rubrik: Lyft fram det som är unikt",
+        "Beskrivning: Börja med ditt starkaste säljargument",
+        "Beskrivning: Var konkret (inte bara \"mysigt\")",
+        "Beskrivning: Nämn sevärdheter i närheten",
+        "Beskrivning: Var ärlig om utrymmet",
+        "Beskrivning: Berätta vad som gör just ditt boende speciellt",
       ],
       examples: {
-        good: "Lakefront Cabin with Private Sauna - Åsunden",
-        bad: "Nice House",
+        good: "Sjöstuga med egen bastu – Åsunden",
+        bad: "Fint hus",
       },
     },
   },
   {
     id: "house-prep",
-    title: "House Preparation",
+    title: "Förbered boendet",
     icon: Home,
     content: {
-      title: "Preparing Your Home",
-      description: "Best practices for getting your property guest-ready.",
+      title: "Gör ditt hem redo",
+      description: "Så gör du boendet redo för gäster.",
       checklist: [
-        "Deep clean all areas (see Cleaning Checklist)",
-        "Fresh linens and towels provided",
-        "Check all appliances work properly",
-        "Stock basic amenities (toilet paper, soap, etc.)",
-        "Clear instructions for heating, hot water, wifi",
-        "Emergency contacts displayed clearly",
-        "Remove personal valuables",
-        "Ensure adequate lighting in all areas",
-        "Test smoke detectors and fire extinguishers",
-        "Provide local maps and restaurant recommendations",
+        "Storstäda överallt (se Städchecklista)",
+        "Rena lakan och handdukar",
+        "Kontrollera att alla apparater fungerar",
+        "Fyll på med det grundläggande (toalettpapper, tvål m.m.)",
+        "Tydliga instruktioner för värme, varmvatten och wifi",
+        "Nödnummer och kontaktuppgifter väl synliga",
+        "Ta bort personliga värdesaker",
+        "Se till att det finns bra belysning överallt",
+        "Testa brandvarnare och brandsläckare",
+        "Lägg fram lokala kartor och restaurangtips",
       ],
     },
   },
   {
     id: "guest-communication",
-    title: "Guest Communication",
+    title: "Kontakt med gäster",
     icon: MessageCircle,
     content: {
-      title: "Communicating with Guests",
-      description: "Tips for excellent guest service.",
+      title: "Så håller du kontakten med gästerna",
+      description: "Tips för riktigt bra gästservice.",
       tips: [
-        "Respond to inquiries within 2 hours",
-        "Send check-in details 24 hours before arrival",
-        "Be available during check-in for questions",
-        "Check in after first night to ensure everything is okay",
-        "Provide clear instructions for everything",
-        "Be proactive about potential issues",
-        "Ask for feedback during and after stay",
-        "Handle complaints professionally and quickly",
+        "Svara på förfrågningar inom 2 timmar",
+        "Skicka incheckningsinformation 24 timmar före ankomst",
+        "Var nåbar vid incheckningen om gästerna har frågor",
+        "Hör av dig efter första natten och kolla att allt är bra",
+        "Ge tydliga instruktioner om allt",
+        "Ligg steget före när det gäller möjliga problem",
+        "Be om synpunkter under och efter vistelsen",
+        "Hantera klagomål snabbt och professionellt",
       ],
       templates: {
-        welcome: "Welcome! Here are your check-in details...",
-        checkin: "We hope you arrived safely. Is everything okay?",
-        checkout: "Thank you for staying with us! Safe travels!",
+        välkomst: "Välkommen! Här är allt du behöver veta inför incheckningen...",
+        incheckning: "Vi hoppas att du har kommit fram ordentligt. Är allt bra?",
+        utcheckning: "Tack för att du bodde hos oss! Trevlig resa hem!",
       },
     },
   },
   {
     id: "common-problems",
-    title: "Common Problems",
+    title: "Vanliga problem",
     icon: HelpCircle,
     content: {
-      title: "FAQ & Solutions",
-      description: "Quick solutions to common hosting challenges.",
+      title: "Frågor och lösningar",
+      description: "Snabba lösningar på vanliga problem för värdar.",
       faqs: [
         {
-          q: "Guest can't find the key lockbox",
-          a: "Provide clear photos and detailed directions. Include landmarks. Consider a welcome call.",
+          q: "Gästen hittar inte nyckelboxen",
+          a: "Ge tydliga bilder och en detaljerad vägbeskrivning. Nämn landmärken. Ring gärna ett välkomstsamtal.",
         },
         {
-          q: "Wifi isn't working",
-          a: "Have router location and reset instructions in guidebook. Keep backup hotspot.",
+          q: "Wifi fungerar inte",
+          a: "Skriv i gästguiden var routern står och hur man startar om den. Ha en reserv, till exempel en mobil surfpunkt.",
         },
         {
-          q: "Heating/hot water issues",
-          a: "Provide detailed instructions with photos. Have local handyman on standby.",
+          q: "Problem med värme eller varmvatten",
+          a: "Ge detaljerade instruktioner med bilder. Ha en lokal hantverkare som kan rycka in.",
         },
         {
-          q: "Noise complaints from neighbors",
-          a: "Set clear house rules. Remind guests before arrival. Act immediately if issues arise.",
+          q: "Grannarna klagar på oväsen",
+          a: "Sätt tydliga husregler. Påminn gästerna före ankomst. Agera direkt om något händer.",
         },
         {
-          q: "Guest wants to cancel",
-          a: "Ask them to contact Nordic Getaways: we handle cancellations and refunds. The guest gets back what your cancellation policy gives (you choose it under Rules; Standard gives 90% of your price more than 21 days before arrival, 50% 8–21 days before, and nothing within 7 days). The refund is taken from that booking's payout; the guest service fee is not refunded.",
+          q: "Gästen vill avboka",
+          a: "Be gästen kontakta Nordic Getaways: vi sköter avbokningar och återbetalningar. Gästen får tillbaka det som din avbokningsregel ger (du väljer den under Regler; Standard ger 90 % av ditt pris mer än 21 dagar före ankomst, 50 % 8–21 dagar före och inget inom 7 dagar). Återbetalningen dras från bokningens utbetalning. Gästens serviceavgift betalas inte tillbaka.",
         },
         {
-          q: "You have to cancel a booking",
-          a: "Contact Nordic Getaways straight away. The guest gets everything back, including the service fee, you are paid nothing for that booking, and its card fee is taken from your next payout (you can see it in the Bank Account tab).",
+          q: "Du måste avboka en bokning",
+          a: "Kontakta Nordic Getaways direkt. Gästen får tillbaka allt, även serviceavgiften. Du får inget betalt för bokningen, och kortavgiften för den dras från din nästa utbetalning (du ser den under Utbetalningar via Stripe).",
         },
       ],
     },
   },
   {
     id: "cleaning-checklist",
-    title: "Cleaning Checklist",
+    title: "Städchecklista",
     icon: CheckSquare,
     content: {
-      title: "Turnover Cleaning Guide",
-      description: "Step-by-step checklist for property turnovers.",
+      title: "Städning mellan gäster",
+      description: "Checklista steg för steg inför nästa gäst.",
       rooms: {
-        Kitchen: [
-          "Clean all surfaces and countertops",
-          "Clean inside/outside all appliances",
-          "Empty and clean refrigerator",
-          "Check all dishes are clean and put away",
-          "Restock coffee, tea, basic supplies",
-          "Take out trash and recycling",
-          "Sweep and mop floor",
+        Kök: [
+          "Torka av alla ytor och bänkar",
+          "Rengör alla apparater in- och utvändigt",
+          "Töm och rengör kylskåpet",
+          "Kontrollera att all disk är ren och undanplockad",
+          "Fyll på kaffe, te och basvaror",
+          "Töm soporna och återvinningen",
+          "Sopa och moppa golvet",
         ],
-        Bathroom: [
-          "Scrub toilet, sink, shower/tub",
-          "Clean mirrors and fixtures",
-          "Restock toilet paper, soap, shampoo",
-          "Wash bath mats and replace towels",
-          "Empty trash",
-          "Check for hair and clean drains",
+        Badrum: [
+          "Skrubba toalett, handfat och dusch/badkar",
+          "Putsa speglar och blandare",
+          "Fyll på toalettpapper, tvål och schampo",
+          "Tvätta badrumsmattorna och byt handdukar",
+          "Töm soporna",
+          "Kolla efter hårstrån och rensa avloppen",
         ],
-        Bedrooms: [
-          "Change all linens and pillowcases",
-          "Check mattress condition",
-          "Dust all surfaces",
-          "Vacuum under bed",
-          "Clean windows if needed",
-          "Check closets are empty",
+        Sovrum: [
+          "Byt alla lakan och örngott",
+          "Kontrollera madrassernas skick",
+          "Damma alla ytor",
+          "Dammsug under sängen",
+          "Putsa fönster vid behov",
+          "Kontrollera att garderoberna är tomma",
         ],
-        Living: [
-          "Vacuum all floors and rugs",
-          "Dust all surfaces and decorations",
-          "Fluff pillows and arrange furniture",
-          "Clean windows and mirrors",
-          "Check remote controls work",
-          "Arrange magazines and books neatly",
+        Vardagsrum: [
+          "Dammsug alla golv och mattor",
+          "Damma alla ytor och prydnadssaker",
+          "Fluffa kuddar och ställ i ordning möblerna",
+          "Putsa fönster och speglar",
+          "Kontrollera att fjärrkontrollerna fungerar",
+          "Lägg tidningar och böcker prydligt",
         ],
-        Outdoor: [
-          "Sweep porch/deck",
-          "Clean outdoor furniture",
-          "Empty outdoor trash",
-          "Check grill is clean (if applicable)",
-          "Ensure pathways are clear",
+        Utomhus: [
+          "Sopa altanen eller verandan",
+          "Rengör utemöblerna",
+          "Töm soporna utomhus",
+          "Kontrollera att grillen är ren (om det finns en)",
+          "Se till att gångarna är fria",
         ],
       },
       final: [
-        "Check all lights work",
-        "Adjust thermostat",
-        "Lock all windows and doors",
-        "Take photos for your records",
-        "Restock lockbox key",
+        "Kontrollera att alla lampor fungerar",
+        "Ställ in termostaten",
+        "Lås alla fönster och dörrar",
+        "Ta bilder för din egen dokumentation",
+        "Lägg tillbaka nyckeln i nyckelboxen",
       ],
     },
   },
@@ -551,18 +551,18 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
                 <p className="text-muted-foreground">{block.body}</p>
                 {block.serviceFeeExample && (
                   <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-                    <p className="font-semibold text-primary mb-2">Guest service fee example (10%)</p>
+                    <p className="font-semibold text-primary mb-2">Exempel på gästens serviceavgift (10 %)</p>
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
-                        <span>Your nightly rate:</span>
+                        <span>Ditt pris per natt:</span>
                         <span className="font-semibold">{block.serviceFeeExample.base}</span>
                       </div>
                       <div className="flex justify-between text-muted-foreground">
-                        <span>Guest service fee:</span>
+                        <span>Gästens serviceavgift:</span>
                         <span>+ {block.serviceFeeExample.fee}</span>
                       </div>
                       <div className="flex justify-between border-t pt-1 font-bold">
-                        <span>Guest pays:</span>
+                        <span>Gästen betalar:</span>
                         <span className="text-primary">{block.serviceFeeExample.guest}</span>
                       </div>
                     </div>
@@ -718,11 +718,11 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
           {(content.formula || content.example) && (
             <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-              <h4 className="font-semibold mb-2">Pricing Formula</h4>
+              <h4 className="font-semibold mb-2">Prisformel</h4>
               {content.formula && <p className="text-sm font-mono">{content.formula}</p>}
               {content.example && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  <strong>Example:</strong> {content.example}
+                  <strong>Exempel:</strong> {content.example}
                 </p>
               )}
             </div>
@@ -755,7 +755,7 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.photoOrder && (
           <div>
-            <h4 className="font-semibold mb-3">Recommended Photo Order:</h4>
+            <h4 className="font-semibold mb-3">Rekommenderad ordning på bilderna:</h4>
             <ol className="space-y-2 list-decimal list-inside text-sm">
               {content.photoOrder.map((item, idx) => (
                 <li key={idx} className="text-muted-foreground">
@@ -768,7 +768,7 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.checklist && (
           <div>
-            <h4 className="font-semibold mb-3">Checklist:</h4>
+            <h4 className="font-semibold mb-3">Checklista:</h4>
             <ul className="space-y-2">
               {content.checklist.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2">
@@ -782,19 +782,19 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.examples && (
           <div>
-            <h4 className="font-semibold mb-3">Examples:</h4>
+            <h4 className="font-semibold mb-3">Exempel:</h4>
             <div className="space-y-2">
               <div className="flex items-start gap-3 bg-green-50 dark:bg-green-950/20 p-3 rounded">
                 <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>
-                  <span className="text-xs font-semibold text-green-700 dark:text-green-400">GOOD:</span>
+                  <span className="text-xs font-semibold text-green-700 dark:text-green-400">BRA:</span>
                   <p className="text-sm mt-1">{content.examples.good}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 bg-red-50 dark:bg-red-950/20 p-3 rounded">
                 <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
                 <div>
-                  <span className="text-xs font-semibold text-red-700 dark:text-red-400">BAD:</span>
+                  <span className="text-xs font-semibold text-red-700 dark:text-red-400">DÅLIGT:</span>
                   <p className="text-sm mt-1">{content.examples.bad}</p>
                 </div>
               </div>
@@ -804,7 +804,7 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.templates && (
           <div>
-            <h4 className="font-semibold mb-3">Message Templates:</h4>
+            <h4 className="font-semibold mb-3">Exempel på meddelanden:</h4>
             <div className="space-y-3">
               {Object.entries(content.templates).map(([key, value]) => (
                 <div key={key} className="bg-muted/50 p-3 rounded">
@@ -818,7 +818,7 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.faqs && (
           <div>
-            <h4 className="font-semibold mb-3">Frequently Asked Questions:</h4>
+            <h4 className="font-semibold mb-3">Vanliga frågor:</h4>
             <div className="space-y-4">
               {content.faqs.map((faq, idx) => (
                 <div key={idx} className="border-l-2 border-primary pl-4">
@@ -832,7 +832,7 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.rooms && (
           <div>
-            <h4 className="font-semibold mb-3">Room-by-Room Checklist:</h4>
+            <h4 className="font-semibold mb-3">Checklista rum för rum:</h4>
             <div className="space-y-4">
               {Object.entries(content.rooms).map(([room, tasks]) => (
                 <div key={room} className="border rounded-lg p-4">
@@ -853,7 +853,7 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.final && (
           <div>
-            <h4 className="font-semibold mb-3">Final Steps:</h4>
+            <h4 className="font-semibold mb-3">Sista stegen:</h4>
             <ul className="space-y-2">
               {content.final.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2">
@@ -867,11 +867,11 @@ const HostGuidebookDialog = ({ isOpen, onClose }: HostGuidebookDialogProps) => {
 
         {content.formula && (
           <div className="bg-primary/10 p-4 rounded-lg">
-            <h4 className="font-semibold mb-2">Pricing Formula:</h4>
+            <h4 className="font-semibold mb-2">Prisformel:</h4>
             <p className="text-sm font-mono">{content.formula}</p>
             {content.example && (
               <p className="text-sm text-muted-foreground mt-2">
-                <strong>Example:</strong> {content.example}
+                <strong>Exempel:</strong> {content.example}
               </p>
             )}
           </div>

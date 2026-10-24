@@ -95,15 +95,15 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
       if (error) throw error;
 
       toast({
-        title: "Email Templates Saved",
-        description: "Your email templates have been updated successfully.",
+        title: "Mejlmallarna är sparade",
+        description: "Dina ändringar är sparade.",
       });
       onUpdate();
     } catch (error: any) {
       console.error("Error saving email templates:", error);
       toast({
-        title: "Error",
-        description: "Failed to save email templates. Please try again.",
+        title: "Något gick fel",
+        description: "Det gick inte att spara mejlmallarna. Försök igen.",
         variant: "destructive",
       });
     } finally {
@@ -126,7 +126,7 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
               <CardDescription>{description}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Label htmlFor={`${type}-enabled`}>Enabled</Label>
+              <Label htmlFor={`${type}-enabled`}>Aktiv</Label>
               <Switch
                 id={`${type}-enabled`}
                 checked={template.enabled}
@@ -137,22 +137,22 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor={`${type}-subject`}>Email Subject</Label>
+            <Label htmlFor={`${type}-subject`}>Ämnesrad</Label>
             <Input
               id={`${type}-subject`}
               value={template.subject}
               onChange={(e) => updateTemplate(type, "subject", e.target.value)}
-              placeholder="Enter email subject"
+              placeholder="Skriv ämnesraden"
               disabled={!template.enabled}
             />
           </div>
           <div>
-            <Label htmlFor={`${type}-message`}>Email Message</Label>
+            <Label htmlFor={`${type}-message`}>Meddelande</Label>
             <Textarea
               id={`${type}-message`}
               value={template.message}
               onChange={(e) => updateTemplate(type, "message", e.target.value)}
-              placeholder="Enter email message"
+              placeholder="Skriv meddelandet"
               rows={10}
               disabled={!template.enabled}
               className="font-mono text-sm"
@@ -162,7 +162,7 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
             <Info className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-2">
-                <p className="font-semibold">Available placeholders:</p>
+                <p className="font-semibold">Fält som fylls i automatiskt:</p>
                 <div className="flex flex-wrap gap-2">
                   {TEMPLATE_PLACEHOLDERS.map((placeholder) => (
                     <code
@@ -170,7 +170,7 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
                       className="px-2 py-1 bg-muted rounded text-xs cursor-pointer hover:bg-muted/80"
                       onClick={() => {
                         navigator.clipboard.writeText(placeholder);
-                        toast({ description: `Copied ${placeholder}` });
+                        toast({ description: `Kopierat: ${placeholder}` });
                       }}
                     >
                       {placeholder}
@@ -178,7 +178,7 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Click any placeholder to copy it to your clipboard
+                  Klicka på ett fält för att kopiera det
                 </p>
               </div>
             </AlertDescription>
@@ -192,53 +192,53 @@ export const EmailTemplatesEditor = ({ propertyId, templates, onUpdate }: EmailT
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Automated Email Templates</h2>
+          <h2 className="text-2xl font-bold">Mejlmallar</h2>
           <p className="text-muted-foreground">
-            Customize automated emails sent to your guests at different stages of their booking
+            Anpassa mejlen som skickas automatiskt till dina gäster under bokningens gång
           </p>
         </div>
         <Button onClick={handleSave} disabled={loading}>
-          {loading ? "Saving..." : "Save Templates"}
+          {loading ? "Sparar..." : "Spara mejlmallar"}
         </Button>
       </div>
 
       <Tabs defaultValue="booking_confirmation" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="booking_confirmation">Booking Confirmation</TabsTrigger>
-          <TabsTrigger value="pre_arrival">Pre-Arrival</TabsTrigger>
-          <TabsTrigger value="check_out">Check-Out</TabsTrigger>
-          <TabsTrigger value="thank_you">Thank You</TabsTrigger>
+          <TabsTrigger value="booking_confirmation">Bokningsbekräftelse</TabsTrigger>
+          <TabsTrigger value="pre_arrival">Före ankomst</TabsTrigger>
+          <TabsTrigger value="check_out">Utcheckning</TabsTrigger>
+          <TabsTrigger value="thank_you">Tack</TabsTrigger>
         </TabsList>
 
         <TabsContent value="booking_confirmation" className="space-y-4">
           {renderTemplateEditor(
             "booking_confirmation",
-            "Booking Confirmation Email",
-            "Sent immediately after a guest completes their booking"
+            "Mejl med bokningsbekräftelse",
+            "Skickas direkt när gästen har bokat"
           )}
         </TabsContent>
 
         <TabsContent value="pre_arrival" className="space-y-4">
           {renderTemplateEditor(
             "pre_arrival",
-            "Pre-Arrival Email",
-            "Sent 24-48 hours before check-in with arrival details"
+            "Mejl före ankomst",
+            "Skickas 24–48 timmar före incheckning med ankomstinformation"
           )}
         </TabsContent>
 
         <TabsContent value="check_out" className="space-y-4">
           {renderTemplateEditor(
             "check_out",
-            "Check-Out Email",
-            "Sent on check-out day with departure instructions"
+            "Mejl vid utcheckning",
+            "Skickas på utcheckningsdagen med information om avresan"
           )}
         </TabsContent>
 
         <TabsContent value="thank_you" className="space-y-4">
           {renderTemplateEditor(
             "thank_you",
-            "Thank You Email",
-            "Sent 1 day after check-out to thank guests for their stay"
+            "Tackmejl",
+            "Skickas dagen efter utcheckning för att tacka gästen för vistelsen"
           )}
         </TabsContent>
       </Tabs>

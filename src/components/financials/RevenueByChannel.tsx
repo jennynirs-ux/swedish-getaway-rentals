@@ -21,14 +21,14 @@ const SOURCE_COLORS: Record<string, string> = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  direct: "Direct",
-  manual: "Manual",
+  direct: "Direkt",
+  manual: "Manuell",
   airbnb: "Airbnb",
   booking_com: "Booking.com",
   vrbo: "Vrbo",
   landfolk: "Landfolk",
-  ical: "Calendar import",
-  other: "Other",
+  ical: "Kalenderimport",
+  other: "Övrigt",
 };
 
 const sourceLabel = (source: string) => SOURCE_LABELS[source] || source;
@@ -129,9 +129,9 @@ const RevenueByChannel = ({ scope }: Props) => {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Revenue by Channel</h3>
+          <h3 className="text-lg font-semibold">Intäkter per kanal</h3>
           <p className="text-xs text-muted-foreground">
-            {NORDIC_GETAWAYS_ONLY_LABEL}: income from Airbnb, Booking.com and other channels is not included.{" "}
+            {NORDIC_GETAWAYS_ONLY_LABEL}: inkomst från Airbnb, Booking.com och andra kanaler ingår inte.{" "}
             {STAY_BASIS_LABEL}.
           </p>
         </div>
@@ -142,25 +142,25 @@ const RevenueByChannel = ({ scope }: Props) => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">
-              Channel Split ({totalRevenue.toLocaleString("sv-SE")} SEK total)
+              Fördelning per kanal (totalt {totalRevenue.toLocaleString("sv-SE")} kr)
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Loading...</p>
+              <p className="text-sm text-muted-foreground text-center py-8">Laddar...</p>
             ) : pieData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
-                No revenue data yet. Bookings will appear here once confirmed.
+                Inga intäkter att visa än. Bokningar dyker upp här när de är bekräftade.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)} %`}>
                     {pieData.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `${value.toLocaleString("sv-SE")} SEK`} />
+                  <Tooltip formatter={(value: number) => `${value.toLocaleString("sv-SE")} kr`} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -169,17 +169,17 @@ const RevenueByChannel = ({ scope }: Props) => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Monthly Revenue by Check-in Month</CardTitle>
+            <CardTitle className="text-sm">Intäkter per incheckningsmånad</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Loading...</p>
+              <p className="text-sm text-muted-foreground text-center py-8">Laddar...</p>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={monthlyData}>
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value: number) => `${value.toLocaleString("sv-SE")} SEK`} />
+                  <Tooltip formatter={(value: number) => `${value.toLocaleString("sv-SE")} kr`} />
                   <Legend />
                   {sources.map((src) => (
                     <Bar key={src} dataKey={src} name={sourceLabel(src)} fill={sourceColor(src)} stackId="a" />

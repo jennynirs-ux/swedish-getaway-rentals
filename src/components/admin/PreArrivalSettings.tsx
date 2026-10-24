@@ -60,16 +60,16 @@ export default function PreArrivalSettings({ propertyId }: { propertyId?: string
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties-pre-arrival'] });
       queryClient.invalidateQueries({ queryKey: ['property-private-details', selectedPropertyId] });
-      toast.success('Pre-arrival settings updated successfully');
+      toast.success('Ändringen är sparad');
     },
     onError: (error) => {
-      toast.error('Failed to update settings: ' + error.message);
+      toast.error('Det gick inte att spara: ' + error.message);
     },
   });
 
   const handleUpdate = (field: Field, value: string) => {
     if (!selectedPropertyId) {
-      toast.error('Please select a property first');
+      toast.error('Välj ett boende först');
       return;
     }
     updateMutation.mutate({ field, value });
@@ -86,28 +86,28 @@ export default function PreArrivalSettings({ propertyId }: { propertyId?: string
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Pre-Arrival Email Settings</h2>
+        <h2 className="text-2xl font-bold">Mejl före ankomst</h2>
         <p className="text-muted-foreground mt-1">
-          Configure check-in instructions, parking info, and local tips sent 24-48 hours before guest arrival
+          Ange ankomstinformation, parkering och lokala tips som mejlas till gästerna 24–48 timmar före ankomst
         </p>
         <p className="text-sm text-muted-foreground mt-2">
-          Only booked guests see this. Put door codes and the Wi-Fi password here, never in the guest guide: the
-          guide is public.
+          Bara gäster med bokning ser det här. Lägg portkoder och wifi-lösenord här, aldrig i gästguiden: den är
+          öppen för alla.
         </p>
       </div>
 
       {!propertyId && (
       <Card>
         <CardHeader>
-          <CardTitle>Select Property</CardTitle>
+          <CardTitle>Välj boende</CardTitle>
           <CardDescription>
-            Choose which property to configure pre-arrival email content for
+            Välj vilket boende du vill ställa in mejlet före ankomst för
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a property..." />
+              <SelectValue placeholder="Välj ett boende..." />
             </SelectTrigger>
             <SelectContent>
               {properties?.map((property) => (
@@ -130,29 +130,29 @@ export default function PreArrivalSettings({ propertyId }: { propertyId?: string
       {selectedProperty && !privateDetailsLoading && (
         <Tabs key={selectedProperty.id} defaultValue="instructions" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="instructions">Check-In Instructions</TabsTrigger>
-            <TabsTrigger value="parking">Parking Info</TabsTrigger>
-            <TabsTrigger value="tips">Local Tips</TabsTrigger>
+            <TabsTrigger value="instructions">Incheckning</TabsTrigger>
+            <TabsTrigger value="parking">Parkering</TabsTrigger>
+            <TabsTrigger value="tips">Lokala tips</TabsTrigger>
           </TabsList>
 
           <TabsContent value="instructions">
             <Card>
               <CardHeader>
-                <CardTitle>Check-In Instructions</CardTitle>
+                <CardTitle>Instruktioner för incheckning</CardTitle>
                 <CardDescription>
-                  Detailed instructions for guests on how to access the property
+                  Beskriv noga hur gästerna tar sig in i boendet
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea
-                  placeholder="E.g., The key lockbox is located on the right side of the front door. Your access code is sent separately. Please call us if you have any trouble accessing the property."
+                  placeholder="T.ex. Nyckelboxen sitter till höger om ytterdörren. Koden skickas separat. Ring oss om du inte kommer in."
                   rows={8}
                   defaultValue={privateDetails?.check_in_instructions || ''}
                   onBlur={(e) => handleUpdate('check_in_instructions', e.target.value)}
                   className="resize-none"
                 />
                 <p className="text-sm text-muted-foreground">
-                  💡 Include details about key pickup, access codes, entry procedures, and who to contact for help
+                  💡 Skriv hur gästerna får nyckeln, vilka koder som gäller, hur de kommer in och vem de kan ringa om något strular
                 </p>
               </CardContent>
             </Card>
@@ -161,21 +161,21 @@ export default function PreArrivalSettings({ propertyId }: { propertyId?: string
           <TabsContent value="parking">
             <Card>
               <CardHeader>
-                <CardTitle>Parking Information</CardTitle>
+                <CardTitle>Parkering</CardTitle>
                 <CardDescription>
-                  Where guests should park and any parking restrictions
+                  Var gästerna ska parkera och vilka regler som gäller
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea
-                  placeholder="E.g., Free parking available in the driveway. Street parking is also available but requires a permit during weekdays. Parking permit can be obtained from the local municipality office."
+                  placeholder="T.ex. Gratis parkering på uppfarten. Det går också att parkera på gatan, men då krävs tillstånd på vardagar. Tillstånd får du från kommunen."
                   rows={8}
                   defaultValue={privateDetails?.parking_info || ''}
                   onBlur={(e) => handleUpdate('parking_info', e.target.value)}
                   className="resize-none"
                 />
                 <p className="text-sm text-muted-foreground">
-                  🚗 Include parking locations, restrictions, permits, and any costs involved
+                  🚗 Skriv var man kan parkera, vilka regler och tillstånd som gäller och vad det kostar
                 </p>
               </CardContent>
             </Card>
@@ -184,21 +184,21 @@ export default function PreArrivalSettings({ propertyId }: { propertyId?: string
           <TabsContent value="tips">
             <Card>
               <CardHeader>
-                <CardTitle>Local Tips & Recommendations</CardTitle>
+                <CardTitle>Lokala tips</CardTitle>
                 <CardDescription>
-                  Helpful local information to enhance the guest experience
+                  Bra att veta om området, så att gästerna trivs ännu bättre
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea
-                  placeholder="E.g., The nearest grocery store (ICA) is 2 km away and open until 21:00. For authentic Swedish dining, try Restaurang Gamla Stan, just a 10-minute walk. The property is pet-friendly - there's a dog park 500m south."
+                  placeholder="T.ex. Närmaste matbutik (ICA) ligger 2 km bort och har öppet till 21:00. Vill du äta svensk husmanskost, testa Restaurang Gamla Stan, tio minuter bort till fots. Husdjur är välkomna – det finns en hundrastgård 500 m söderut."
                   rows={10}
                   defaultValue={selectedProperty.local_tips || ''}
                   onBlur={(e) => handleUpdate('local_tips', e.target.value)}
                   className="resize-none"
                 />
                 <p className="text-sm text-muted-foreground">
-                  💡 Include nearby shops, restaurants, attractions, and any special local insights
+                  💡 Skriv om affärer, restauranger, sevärdheter och annat som är bra att veta i närheten
                 </p>
               </CardContent>
             </Card>
@@ -209,7 +209,7 @@ export default function PreArrivalSettings({ propertyId }: { propertyId?: string
       {!selectedProperty && (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Select a property to configure pre-arrival email settings</p>
+            <p className="text-muted-foreground">Välj ett boende för att ställa in mejlet före ankomst</p>
           </CardContent>
         </Card>
       )}

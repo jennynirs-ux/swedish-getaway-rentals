@@ -89,13 +89,13 @@ serve(async (req) => {
     );
 
     const user = await getCallerUser(req, supabase);
-    if (!user) return json({ error: 'Please sign in again' }, 401);
+    if (!user) return json({ error: 'Logga in igen' }, 401);
 
     const body = await req.json().catch(() => ({}));
     const currentYear = Number(new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', year: 'numeric' }).format(new Date()));
     const taxYear = body?.year == null ? currentYear - 1 : Number(body.year);
     if (!Number.isInteger(taxYear) || taxYear < 2000 || taxYear > currentYear) {
-      return json({ error: `Choose a year between 2000 and ${currentYear}` }, 400);
+      return json({ error: `Välj ett år mellan 2000 och ${currentYear}` }, 400);
     }
 
     // The columns that exist: full_name, display_name, host_business_name
@@ -104,15 +104,15 @@ serve(async (req) => {
       .select('id, full_name, display_name, host_business_name, is_host')
       .eq('user_id', user.id)
       .maybeSingle();
-    if (profileError) throw new Error(`Could not read your profile: ${profileError.message}`);
-    if (!profile?.is_host) return json({ error: 'Only hosts can create a tax report' }, 403);
+    if (profileError) throw new Error(`Kunde inte läsa din profil: ${profileError.message}`);
+    if (!profile?.is_host) return json({ error: 'Bara värdar kan skapa en skatterapport' }, 403);
 
     const { data: properties, error: propertiesError } = await supabase
       .from('properties')
       .select('id, title, registration_number')
       .eq('host_id', profile.id);
-    if (propertiesError) throw new Error(`Could not read your listings: ${propertiesError.message}`);
-    if (!properties || properties.length === 0) return json({ error: 'You have no listings yet' }, 404);
+    if (propertiesError) throw new Error(`Kunde inte läsa dina boenden: ${propertiesError.message}`);
+    if (!properties || properties.length === 0) return json({ error: 'Du har inga boenden än' }, 404);
 
     const propertyIds = properties.map((p) => p.id);
     const yearStart = `${taxYear}-01-01`;
@@ -127,7 +127,7 @@ serve(async (req) => {
       .gte('check_in_date', yearStart)
       .lte('check_in_date', yearEnd)
       .in('status', ['confirmed', 'completed', 'cancelled']);
-    if (bookingsError) throw new Error(`Could not read your bookings: ${bookingsError.message}`);
+    if (bookingsError) throw new Error(`Kunde inte läsa dina bokningar: ${bookingsError.message}`);
     const bookings = (bookingData ?? []) as BookingRow[];
 
     const { data: expenseData, error: expensesError } = await supabase
@@ -136,7 +136,7 @@ serve(async (req) => {
       .in('property_id', propertyIds)
       .gte('expense_date', yearStart)
       .lte('expense_date', yearEnd);
-    if (expensesError) throw new Error(`Could not read your expenses: ${expensesError.message}`);
+    if (expensesError) throw new Error(`Kunde inte läsa dina utgifter: ${expensesError.message}`);
     const expenses = expenseData ?? [];
 
     const propertyLines: TaxReportLine[] = properties.map((prop) => {
@@ -222,6 +222,6 @@ serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Tax report error:', message);
-    return json({ error: message || 'Failed to generate tax report' }, 500);
+    return json({ error: message || 'Skatterapporten kunde inte skapas' }, 500);
   }
 });

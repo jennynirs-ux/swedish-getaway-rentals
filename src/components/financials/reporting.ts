@@ -17,9 +17,9 @@ import { hostNetAmount } from "../../../supabase/functions/_shared/payout";
 /** What the host keeps from a booking (öre); re-exported so the views have one import */
 export { hostNetAmount };
 
-export const STAY_BASIS_LABEL = "By check-in date";
+export const STAY_BASIS_LABEL = "Efter incheckningsdatum";
 /** Airbnb, Booking.com etc. only block dates through iCal; their income never reaches our bookings table. */
-export const NORDIC_GETAWAYS_ONLY_LABEL = "Nordic Getaways bookings only";
+export const NORDIC_GETAWAYS_ONLY_LABEL = "Endast bokningar via Nordic Getaways";
 
 /** Bookings that are (or were) stays: they count for nights and occupancy. */
 export const STAY_STATUSES = ["confirmed", "completed"];

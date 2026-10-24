@@ -32,6 +32,8 @@ interface LocationEditorProps {
 
 /** Listings are in Sweden only (counties, prices in kronor) */
 const COUNTRIES = ['Sweden'];
+/** Swedish labels for the select; the stored value stays English */
+const COUNTRY_LABELS: Record<string, string> = { Sweden: 'Sverige' };
 
 
 // Mid-Sweden: where the map opens for a place that has no pin yet, zoomed
@@ -70,8 +72,8 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
   const handleGeocode = async () => {
     if (!value.street && !value.city) {
       toast({
-        title: 'Missing information',
-        description: 'Enter the street address or the town first.',
+        title: 'Uppgifter saknas',
+        description: 'Skriv in gatuadress eller ort först.',
         variant: 'destructive'
       });
       return;
@@ -101,21 +103,21 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
         });
         setMapPosition([result.latitude, result.longitude]);
         toast({
-          title: 'Found it',
-          description: 'Check the pin and drag it if it is not quite right.'
+          title: 'Hittad',
+          description: 'Kontrollera nålen och dra den om den inte hamnat helt rätt.'
         });
       } else {
         toast({
-          title: 'Address not found',
-          description: 'Click the map where your place is instead.',
+          title: 'Adressen hittades inte',
+          description: 'Klicka i stället på kartan där ditt boende ligger.',
           variant: 'destructive'
         });
       }
     } catch (error) {
       console.error('Geocoding error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to geocode address',
+        title: 'Något gick fel',
+        description: 'Det gick inte att hitta adressen på kartan',
         variant: 'destructive'
       });
     } finally {
@@ -135,11 +137,11 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
   const body = (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="country">Country</Label>
+        <Label htmlFor="country">Land</Label>
         <Select value={normaliseCountry(value.country) || 'Sweden'} onValueChange={(v) => handleFieldChange('country', v)}>
           <SelectTrigger id="country"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{COUNTRY_LABELS[c] ?? c}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -147,7 +149,7 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
       {children}
 
       <div className="space-y-2">
-        <Label htmlFor="street">Street address</Label>
+        <Label htmlFor="street">Gatuadress</Label>
         <Input
           id="street"
           value={value.street || ''}
@@ -155,11 +157,11 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
           placeholder="Storgatan 12"
           autoComplete="street-address"
         />
-        <p className="text-xs text-muted-foreground">Private: only guests with a booking get the address.</p>
+        <p className="text-xs text-muted-foreground">Privat: bara gäster med en bokning får adressen.</p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[10rem_1fr]">
         <div className="space-y-2">
-          <Label htmlFor="postal_code">Postal code</Label>
+          <Label htmlFor="postal_code">Postnummer</Label>
           <Input
             id="postal_code"
             value={value.postal_code || ''}
@@ -169,7 +171,7 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="city">Town or village</Label>
+          <Label htmlFor="city">Ort</Label>
           <Input
             id="city"
             value={value.city || ''}
@@ -182,15 +184,15 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
 
       <Button type="button" variant="outline" onClick={handleGeocode} disabled={loading} className="gap-2">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-        {loading ? 'Finding it…' : 'Find on map'}
+        {loading ? 'Letar…' : 'Hitta på kartan'}
       </Button>
 
       {mounted && (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
             {hasPin
-              ? 'Is the pin in the right spot? Drag it, or click the map where your place is.'
-              : 'No pin yet. Press "Find on map", or click the map where your place is.'}
+              ? 'Sitter nålen på rätt ställe? Dra den, eller klicka på kartan där ditt boende ligger.'
+              : 'Ingen nål än. Tryck på "Hitta på kartan" eller klicka på kartan där ditt boende ligger.'}
           </p>
           <div className={`${mapHeightClass} rounded-lg overflow-hidden border`}>
             <ErrorBoundary>
@@ -215,9 +217,9 @@ export function LocationEditor({ value, onChange, children, bare = false, mapHei
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="w-5 h-5" />
-          Address
+          Adress
         </CardTitle>
-        <CardDescription>Where your place is. Guests see the area; the street address only after booking.</CardDescription>
+        <CardDescription>Var ditt boende ligger. Gästerna ser området, och gatuadressen först efter bokning.</CardDescription>
       </CardHeader>
       <CardContent>{body}</CardContent>
     </Card>

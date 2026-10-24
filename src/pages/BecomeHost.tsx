@@ -257,9 +257,9 @@ const copy = (lang: Lang): Copy => {
           question: "Hur fungerar avbokningar och återbetalningar?",
           answer: (
             <>
-              Du väljer själv avbokningsregel: <strong>Flexible</strong>, <strong>Moderate</strong>,{" "}
+              Du väljer själv avbokningsregel: <strong>Flexibel</strong>, <strong>Måttlig</strong>,{" "}
               <strong>Standard</strong> (90 % tillbaka mer än 21 dagar före ankomst, 50 % 8–21 dagar före, inget inom 7
-              dagar) eller <strong>Strict</strong>. Gästen ser regeln innan bokningen. Vi sköter avbokningar och
+              dagar) eller <strong>Strikt</strong>. Gästen ser regeln innan bokningen. Vi sköter avbokningar och
               återbetalningar. Återbetalningen dras från din utbetalning för bokningen; serviceavgiften betalas inte
               tillbaka till gästen och minskar aldrig din del. Om du själv måste avboka får gästen tillbaka allt, du får
               inget för bokningen och du betalar kortavgiften. Detaljer finns i {hostTermsLink("värdvillkoren", "guest-cancels")}.

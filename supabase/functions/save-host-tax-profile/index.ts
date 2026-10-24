@@ -47,7 +47,7 @@ serve(async (req) => {
       global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
     });
     const { data: { user } } = await authClient.auth.getUser();
-    if (!user) return json({ error: "Please sign in again." }, 401);
+    if (!user) return json({ error: "Logga in igen." }, 401);
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
     const { data: profile, error: profileError } = await supabase
@@ -56,22 +56,22 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
     if (profileError) throw new Error(`Reading the profile failed: ${profileError.message}`);
-    if (!profile?.is_host) return json({ error: "Only hosts give tax details." }, 403);
+    if (!profile?.is_host) return json({ error: "Bara värdar lämnar skatteuppgifter." }, 403);
 
     const body = await req.json().catch(() => null);
-    if (!body || typeof body !== "object") return fail("Fill in the form and try again.");
-    if (body.confirm !== true) return fail("Confirm that the details are correct.");
+    if (!body || typeof body !== "object") return fail("Fyll i formuläret och försök igen.");
+    if (body.confirm !== true) return fail("Bekräfta att uppgifterna stämmer.");
 
     const today = stockholmToday();
     const sellerType = body.sellerType === "entity" ? "entity" : body.sellerType === "individual" ? "individual" : null;
-    if (!sellerType) return fail("Choose whether you rent out as a private person or a company.");
+    if (!sellerType) return fail("Välj om du hyr ut som privatperson eller företag.");
 
     // Address: where a private person lives, a company's registered seat
     const street = text(body.street);
     const postalCode = text(body.postalCode, 20);
     const city = text(body.city, 100);
     const countryCode = country(body.countryCode);
-    if (!street || !postalCode || !city || !countryCode) return fail("Fill in the whole address, including the country.");
+    if (!street || !postalCode || !city || !countryCode) return fail("Fyll i hela adressen, även land.");
 
     const vat = parseVatNumber(text(body.vatNumber, 30));
     if (!vat.ok) return fail(vat.error);
@@ -87,7 +87,7 @@ serve(async (req) => {
 
     // The tax number: Swedish ones are checked and give the date of birth
     const tinCountry = body.tinCountry === undefined || body.tinCountry === "SE" ? "SE" : country(body.tinCountry);
-    if (!tinCountry) return fail("Choose the country of your tax number (a two-letter code, e.g. NO).");
+    if (!tinCountry) return fail("Välj land för ditt skattenummer (en landskod med två bokstäver, t.ex. NO).");
     const keepTin = body.keepTin === true && !!existing?.tin_ciphertext && existing.tin_country === tinCountry &&
       existing.seller_type === sellerType;
     const checks: { check: string; result: string }[] = [];
@@ -100,7 +100,7 @@ serve(async (req) => {
       tinMasked = existing!.tin_masked;
       // A Swedish number gave the date of birth; a foreign one came with it
       dateOfBirth = sellerType === "individual" ? (tinCountry === "SE" ? existing!.date_of_birth : isoDate(body.dateOfBirth)) : null;
-      if (sellerType === "individual" && !dateOfBirth) return fail("Enter your date of birth.");
+      if (sellerType === "individual" && !dateOfBirth) return fail("Fyll i ditt födelsedatum.");
     } else if (sellerType === "individual") {
       if (tinCountry === "SE") {
         const pnr = parsePersonnummer(text(body.tin, 20), today);
@@ -110,10 +110,10 @@ serve(async (req) => {
         dateOfBirth = pnr.value.dateOfBirth;
         checks.push({ check: "personnummer checksum and date", result: pnr.value.samordningsnummer ? "ok (samordningsnummer)" : "ok" });
         const given = isoDate(body.dateOfBirth);
-        if (given && given !== dateOfBirth) return fail("The date of birth does not match your personnummer.");
+        if (given && given !== dateOfBirth) return fail("Födelsedatumet stämmer inte med ditt personnummer.");
       } else {
         dateOfBirth = isoDate(body.dateOfBirth);
-        if (!dateOfBirth || dateOfBirth > today) return fail("Enter your date of birth.");
+        if (!dateOfBirth || dateOfBirth > today) return fail("Fyll i ditt födelsedatum.");
         if (text(body.tin, 40)) {
           const foreign = parseForeignTin(text(body.tin, 40));
           if (!foreign.ok) return fail(foreign.error);
@@ -122,7 +122,7 @@ serve(async (req) => {
           checks.push({ check: `tax number format (${tinCountry})`, result: "ok" });
         } else {
           birthPlace = text(body.birthPlace, 100);
-          if (!birthPlace) return fail("Without a tax number we need your place of birth.");
+          if (!birthPlace) return fail("Utan skattenummer behöver vi din födelseort.");
         }
       }
     } else if (tinCountry === "SE") {
@@ -141,18 +141,18 @@ serve(async (req) => {
     const firstName = text(body.firstName, 100);
     const lastName = text(body.lastName, 100);
     const legalName = text(body.legalName, 200);
-    if (sellerType === "individual" && (!firstName || !lastName)) return fail("Enter your first and last name as on your ID.");
-    if (sellerType === "entity" && legalName.length < 2) return fail("Enter the company's full name, including AB or similar.");
+    if (sellerType === "individual" && (!firstName || !lastName)) return fail("Fyll i ditt för- och efternamn som på din legitimation.");
+    if (sellerType === "entity" && legalName.length < 2) return fail("Fyll i företagets fullständiga namn, med AB eller liknande.");
 
     // Companies: a permanent establishment in another EU country used for the rentals
     let peEu: boolean | null = null;
     let peCountries: string[] = [];
     if (sellerType === "entity") {
-      if (typeof body.peEu !== "boolean") return fail("Say whether the company rents out through a place of business in another EU country.");
+      if (typeof body.peEu !== "boolean") return fail("Svara på om företaget hyr ut via ett fast driftställe i ett annat EU-land.");
       peEu = body.peEu;
       const listed: unknown[] = peEu && Array.isArray(body.peCountries) ? body.peCountries : [];
       peCountries = listed.map(country).filter((c): c is string => !!c);
-      if (peEu && !peCountries.length) return fail("Which EU countries?");
+      if (peEu && !peCountries.length) return fail("Vilka EU-länder?");
     }
 
     // Tax numbers from other countries (all must be collected); kept as saved
@@ -162,7 +162,7 @@ serve(async (req) => {
     for (const item of keepOtherTins ? [] : Array.isArray(body.otherTins) ? body.otherTins.slice(0, 5) : []) {
       const c = country(item?.country);
       const n = parseForeignTin(text(item?.number, 40));
-      if (!c || !n.ok) return fail("Check the other country's tax number and its country.");
+      if (!c || !n.ok) return fail("Kontrollera skattenumret från det andra landet och landskoden.");
       otherTins.push({ country: c, number: n.value });
     }
 
@@ -225,6 +225,6 @@ serve(async (req) => {
   } catch (error) {
     // Never the request body: it holds tax numbers
     console.error("[SAVE-HOST-TAX-PROFILE]", error instanceof Error ? error.message : String(error));
-    return json({ error: "Your tax details could not be saved. Please try again, or write to support@mojjo.se." }, 500);
+    return json({ error: "Det gick inte att spara dina skatteuppgifter. Försök igen eller mejla support@mojjo.se." }, 500);
   }
 });

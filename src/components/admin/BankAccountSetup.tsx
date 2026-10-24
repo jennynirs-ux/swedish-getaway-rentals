@@ -7,9 +7,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Building2, CheckCircle2, ExternalLink, AlertCircle, RefreshCw, Loader2, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { HOST_PAYOUT_TIMING_TEXT, stockholmDate } from "@/lib/constants";
+import { stockholmDate } from "@/lib/constants";
 // Pure rules, shared with the onboarding checklist and tested in src/lib/hostDashboard.test.ts
-import { formatSek, payoutState, payoutStatusPollMs, stripeRequirementLabels, type PayoutStatus } from "@/lib/hostDashboard";
+import {
+  HOST_PAYOUT_TIMING_SV,
+  formatSek,
+  payoutState,
+  payoutStatusPollMs,
+  stripeRequirementLabels,
+  type PayoutStatus,
+} from "@/lib/hostDashboard";
 import { StripeExplainer } from "@/components/host/StripeExplainer";
 
 export { payoutState };
@@ -54,7 +61,7 @@ export const useHostPayoutStatus = (enabled = true) =>
       const { data, error } = await supabase.functions.invoke("create-connect-account", {
         body: { action: "status" },
       });
-      if (error) throw new Error(await functionErrorMessage(error, "Could not check your payout status."));
+      if (error) throw new Error(await functionErrorMessage(error, "Det gick inte att hämta din utbetalningsstatus."));
       return data as PayoutStatus;
     },
     refetchOnWindowFocus: true,
@@ -110,20 +117,20 @@ export const startStripeOnboarding = async (returnPath = "/host-dashboard?tab=pa
   const { data, error } = await supabase.functions.invoke("create-connect-account", {
     body: { returnUrl: back, refreshUrl: back },
   });
-  if (error) throw new Error(await functionErrorMessage(error, "We couldn't open Stripe. Please try again."));
-  if (!data?.url) throw new Error("Stripe did not send a sign-up link. Please try again.");
+  if (error) throw new Error(await functionErrorMessage(error, "Det gick inte att öppna Stripe. Försök igen."));
+  if (!data?.url) throw new Error("Vi fick ingen länk från Stripe. Försök igen.");
   window.location.href = data.url;
 };
 
 /** The toast when Stripe can't be opened */
 export const stripeOpenFailed = (error: unknown) =>
-  toast.error("Could not open Stripe", {
-    description: `${sentence(error instanceof Error ? error.message : "Please try again")} If it keeps happening, email support@mojjo.se.`,
+  toast.error("Det gick inte att öppna Stripe", {
+    description: `${sentence(error instanceof Error ? error.message : "Försök igen")} Om det fortsätter, mejla support@mojjo.se.`,
     duration: 10_000,
   });
 
 const formatDay = (isoDate: string) =>
-  new Date(`${isoDate}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  new Date(`${isoDate}T12:00:00`).toLocaleDateString("sv-SE", { day: "numeric", month: "long", year: "numeric" });
 
 export const BankAccountSetup = () => {
   const [loading, setLoading] = useState(false);
@@ -168,13 +175,13 @@ export const BankAccountSetup = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-connect-dashboard-link");
-      if (error) throw new Error(await functionErrorMessage(error, "Failed to open Stripe. Please try again."));
-      if (!data?.url) throw new Error("No dashboard link received from Stripe");
+      if (error) throw new Error(await functionErrorMessage(error, "Det gick inte att öppna Stripe. Försök igen."));
+      if (!data?.url) throw new Error("Vi fick ingen länk från Stripe.");
       window.open(data.url, "_blank");
     } catch (error) {
       console.error("Error opening Stripe dashboard:", error);
-      toast.error("Could not open Stripe", {
-        description: error instanceof Error ? error.message : "Failed to open Stripe. Please try again.",
+      toast.error("Det gick inte att öppna Stripe", {
+        description: error instanceof Error ? error.message : "Försök igen.",
       });
     } finally {
       setLoading(false);
@@ -186,18 +193,18 @@ export const BankAccountSetup = () => {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" />
-          <CardTitle>Payouts with Stripe</CardTitle>
+          <CardTitle>Utbetalningar via Stripe</CardTitle>
         </div>
         {state === "ready" && (
           <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-emerald-200">
             <CheckCircle2 className="h-3 w-3 mr-1" />
-            Set up
+            Klart
           </Badge>
         )}
       </div>
       <CardDescription>
-        Your price is paid out to your bank {HOST_PAYOUT_TIMING_TEXT}. If a guest cancels, the refund is taken from
-        that booking's payout, or from your next payout if it has already been paid.
+        Ditt pris betalas ut till din bank {HOST_PAYOUT_TIMING_SV}. Om en gäst avbokar dras återbetalningen från
+        utbetalningen för den bokningen, eller från din nästa utbetalning om den redan är gjord.
       </CardDescription>
     </CardHeader>
   );
@@ -216,20 +223,20 @@ export const BankAccountSetup = () => {
   const fees = (
     <div className="bg-muted/50 rounded-lg p-4 space-y-2">
       <div className="flex justify-between gap-4 text-sm">
-        <span className="text-muted-foreground">You receive:</span>
-        <span className="font-medium text-emerald-600 text-right">100% of your price</span>
+        <span className="text-muted-foreground">Du får:</span>
+        <span className="font-medium text-emerald-600 text-right">100 % av ditt pris</span>
       </div>
       <div className="flex justify-between gap-4 text-sm">
-        <span className="text-muted-foreground">Guests pay:</span>
-        <span className="font-medium text-right">a {rate}% service fee on top</span>
+        <span className="text-muted-foreground">Gästen betalar:</span>
+        <span className="font-medium text-right">{rate.toLocaleString("sv-SE")} % i serviceavgift ovanpå</span>
       </div>
       <div className="flex justify-between gap-4 text-sm">
-        <span className="text-muted-foreground">Paid out:</span>
-        <span className="font-medium text-right">{HOST_PAYOUT_TIMING_TEXT}</span>
+        <span className="text-muted-foreground">Utbetalning:</span>
+        <span className="font-medium text-right">{HOST_PAYOUT_TIMING_SV}</span>
       </div>
       {offerActive && rate < baseRate && (
         <p className="text-xs text-muted-foreground">
-          Founding-host offer until {formatDay(fee!.fee_offer_until!)}, then {baseRate}%.
+          Erbjudande för nya värdar till och med {formatDay(fee!.fee_offer_until!)}, sedan {baseRate.toLocaleString("sv-SE")} %.
         </p>
       )}
     </div>
@@ -240,7 +247,7 @@ export const BankAccountSetup = () => {
     <Alert>
       <AlertCircle className="h-4 w-4" />
       <AlertDescription className="space-y-1">
-        <p className="font-medium">To be taken from your next payout: {formatSek(owedOre)}</p>
+        <p className="font-medium">Dras från din nästa utbetalning: {formatSek(owedOre)}</p>
         <ul className="text-sm text-muted-foreground list-disc pl-4">
           {charges.map((c) => (
             <li key={c.id}>
@@ -249,9 +256,9 @@ export const BankAccountSetup = () => {
           ))}
         </ul>
         <p className="text-xs text-muted-foreground">
-          This is, for example, the card fee for a booking you cancelled, or a refund to a guest made after your share
-          of that booking was paid out. We take it from your next payout, and from the ones after it if one payout is
-          not enough.
+          Det kan till exempel vara kortavgiften för en bokning som du avbokade, eller en återbetalning till en gäst efter
+          att din del av bokningen redan betalats ut. Vi drar det från din nästa utbetalning, och från de följande om en
+          utbetalning inte räcker.
         </p>
       </AlertDescription>
     </Alert>
@@ -265,8 +272,8 @@ export const BankAccountSetup = () => {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {sentence(statusError instanceof Error ? statusError.message : "Could not check your payout status")} Try
-              "Refresh status", or email support@mojjo.se if it keeps happening.
+              {sentence(statusError instanceof Error ? statusError.message : "Det gick inte att hämta din utbetalningsstatus")}{" "}
+              Tryck på ”Uppdatera status”, eller mejla support@mojjo.se om det fortsätter.
             </AlertDescription>
           </Alert>
         )}
@@ -276,10 +283,10 @@ export const BankAccountSetup = () => {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <p className="font-medium mb-1">Stripe can't pay out to this account</p>
+                <p className="font-medium mb-1">Stripe kan inte betala ut till det här kontot</p>
                 <p className="text-sm">
-                  Stripe has stopped this account and there is nothing more to fill in. Email support@mojjo.se and we
-                  will sort it out with Stripe. Your listings can't be published until it is fixed.
+                  Stripe har stoppat kontot och det finns inget mer att fylla i. Mejla support@mojjo.se så löser vi det
+                  med Stripe. Dina annonser kan inte publiceras förrän det är löst.
                 </p>
               </AlertDescription>
             </Alert>
@@ -290,14 +297,14 @@ export const BankAccountSetup = () => {
             <Alert className="bg-emerald-50 border-emerald-200">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <AlertDescription className="text-emerald-800">
-                <p className="font-medium">Your payouts are set up.</p>
+                <p className="font-medium">Dina utbetalningar är klara.</p>
                 <p className="text-sm">
-                  For each booking, your price is paid out to your bank {HOST_PAYOUT_TIMING_TEXT}.
+                  För varje bokning betalas ditt pris ut till din bank {HOST_PAYOUT_TIMING_SV}.
                 </p>
                 {status?.payoutsEnabled === false && (
                   <p className="text-sm mt-1">
-                    Stripe is still checking your bank account. You can publish now; payouts start once Stripe has
-                    verified it.
+                    Stripe kontrollerar fortfarande ditt bankkonto. Du kan publicera redan nu; utbetalningarna börjar
+                    när Stripe har godkänt kontot.
                   </p>
                 )}
               </AlertDescription>
@@ -305,7 +312,7 @@ export const BankAccountSetup = () => {
             {fees}
             <Button onClick={handleManageAccount} disabled={loading} variant="outline" className="w-full">
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
-              Manage payout settings in Stripe
+              Hantera utbetalningar hos Stripe
             </Button>
           </>
         ) : state === "verifying" ? (
@@ -313,10 +320,10 @@ export const BankAccountSetup = () => {
             <Alert className="border-2 border-primary/20">
               <Clock className="h-4 w-4 text-primary" />
               <AlertDescription className="text-foreground">
-                <p className="font-medium mb-1">Stripe is verifying your details</p>
+                <p className="font-medium mb-1">Stripe kontrollerar dina uppgifter</p>
                 <p className="text-sm text-muted-foreground">
-                  You have sent Stripe everything it asked for. Checking usually takes a few minutes, sometimes a
-                  day. This page checks again every 30 seconds; you can publish your listing as soon as it is done.
+                  Du har skickat allt som Stripe bad om. Kontrollen brukar ta några minuter, ibland ett dygn. Sidan
+                  kollar igen var 30:e sekund, och du kan publicera din annons så fort det är klart.
                 </p>
               </AlertDescription>
             </Alert>
@@ -329,35 +336,35 @@ export const BankAccountSetup = () => {
               <AlertDescription className="text-foreground">
                 {state === "details_missing" ? (
                   <>
-                    <p className="font-medium mb-1">Finish your payout setup with Stripe</p>
+                    <p className="font-medium mb-1">Gör klart dina utbetalningar hos Stripe</p>
                     {stripeRequirementLabels(status?.currentlyDue).length > 0 ? (
                       <>
-                        <p className="text-sm text-muted-foreground">Stripe still needs:</p>
+                        <p className="text-sm text-muted-foreground">Stripe behöver fortfarande:</p>
                         <ul className="mt-1 list-disc pl-5 text-sm">
                           {stripeRequirementLabels(status?.currentlyDue).map((label) => <li key={label}>{label}</li>)}
                         </ul>
                       </>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Stripe still needs a few details
-                        {status?.requirementsDue ? ` (${status.requirementsDue} left)` : ""} before it can pay you.
+                        Stripe behöver några uppgifter till
+                        {status?.requirementsDue ? ` (${status.requirementsDue} kvar)` : ""} innan du kan få betalt.
                       </p>
                     )}
                     <p className="mt-1 text-sm text-muted-foreground">
                       {status?.currentDeadline
-                        ? `Please finish by ${formatDay(stockholmDate(new Date(status.currentDeadline * 1000).toISOString()))}. `
+                        ? `Gör klart senast ${formatDay(stockholmDate(new Date(status.currentDeadline * 1000).toISOString()))}. `
                         : ""}
-                      Press "Finish setup on Stripe": you continue where you left off. You can publish your listing once
-                      this is done.
+                      Tryck på ”Slutför hos Stripe” så fortsätter du där du slutade. Du kan publicera din annons när det
+                      är klart.
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="font-medium mb-1">Set up payouts to get paid</p>
+                    <p className="font-medium mb-1">Ställ in utbetalningar för att få betalt</p>
                     <p className="text-sm text-muted-foreground">
-                      You create a free Stripe account, which pays your share of each booking to your bank. It takes
-                      about five minutes: your details, your ID and your bank account. You can publish your listing once
-                      this is done.
+                      Du skapar ett kostnadsfritt Stripe-konto som betalar ut din del av varje bokning till din bank.
+                      Det tar ungefär fem minuter: dina uppgifter, din legitimation och ditt bankkonto. Du kan publicera
+                      din annons när det är klart.
                     </p>
                   </>
                 )}
@@ -370,11 +377,11 @@ export const BankAccountSetup = () => {
               ) : (
                 <Building2 className="mr-2 h-5 w-5" />
               )}
-              {state === "details_missing" ? "Finish setup on Stripe" : "Set up payouts with Stripe"}
+              {state === "details_missing" ? "Slutför hos Stripe" : "Ställ in utbetalningar via Stripe"}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              You'll go to Stripe to enter your details securely and come back here when you're done. We never see your
-              bank details.
+              Du fyller i dina uppgifter säkert hos Stripe och kommer tillbaka hit när du är klar. Vi ser aldrig dina
+              bankuppgifter.
             </p>
           </>
         )}
@@ -388,7 +395,7 @@ export const BankAccountSetup = () => {
           className="w-full"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          Refresh status
+          Uppdatera status
         </Button>
       </CardContent>
     </Card>
