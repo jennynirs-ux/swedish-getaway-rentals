@@ -611,6 +611,8 @@ serve(async (req) => {
         guestName: trimmedName,
         guestEmail,
         guestPhone: guestPhone || "",
+        // Saved on the booking: the guest's e-mails are in this language
+        guestLang,
         specialRequests: specialRequests || "",
         // Guest confirmed: lead guest 25+, no parties or events
         rulesConfirmedAt: new Date().toISOString(),

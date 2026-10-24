@@ -209,6 +209,7 @@ export type Database = {
           currency: string
           extras: Json | null
           guest_email: string
+          guest_lang: string
           guest_name: string
           guest_phone: string | null
           host_amount: number | null
@@ -246,6 +247,7 @@ export type Database = {
           currency?: string
           extras?: Json | null
           guest_email: string
+          guest_lang?: string
           guest_name: string
           guest_phone?: string | null
           host_amount?: number | null
@@ -283,6 +285,7 @@ export type Database = {
           currency?: string
           extras?: Json | null
           guest_email?: string
+          guest_lang?: string
           guest_name?: string
           guest_phone?: string | null
           host_amount?: number | null

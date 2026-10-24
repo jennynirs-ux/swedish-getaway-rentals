@@ -231,7 +231,9 @@ serve(async (req) => {
         currency,
         coupon_id: validatedCouponId || '',
         coupon_code: validatedCouponCode || '',
-        discount_amount: String(validatedDiscount)
+        discount_amount: String(validatedDiscount),
+        // The order confirmation is in this language
+        lang: guestLang
       }
     };
 

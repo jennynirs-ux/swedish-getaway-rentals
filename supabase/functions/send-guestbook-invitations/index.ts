@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { isAdminOrService } from "../_shared/auth.ts";
+import { guestbookInvitationEmail } from "../_shared/guestbook-email.ts";
+import { guestLang, guestPageUrl, guestTexts } from "../_shared/guest-lang.ts";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const SITE_URL = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,6 +54,7 @@ serve(async (req) => {
         property_id,
         guest_name,
         guest_email,
+        guest_lang,
         check_in_date,
         check_out_date,
         properties (
@@ -117,68 +121,25 @@ serve(async (req) => {
         }
 
         const property = booking.properties as any;
-        const guestbookUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/property/${property.id}/guestbook?token=${token}`;
+        // The guestbook page on the site, in the guest's language
+        const lang = guestLang(booking.guest_lang);
+        const guestbookUrl = `${guestPageUrl(SITE_URL, lang, `/property/${property.id}/guestbook`)}?token=${token}`;
+        const texts = await guestTexts(supabaseClient, property.id, lang);
 
-        // Send email
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #2c3e50; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #7c9885 0%, #556b2f 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-                .content { background: #ffffff; padding: 40px 30px; border: 1px solid #e1e8e1; border-top: none; }
-                .button { display: inline-block; background: #7c9885; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }
-                .button:hover { background: #6a8573; }
-                .footer { text-align: center; padding: 20px; color: #7f8c8d; font-size: 14px; }
-                .highlight { background: #f0f4f0; padding: 20px; border-left: 4px solid #7c9885; margin: 20px 0; border-radius: 4px; }
-                h1 { margin: 0; font-size: 28px; font-weight: 600; }
-                p { margin: 16px 0; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>🌿 Thank You for Staying With Us!</h1>
-                </div>
-                <div class="content">
-                  <p>Dear ${booking.guest_name},</p>
-                  
-                  <p>We hope you had a wonderful and relaxing stay at <strong>${property.title}</strong>. It was our pleasure to host you from ${new Date(booking.check_in_date).toLocaleDateString()} to ${new Date(booking.check_out_date).toLocaleDateString()}.</p>
-                  
-                  <div class="highlight">
-                    <p><strong>Share Your Experience 🌟</strong></p>
-                    <p>We would love to hear about your stay! Leave a note in our guestbook and share your favorite moments, photos, or memories from your time with us.</p>
-                  </div>
-                  
-                  <p style="text-align: center;">
-                    <a href="${guestbookUrl}" class="button">Write in Our Guestbook 🌿</a>
-                  </p>
-                  
-                  <p>Your words inspire future guests and help us continue creating memorable experiences. Whether you share a photo, a star rating, or simply a few kind words, we treasure every message.</p>
-                  
-                  <p>This invitation is valid for 30 days and is specifically for your recent stay.</p>
-                  
-                  <p>We hope to welcome you back soon!</p>
-                  
-                  <p>With warm regards,<br>
-                  <strong>The Nordic Getaways Team</strong></p>
-                </div>
-                <div class="footer">
-                  <p>Nordic Getaways - Escape to Nature</p>
-                  <p style="font-size: 12px; color: #95a5a6;">This is an automated message. Please do not reply to this email.</p>
-                </div>
-              </div>
-            </body>
-          </html>
-        `;
+        // Send email, in the language the guest booked in
+        const { subject, html: emailHtml } = guestbookInvitationEmail({
+          lang,
+          guestName: booking.guest_name,
+          propertyTitle: texts.text("property", "title", property.title),
+          checkIn: booking.check_in_date,
+          checkOut: booking.check_out_date,
+          url: guestbookUrl,
+        });
 
         const { error: emailError } = await resend.emails.send({
           from: "Nordic Getaways <support@mojjo.se>",
           to: [booking.guest_email],
-          subject: `🌿 Share Your Experience at ${property.title}`,
+          subject,
           html: emailHtml,
         });
 

@@ -185,6 +185,8 @@ const Contact = () => {
           phone: formData.phone,
           subject: formData.subject || "Message from the contact page",
           message: formData.message,
+          // The confirmation e-mail to the sender is in the page's language
+          lang,
         }
       });
       if (emailError) throw emailError;

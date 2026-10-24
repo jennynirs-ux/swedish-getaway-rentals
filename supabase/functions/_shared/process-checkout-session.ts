@@ -1,6 +1,8 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { alertAdmin, alertAdminOnce, sendEmail, SUPPORT_EMAIL } from "./alert.ts";
+import { type GuestLang, guestLang } from "./guest-lang.ts";
+import { longDate } from "./format.ts";
 import { escapeHtml } from "./auth.ts";
 import { hostShareAmount, initialHostPayout } from "./payout.ts";
 import { MONEY_BOOKING_COLUMNS, type MoneyBooking, reconcileBookingMoney, reverseUnsavedPayment } from "./booking-money.ts";
@@ -24,6 +26,43 @@ export interface ProcessResult {
 const STALE_CLAIM_MS = 10 * 60 * 1000;
 
 const kr = (ore: number) => (ore / 100).toLocaleString('sv-SE');
+
+// The e-mail to a guest whose dates were taken while they paid, in the
+// language they booked in (metadata.guestLang). Sentences get escaped values.
+// English keeps its ISO dates, as before.
+const DATES_TAKEN_COPY: Record<GuestLang, {
+  subject: string;
+  stay: (title: string, checkIn: string, checkOut: string) => string;
+  hi: (name: string) => string;
+  sorry: (stay: string) => string;
+  refunded: string;
+  otherDates: (email: string) => string;
+}> = {
+  en: {
+    subject: 'Your booking could not be completed – full refund issued',
+    stay: (title, checkIn, checkOut) => `${title || 'the cabin'}, ${checkIn} to ${checkOut}`,
+    hi: (name) => `Hi ${name},`,
+    sorry: (stay) => `We're sorry: the dates you paid for (${stay}) were booked by someone else while you were checking out.`,
+    refunded: 'We have refunded your payment in full. It usually shows on your card within 5–10 business days.',
+    otherDates: (email) => `If you'd like other dates, just reply to this e-mail or write to ${email}.`,
+  },
+  sv: {
+    subject: 'Din bokning kunde inte slutföras – full återbetalning',
+    stay: (title, checkIn, checkOut) => `${title || 'stugan'}, ${longDate(checkIn, 'sv')} – ${longDate(checkOut, 'sv')}`,
+    hi: (name) => `Hej ${name},`,
+    sorry: (stay) => `Tyvärr bokades datumen du betalade för (${stay}) av någon annan medan du slutförde betalningen.`,
+    refunded: 'Vi har betalat tillbaka hela beloppet. Pengarna syns oftast på ditt kort inom 5–10 bankdagar.',
+    otherDates: (email) => `Vill du boka andra datum? Svara bara på det här mejlet eller skriv till ${email}.`,
+  },
+  de: {
+    subject: 'Deine Buchung konnte nicht abgeschlossen werden – volle Rückerstattung',
+    stay: (title, checkIn, checkOut) => `${title || 'das Ferienhaus'}, ${longDate(checkIn, 'de')} – ${longDate(checkOut, 'de')}`,
+    hi: (name) => `Hallo ${name},`,
+    sorry: (stay) => `Das tut uns leid: Der Zeitraum, den du bezahlt hast (${stay}), wurde während deiner Zahlung von jemand anderem gebucht.`,
+    refunded: 'Wir haben dir den vollen Betrag erstattet. Die Erstattung ist meist innerhalb von 5–10 Werktagen auf deiner Karte zu sehen.',
+    otherDates: (email) => `Wenn du einen anderen Zeitraum buchen möchtest, antworte einfach auf diese E-Mail oder schreib an ${email}.`,
+  },
+};
 
 // Nights already taken: another booking, a channel block (Airbnb...), a host block
 async function datesTaken(supabase: SupabaseClient, propertyId: string, checkIn: string, checkOut: string) {
@@ -246,13 +285,14 @@ async function saveSession(
           .eq('id', claim!.id);
 
         const stay = `${metadata.propertyTitle || 'the cabin'}, ${metadata.checkInDate} to ${metadata.checkOutDate}`;
+        const t = DATES_TAKEN_COPY[guestLang(metadata.guestLang)];
         await sendEmail(
           metadata.guestEmail,
-          'Your booking could not be completed – full refund issued',
-          `<p>Hi ${escapeHtml(metadata.guestName)},</p>
-           <p>We're sorry: the dates you paid for (${escapeHtml(stay)}) were booked by someone else while you were checking out.
-           We have refunded your payment in full. It usually shows on your card within 5–10 business days.</p>
-           <p>If you'd like other dates, just reply to this e-mail or write to ${SUPPORT_EMAIL}.</p>
+          t.subject,
+          `<p>${t.hi(escapeHtml(metadata.guestName))}</p>
+           <p>${t.sorry(escapeHtml(t.stay(metadata.propertyTitle, metadata.checkInDate, metadata.checkOutDate)))}
+           ${t.refunded}</p>
+           <p>${t.otherDates(SUPPORT_EMAIL)}</p>
            <p>Jenny &amp; Jon, Nordic Getaways</p>`,
         );
         await alertAdmin('Double booking prevented – guest refunded', [
@@ -286,6 +326,8 @@ async function saveSession(
           guest_name: metadata.guestName,
           guest_email: metadata.guestEmail,
           guest_phone: metadata.guestPhone || null,
+          // The language the guest booked in; their e-mails use it
+          guest_lang: guestLang(metadata.guestLang),
           check_in_date: metadata.checkInDate,
           check_out_date: metadata.checkOutDate,
           number_of_guests: parseInt(metadata.numberOfGuests),

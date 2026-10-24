@@ -2,12 +2,49 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { alertAdmin, alertAdminOnce, sendEmail, SUPPORT_EMAIL } from "./alert.ts";
 import { escapeHtml } from "./auth.ts";
+import { type GuestLang, guestLang } from "./guest-lang.ts";
 import { pickVariant } from "./shop-variants.ts";
 
 // A paid shop checkout (Stripe account STRIPE_SECRET_KEY_SHOP) becomes an
 // order and a Printful order. Called by handle-shop-payment-success from both
 // the shop Stripe webhook and the customer's /order-success page; the first
 // to claim the session does the work.
+
+// The order confirmation, in the language the shopper used on the site
+// (metadata.lang, set by create-cart-payment). Values are already escaped.
+// Product names stay as stored.
+const ORDER_COPY: Record<GuestLang, {
+  subject: string;
+  hi: (name: string) => string;
+  thanks: (total: string) => string;
+  shipping: string;
+  reference: (ref: string, email: string) => string;
+}> = {
+  en: {
+    subject: "Your Nordic Getaways order is confirmed",
+    hi: (name) => `Hi ${name || "there"},`,
+    thanks: (total) => `Thank you for your order! We've received your payment of ${total}.`,
+    shipping:
+      "Your items are printed to order and usually ship within 2–7 business days. You'll get tracking details by e-mail when the parcel is on its way.",
+    reference: (ref, email) => `Order reference: ${ref}. Questions? Reply to this e-mail or write to ${email}.`,
+  },
+  sv: {
+    subject: "Din beställning hos Nordic Getaways är bekräftad",
+    hi: (name) => (name ? `Hej ${name},` : "Hej,"),
+    thanks: (total) => `Tack för din beställning! Vi har tagit emot din betalning på ${total}.`,
+    shipping:
+      "Dina varor trycks på beställning och skickas oftast inom 2–7 arbetsdagar. Du får spårningsinformation via e-post när paketet är på väg.",
+    reference: (ref, email) => `Beställningsnummer: ${ref}. Frågor? Svara på det här mejlet eller skriv till ${email}.`,
+  },
+  de: {
+    subject: "Deine Bestellung bei Nordic Getaways ist bestätigt",
+    hi: (name) => (name ? `Hallo ${name},` : "Hallo,"),
+    thanks: (total) => `Vielen Dank für deine Bestellung! Wir haben deine Zahlung über ${total} erhalten.`,
+    shipping:
+      "Deine Artikel werden auf Bestellung gedruckt und in der Regel innerhalb von 2–7 Werktagen versandt. Sobald das Paket unterwegs ist, bekommst du die Sendungsverfolgung per E-Mail.",
+    reference: (ref, email) => `Bestellnummer: ${ref}. Fragen? Antworte einfach auf diese E-Mail oder schreib an ${email}.`,
+  },
+};
 
 export interface ShopResult {
   success: boolean;
@@ -139,14 +176,15 @@ export async function processShopSession(
     const itemList = lines.map((l) => `${l.quantity} × ${l.title}${l.variant_name ? ` (${l.variant_name.split(" / ").slice(1).join(" / ") || l.variant_name})` : ""}`);
 
     if (email) {
+      const t = ORDER_COPY[guestLang(metadata.lang)];
       await sendEmail(
         email,
-        "Your Nordic Getaways order is confirmed",
-        `<p>Hi ${escapeHtml(name || "there")},</p>
-         <p>Thank you for your order! We've received your payment of ${total}.</p>
+        t.subject,
+        `<p>${t.hi(escapeHtml(name))}</p>
+         <p>${t.thanks(total)}</p>
          <ul>${itemList.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>
-         <p>Your items are printed to order and usually ship within 2–7 business days. You'll get tracking details by e-mail when the parcel is on its way.</p>
-         <p>Order reference: ${order.id.slice(0, 8).toUpperCase()}. Questions? Reply to this e-mail or write to ${SUPPORT_EMAIL}.</p>
+         <p>${t.shipping}</p>
+         <p>${t.reference(order.id.slice(0, 8).toUpperCase(), SUPPORT_EMAIL)}</p>
          <p>Jenny &amp; Jon, Nordic Getaways</p>`,
       );
     }

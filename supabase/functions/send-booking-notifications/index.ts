@@ -3,10 +3,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "npm:resend@4.0.0";
 import { escapeHtml } from "../_shared/auth.ts";
 import { hhmm, longDate } from "../_shared/format.ts";
-import { policyFor, policySummary } from "../_shared/cancellation.ts";
+import { policyFor, policySummary, policyText } from "../_shared/cancellation.ts";
 import { houseRuleLines } from "../_shared/stay-rules.ts";
 import { alertAdminOnce } from "../_shared/alert.ts";
 import { dayAfterCheckIn, hostShareAmount, MAX_HOLD_DAYS, payoutDueOn } from "../_shared/payout.ts";
+import { type GuestLang, guestLang, guestPageUrl, guestTexts } from "../_shared/guest-lang.ts";
 
 // bookings.total_amount is stored in öre
 const formatAmount = (ore: number) => (ore / 100).toLocaleString("sv-SE");
@@ -19,6 +20,200 @@ const COMPANY_NAME = "Mojjo AB";
 // A name fit to show in an e-mail: profiles.full_name defaults to the e-mail address
 const shownName = (...names: (string | null | undefined)[]) =>
   names.map((n) => n?.trim()).find((n) => n && !n.includes("@")) ?? null;
+
+// The guest's confirmation in the language they booked in (bookings.guest_lang).
+// English is the e-mail as it has always been. The host's e-mail further down
+// stays in English. Values go in already escaped where the e-mail is HTML.
+interface GuestCopy {
+  subject: (title: string) => string;
+  /** The default template's <title> */
+  documentTitle: string;
+  /** "Booking Confirmed!" (the HTML heading adds 🎉) */
+  heading: string;
+  thanks: string;
+  hi: (name: string) => string;
+  /** title: "<strong>…</strong>" in the HTML, plain in the text version */
+  confirmed: (title: string) => string;
+  /** Who provides the stay. A legal statement: it says the same in every language */
+  provider: (title: string, hostName: string | null) => string;
+  /** "Saturday 3 October 2026, from 15:00" */
+  checkInAt: (date: string, time: string) => string;
+  checkOutBy: (date: string, time: string) => string;
+  /** An extra saved without a name */
+  extraFallback: string;
+  policyTitle: (policyName: string) => string;
+  /** summary: the policy's tiers; stay and fee: "1 234 SEK" (fee null when there is none) */
+  policyDescription: (summary: string, stay: string, fee: string | null) => string;
+  // The default template (section titles also head the text version, in capitals)
+  checkInOut: string;
+  checkIn: string;
+  checkOut: string;
+  guests: string;
+  extras: string;
+  location: string;
+  houseRules: string;
+  cancellationPolicy: string;
+  guideButton: string;
+  guideHint: string;
+  summary: string;
+  bookingId: string;
+  total: string;
+  questions: string;
+  /** The text version's shorter line */
+  questionsText: string;
+  /** "Best regards," (the next line is the team) */
+  regards: string;
+  team: string;
+  footerTagline: string;
+  automated: string;
+  // The facts under a host's own template
+  factCheckIn: string;
+  factCheckOut: string;
+  factAddress: string;
+  factReference: string;
+  factGuideLink: string;
+  /** Follows the guide link */
+  factGuideRest: string;
+  factQuestions: string;
+}
+
+const GUEST_COPY: Record<GuestLang, GuestCopy> = {
+  en: {
+    subject: (title) => `Booking Confirmed - ${title}`,
+    documentTitle: "Booking Confirmation - Nordic Getaways",
+    heading: "Booking Confirmed!",
+    thanks: "Thank you for choosing Nordic Getaways",
+    hi: (name) => `Hi ${name},`,
+    confirmed: (title) => `Your booking for ${title} has been confirmed!`,
+    provider: (title, hostName) =>
+      `Your stay at ${title} is provided by ${hostName ? `${hostName}, the cabin's host` : "the cabin's host"}. ${COMPANY_NAME} (Nordic Getaways) takes the booking and payment on the host's behalf.`,
+    checkInAt: (date, time) => `${date}, from ${time}`,
+    checkOutBy: (date, time) => `${date}, by ${time}`,
+    extraFallback: "Extra",
+    policyTitle: (policyName) => `Cancellation policy (${policyName})`,
+    policyDescription: (summary, stay, fee) =>
+      `${summary}. ` +
+      `The percentage applies to the price of the stay (${stay}); ` +
+      `the service fee${fee ? ` (${fee})` : ""} is not refunded when you cancel. ` +
+      "If the host or we cancel, you get everything back, service fee included. To cancel, reply to this e-mail.",
+    checkInOut: "Check-In & Check-Out",
+    checkIn: "Check-In:",
+    checkOut: "Check-Out:",
+    guests: "Guests:",
+    extras: "Extras:",
+    location: "Property Location",
+    houseRules: "House Rules",
+    cancellationPolicy: "Cancellation Policy",
+    guideButton: "View Your Complete Guest Guide",
+    guideHint: "Access directions, amenities, local recommendations, and more",
+    summary: "Booking Summary",
+    bookingId: "Booking ID:",
+    total: "Total Amount:",
+    questions: "If you have any questions, feel free to reach out to us. We're here to help make your stay unforgettable!",
+    questionsText: "If you have any questions, feel free to reach out to us.",
+    regards: "Best regards,",
+    team: "The Nordic Getaways Team",
+    footerTagline: "Nordic Getaways - Your Home Away from Home",
+    automated: "This is an automated confirmation email",
+    factCheckIn: "Check-in:",
+    factCheckOut: "Check-out:",
+    factAddress: "Address:",
+    factReference: "Booking reference:",
+    factGuideLink: "Open the guest guide",
+    factGuideRest: " – house rules, practical details and local tips.",
+    factQuestions: "Questions? Reply to this e-mail or write to support@mojjo.se.",
+  },
+  sv: {
+    subject: (title) => `Bokningen är bekräftad – ${title}`,
+    documentTitle: "Bokningsbekräftelse – Nordic Getaways",
+    heading: "Bokningen är bekräftad!",
+    thanks: "Tack för att du valde Nordic Getaways",
+    hi: (name) => `Hej ${name},`,
+    confirmed: (title) => `Din bokning av ${title} är bekräftad!`,
+    provider: (title, hostName) =>
+      `Din vistelse på ${title} tillhandahålls av ${hostName ? `${hostName}, som är stugans värd` : "stugans värd"}. ${COMPANY_NAME} (Nordic Getaways) tar emot bokningen och betalningen på värdens vägnar.`,
+    checkInAt: (date, time) => `${date}, från kl. ${time}`,
+    checkOutBy: (date, time) => `${date}, senast kl. ${time}`,
+    extraFallback: "Tillval",
+    policyTitle: (policyName) => `Avbokningsregler (${policyName})`,
+    policyDescription: (summary, stay, fee) =>
+      `${summary}. ` +
+      `Procentsatsen gäller priset för vistelsen (${stay}); ` +
+      `serviceavgiften${fee ? ` (${fee})` : ""} betalas inte tillbaka när du avbokar. ` +
+      "Om värden eller vi avbokar får du tillbaka allt, även serviceavgiften. Svara på det här mejlet om du vill avboka.",
+    checkInOut: "Incheckning och utcheckning",
+    checkIn: "Incheckning:",
+    checkOut: "Utcheckning:",
+    guests: "Gäster:",
+    extras: "Tillval:",
+    location: "Boendets adress",
+    houseRules: "Husregler",
+    cancellationPolicy: "Avbokningsregler",
+    guideButton: "Öppna hela gästguiden",
+    guideHint: "Vägbeskrivning, bekvämligheter, lokala tips och mycket mer",
+    summary: "Sammanfattning av bokningen",
+    bookingId: "Boknings-id:",
+    total: "Totalbelopp:",
+    questions: "Hör gärna av dig om du har några frågor. Vi hjälper dig gärna så att din vistelse blir oförglömlig!",
+    questionsText: "Hör gärna av dig om du har några frågor.",
+    regards: "Vänliga hälsningar",
+    team: "Nordic Getaways-teamet",
+    footerTagline: "Nordic Getaways – ditt hem borta från hemmet",
+    automated: "Det här är en automatisk bokningsbekräftelse",
+    factCheckIn: "Incheckning:",
+    factCheckOut: "Utcheckning:",
+    factAddress: "Adress:",
+    factReference: "Bokningsnummer:",
+    factGuideLink: "Öppna gästguiden",
+    factGuideRest: " – husregler, praktisk information och lokala tips.",
+    factQuestions: "Frågor? Svara på det här mejlet eller skriv till support@mojjo.se.",
+  },
+  de: {
+    subject: (title) => `Buchung bestätigt – ${title}`,
+    documentTitle: "Buchungsbestätigung – Nordic Getaways",
+    heading: "Buchung bestätigt!",
+    thanks: "Danke, dass du dich für Nordic Getaways entschieden hast",
+    hi: (name) => `Hallo ${name},`,
+    confirmed: (title) => `Deine Buchung für ${title} ist bestätigt!`,
+    provider: (title, hostName) =>
+      `Anbieter deines Aufenthalts in ${title} ist ${hostName ? `${hostName}, Gastgeber des Ferienhauses` : "der Gastgeber des Ferienhauses"}. ${COMPANY_NAME} (Nordic Getaways) nimmt die Buchung und die Zahlung im Namen des Gastgebers entgegen.`,
+    checkInAt: (date, time) => `${date}, ab ${time} Uhr`,
+    checkOutBy: (date, time) => `${date}, bis ${time} Uhr`,
+    extraFallback: "Extra",
+    policyTitle: (policyName) => `Stornierungsbedingungen (${policyName})`,
+    policyDescription: (summary, stay, fee) =>
+      `${summary}. ` +
+      `Der Prozentsatz bezieht sich auf den Preis des Aufenthalts (${stay}); ` +
+      `die Servicegebühr${fee ? ` (${fee})` : ""} wird nicht erstattet, wenn du stornierst. ` +
+      "Storniert der Gastgeber oder wir, bekommst du alles zurück, auch die Servicegebühr. Wenn du stornieren möchtest, antworte einfach auf diese E-Mail.",
+    checkInOut: "Check-in & Check-out",
+    checkIn: "Check-in:",
+    checkOut: "Check-out:",
+    guests: "Gäste:",
+    extras: "Extras:",
+    location: "Adresse der Unterkunft",
+    houseRules: "Hausregeln",
+    cancellationPolicy: "Stornierungsbedingungen",
+    guideButton: "Zur vollständigen Gästeinfo",
+    guideHint: "Anfahrt, Ausstattung, Tipps für die Umgebung und mehr",
+    summary: "Buchungsübersicht",
+    bookingId: "Buchungs-ID:",
+    total: "Gesamtbetrag:",
+    questions: "Wenn du Fragen hast, melde dich gern bei uns. Wir helfen dir gern dabei, dass dein Aufenthalt unvergesslich wird!",
+    questionsText: "Wenn du Fragen hast, melde dich gern bei uns.",
+    regards: "Viele Grüße",
+    team: "Dein Nordic Getaways-Team",
+    footerTagline: "Nordic Getaways – dein Zuhause auf Zeit",
+    automated: "Dies ist eine automatisch versendete Buchungsbestätigung",
+    factCheckIn: "Check-in:",
+    factCheckOut: "Check-out:",
+    factAddress: "Adresse:",
+    factReference: "Buchungsnummer:",
+    factGuideLink: "Gästeinfo öffnen",
+    factGuideRest: " – Hausregeln, praktische Infos und Tipps für die Umgebung.",
+    factQuestions: "Fragen? Antworte auf diese E-Mail oder schreib an support@mojjo.se.",
+  },
+};
 
 // booking_email_tracking.email_type of each e-mail this function sends; a
 // recorded one is never sent again, so a retry only sends what failed
@@ -74,6 +269,7 @@ serve(async (req) => {
         host_payout_due_on,
         created_at,
         currency,
+        guest_lang,
         properties (
           id,
           slug,
@@ -146,8 +342,19 @@ serve(async (req) => {
     const resend = new Resend(resendApiKey);
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const baseUrl = Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
-    const guidebookUrl = `${baseUrl}/property/${property.slug || property.id}/guide`;
     const hostDashboardUrl = `${baseUrl}/host-dashboard?tab=bookings`;
+
+    // The guest's e-mail is in the language they booked in, with what the
+    // host wrote (title, guide, extras, their template) in that language where
+    // it has been translated; the host's e-mail keeps the host's own words
+    const lang = guestLang(booking.guest_lang);
+    const copy = GUEST_COPY[lang];
+    const texts = await guestTexts(supabase, booking.property_id, lang);
+    const guestProperty = texts.listing(property);
+    const guestTitle: string = guestProperty.title;
+    const guidebookUrl = guestPageUrl(baseUrl, lang, `/property/${property.slug || property.id}/guide`);
+    // English keeps its <html> tag as it was
+    const htmlLangAttr = lang === "en" ? "" : ` lang="${lang}"`;
 
     // E-mails already sent for this booking (a retry must not send them twice)
     const { data: sentRows } = await supabase
@@ -160,14 +367,13 @@ serve(async (req) => {
     // Everything below that comes from guests or hosts is escaped before it
     // goes into HTML: a name like "<b>" must not change the e-mail
     const titleHtml = escapeHtml(property.title);
+    const guestTitleHtml = escapeHtml(guestTitle);
     const guestNameHtml = escapeHtml(booking.guest_name);
     const currencyHtml = escapeHtml(booking.currency);
 
     // Who provides the stay: the host's business, else their name
     const hostName = shownName(hostProfile?.host_business_name, hostProfile?.display_name, hostProfile?.full_name);
-    const providerText = hostName
-      ? `Your stay at ${property.title} is provided by ${hostName}, the cabin's host. ${COMPANY_NAME} (Nordic Getaways) takes the booking and payment on the host's behalf.`
-      : `Your stay at ${property.title} is provided by the cabin's host. ${COMPANY_NAME} (Nordic Getaways) takes the booking and payment on the host's behalf.`;
+    const providerText = copy.provider(guestTitle, hostName);
     const providerHtml = escapeHtml(providerText);
     
     // Format property address
@@ -179,12 +385,12 @@ serve(async (req) => {
       property?.country
     ].filter(Boolean).join(", ");
 
-    // Extract house rules from guidebook sections
-    const guidebookSections = property.guidebook_sections || [];
+    // Extract house rules from guidebook sections (in the guest's language)
+    const guidebookSections = guestProperty.guidebook_sections || [];
     const rulesSection = guidebookSections.find((s: any) => s.id === 'rules');
     // The host's house rules for the listing, then any the guide adds
     const houseRules = [
-      ...houseRuleLines(property),
+      ...houseRuleLines(property, lang),
       ...(rulesSection?.blocks?.filter((b: any) => b.type === 'list').flatMap((b: any) => b.items || []) || []),
     ];
 
@@ -195,22 +401,35 @@ serve(async (req) => {
     const stayPrice = hostShareAmount(booking);
     const serviceFee = booking.service_fee ?? Math.max(0, booking.total_amount - stayPrice);
     const cancellationPolicy = {
-      title: `Cancellation policy (${policy.name})`,
-      description:
-        `${policySummary(policy)}. ` +
-        `The percentage applies to the price of the stay (${formatAmount(stayPrice)} ${booking.currency}); ` +
-        `the service fee${serviceFee > 0 ? ` (${formatAmount(serviceFee)} ${booking.currency})` : ""} is not refunded when you cancel. ` +
-        "If the host or we cancel, you get everything back, service fee included. To cancel, reply to this e-mail.",
+      title: copy.policyTitle(policyText(policy.key, lang).name),
+      description: copy.policyDescription(
+        policySummary(policy, lang),
+        `${formatAmount(stayPrice)} ${booking.currency}`,
+        serviceFee > 0 ? `${formatAmount(serviceFee)} ${booking.currency}` : null,
+      ),
     };
 
-    // Extras the guest added when booking ("Jacuzzi, one day (400 SEK)")
-    const extrasText = (Array.isArray(booking.extras) ? booking.extras : [])
-      .map((e: { name?: string; amount?: number }) => `${e.name ?? "Extra"} (${formatAmount(e.amount ?? 0)} ${booking.currency})`)
+    // Extras the guest added when booking ("Jacuzzi, one day (400 SEK)"):
+    // the host reads them as named, the guest in their language
+    type BookedExtra = { id?: string; name?: string; amount?: number };
+    const bookedExtras: BookedExtra[] = Array.isArray(booking.extras) ? booking.extras : [];
+    const extrasText = bookedExtras
+      .map((e) => `${e.name ?? "Extra"} (${formatAmount(e.amount ?? 0)} ${booking.currency})`)
+      .join(", ");
+    const guestExtrasText = bookedExtras
+      .map((e) => {
+        const name = e.name == null ? copy.extraFallback : e.id ? texts.text("property", `extra:${e.id}`, e.name) : e.name;
+        return `${name} (${formatAmount(e.amount ?? 0)} ${booking.currency})`;
+      })
       .join(", ");
 
-    // Format check-in and check-out times
-    const checkInDateTime = `${longDate(booking.check_in_date)}, from ${hhmm(property.check_in_time, '15:00')}`;
-    const checkOutDateTime = `${longDate(booking.check_out_date)}, by ${hhmm(property.check_out_time, '11:00')}`;
+    // Format check-in and check-out times (the host's e-mail, then the guest's)
+    const checkInTime = hhmm(property.check_in_time, '15:00');
+    const checkOutTime = hhmm(property.check_out_time, '11:00');
+    const checkInDateTime = `${longDate(booking.check_in_date)}, from ${checkInTime}`;
+    const checkOutDateTime = `${longDate(booking.check_out_date)}, by ${checkOutTime}`;
+    const guestCheckIn = copy.checkInAt(longDate(booking.check_in_date, lang), checkInTime);
+    const guestCheckOut = copy.checkOutBy(longDate(booking.check_out_date, lang), checkOutTime);
 
     // Create email open tracking pixel
     const trackingId = `${bookingId}-${Date.now()}`;
@@ -228,9 +447,9 @@ serve(async (req) => {
       // message is HTML, so the host's text and every value are escaped there.
       const replacements: Record<string, string> = {
         "{guest_name}": booking.guest_name,
-        "{property_name}": property.title,
-        "{check_in_date}": longDate(booking.check_in_date),
-        "{check_out_date}": longDate(booking.check_out_date),
+        "{property_name}": guestTitle,
+        "{check_in_date}": longDate(booking.check_in_date, lang),
+        "{check_out_date}": longDate(booking.check_out_date, lang),
         "{check_in_time}": hhmm(property.check_in_time, "15:00"),
         "{check_out_time}": hhmm(property.check_out_time, "11:00"),
         "{number_of_guests}": booking.number_of_guests.toString(),
@@ -238,9 +457,17 @@ serve(async (req) => {
         "{currency}": booking.currency,
       };
 
-      guestEmailSubject = String(bookingTemplate.subject ?? "");
+      // The host's template in the guest's language once it is translated
+      // (the placeholders are kept in the translation)
+      guestEmailSubject = texts.text(
+        "property_private",
+        "email_templates.booking_confirmation.subject",
+        String(bookingTemplate.subject ?? ""),
+      );
       // Placeholders hold no HTML characters, so they survive the escaping
-      let message = escapeHtml(bookingTemplate.message ?? "");
+      let message = escapeHtml(
+        texts.text("property_private", "email_templates.booking_confirmation.message", bookingTemplate.message ?? ""),
+      );
 
       Object.entries(replacements).forEach(([placeholder, value]) => {
         const escapedPlaceholder = placeholder.replace(/[{}]/g, '\\$&');
@@ -251,7 +478,7 @@ serve(async (req) => {
 
       guestEmailHtml = `
         <!DOCTYPE html>
-        <html>
+        <html${htmlLangAttr}>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -267,15 +494,15 @@ serve(async (req) => {
             <!-- The facts every confirmation needs, whatever the host's template says -->
             <div style="margin-top: 24px; padding: 16px 20px; background: #f8f9fa; border-radius: 8px;">
               <p>${providerHtml}</p>
-              <p><strong>Check-in:</strong> ${checkInDateTime}</p>
-              <p><strong>Check-out:</strong> ${checkOutDateTime}</p>
-              ${propertyAddress ? `<p><strong>Address:</strong> ${escapeHtml(propertyAddress)}</p>` : ''}
-              <p><strong>Guests:</strong> ${booking.number_of_guests}</p>
-              ${extrasText ? `<p><strong>Extras:</strong> ${escapeHtml(extrasText)}</p>` : ''}
-              <p><strong>Booking reference:</strong> ${booking.id.slice(0, 8).toUpperCase()}</p>
+              <p><strong>${copy.factCheckIn}</strong> ${guestCheckIn}</p>
+              <p><strong>${copy.factCheckOut}</strong> ${guestCheckOut}</p>
+              ${propertyAddress ? `<p><strong>${copy.factAddress}</strong> ${escapeHtml(propertyAddress)}</p>` : ''}
+              <p><strong>${copy.guests}</strong> ${booking.number_of_guests}</p>
+              ${guestExtrasText ? `<p><strong>${copy.extras}</strong> ${escapeHtml(guestExtrasText)}</p>` : ''}
+              <p><strong>${copy.factReference}</strong> ${booking.id.slice(0, 8).toUpperCase()}</p>
               <p><strong>${cancellationPolicy.title}:</strong> ${escapeHtml(cancellationPolicy.description)}</p>
-              <p><a href="${guidebookUrl}">Open the guest guide</a> – house rules, practical details and local tips.</p>
-              <p>Questions? Reply to this e-mail or write to support@mojjo.se.</p>
+              <p><a href="${guidebookUrl}">${copy.factGuideLink}</a>${copy.factGuideRest}</p>
+              <p>${copy.factQuestions}</p>
             </div>
           </div>
           <img src="${trackingPixel}" width="1" height="1" alt="" style="display:none;" />
@@ -284,14 +511,14 @@ serve(async (req) => {
       `;
     } else {
       // Use default template
-      guestEmailSubject = `Booking Confirmed - ${property.title}`;
+      guestEmailSubject = copy.subject(guestTitle);
       guestEmailHtml = `
         <!DOCTYPE html>
-        <html>
+        <html${htmlLangAttr}>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Booking Confirmation - Nordic Getaways</title>
+          <title>${copy.documentTitle}</title>
           <style>
             body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; }
             .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
@@ -321,45 +548,45 @@ serve(async (req) => {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎉 Booking Confirmed!</h1>
-              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Thank you for choosing Nordic Getaways</p>
+              <h1>🎉 ${copy.heading}</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">${copy.thanks}</p>
             </div>
             
             <div class="content">
-              <p style="font-size: 16px; line-height: 1.6;">Hi ${guestNameHtml},</p>
-              <p style="font-size: 16px; line-height: 1.6;">Your booking for <strong>${titleHtml}</strong> has been confirmed!</p>
+              <p style="font-size: 16px; line-height: 1.6;">${copy.hi(guestNameHtml)}</p>
+              <p style="font-size: 16px; line-height: 1.6;">${copy.confirmed(`<strong>${guestTitleHtml}</strong>`)}</p>
               <p style="font-size: 16px; line-height: 1.6;">${providerHtml}</p>
               
               <div class="section">
-                <div class="section-title">Check-In & Check-Out</div>
+                <div class="section-title">${copy.checkInOut}</div>
                 <div class="info-box">
                   <div class="info-row">
-                    <span class="info-label">Check-In:</span>
-                    <span class="info-value">${checkInDateTime}</span>
+                    <span class="info-label">${copy.checkIn}</span>
+                    <span class="info-value">${guestCheckIn}</span>
                   </div>
                   <div class="info-row">
-                    <span class="info-label">Check-Out:</span>
-                    <span class="info-value">${checkOutDateTime}</span>
+                    <span class="info-label">${copy.checkOut}</span>
+                    <span class="info-value">${guestCheckOut}</span>
                   </div>
                   <div class="info-row">
-                    <span class="info-label">Guests:</span>
+                    <span class="info-label">${copy.guests}</span>
                     <span class="info-value">${booking.number_of_guests}</span>
                   </div>
-                  ${extrasText ? `<div class="info-row">
-                    <span class="info-label">Extras:</span>
-                    <span class="info-value">${escapeHtml(extrasText)}</span>
+                  ${guestExtrasText ? `<div class="info-row">
+                    <span class="info-label">${copy.extras}</span>
+                    <span class="info-value">${escapeHtml(guestExtrasText)}</span>
                   </div>` : ''}
                 </div>
               </div>
 
               <div class="section">
-                <div class="section-title">Property Location</div>
-                <p style="font-size: 16px; line-height: 1.6; color: #495057;">${escapeHtml(propertyAddress || property.title)}</p>
+                <div class="section-title">${copy.location}</div>
+                <p style="font-size: 16px; line-height: 1.6; color: #495057;">${escapeHtml(propertyAddress || guestTitle)}</p>
               </div>
 
               ${houseRules.length > 0 ? `
               <div class="section">
-                <div class="section-title">House Rules</div>
+                <div class="section-title">${copy.houseRules}</div>
                 <ul class="rules-list">
                   ${houseRules.map((rule: string) => `<li>${escapeHtml(rule)}</li>`).join('')}
                 </ul>
@@ -367,7 +594,7 @@ serve(async (req) => {
               ` : ''}
 
               <div class="section">
-                <div class="section-title">Cancellation Policy</div>
+                <div class="section-title">${copy.cancellationPolicy}</div>
                 <div class="info-box">
                   <strong style="color: #2D5F5D;">${cancellationPolicy.title}</strong>
                   <p style="margin: 10px 0 0 0; line-height: 1.6; color: #495057;">${escapeHtml(cancellationPolicy.description)}</p>
@@ -375,32 +602,32 @@ serve(async (req) => {
               </div>
 
               <div style="text-align: center; margin: 40px 0;">
-                <a href="${guidebookUrl}" class="cta-button">View Your Complete Guest Guide</a>
-                <p style="margin: 15px 0; color: #6c757d; font-size: 14px;">Access directions, amenities, local recommendations, and more</p>
+                <a href="${guidebookUrl}" class="cta-button">${copy.guideButton}</a>
+                <p style="margin: 15px 0; color: #6c757d; font-size: 14px;">${copy.guideHint}</p>
               </div>
 
               <div class="section">
-                <div class="section-title">Booking Summary</div>
+                <div class="section-title">${copy.summary}</div>
                 <div class="info-box">
                   <div class="info-row">
-                    <span class="info-label">Booking ID:</span>
+                    <span class="info-label">${copy.bookingId}</span>
                     <span class="info-value">${booking.id}</span>
                   </div>
                   <div class="info-row">
-                    <span class="info-label">Total Amount:</span>
+                    <span class="info-label">${copy.total}</span>
                     <span class="info-value">${formatAmount(booking.total_amount)} ${currencyHtml}</span>
                   </div>
                 </div>
               </div>
 
-              <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">If you have any questions, feel free to reach out to us. We're here to help make your stay unforgettable!</p>
+              <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">${copy.questions}</p>
               
-              <p style="font-size: 16px; line-height: 1.6; margin-top: 20px;">Best regards,<br><strong>The Nordic Getaways Team</strong></p>
+              <p style="font-size: 16px; line-height: 1.6; margin-top: 20px;">${copy.regards}<br><strong>${copy.team}</strong></p>
             </div>
             
             <div class="footer">
-              <p style="margin: 5px 0;">Nordic Getaways - Your Home Away from Home</p>
-              <p style="margin: 5px 0;">This is an automated confirmation email</p>
+              <p style="margin: 5px 0;">${copy.footerTagline}</p>
+              <p style="margin: 5px 0;">${copy.automated}</p>
             </div>
           </div>
           <img src="${trackingPixel}" width="1" height="1" alt="" style="display:none;" />
@@ -411,42 +638,42 @@ serve(async (req) => {
 
     // Send email to guest with plain text fallback
     const guestEmailPlainText = `
-Booking Confirmed!
+${copy.heading}
 
-Hi ${booking.guest_name},
+${copy.hi(booking.guest_name)}
 
-Your booking for ${property.title} has been confirmed!
+${copy.confirmed(guestTitle)}
 
 ${providerText}
 
-CHECK-IN & CHECK-OUT:
-- Check-In: ${checkInDateTime}
-- Check-Out: ${checkOutDateTime}
-- Guests: ${booking.number_of_guests}${extrasText ? `\n- Extras: ${extrasText}` : ''}
+${copy.checkInOut.toUpperCase()}:
+- ${copy.checkIn} ${guestCheckIn}
+- ${copy.checkOut} ${guestCheckOut}
+- ${copy.guests} ${booking.number_of_guests}${guestExtrasText ? `\n- ${copy.extras} ${guestExtrasText}` : ''}
 
-PROPERTY LOCATION:
-${propertyAddress || property.title}
+${copy.location.toUpperCase()}:
+${propertyAddress || guestTitle}
 
 ${houseRules.length > 0 ? `
-HOUSE RULES:
+${copy.houseRules.toUpperCase()}:
 ${houseRules.map((rule: string, i: number) => `${i + 1}. ${rule}`).join('\n')}
 ` : ''}
 
-CANCELLATION POLICY:
+${copy.cancellationPolicy.toUpperCase()}:
 ${cancellationPolicy.title}
 ${cancellationPolicy.description}
 
-VIEW YOUR COMPLETE GUEST GUIDE:
+${copy.guideButton.toUpperCase()}:
 ${guidebookUrl}
 
-BOOKING SUMMARY:
-- Booking ID: ${booking.id}
-- Total Amount: ${formatAmount(booking.total_amount)} ${booking.currency}
+${copy.summary.toUpperCase()}:
+- ${copy.bookingId} ${booking.id}
+- ${copy.total} ${formatAmount(booking.total_amount)} ${booking.currency}
 
-If you have any questions, feel free to reach out to us.
+${copy.questionsText}
 
-Best regards,
-The Nordic Getaways Team
+${copy.regards}
+${copy.team}
     `;
 
     // Resend reports failures in its result instead of throwing; an e-mail

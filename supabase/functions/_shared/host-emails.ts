@@ -1,9 +1,11 @@
 import { escapeHtml } from "./auth.ts";
 import { longDate } from "./format.ts";
+import type { GuestLang } from "./guest-lang.ts";
 import type { CancelledBy } from "./payout.ts";
 
-// The e-mails a cancellation sends: the guest's and (M8) the host's. Built as
-// pure functions so vitest can check them (src/lib/hostEmails.test.ts);
+// The e-mails a cancellation sends: the guest's (in the language they booked
+// in) and (M8) the host's (English). Built as pure functions so vitest can
+// check them (src/lib/hostEmails.test.ts, src/lib/guestCancellationEmail.test.ts);
 // callers send them with alert.ts sendEmail. Every value from the database or
 // the admin is escaped. Amounts are öre.
 
@@ -71,6 +73,126 @@ export interface Email {
   html: string;
 }
 
+/** Refund figures for a guest whose earlier refunds count towards the policy's (values escaped) */
+interface EarlierRefund {
+  pct: string;
+  target: string;
+  request: string;
+  earlier: string;
+  /** Refunded now, or null when nothing more is refunded */
+  now: string | null;
+  total: string;
+}
+
+// The guest's cancellation e-mail in each guest language (bookings.guest_lang).
+// Values come in escaped; English is the e-mail as it always was.
+export const GUEST_CANCELLATION_COPY: Record<GuestLang, {
+  subject: (title: string) => string;
+  hi: (name: string) => string;
+  /** The stay: "Lakehouse, Sunday 20 December 2026 to Sunday 27 December 2026" */
+  stay: (title: string, checkIn: string, checkOut: string) => string;
+  /** When the cancellation reached us: "Friday 20 November 2026, 30 days before arrival" */
+  request: (date: string, days: number) => string;
+  cancelledAsAsked: (stay: string) => string;
+  nothingPaid: string;
+  refundAfterEarlier: (r: EarlierRefund) => string;
+  refunded: (amount: string, pct: string, request: string) => string;
+  notRefunded: (request: string) => string;
+  serviceFeeKept: (fee: string) => string;
+  /** policySummaryText: "Standard: 90% refund more than 21 days before arrival; …" */
+  policy: (policySummaryText: string) => string;
+  hostCancelled: (stay: string) => string;
+  weCancelled: (stay: string) => string;
+  refundedAll: (amount: string) => string;
+  alreadyRefunded: string;
+  rebook: string;
+  questions: (email: string) => string;
+  /** The listing's name when it has none */
+  yourCabin: string;
+}> = {
+  en: {
+    subject: (title) => `Your booking is cancelled – ${title}`,
+    hi: (name) => `Hi ${name},`,
+    stay: (title, checkIn, checkOut) => `${title}, ${checkIn} to ${checkOut}`,
+    request: (date, days) => `${date}, ${days} day${days === 1 ? "" : "s"} before arrival`,
+    cancelledAsAsked: (stay) => `Your booking of ${stay} is cancelled, as you asked.`,
+    nothingPaid: "Nothing was paid through our website for this booking, so there is nothing to refund here.",
+    refundAfterEarlier: (r) =>
+      `The booking's cancellation policy gives ${r.pct}% of the accommodation price (${r.target}) for a cancellation received ${r.request}. You had already been refunded ${r.earlier}, so ${
+        r.now !== null ? `we have now refunded the remaining ${r.now}` : "nothing more is refunded"
+      }. In total you get ${r.total} back.${r.now !== null ? " It usually shows on your card within 5–10 business days." : ""}`,
+    refunded: (amount, pct, request) =>
+      `We have refunded ${amount}: ${pct}% of the accommodation price, which the booking's cancellation policy gives for a cancellation received ${request}. It usually shows on your card within 5–10 business days.`,
+    notRefunded: (request) => `Under the booking's cancellation policy, a cancellation received ${request} is not refunded.`,
+    serviceFeeKept: (fee) => `The service fee (${fee}) is not refunded when a guest cancels.`,
+    policy: (summary) =>
+      `The booking's cancellation policy, ${summary}. Refunds are a share of the accommodation price; the service fee is not refundable.`,
+    hostCancelled: (stay) => `We're sorry: the host has had to cancel your booking of ${stay}.`,
+    weCancelled: (stay) => `We're sorry: we have had to cancel your booking of ${stay}.`,
+    refundedAll: (amount) =>
+      `You get back everything you paid, service fee included: we have refunded ${amount}. It usually shows on your card within 5–10 business days.`,
+    alreadyRefunded: "Everything you paid has already been refunded.",
+    rebook: "If you'd like help finding another cabin or other dates, just reply to this e-mail.",
+    questions: (email) => `Questions? Reply to this e-mail or write to ${email}.`,
+    yourCabin: "your cabin",
+  },
+  sv: {
+    subject: (title) => `Din bokning är avbokad – ${title}`,
+    hi: (name) => `Hej ${name},`,
+    stay: (title, checkIn, checkOut) => `${title}, ${checkIn} till ${checkOut}`,
+    request: (date, days) => `${date}, ${days} ${days === 1 ? "dag" : "dagar"} före ankomst`,
+    cancelledAsAsked: (stay) => `Vi har avbokat din bokning av ${stay}, som du bad om.`,
+    nothingPaid: "Ingenting betalades via vår webbplats för den här bokningen, så det finns inget att betala tillbaka här.",
+    refundAfterEarlier: (r) =>
+      `Bokningens avbokningsregler ger ${r.pct} % av priset för vistelsen (${r.target}) för en avbokning som nådde oss ${r.request}. Du hade redan fått tillbaka ${r.earlier}, så ${
+        r.now !== null ? `nu har vi betalat tillbaka de återstående ${r.now}` : "inget mer betalas tillbaka"
+      }. Totalt får du tillbaka ${r.total}.${r.now !== null ? " Pengarna syns oftast på ditt kort inom 5–10 bankdagar." : ""}`,
+    refunded: (amount, pct, request) =>
+      `Vi har betalat tillbaka ${amount}: ${pct} % av priset för vistelsen, vilket bokningens avbokningsregler ger för en avbokning som nådde oss ${request}. Pengarna syns oftast på ditt kort inom 5–10 bankdagar.`,
+    notRefunded: (request) =>
+      `Enligt bokningens avbokningsregler betalas ingenting tillbaka för en avbokning som nådde oss ${request}.`,
+    serviceFeeKept: (fee) => `Serviceavgiften (${fee}) betalas inte tillbaka när en gäst avbokar.`,
+    policy: (summary) =>
+      `Bokningens avbokningsregler – ${summary}. Återbetalningen är en andel av priset för vistelsen; serviceavgiften betalas inte tillbaka.`,
+    hostCancelled: (stay) => `Vi är ledsna, men värden har behövt avboka din bokning av ${stay}.`,
+    weCancelled: (stay) => `Vi är ledsna, men vi har behövt avboka din bokning av ${stay}.`,
+    refundedAll: (amount) =>
+      `Du får tillbaka allt du betalade, även serviceavgiften: vi har betalat tillbaka ${amount}. Pengarna syns oftast på ditt kort inom 5–10 bankdagar.`,
+    alreadyRefunded: "Allt du betalade har redan betalats tillbaka.",
+    rebook: "Vill du ha hjälp att hitta en annan stuga eller andra datum? Svara bara på det här mejlet.",
+    questions: (email) => `Frågor? Svara på det här mejlet eller skriv till ${email}.`,
+    yourCabin: "din stuga",
+  },
+  de: {
+    subject: (title) => `Deine Buchung ist storniert – ${title}`,
+    hi: (name) => `Hallo ${name},`,
+    stay: (title, checkIn, checkOut) => `${title} vom ${checkIn} bis ${checkOut}`,
+    request: (date, days) => `am ${date} (${days} ${days === 1 ? "Tag" : "Tage"} vor Anreise)`,
+    cancelledAsAsked: (stay) => `Wie gewünscht haben wir deine Buchung für ${stay} storniert.`,
+    nothingPaid: "Für diese Buchung wurde nichts über unsere Website bezahlt, daher gibt es hier nichts zu erstatten.",
+    refundAfterEarlier: (r) =>
+      `Nach den Stornierungsbedingungen der Buchung bekommst du für eine Stornierung, die uns ${r.request} erreicht hat, ${r.pct} % des Preises für den Aufenthalt zurück (${r.target}). Du hattest bereits ${r.earlier} zurückbekommen, ${
+        r.now !== null ? `deshalb haben wir dir jetzt die restlichen ${r.now} erstattet` : "deshalb wird nichts weiter erstattet"
+      }. Insgesamt bekommst du ${r.total} zurück.${r.now !== null ? " Die Erstattung ist meist innerhalb von 5–10 Werktagen auf deiner Karte zu sehen." : ""}`,
+    refunded: (amount, pct, request) =>
+      `Wir haben dir ${amount} erstattet: ${pct} % des Preises für den Aufenthalt, die dir nach den Stornierungsbedingungen der Buchung für eine Stornierung zustehen, die uns ${request} erreicht hat. Die Erstattung ist meist innerhalb von 5–10 Werktagen auf deiner Karte zu sehen.`,
+    notRefunded: (request) =>
+      `Nach den Stornierungsbedingungen der Buchung wird eine Stornierung, die uns ${request} erreicht hat, nicht erstattet.`,
+    serviceFeeKept: (fee) => `Die Servicegebühr (${fee}) wird nicht erstattet, wenn ein Gast storniert.`,
+    policy: (summary) =>
+      `Stornierungsbedingungen der Buchung – ${summary}. Erstattet wird ein Anteil am Preis des Aufenthalts; die Servicegebühr wird nicht erstattet.`,
+    hostCancelled: (stay) => `Es tut uns leid: Der Gastgeber musste deine Buchung für ${stay} stornieren.`,
+    weCancelled: (stay) => `Es tut uns leid: Wir mussten deine Buchung für ${stay} stornieren.`,
+    refundedAll: (amount) =>
+      `Du bekommst alles zurück, was du bezahlt hast, auch die Servicegebühr: Wir haben dir ${amount} erstattet. Die Erstattung ist meist innerhalb von 5–10 Werktagen auf deiner Karte zu sehen.`,
+    alreadyRefunded: "Alles, was du bezahlt hast, wurde bereits erstattet.",
+    rebook:
+      "Wenn du Hilfe bei der Suche nach einer anderen Unterkunft oder einem anderen Zeitraum möchtest, antworte einfach auf diese E-Mail.",
+    questions: (email) => `Fragen? Antworte auf diese E-Mail oder schreib an ${email}.`,
+    yourCabin: "deine Unterkunft",
+  },
+};
+
 /** 990000 öre -> "9 900 SEK", 16680 -> "166,80 SEK" (Swedish digit grouping) */
 export function money(ore: number, currency = "SEK"): string {
   const whole = Math.round(Number(ore) || 0);
@@ -89,55 +211,55 @@ const amount = (f: CancellationFacts, ore: number) => escapeHtml(money(ore, f.cu
 const requestLine = (f: CancellationFacts) =>
   `${escapeHtml(longDate(f.requestedOn))}, ${escapeHtml(f.daysBeforeArrival)} day${f.daysBeforeArrival === 1 ? "" : "s"} before arrival`;
 
-/** The guest's "your booking is cancelled" e-mail; policySummaryText from cancellation.ts policySummary */
-export function guestCancellationEmail(f: CancellationFacts, policySummaryText: string): Email {
-  const lines: string[] = [`<p>Hi ${escapeHtml(f.guestName)},</p>`];
+/**
+ * The guest's "your booking is cancelled" e-mail in their language (English
+ * by default). policySummaryText: the policy's name and cancellation.ts
+ * policySummary in the same language; f.propertyTitle: the listing's title as
+ * the guest reads it (guest-lang.ts guestTexts).
+ */
+export function guestCancellationEmail(f: CancellationFacts, policySummaryText: string, lang: GuestLang = "en"): Email {
+  const t = GUEST_CANCELLATION_COPY[lang] ?? GUEST_CANCELLATION_COPY.en;
+  const guestStay = t.stay(escapeHtml(f.propertyTitle), escapeHtml(longDate(f.checkIn, lang)), escapeHtml(longDate(f.checkOut, lang)));
+  const request = t.request(escapeHtml(longDate(f.requestedOn, lang)), f.daysBeforeArrival);
+  const pct = escapeHtml(f.refundPercentage);
+  const lines: string[] = [`<p>${t.hi(escapeHtml(f.guestName))}</p>`];
 
   if (f.cancelledBy === "guest") {
-    lines.push(`<p>Your booking of ${stay(f)} is cancelled, as you asked.</p>`);
+    lines.push(`<p>${t.cancelledAsAsked(guestStay)}</p>`);
     const refundedNow = Math.max(0, f.refundAmount - f.refundedEarlier);
     if (!f.hasPayment) {
-      lines.push("<p>Nothing was paid through our website for this booking, so there is nothing to refund here.</p>");
+      lines.push(`<p>${t.nothingPaid}</p>`);
     } else if (f.refundedEarlier > 0) {
       // The policy refund on its own, then what earlier refunds change
       lines.push(
-        `<p>The booking's cancellation policy gives ${escapeHtml(f.refundPercentage)}% of the accommodation price (${amount(f, f.refundTarget)}) for a cancellation received ${requestLine(f)}. You had already been refunded ${amount(f, f.refundedEarlier)}, so ${
-          refundedNow > 0 ? `we have now refunded the remaining ${amount(f, refundedNow)}` : "nothing more is refunded"
-        }. In total you get ${amount(f, f.refundAmount)} back.${refundedNow > 0 ? " It usually shows on your card within 5–10 business days." : ""}</p>`,
+        `<p>${t.refundAfterEarlier({
+          pct,
+          target: amount(f, f.refundTarget),
+          request,
+          earlier: amount(f, f.refundedEarlier),
+          now: refundedNow > 0 ? amount(f, refundedNow) : null,
+          total: amount(f, f.refundAmount),
+        })}</p>`,
       );
     } else if (f.refundAmount > 0) {
-      lines.push(
-        `<p>We have refunded ${amount(f, f.refundAmount)}: ${escapeHtml(f.refundPercentage)}% of the accommodation price, which the booking's cancellation policy gives for a cancellation received ${requestLine(f)}. It usually shows on your card within 5–10 business days.</p>`,
-      );
+      lines.push(`<p>${t.refunded(amount(f, f.refundAmount), pct, request)}</p>`);
     } else {
-      lines.push(
-        `<p>Under the booking's cancellation policy, a cancellation received ${requestLine(f)} is not refunded.</p>`,
-      );
+      lines.push(`<p>${t.notRefunded(request)}</p>`);
     }
     if (f.hasPayment && f.serviceFeeKept > 0) {
-      lines.push(`<p>The service fee (${amount(f, f.serviceFeeKept)}) is not refunded when a guest cancels.</p>`);
+      lines.push(`<p>${t.serviceFeeKept(amount(f, f.serviceFeeKept))}</p>`);
     }
-    lines.push(
-      `<p>The booking's cancellation policy, ${escapeHtml(policySummaryText)}. Refunds are a share of the accommodation price; the service fee is not refundable.</p>`,
-    );
+    lines.push(`<p>${t.policy(escapeHtml(policySummaryText))}</p>`);
   } else {
+    lines.push(`<p>${f.cancelledBy === "host" ? t.hostCancelled(guestStay) : t.weCancelled(guestStay)}</p>`);
     lines.push(
-      f.cancelledBy === "host"
-        ? `<p>We're sorry: the host has had to cancel your booking of ${stay(f)}.</p>`
-        : `<p>We're sorry: we have had to cancel your booking of ${stay(f)}.</p>`,
+      `<p>${!f.hasPayment ? t.nothingPaid : f.refundAmount > 0 ? t.refundedAll(amount(f, f.refundAmount)) : t.alreadyRefunded}</p>`,
     );
-    lines.push(
-      !f.hasPayment
-        ? "<p>Nothing was paid through our website for this booking, so there is nothing to refund here.</p>"
-        : f.refundAmount > 0
-          ? `<p>You get back everything you paid, service fee included: we have refunded ${amount(f, f.refundAmount)}. It usually shows on your card within 5–10 business days.</p>`
-          : "<p>Everything you paid has already been refunded.</p>",
-    );
-    lines.push("<p>If you'd like help finding another cabin or other dates, just reply to this e-mail.</p>");
+    lines.push(`<p>${t.rebook}</p>`);
   }
 
-  lines.push(`<p>Questions? Reply to this e-mail or write to ${SUPPORT}.</p>`, SIGNATURE);
-  return { subject: `Your booking is cancelled – ${f.propertyTitle}`, html: lines.join("\n") };
+  lines.push(`<p>${t.questions(SUPPORT)}</p>`, SIGNATURE);
+  return { subject: t.subject(f.propertyTitle), html: lines.join("\n") };
 }
 
 /** The host's "a booking was cancelled" e-mail (M8): what the guest gets, what leaves their payout, the dates reopen */

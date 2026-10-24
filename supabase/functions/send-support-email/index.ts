@@ -1,8 +1,35 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@4.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { type GuestLang, guestLang } from "../_shared/guest-lang.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+// The confirmation to the sender, in the language of the contact page they
+// used (body.lang). Fixed text only: nothing the sender typed goes in it.
+const REPLY_COPY: Record<GuestLang, { subject: string; heading: string; received: string; regards: string; urgent: string }> = {
+  en: {
+    subject: "We received your message",
+    heading: "Thank you for contacting Nordic Getaways",
+    received: "We have received your message and will reply to this address as soon as we can.",
+    regards: "Best regards,",
+    urgent: "If you need urgent assistance, please contact us at support@mojjo.se",
+  },
+  sv: {
+    subject: "Vi har tagit emot ditt meddelande",
+    heading: "Tack för att du hörde av dig till Nordic Getaways",
+    received: "Vi har tagit emot ditt meddelande och svarar till den här adressen så snart vi kan.",
+    regards: "Vänliga hälsningar,",
+    urgent: "Behöver du hjälp snabbt? Mejla oss på support@mojjo.se",
+  },
+  de: {
+    subject: "Wir haben deine Nachricht erhalten",
+    heading: "Danke für deine Nachricht an Nordic Getaways",
+    received: "Wir haben deine Nachricht erhalten und antworten dir so schnell wie möglich an diese Adresse.",
+    regards: "Viele Grüße",
+    urgent: "Wenn du dringend Hilfe brauchst, schreib uns an support@mojjo.se",
+  },
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +43,8 @@ interface SupportEmailRequest {
   phone?: string;
   subject: string;
   message: string;
+  /** The contact page's language ("en" | "sv" | "de"), for the reply to the sender */
+  lang?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -113,17 +142,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Confirmation to the sender: fixed text only, so nobody can use the form
     // to send their own words to someone else's address
+    const reply = REPLY_COPY[guestLang(body.lang)];
     await resend.emails.send({
       from: "Nordic Getaways <support@mojjo.se>",
       to: [email],
-      subject: "We received your message",
+      subject: reply.subject,
       html: `
-        <h1>Thank you for contacting Nordic Getaways</h1>
-        <p>We have received your message and will reply to this address as soon as we can.</p>
-        <p>Best regards,<br>Jenny &amp; Jon, Nordic Getaways</p>
+        <h1>${reply.heading}</h1>
+        <p>${reply.received}</p>
+        <p>${reply.regards}<br>Jenny &amp; Jon, Nordic Getaways</p>
         <hr />
         <p style="font-size: 12px; color: #999;">
-          If you need urgent assistance, please contact us at support@mojjo.se
+          ${reply.urgent}
         </p>
       `,
     });

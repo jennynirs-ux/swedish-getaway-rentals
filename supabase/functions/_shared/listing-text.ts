@@ -102,6 +102,35 @@ export function applyListingTexts<T extends Record<string, unknown>>(property: T
 }
 
 /**
+ * What hosts write for booked guests only (entity "property_private", never
+ * readable on the site): check-in instructions, parking, and the e-mail
+ * templates the e-mails use (booking confirmation, pre-arrival). The
+ * templates' placeholders, such as {guest_name}, are kept in translation.
+ */
+export const PRIVATE_TEMPLATE_KEYS = ["booking_confirmation", "pre_arrival"] as const;
+
+export function privateListingTexts(
+  details: { check_in_instructions?: string | null; parking_info?: string | null } | null | undefined,
+  emailTemplates: unknown,
+): ListingTexts {
+  const out: ListingTexts = {};
+  for (const column of ["check_in_instructions", "parking_info"] as const) {
+    const value = details?.[column];
+    if (typeof value === "string" && looksLikeText(value)) out[column] = value;
+  }
+  const templates = emailTemplates && typeof emailTemplates === "object" ? (emailTemplates as Record<string, unknown>) : {};
+  for (const key of PRIVATE_TEMPLATE_KEYS) {
+    const template = templates[key] as { enabled?: unknown; subject?: unknown; message?: unknown } | undefined;
+    if (!template?.enabled) continue;
+    for (const part of ["subject", "message"] as const) {
+      const value = template[part];
+      if (typeof value === "string" && looksLikeText(value)) out[`email_templates.${key}.${part}`] = value;
+    }
+  }
+  return out;
+}
+
+/**
  * A short fingerprint of a text (cyrb53), saved with each translation: a
  * translation whose fingerprint no longer matches the host's text is out of
  * date, so guests see the host's own words until it is translated again.
