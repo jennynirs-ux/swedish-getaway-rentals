@@ -378,6 +378,42 @@ export type Database = {
           },
         ]
       }
+      content_translations: {
+        Row: {
+          entity_id: string
+          entity_type: string
+          field: string
+          lang: string
+          refused: boolean
+          source_hash: string
+          source_lang: string | null
+          text: string | null
+          updated_at: string
+        }
+        Insert: {
+          entity_id: string
+          entity_type: string
+          field: string
+          lang: string
+          refused?: boolean
+          source_hash: string
+          source_lang?: string | null
+          text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          entity_id?: string
+          entity_type?: string
+          field?: string
+          lang?: string
+          refused?: boolean
+          source_hash?: string
+          source_lang?: string | null
+          text?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupon_usages: {
         Row: {
           booking_id: string | null
@@ -2566,6 +2602,10 @@ export type Database = {
           _coupon_id: string
           _discount_amount: number
         }
+        Returns: undefined
+      }
+      request_listing_translation: {
+        Args: { _property_id: string }
         Returns: undefined
       }
       review_host_application: {

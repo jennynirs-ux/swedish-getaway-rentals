@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { isLocalizedPath, LANGS, localizedPath, OG_LOCALES, stripLang, useLangOrNull } from "@/i18n";
 
 export const SITE_URL = "https://nordic-getaways.com";
 export const SITE_NAME = "Nordic Getaways";
@@ -11,7 +13,8 @@ interface PageMeta {
   title: string;
   /** Defaults to SITE_DESCRIPTION; only noindex pages should leave it out */
   description?: string;
-  /** Path such as "/contact"; defaults to the current path */
+  /** Path such as "/contact"; defaults to the current path. On the guest site
+   *  it is put in the page's language ("/sv/contact"), with links to the other languages */
   path?: string;
   image?: string | null;
   /** schema.org objects rendered as one JSON-LD script */
@@ -20,9 +23,9 @@ interface PageMeta {
   ready?: boolean;
   /** Keep the page out of search results (pages only reached from a booking or an emailed link) */
   noindex?: boolean;
-  /** The page's language, e.g. "sv" (the site is in English otherwise) */
+  /** The language of a page outside the guest site, e.g. "sv" (guest pages take theirs from the URL) */
   lang?: string;
-  /** The same page in other languages: { en: "/become-host", sv: "/bli-vard" } */
+  /** The same page in other languages, outside the guest site: { en: "/become-host", sv: "/bli-vard" } */
   alternates?: Record<string, string>;
 }
 
@@ -50,9 +53,23 @@ export const usePageMeta = ({
   jsonLd,
   ready = true,
   noindex = false,
-  lang = "en",
-  alternates,
+  lang: pageLang = "en",
+  alternates: pageAlternates,
 }: PageMeta) => {
+  const { pathname } = useLocation();
+  // /bli-vard sets a language for its navigation but has addresses of its own
+  const contextLang = useLangOrNull();
+  const siteLang = contextLang && isLocalizedPath(path ?? pathname) ? contextLang : null;
+  // On the guest site: the page in its language, and the same page in the
+  // others (hreflang; x-default is the English one)
+  const basePath = stripLang(path ?? pathname);
+  const pagePath = siteLang ? localizedPath(basePath, siteLang) : path ?? pathname;
+  const lang = siteLang ?? pageLang;
+  const alternates =
+    siteLang && !noindex
+      ? { ...Object.fromEntries(LANGS.map((l) => [l, localizedPath(basePath, l)])), "x-default": localizedPath(basePath, "en") }
+      : pageAlternates;
+
   // Listing titles come from hosts unreviewed; an escaped "<" keeps a
   // "</script>" in one from ending the script tag in the prerendered HTML
   const jsonLdString = jsonLd ? JSON.stringify(jsonLd).replace(/</g, "\\u003c") : "";
@@ -61,7 +78,7 @@ export const usePageMeta = ({
     if (!ready) return;
 
     const fullTitle = title === SITE_NAME ? title : `${title} | ${SITE_NAME}`;
-    const url = `${SITE_URL}${path ?? window.location.pathname}`;
+    const url = `${SITE_URL}${pagePath}`;
     const img = image || DEFAULT_IMAGE;
 
     document.title = fullTitle;
@@ -71,6 +88,7 @@ export const usePageMeta = ({
     setMeta("property", "og:description", description);
     setMeta("property", "og:url", url);
     setMeta("property", "og:image", img);
+    setMeta("property", "og:locale", OG_LOCALES[lang as keyof typeof OG_LOCALES] ?? OG_LOCALES.en);
     setMeta("name", "twitter:title", fullTitle);
     setMeta("name", "twitter:description", description);
     setMeta("name", "twitter:image", img);
@@ -97,7 +115,7 @@ export const usePageMeta = ({
     }
 
     document.documentElement.dataset.metaReady = "true";
-  }, [title, description, path, image, jsonLdString, ready]);
+  }, [title, description, pagePath, lang, image, jsonLdString, ready]);
 
   // Language, and links to the same page in other languages (hreflang), so
   // search engines show Swedish speakers the Swedish page. Restored on the way out.

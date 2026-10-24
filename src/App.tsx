@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
+import { LangProvider } from "@/i18n";
+import { LangLayout } from "@/i18n/LangLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PropertyPage from "./pages/PropertyPage";
@@ -36,6 +38,28 @@ const HostTerms = lazy(() => import("./pages/HostTerms"));
 
 const queryClient = new QueryClient();
 
+/** Mounted once per language, under "/", "/sv" and "/de" */
+const guestRoutes = (
+  <>
+    <Route index element={<Index />} />
+    <Route path="property/:id" element={<PropertyPage />} />
+    <Route path="property/:id/guide" element={<PropertyGuide />} />
+    <Route path="property/:id/guestbook" element={<PropertyGuestbookPage />} />
+    <Route path="cabins" element={<Cabins />} />
+    <Route path="shop" element={<Shop />} />
+    <Route path="product/:id" element={<ProductDetail />} />
+    <Route path="cart" element={<Cart />} />
+    <Route path="booking-success" element={<BookingSuccess />} />
+    <Route path="order-success" element={<OrderSuccess />} />
+    <Route path="contact" element={<Contact />} />
+    <Route path="first-time-in-sweden" element={<FirstTimeInSweden />} />
+    <Route path="stora-harsjon-lerum" element={<LakeGuide />} />
+    <Route path="privacy" element={<PrivacyPolicy />} />
+    <Route path="terms" element={<Terms />} />
+    <Route path="*" element={<NotFound />} />
+  </>
+);
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -46,7 +70,6 @@ const App = () => {
               <Toaster />
               <Suspense fallback={<div className="min-h-screen bg-background" />}>
               <Routes>
-                <Route path="/" element={<Index />} />
                 {/* Legacy short links */}
                 <Route path="/villa-hacken" element={<Navigate to="/property/lakefront-retreat" replace />} />
                 <Route path="/villa-hacken/guide" element={<Navigate to="/property/lakefront-retreat/guide" replace />} />
@@ -55,13 +78,11 @@ const App = () => {
                 {/* Old name of /cabins (renamed to leave room for /cabins/<region>); the live
                     site 301s it through _redirects, written by scripts/prerender.mjs */}
                 <Route path="/book-now" element={<Navigate to="/cabins" replace />} />
-                <Route path="/property/:id" element={<PropertyPage />} />
-                <Route path="/property/:id/guide" element={<PropertyGuide />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/booking-success" element={<BookingSuccess />} />
-                <Route path="/order-success" element={<OrderSuccess />} />
+                {/* Were empty pages; photos and amenities are on each property page */}
+                <Route path="/gallery" element={<Navigate to="/" replace />} />
+                <Route path="/amenities" element={<Navigate to="/" replace />} />
+
+                {/* One language each, no prefix (see src/i18n) */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/admin" element={
                   <ProtectedRoute requireAdmin>
@@ -78,26 +99,21 @@ const App = () => {
                     <HostDashboard />
                   </ProtectedRoute>
                 } />
-                {/* Were empty pages; photos and amenities are on each property page */}
-                <Route path="/gallery" element={<Navigate to="/" replace />} />
-                <Route path="/amenities" element={<Navigate to="/" replace />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/property/:id/guestbook" element={<PropertyGuestbookPage />} />
-                <Route path="/cabins" element={<Cabins />} />
                 <Route path="/profile" element={
                   <ProtectedRoute>
                     <Profile />
                   </ProtectedRoute>
                 } />
-                <Route path="/first-time-in-sweden" element={<FirstTimeInSweden />} />
-                <Route path="/stora-harsjon-lerum" element={<LakeGuide />} />
                 <Route path="/pricing-guide" element={<PricingGuide />} />
                 <Route path="/become-host" element={<BecomeHost />} />
-                <Route path="/bli-vard" element={<BecomeHost lang="sv" />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<Terms />} />
+                {/* Swedish navigation; the page has its own English twin */}
+                <Route path="/bli-vard" element={<LangProvider value="sv"><BecomeHost lang="sv" /></LangProvider>} />
                 <Route path="/host-terms" element={<HostTerms />} />
-                <Route path="*" element={<NotFound />} />
+
+                {/* The guest site in English (/cabins), Swedish (/sv/cabins) and German (/de/cabins) */}
+                <Route path="/sv" element={<LangLayout lang="sv" />}>{guestRoutes}</Route>
+                <Route path="/de" element={<LangLayout lang="de" />}>{guestRoutes}</Route>
+                <Route path="/" element={<LangLayout lang="en" />}>{guestRoutes}</Route>
               </Routes>
               </Suspense>
             </ErrorBoundary>

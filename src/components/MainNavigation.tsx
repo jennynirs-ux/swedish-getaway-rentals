@@ -1,8 +1,44 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useBasePath, useNavigate } from "@/i18n/router";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, User, Menu, X, ShoppingCart, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { type Copy, useCopy } from "@/i18n";
+import LanguageMenu from "./LanguageMenu";
+
+const en = {
+  logoAlt: "Nordic Getaways logo",
+  findCabin: "Find a cabin",
+  becomeHost: "Become a host",
+  shop: "Shop",
+  cart: "Cart",
+  hostDashboard: "Host Dashboard",
+  profile: "Profile",
+  signIn: "Sign In",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    logoAlt: "Nordic Getaways logotyp",
+    findCabin: "Hitta en stuga",
+    becomeHost: "Bli värd",
+    shop: "Butik",
+    cart: "Varukorg",
+    hostDashboard: "Värdpanelen",
+    profile: "Profil",
+    signIn: "Logga in",
+  },
+  de: {
+    logoAlt: "Nordic Getaways Logo",
+    findCabin: "Ferienhaus finden",
+    becomeHost: "Gastgeber werden",
+    shop: "Shop",
+    cart: "Warenkorb",
+    hostDashboard: "Gastgeberbereich",
+    profile: "Profil",
+    signIn: "Anmelden",
+  },
+};
 
 interface MainNavigationProps {
   showBackButton?: boolean;
@@ -10,20 +46,21 @@ interface MainNavigationProps {
 }
 
 const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
-  const location = useLocation();
+  const t = useCopy(COPY);
+  const pathname = useBasePath();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isPropertyPage =
-    location.pathname.includes("/villa-") ||
-    location.pathname.includes("/lakehouse-") ||
-    location.pathname.includes("/property/");
+    pathname.includes("/villa-") ||
+    pathname.includes("/lakehouse-") ||
+    pathname.includes("/property/");
 
-  const isHomePage = location.pathname === "/";
-  const isShopPage = location.pathname.startsWith("/shop");
-  const isCartPage = location.pathname.startsWith("/cart");
-  const isCabinsPage = location.pathname.startsWith("/cabins");
+  const isHomePage = pathname === "/";
+  const isShopPage = pathname.startsWith("/shop");
+  const isCartPage = pathname.startsWith("/cart");
+  const isCabinsPage = pathname.startsWith("/cabins");
 
   const [isHost, setIsHost] = useState(false);
 
@@ -74,14 +111,20 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
         <Link to="/" className="flex items-center">
           <img
             src="/apple-touch-icon.png"
-            alt="Nordic Getaways logo"
+            alt={t.logoAlt}
             className="h-8 w-auto filter invert brightness-0"
           />
         </Link>
 
+        {/* Property pages keep the bar clear: only the language */}
+        {isPropertyPage && (
+          <LanguageMenu className="flex items-center gap-1.5 rounded-md border border-white/30 bg-white/10 px-3 py-2 text-white backdrop-blur-sm transition-all hover:border-white/50 hover:bg-white/20" />
+        )}
+
         {/* Desktop Navigation */}
         {!isPropertyPage && (
           <div className="hidden md:flex items-center gap-3">
+            <LanguageMenu className="flex h-10 items-center gap-1.5 rounded-md border border-white/30 bg-white/10 px-3 text-white backdrop-blur-sm transition-all hover:border-white/50 hover:bg-white/20" />
             {/* asChild: one link, not a button inside a link */}
             {!isCabinsPage && (
               <Button
@@ -91,10 +134,10 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                            hover:bg-white/20 hover:border-white/50 
                            backdrop-blur-sm transition-all"
               >
-                <Link to="/cabins">Find a cabin</Link>
+                <Link to="/cabins">{t.findCabin}</Link>
               </Button>
             )}
-            {!["/become-host", "/bli-vard"].includes(location.pathname) && (
+            {!["/become-host", "/bli-vard"].includes(pathname) && (
               <Button
                 asChild
                 variant="outline"
@@ -102,11 +145,11 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
                            hover:bg-white/20 hover:border-white/50 
                            backdrop-blur-sm transition-all"
               >
-                <Link to="/become-host">Become a host</Link>
+                <Link to="/become-host">{t.becomeHost}</Link>
               </Button>
             )}
             {!isShopPage && (
-              <Link to="/shop" title="Shop">
+              <Link to="/shop" title={t.shop} aria-label={t.shop}>
                 <Button
                   variant="outline"
                   size="icon"
@@ -119,7 +162,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               </Link>
             )}
             {!isHomePage && !isCartPage && (
-              <Link to="/cart" title="Cart">
+              <Link to="/cart" title={t.cart} aria-label={t.cart}>
                 <Button
                   variant="outline"
                   size="icon"
@@ -134,7 +177,8 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
             <Button
               variant="outline"
               size="icon"
-              title={user ? (isHost ? "Host Dashboard" : "Profile") : "Sign In"}
+              title={user ? (isHost ? t.hostDashboard : t.profile) : t.signIn}
+              aria-label={user ? (isHost ? t.hostDashboard : t.profile) : t.signIn}
               onClick={handleProfileClick}
               className="text-white border-white/30 bg-white/10 
                          hover:bg-white/20 hover:border-white/50 
@@ -147,7 +191,8 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
 
         {/* Mobile Hamburger */}
         {!isPropertyPage && (
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-3">
+            <LanguageMenu className="flex items-center gap-1 text-white" />
             <button onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? (
                 <X className="w-6 h-6 text-white" />
@@ -169,16 +214,16 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               className="flex items-center gap-2"
             >
               <Search className="w-5 h-5" />
-              <span>Find a cabin</span>
+              <span>{t.findCabin}</span>
             </Link>
           )}
-          {!["/become-host", "/bli-vard"].includes(location.pathname) && (
+          {!["/become-host", "/bli-vard"].includes(pathname) && (
             <Link
               to="/become-host"
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-2"
             >
-              <span>Become a host</span>
+              <span>{t.becomeHost}</span>
             </Link>
           )}
           {!isShopPage && (
@@ -188,7 +233,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               className="flex items-center gap-2"
             >
               <ShoppingBag className="w-5 h-5" />
-              <span>Shop</span>
+              <span>{t.shop}</span>
             </Link>
           )}
           {!isHomePage && !isCartPage && (
@@ -198,7 +243,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
               className="flex items-center gap-2"
             >
               <ShoppingCart className="w-5 h-5" />
-              <span>Cart</span>
+              <span>{t.cart}</span>
             </Link>
           )}
           <button
@@ -209,7 +254,7 @@ const MainNavigation = ({ showBackButton = false }: MainNavigationProps) => {
             className="flex items-center gap-2"
           >
             <User className="w-5 h-5" />
-            <span>{user ? (isHost ? "Host Dashboard" : "Profile") : "Sign In"}</span>
+            <span>{user ? (isHost ? t.hostDashboard : t.profile) : t.signIn}</span>
           </button>
         </div>
       )}

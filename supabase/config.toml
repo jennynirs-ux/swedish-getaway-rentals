@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.cancel-booking]
 verify_jwt = true
+
+[functions.translate-content]
+verify_jwt = true
