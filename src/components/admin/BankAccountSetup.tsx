@@ -100,6 +100,28 @@ export const useHostCharges = () =>
     refetchOnWindowFocus: true,
   });
 
+/**
+ * Sends the host to Stripe to create (or finish) their payout account.
+ * Stripe brings them back to returnPath: the Payouts tab, or the listing and
+ * its publish window when they started from publishing.
+ */
+export const startStripeOnboarding = async (returnPath = "/host-dashboard?tab=payouts") => {
+  const back = `${window.location.origin}${returnPath}`;
+  const { data, error } = await supabase.functions.invoke("create-connect-account", {
+    body: { returnUrl: back, refreshUrl: back },
+  });
+  if (error) throw new Error(await functionErrorMessage(error, "We couldn't open Stripe. Please try again."));
+  if (!data?.url) throw new Error("Stripe did not send a sign-up link. Please try again.");
+  window.location.href = data.url;
+};
+
+/** The toast when Stripe can't be opened */
+export const stripeOpenFailed = (error: unknown) =>
+  toast.error("Could not open Stripe", {
+    description: `${sentence(error instanceof Error ? error.message : "Please try again")} If it keeps happening, email support@mojjo.se.`,
+    duration: 10_000,
+  });
+
 const formatDay = (isoDate: string) =>
   new Date(`${isoDate}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
@@ -134,19 +156,10 @@ export const BankAccountSetup = () => {
     setLoading(true);
     try {
       // Stripe brings the host back to this tab when done
-      const back = `${window.location.origin}/host-dashboard?tab=payouts`;
-      const { data, error } = await supabase.functions.invoke("create-connect-account", {
-        body: { returnUrl: back, refreshUrl: back },
-      });
-      if (error) throw new Error(await functionErrorMessage(error, "We couldn't open Stripe. Please try again."));
-      if (!data?.url) throw new Error("Stripe did not send a sign-up link. Please try again.");
-      window.location.href = data.url;
+      await startStripeOnboarding();
     } catch (error) {
       console.error("Error connecting Stripe:", error);
-      toast.error("Could not open Stripe", {
-        description: `${sentence(error instanceof Error ? error.message : "Please try again")} If it keeps happening, email support@mojjo.se.`,
-        duration: 10_000,
-      });
+      stripeOpenFailed(error);
       setLoading(false);
     }
   };
@@ -173,12 +186,12 @@ export const BankAccountSetup = () => {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" />
-          <CardTitle>Bank Account & Payouts</CardTitle>
+          <CardTitle>Payouts with Stripe</CardTitle>
         </div>
         {state === "ready" && (
           <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-emerald-200">
             <CheckCircle2 className="h-3 w-3 mr-1" />
-            Connected
+            Set up
           </Badge>
         )}
       </div>
@@ -277,7 +290,7 @@ export const BankAccountSetup = () => {
             <Alert className="bg-emerald-50 border-emerald-200">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <AlertDescription className="text-emerald-800">
-                <p className="font-medium">Your bank account is connected.</p>
+                <p className="font-medium">Your payouts are set up.</p>
                 <p className="text-sm">
                   For each booking, your price is paid out to your bank {HOST_PAYOUT_TIMING_TEXT}.
                 </p>
@@ -340,10 +353,11 @@ export const BankAccountSetup = () => {
                   </>
                 ) : (
                   <>
-                    <p className="font-medium mb-1">Connect your bank account to get paid</p>
+                    <p className="font-medium mb-1">Set up payouts to get paid</p>
                     <p className="text-sm text-muted-foreground">
-                      It takes a few minutes on Stripe: your details, ID and bank account. You can publish your listing
-                      once this is done.
+                      You create a free Stripe account, which pays your share of each booking to your bank. It takes
+                      about five minutes: your details, your ID and your bank account. You can publish your listing once
+                      this is done.
                     </p>
                   </>
                 )}
@@ -356,7 +370,7 @@ export const BankAccountSetup = () => {
               ) : (
                 <Building2 className="mr-2 h-5 w-5" />
               )}
-              {state === "details_missing" ? "Finish setup on Stripe" : "Connect bank account"}
+              {state === "details_missing" ? "Finish setup on Stripe" : "Set up payouts with Stripe"}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
               You'll go to Stripe to enter your details securely and come back here when you're done. We never see your

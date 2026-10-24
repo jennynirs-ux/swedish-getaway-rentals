@@ -5,9 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Wallet, Calendar, CalendarCheck, Plus, HelpCircle, BookOpen, Trash2, Receipt, BarChart3, Copy } from "lucide-react";
+import { Building2, Wallet, Calendar, CalendarCheck, Plus, HelpCircle, BookOpen, Trash2, Receipt, BarChart3 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -29,13 +28,8 @@ import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
 import { HostTaxDetails } from "./HostTaxDetails";
-import HostOnboardingChecklist, {
-  HOST_CHECKLIST_KEY,
-  HostTermsAcceptance,
-  isOnlyRentedHere,
-  markOnlyRentedHere,
-  publishBlocker,
-} from "./HostOnboardingChecklist";
+import HostOnboardingChecklist, { HOST_CHECKLIST_KEY, publishBlocker } from "./HostOnboardingChecklist";
+import { HostPublishDialog } from "./HostPublishDialog";
 import HostPricingSuggestions from "./HostPricingSuggestions";
 import HostUnifiedInbox from "./HostUnifiedInbox";
 import HostMessageTemplates from "./HostMessageTemplates";
@@ -87,63 +81,6 @@ const hostNet = (b: Booking) => hostNetAmount(b);
 
 const cancelledByText = { guest: "by the guest", host: "by you", platform: "by Nordic Getaways" } as const;
 
-/**
- * This listing's own calendar link (export-ical), for the host to paste into
- * Airbnb or Booking.com so dates booked here are blocked there too. The same
- * link as in the editor's Calendar tab.
- */
-const CalendarExportLink = ({ propertyId }: { propertyId: string }) => {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    supabase
-      .from("property_private_details")
-      .select("ical_export_secret")
-      .eq("property_id", propertyId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled || !data?.ical_export_secret) return;
-        const base = import.meta.env.VITE_SUPABASE_URL || "https://bbuutvozqfzbsnllsiai.supabase.co";
-        setUrl(`${base}/functions/v1/export-ical/${propertyId}?secret=${data.ical_export_secret}`);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [propertyId]);
-
-  if (!url) return null;
-  return (
-    <div className="space-y-1">
-      <p className="text-sm font-medium">Your calendar link for Airbnb and Booking.com</p>
-      <div className="flex gap-2">
-        <input
-          readOnly
-          value={url}
-          aria-label="Your calendar link"
-          className="min-w-0 flex-1 rounded-md border bg-muted px-2 py-1 text-xs"
-          onFocus={(e) => e.currentTarget.select()}
-        />
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            navigator.clipboard.writeText(url).then(
-              () => toast.success("Calendar link copied"),
-              () => toast.error("Could not copy. Select the link and copy it by hand."),
-            )
-          }
-        >
-          <Copy className="h-4 w-4 mr-1" />
-          Copy
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Paste it as an imported calendar there, and add theirs in this listing's Calendar tab.
-      </p>
-    </div>
-  );
-};
 
 // Wrapper: använder PropertyCard men lägger till Edit-knapp
 const HostPropertyCard = ({
@@ -229,14 +166,13 @@ const HostDashboard = () => {
   // The editor tab to open on, e.g. Location when publishing needs a pin and county
   const [editingTab, setEditingTab] = useState("basic");
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   // ?tab=payouts: where Stripe sends the host back after onboarding
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "properties");
   const [isGuidebookOpen, setIsGuidebookOpen] = useState(false);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
-  // Publishing that waits for an answer: no calendar sync yet, or host terms not accepted
-  const [calendarCheckId, setCalendarCheckId] = useState<string | null>(null);
-  const [termsForId, setTermsForId] = useState<string | null>(null);
+  // The publish window: every step still missing for this listing, in one place
+  const [publishId, setPublishId] = useState<string | null>(null);
   // One publish at a time: a double click must not publish twice. The ref
   // answers at once; the state disables the buttons.
   const publishingRef = useRef(false);
@@ -253,6 +189,20 @@ const HostDashboard = () => {
     setEditingTab(tab);
     setEditingPropertyId(propertyId);
   };
+
+  // Back from Stripe (or a link): ?edit=<id> reopens the listing, ?publish=<id>
+  // its publish window; the parameters are then removed, so a reload doesn't repeat it
+  useEffect(() => {
+    const edit = searchParams.get("edit");
+    const publishParam = searchParams.get("publish");
+    if (!edit && !publishParam) return;
+    if (edit) openEditor(edit, searchParams.get("editTab") || "basic");
+    if (publishParam) setPublishId(publishParam);
+    const next = new URLSearchParams(searchParams);
+    ["edit", "editTab", "publish"].forEach((key) => next.delete(key));
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchHostStats = async () => {
     try {
@@ -377,54 +327,38 @@ const HostDashboard = () => {
   // working payouts, a map pin and county, accepted host terms and tax details.
   // (No e-mail to the team from here: send-support-email also answers the host
   // "we received your message". A listing-published notice needs its own function.)
-  const publish = (id: string) => exclusive(() => publishNow(id));
+  /** The publish window's "Publish now"; true when the listing went live */
+  const publish = async (id: string) => {
+    let ok = false;
+    await exclusive(async () => {
+      ok = await publishNow(id);
+    });
+    return ok;
+  };
 
-  const publishNow = async (id: string) => {
+  const publishNow = async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("properties").update({ active: true }).eq("id", id);
     if (error) {
+      // The window shows the step that is missing; nothing closes
       const blocker = publishBlocker(error.message);
-      if (blocker === "terms") {
-        toast.error("Accept the host terms first.");
-        setTermsForId(id);
-      } else if (blocker === "bank") {
-        toast.error("Connect your bank account before publishing, so you can be paid for bookings.");
-        setEditingPropertyId(null);
-        setActiveTab("payouts");
-      } else if (blocker === "tax") {
-        toast.error("Add your tax details before publishing: Swedish law requires them.");
-        setEditingPropertyId(null);
-        setActiveTab("payouts");
-      } else if (blocker === "location") {
-        toast.error("Pin your place on the map and choose its county before publishing: open the Location tab.");
-        openEditor(id, "location");
-      } else {
-        toast.error(`Could not publish: ${error.message}`);
-      }
+      toast.error(
+        blocker === "terms" ? "Accept the host terms first."
+          : blocker === "bank" ? "Set up payouts with Stripe first, so you can be paid for bookings."
+          : blocker === "tax" ? "Add your tax details first: Swedish law requires them."
+          : blocker === "location" ? "Pin your place on the map and choose its county first."
+          : `Could not publish: ${error.message}`,
+      );
       refreshChecklist();
-      return;
+      return false;
     }
     toast.success("Published! Guests can now find and book your place.");
     refetchProperties();
     refreshChecklist();
+    return true;
   };
 
-  // Both Publish buttons (card and checklist) come here. A listing that is
-  // also on Airbnb etc. without a synced calendar can be double booked, so
-  // ask first; it is a question, not a block.
-  const requestPublish = (id: string) =>
-    exclusive(async () => {
-      if (!isOnlyRentedHere(id)) {
-        const { count } = await supabase
-          .from("ical_feeds")
-          .select("id", { count: "exact", head: true })
-          .eq("property_id", id);
-        if (!count) {
-          setCalendarCheckId(id);
-          return;
-        }
-      }
-      await publishNow(id);
-    });
+  // Every Publish button (card, checklist, editor) opens the publish window
+  const requestPublish = (id: string) => setPublishId(id);
 
   const togglePublish = (id: string, makeLive: boolean) => {
     if (makeLive) {
@@ -776,7 +710,14 @@ const HostDashboard = () => {
             return property ? (
               <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-y-auto">
                 <div className="container mx-auto px-4 py-8">
-                  <div className="flex justify-end mb-4">
+                  <div className="flex justify-end gap-2 mb-4">
+                    {(property as { active?: boolean }).active ? (
+                      <span className="self-center rounded-full bg-emerald-500/10 px-3 py-1 text-sm text-emerald-700">Live</span>
+                    ) : (
+                      <Button onClick={() => requestPublish(editingPropertyId)} disabled={publishing}>
+                        Publish
+                      </Button>
+                    )}
                     <Button variant="outline" onClick={closeEditor}>
                       Close
                     </Button>
@@ -820,63 +761,18 @@ const HostDashboard = () => {
             }}
           />
 
-          {/* Publishing a listing that has no synced calendar */}
-          <Dialog open={!!calendarCheckId} onOpenChange={(open) => !open && setCalendarCheckId(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Is this place also on Airbnb or Booking.com?</DialogTitle>
-                <DialogDescription>
-                  Bookings here are confirmed instantly. If guests can also book this place elsewhere, link those
-                  calendars first (in the listing's Calendar tab), so nobody can book the same night twice.
-                </DialogDescription>
-              </DialogHeader>
-              {calendarCheckId && <CalendarExportLink propertyId={calendarCheckId} />}
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const id = calendarCheckId;
-                    setCalendarCheckId(null);
-                    if (id) openEditor(id, "calendar");
-                  }}
-                >
-                  Add calendar links
-                </Button>
-                <Button
-                  onClick={() => {
-                    const id = calendarCheckId;
-                    setCalendarCheckId(null);
-                    if (!id) return;
-                    markOnlyRentedHere(id);
-                    publish(id);
-                  }}
-                >
-                  I only rent it here: publish
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Publishing was refused because the host terms are not accepted yet */}
-          <Dialog open={!!termsForId} onOpenChange={(open) => !open && setTermsForId(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Accept the host terms first</DialogTitle>
-                <DialogDescription>
-                  They cover the guest service fee, when you are paid out, cancellations and refunds.
-                </DialogDescription>
-              </DialogHeader>
-              <HostTermsAcceptance
-                idSuffix="publish"
-                onAccepted={() => {
-                  const id = termsForId;
-                  setTermsForId(null);
-                  refreshChecklist();
-                  if (id) publish(id);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+          <HostPublishDialog
+            key={publishId ?? "none"}
+            propertyId={publishId}
+            onOpenChange={(open) => !open && setPublishId(null)}
+            onPublish={publish}
+            onOpenEditor={(id, tab) => {
+              setPublishId(null);
+              openEditor(id, tab);
+            }}
+            fromEditor={!!publishId && editingPropertyId === publishId}
+            publishing={publishing}
+          />
 
           {/* Delete Confirmation */}
           <AlertDialog open={!!deletingPropertyId} onOpenChange={(open) => !open && setDeletingPropertyId(null)}>

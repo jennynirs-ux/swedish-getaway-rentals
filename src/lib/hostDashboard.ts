@@ -103,7 +103,7 @@ export const payoutStatusPollMs = (status?: PayoutStatus | null): number | false
 export type PublishBlocker = "terms" | "bank" | "location" | "tax" | null;
 export const publishBlocker = (message: string): PublishBlocker => {
   if (/host terms/i.test(message)) return "terms";
-  if (/bank account/i.test(message)) return "bank";
+  if (/bank account|payouts/i.test(message)) return "bank";
   if (/county|on the map/i.test(message)) return "location";
   if (/tax details/i.test(message)) return "tax";
   return null;

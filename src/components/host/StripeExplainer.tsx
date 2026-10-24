@@ -17,7 +17,7 @@ const QUESTIONS: { q: string; a: string }[] = [
   },
   {
     q: "How do I create it?",
-    a: "Press \"Connect bank account\". Stripe asks for, for example, your name, address, date of birth, mobile number and bank account, and sometimes a photo of your ID. Anti-money-laundering law requires this, and the details go to Stripe, not to us. It takes about five minutes.",
+    a: "Press \"Set up payouts with Stripe\". Stripe asks for, for example, your name, address, date of birth, mobile number and bank account, and sometimes a photo of your ID. Anti-money-laundering law requires this, and the details go to Stripe, not to us. It takes about five minutes.",
   },
   {
     q: "When do I get the money?",

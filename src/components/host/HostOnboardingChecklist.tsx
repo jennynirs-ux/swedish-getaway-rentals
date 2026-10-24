@@ -295,10 +295,10 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty, onEditProperty, 
     },
     {
       id: "payout",
-      label: "Connect your bank account",
-      description: `Your price is paid out to your bank ${HOST_PAYOUT_TIMING_TEXT}.`,
+      label: "Set up payouts with Stripe",
+      description: `A free Stripe account pays your price to your bank ${HOST_PAYOUT_TIMING_TEXT}. About five minutes.`,
       done: payoutReady,
-      actionLabel: "Connect bank",
+      actionLabel: "Set up payouts",
       action: () => onGoToTab("payouts"),
     },
     {
