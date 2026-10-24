@@ -12,6 +12,7 @@ import { LocationEditor } from "@/components/LocationEditor";
 import { savePropertyPrivateDetails } from "@/lib/propertyPrivateDetails";
 import { CountySelect, publicAreaFrom } from "./CountySelect";
 import { PROPERTY_TYPE_LABELS } from "./HostBasicTab";
+import { TRANSLATION_HINT } from "@/lib/hostDashboard";
 import { emptyPriceDraft, parseKronor, PriceFields, priceDraftProblem, savePriceDraft, Stepper, type PriceDraft } from "./listingPrices";
 
 interface Props {
@@ -255,6 +256,7 @@ const HostPropertyWizard = ({ open, onOpenChange, onCreated }: Props) => {
                   placeholder="Vad gör ditt boende speciellt? Du kan skriva mer senare."
                   rows={4}
                 />
+                <p className="text-xs text-muted-foreground">{TRANSLATION_HINT}</p>
               </div>
             </div>
           )}

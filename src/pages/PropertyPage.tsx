@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback, memo, Suspense, lazy } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo, useCallback, memo, Suspense, lazy, type ReactNode } from "react";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "@/i18n/router";
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/hooks/useProperties";
 import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
@@ -11,8 +12,69 @@ import { ArrowLeft } from "lucide-react";
 import GuestGuideDialog from "@/components/GuestGuideDialog";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import PropertyAbout from "@/components/PropertyAbout";
-import { PROPERTY_CONTENT } from "@/content/propertyContent";
-import { buildPropertyJsonLd, propertyMetaDescription, propertyPath } from "@/lib/propertySeo";
+import { propertyContentFor } from "@/content/propertyContent";
+import { amenityLabel } from "@/content/amenities";
+import { buildPropertyJsonLd, propertyMetaDescription, propertyPageTitle, propertyPath } from "@/lib/propertySeo";
+import { type Copy, type Lang, useCopy, useLang } from "@/i18n";
+import {
+  type ListingTranslation,
+  SHOW_ORIGINAL,
+  translatedFromText,
+  translateListing,
+  useListingTranslation,
+} from "@/i18n/listingTexts";
+import { type ListingTexts, listingTexts, textHash } from "../../supabase/functions/_shared/listing-text";
+
+const en = {
+  aboutPlace: "About this place",
+  notFound: "Property Not Found",
+  notFoundText: "The property you're looking for doesn't exist or is no longer available.",
+  backHome: "Back to Homepage",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    aboutPlace: "Om boendet",
+    notFound: "Boendet hittades inte",
+    notFoundText: "Boendet du letar efter finns inte eller är inte längre tillgängligt.",
+    backHome: "Tillbaka till startsidan",
+  },
+  de: {
+    aboutPlace: "Über diese Unterkunft",
+    notFound: "Unterkunft nicht gefunden",
+    notFoundText: "Die Unterkunft, die du suchst, gibt es nicht oder sie ist nicht mehr verfügbar.",
+    backHome: "Zurück zur Startseite",
+  },
+};
+
+/**
+ * The host's fields a guest reads translated on this page: translations of the
+ * text as it is now, leaving out what the page doesn't show (special_highlights;
+ * the host's description on the owners' cabins, which have copy of their own;
+ * amenities shown with our own label)
+ */
+const shownTranslatedFields = (translation: ListingTranslation, originals: ListingTexts, lang: Lang, hasContent: boolean) =>
+  Object.keys(translation.texts).filter((field) => {
+    const original = originals[field];
+    if (original === undefined || translation.hashes[field] !== textHash(original)) return false;
+    if (field.startsWith("special_highlights.")) return false;
+    if (hasContent && (field === "description" || field === "introduction_text")) return false;
+    if (field.startsWith("amenity:") && amenityLabel(original, lang)) return false;
+    return true;
+  });
+
+/** "Translated from Swedish · Show original", Airbnb style: switches the whole page */
+const TranslationNote = ({ from, showingOriginal, onToggle }: { from: Lang | "other"; showingOriginal: boolean; onToggle: () => void }) => {
+  const lang = useLang();
+  return (
+    <p className="text-sm text-muted-foreground mb-6">
+      {!showingOriginal && <>{translatedFromText(lang, from)} · </>}
+      <button type="button" onClick={onToggle} className="font-medium text-foreground underline hover:no-underline">
+        {showingOriginal ? SHOW_ORIGINAL[lang].translation : SHOW_ORIGINAL[lang].original}
+      </button>
+    </p>
+  );
+};
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -71,18 +133,35 @@ NearbyPropertiesWrapper.displayName = "NearbyPropertiesWrapper";
  * search engines the text too. The columns have no defaults: when the host has
  * written neither, the section is left out.
  */
-const ListingAbout = ({ introduction, description }: { introduction?: string | null; description?: string | null }) => {
+const ListingAbout = ({
+  introduction,
+  description,
+  translationNote,
+}: {
+  introduction?: string | null;
+  description?: string | null;
+  translationNote?: ReactNode;
+}) => {
+  const t = useCopy(COPY);
   const text = description?.trim();
   // Hosts sometimes paste the same text in both boxes
   const intro = introduction?.trim() !== text ? introduction?.trim() : undefined;
-  if (!intro && !text) return null;
+  if (!intro && !text) {
+    // Nothing to read here, but other parts of the page are translated
+    return translationNote ? (
+      <div className="container mx-auto px-4 pt-8">
+        <div className="max-w-4xl mx-auto">{translationNote}</div>
+      </div>
+    ) : null;
+  }
   return (
     <section className="py-16" aria-labelledby="about-heading">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <h2 id="about-heading" className="text-3xl md:text-4xl font-bold mb-6">
-            About this place
+            {t.aboutPlace}
           </h2>
+          {translationNote}
           {intro && <p className="text-xl leading-relaxed mb-6 whitespace-pre-line break-words">{intro}</p>}
           {text && (
             <div className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line break-words">{text}</div>
@@ -94,8 +173,11 @@ const ListingAbout = ({ introduction, description }: { introduction?: string | n
 };
 
 const PropertyPage = memo(() => {
+  const t = useCopy(COPY);
+  const lang = useLang();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showOriginal, setShowOriginal] = useState(false);
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
   const [guideSectionId, setGuideSectionId] = useState<string | undefined>();
 
@@ -252,19 +334,43 @@ const PropertyPage = memo(() => {
     } as Property & { check_in_time: string | null; check_out_time: string | null };
   }, [lightProperty, heavyProperty]);
 
-  const content = property?.slug ? PROPERTY_CONTENT[property.slug] : undefined;
+  const content = propertyContentFor(property?.slug, lang);
 
+  // What the host wrote, in the page's language where it has been translated.
+  // `property` stays the host's own words: names are matched to icons and
+  // URLs built from it
+  const translation = useListingTranslation(property?.id);
+  const originals = useMemo(() => (property ? listingTexts({ ...property }) : {}), [property]);
+  const translated = useMemo(
+    () => (property ? translateListing({ ...property }, translation, originals) : null),
+    [property, translation, originals],
+  );
+  const shownFields = useMemo(
+    () => shownTranslatedFields(translation, originals, lang, !!content),
+    [translation, originals, lang, content],
+  );
+  const translatedFrom = shownFields.length > 0 ? translation.translatedFrom : null;
+  const toggleOriginal = useCallback(() => setShowOriginal((value) => !value), []);
+  // What guests read: the translation, or the host's own words after "Show original"
+  const shown = showOriginal || !translated ? property : translated;
+  const shownTranslation = showOriginal ? undefined : translation;
+  const translationNote = translatedFrom ? (
+    <TranslationNote from={translatedFrom} showingOriginal={showOriginal} onToggle={toggleOriginal} />
+  ) : undefined;
+  // The guide dialog covers the page, so it has the same switch inside
+  const guideTranslationToggle =
+    translatedFrom && shownFields.some((field) => field.startsWith("guidebook_sections."))
+      ? { from: translatedFrom, showingOriginal: showOriginal, onToggle: toggleOriginal }
+      : undefined;
+
+  // Search engines get the page's language whatever the switch says
   usePageMeta({
     ready: !!property,
-    title: property
-      ? content
-        ? `${content.nickname}: ${content.seoTitle}`
-        : `${property.title} – ${property.location ?? "Sweden"}`
-      : "",
-    description: property ? propertyMetaDescription(property, content) : "",
+    title: translated ? propertyPageTitle(translated, content, lang) : "",
+    description: translated ? propertyMetaDescription(translated, content, lang) : "",
     path: property ? propertyPath(property) : undefined,
     image: property?.hero_image_url,
-    jsonLd: property ? buildPropertyJsonLd(property, content) : undefined,
+    jsonLd: translated ? buildPropertyJsonLd(translated, content, lang) : undefined,
   });
 
   // Loading
@@ -289,13 +395,13 @@ const PropertyPage = memo(() => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Property Not Found</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">{t.notFound}</h1>
           <p className="text-muted-foreground mb-6">
-            The property you're looking for doesn't exist or is no longer available.
+            {t.notFoundText}
           </p>
           <Button onClick={handleBackToHome} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Homepage
+            {t.backHome}
           </Button>
         </div>
       </div>
@@ -306,7 +412,7 @@ const PropertyPage = memo(() => {
   return (
     <div className="min-h-screen bg-background">
       <PropertyNavigation />
-      <PropertyHero property={property} />
+      <PropertyHero property={shown} />
 
       {content ? (
         <PropertyAbout
@@ -314,22 +420,27 @@ const PropertyPage = memo(() => {
           rating={property.review_rating}
           reviewCount={property.review_count}
           city={property.city}
+          translationNote={translationNote}
         />
       ) : (
-        <ListingAbout introduction={property.introduction_text} description={property.description} />
+        <ListingAbout
+          introduction={shown.introduction_text}
+          description={shown.description}
+          translationNote={translationNote}
+        />
       )}
 
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-        <PropertyGallery property={property} />
+        <PropertyGallery property={shown} />
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-32 w-full" />}>
-        <PropertyAmenities property={property} />
+        <PropertyAmenities property={shown} original={property} translation={shownTranslation} />
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-24 w-full" />}>
         {/* Skickar in onViewGuide så knappen i highlights fungerar */}
-        <PropertySpecialHighlights property={property} onViewGuide={handleGuideOpen} />
+        <PropertySpecialHighlights property={shown} onViewGuide={handleGuideOpen} />
       </Suspense>
 
       {/* Guestbook Section */}
@@ -339,15 +450,15 @@ const PropertyPage = memo(() => {
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-        <PropertyBooking property={property} onOpenGuidebook={handleGuideOpen} />
+        <PropertyBooking property={shown} onOpenGuidebook={handleGuideOpen} />
       </Suspense>
 
       <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
         <PropertyLocation
-          gettingHere={PROPERTY_CONTENT[property.slug ?? ""]?.gettingHere}
+          gettingHere={content?.gettingHere}
           latitude={property.latitude}
           longitude={property.longitude}
-          propertyTitle={property.title}
+          propertyTitle={shown.title}
           location={property.location}
           city={property.city}
         />
@@ -366,14 +477,15 @@ const PropertyPage = memo(() => {
       )}
 
       <Suspense fallback={<Skeleton className="h-20 w-full" />}>
-        <PropertyFooter property={property} />
+        <PropertyFooter property={shown} />
       </Suspense>
 
       <GuestGuideDialog
         isOpen={isGuideDialogOpen}
         onClose={handleGuideClose}
-        property={property}
+        property={shown}
         initialSectionId={guideSectionId}
+        translationToggle={guideTranslationToggle}
       />
     </div>
   );

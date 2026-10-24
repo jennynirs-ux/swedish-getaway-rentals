@@ -8,9 +8,68 @@ import {
   Bed, Bath, Users, Flame, UtensilsCrossed, Car as Parking,
   Thermometer, Shield, Tv, Dumbbell, PawPrint, Snowflake
 } from "lucide-react";
+import { type Copy, useCopy, useLang } from "@/i18n";
+import { type ListingTranslation, translatedName } from "@/i18n/listingTexts";
+import { amenityLabel } from "@/content/amenities";
+
+type Category = "Essentials" | "Kitchen & Dining" | "Comfort" | "Entertainment" | "Outdoor" | "Other";
+
+const en = {
+  heading: "Premium Amenities",
+  intro: "Everything you need for an unforgettable stay, from modern conveniences to unique experiences that celebrate Nordic culture.",
+  showStandard: (n: number) => `+${n} Standard Amenities`,
+  noPremium: "No premium amenities listed for this property yet.",
+  standardTitle: "Standard Amenities",
+  categories: {
+    Essentials: "Essentials",
+    "Kitchen & Dining": "Kitchen & Dining",
+    Comfort: "Comfort",
+    Entertainment: "Entertainment",
+    Outdoor: "Outdoor",
+    Other: "Other",
+  } as Record<Category, string>,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    heading: "Utvalda bekvämligheter",
+    intro: "Allt du behöver för en oförglömlig vistelse – från moderna bekvämligheter till unika upplevelser i nordisk anda.",
+    showStandard: (n) => `+${n} fler bekvämligheter`,
+    noPremium: "Inga utvalda bekvämligheter har lagts till för det här boendet än.",
+    standardTitle: "Fler bekvämligheter",
+    categories: {
+      Essentials: "Grundläggande",
+      "Kitchen & Dining": "Kök och matplats",
+      Comfort: "Komfort",
+      Entertainment: "Underhållning",
+      Outdoor: "Utomhus",
+      Other: "Övrigt",
+    },
+  },
+  de: {
+    heading: "Besondere Ausstattung",
+    intro: "Alles für einen unvergesslichen Aufenthalt – von modernem Komfort bis zu besonderen Erlebnissen ganz im Zeichen nordischer Kultur.",
+    showStandard: (n) => `+${n} weitere Ausstattungsmerkmale`,
+    noPremium: "Für diese Unterkunft ist noch keine besondere Ausstattung angegeben.",
+    standardTitle: "Weitere Ausstattung",
+    categories: {
+      Essentials: "Grundausstattung",
+      "Kitchen & Dining": "Küche & Essen",
+      Comfort: "Komfort",
+      Entertainment: "Unterhaltung",
+      Outdoor: "Außenbereich",
+      Other: "Sonstiges",
+    },
+  },
+};
 
 interface PropertyAmenitiesProps {
+  /** The listing as guests read it (translated) */
   property: Property;
+  /** The host's own listing, for matching names to icons; defaults to property */
+  original?: Property;
+  /** The listing's translations, for amenity names we have no label for */
+  translation?: ListingTranslation;
 }
 
 interface AmenityData {
@@ -22,7 +81,9 @@ interface AmenityData {
   features?: string[];
 }
 
-export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
+export const PropertyAmenities = ({ property, original = property, translation }: PropertyAmenitiesProps) => {
+  const t = useCopy(COPY);
+  const lang = useLang();
   const [selectedAmenity, setSelectedAmenity] = useState<AmenityData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
@@ -51,7 +112,7 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
   };
 
   // Helper function to categorize amenities
-  const categorizeAmenity = (title: string): string => {
+  const categorizeAmenity = (title: string): Category => {
     const lower = title.toLowerCase();
     if (lower.includes('wifi') || lower.includes('parking') || lower.includes('heating')) return "Essentials";
     if (lower.includes('kitchen') || lower.includes('coffee') || lower.includes('dining')) return "Kitchen & Dining";
@@ -61,30 +122,34 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     return "Other";
   };
 
-  // Premium amenities are from amenities_data, excluding featured ones
+  // Premium amenities are from amenities_data, excluding featured ones. Which
+  // ones and their icons follow the host's own words; the text shown is the
+  // translated entry in the same place
   const premiumAmenities: AmenityData[] = useMemo(() => {
-    const amenitiesData = (property.amenities_data || []) as any[];
-    const featuredAmenities = (property.featured_amenities || []) as any[];
+    const amenitiesData = (original.amenities_data || []) as any[];
+    const shownData = (property.amenities_data || []) as any[];
+    const featuredAmenities = (original.featured_amenities || []) as any[];
     const featuredTitles = featuredAmenities.map((fa: any) => fa.title?.toLowerCase());
     
     return amenitiesData
-      .filter((amenity: any) => {
+      .map((amenity: any, index: number) => ({ amenity, shown: shownData[index] ?? amenity }))
+      .filter(({ amenity }) => {
         const title = (amenity.title || amenity.name || '').toLowerCase();
         return !featuredTitles.includes(title);
       })
-      .map((amenity: any) => ({
+      .map(({ amenity, shown }) => ({
         icon: getAmenityIcon(amenity.icon || amenity.title || amenity.name),
-        title: amenity.title || amenity.name || '',
-        tagline: amenity.tagline || amenity.description || '',
-        description: amenity.description || '',
-        image_url: amenity.image_url,
-        features: amenity.features || []
+        title: shown.title || shown.name || '',
+        tagline: shown.tagline || shown.description || '',
+        description: shown.description || '',
+        image_url: shown.image_url,
+        features: shown.features || []
       }));
-  }, [property.amenities_data, property.featured_amenities]);
+  }, [original.amenities_data, original.featured_amenities, property.amenities_data]);
 
   // Standard amenities - from basic amenities array only
   const standardAmenitiesByCategory = useMemo(() => {
-    const categories: Record<string, AmenityData[]> = {
+    const categories: Record<Category, AmenityData[]> = {
       "Essentials": [],
       "Kitchen & Dining": [],
       "Comfort": [],
@@ -97,8 +162,9 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     if (property.amenities && Array.isArray(property.amenities)) {
       property.amenities.forEach((amenity: string) => {
         const amenityData: AmenityData = {
+          // Icons and categories match the English name; guests see the label
           icon: getAmenityIcon(amenity),
-          title: amenity,
+          title: amenityLabel(amenity, lang) ?? translatedName(translation, `amenity:${amenity}`, amenity),
           tagline: `Enjoy ${amenity.toLowerCase()} during your stay`,
           description: property.amenities_descriptions?.[amenity] || `Experience ${amenity.toLowerCase()} during your stay.`,
           image_url: undefined,
@@ -111,7 +177,7 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
     }
 
     return categories;
-  }, [property.amenities, property.amenities_descriptions]);
+  }, [property.amenities, property.amenities_descriptions, lang, translation]);
 
   const totalStandardAmenities = Object.values(standardAmenitiesByCategory).flat().length;
 
@@ -131,11 +197,10 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
           {/* Section Header */}
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Premium Amenities
+              {t.heading}
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Everything you need for an unforgettable stay, from modern conveniences 
-              to unique experiences that celebrate Nordic culture.
+              {t.intro}
             </p>
           </div>
 
@@ -172,7 +237,7 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
                     onClick={() => setShowAllAmenities(true)}
                     className="text-primary"
                   >
-                    +{totalStandardAmenities} Standard Amenities
+                    {t.showStandard(totalStandardAmenities)}
                   </Button>
                 </div>
               )}
@@ -180,7 +245,7 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
           ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">
-                No premium amenities listed for this property yet.
+                {t.noPremium}
               </p>
             </div>
           )}
@@ -198,14 +263,14 @@ export const PropertyAmenities = ({ property }: PropertyAmenitiesProps) => {
       <Dialog open={showAllAmenities} onOpenChange={setShowAllAmenities}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Standard Amenities</DialogTitle>
+            <DialogTitle>{t.standardTitle}</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4">
             {Object.entries(standardAmenitiesByCategory).map(([category, amenities]) => {
               if (amenities.length === 0) return null;
               return (
                 <div key={category}>
-                  <h3 className="text-lg font-semibold mb-3">{category}</h3>
+                  <h3 className="text-lg font-semibold mb-3">{t.categories[category as Category]}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {amenities.map((amenity, index) => (
                       <div 

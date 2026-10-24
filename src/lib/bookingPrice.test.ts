@@ -74,4 +74,12 @@ describe("extras", () => {
     expect(extraServiceUnit({ is_per_night: false, per_guest: true })).toBe("per guest");
     expect(extraServiceUnit({ is_per_night: true, per_guest: true })).toBe("per guest per night");
   });
+
+  it("names the unit in Swedish and German", () => {
+    expect(extraServiceUnit({ is_per_night: false }, "en")).toBe("per stay");
+    expect(extraServiceUnit({ is_per_night: false }, "sv")).toBe("per vistelse");
+    expect(extraServiceUnit({ is_per_night: true, per_guest: true }, "sv")).toBe("per gäst och natt");
+    expect(extraServiceUnit({ is_per_night: true }, "de")).toBe("pro Nacht");
+    expect(extraServiceUnit({ is_per_night: false, per_guest: true }, "de")).toBe("pro Gast");
+  });
 });

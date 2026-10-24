@@ -63,6 +63,14 @@ export const MAX_EXTRAS_PER_BOOKING = 8;
 export const extraServiceFee = (rule: ExtraServiceRule, guests: number, nights: number) =>
   rule.included ? 0 : rule.price * (rule.per_guest ? guests : 1) * (rule.is_per_night ? nights : 1);
 
-/** "per stay", "per night", "per guest" or "per guest per night" */
-export const extraServiceUnit = (rule: Pick<ExtraServiceRule, "is_per_night" | "per_guest">) =>
-  rule.per_guest ? (rule.is_per_night ? "per guest per night" : "per guest") : rule.is_per_night ? "per night" : "per stay";
+const UNITS = {
+  en: { stay: "per stay", night: "per night", guest: "per guest", guestNight: "per guest per night" },
+  sv: { stay: "per vistelse", night: "per natt", guest: "per gäst", guestNight: "per gäst och natt" },
+  de: { stay: "pro Aufenthalt", night: "pro Nacht", guest: "pro Gast", guestNight: "pro Gast und Nacht" },
+} as const;
+
+/** "per stay", "per night", "per guest" or "per guest per night" (in the guest site's languages: "en", "sv", "de") */
+export const extraServiceUnit = (rule: Pick<ExtraServiceRule, "is_per_night" | "per_guest">, lang: keyof typeof UNITS = "en") => {
+  const unit = UNITS[lang];
+  return rule.per_guest ? (rule.is_per_night ? unit.guestNight : unit.guest) : rule.is_per_night ? unit.night : unit.stay;
+};

@@ -28,7 +28,7 @@ const UNITS = [
 ] as const;
 type Unit = (typeof UNITS)[number]["value"];
 
-/** The unit in Swedish for the host, read like extraServiceUnit (which guests see, in English) */
+/** The unit in Swedish for the host panel, as extraServiceUnit words it for guests */
 const unitLabel = (e: Pick<Extra, "is_per_night" | "per_guest">) =>
   e.per_guest ? (e.is_per_night ? "per gäst och natt" : "per gäst") : e.is_per_night ? "per natt" : "per vistelse";
 

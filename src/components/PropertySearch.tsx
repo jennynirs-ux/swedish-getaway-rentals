@@ -12,6 +12,71 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
+import { type Copy, useCopy, useLang, useLocale } from "@/i18n";
+import { useDateFnsLocale } from "@/i18n/dates";
+import { propertyTypeName } from "@/components/PropertyCard";
+
+const en = {
+  where: "Where in Sweden?",
+  dates: "Check-in / Check-out",
+  /** date-fns patterns for the dates on the button */
+  dayMonth: "dd MMM",
+  dateFlexibility: "Date flexibility",
+  flex: (days: number) => (days === 0 ? "Exact" : days === 7 ? "± 1w" : `± ${days}d`),
+  flexNote: (days: number) => `We’ll also consider availability within ±${days} days.`,
+  guests: "Guests",
+  guestCount: (n: number) => `${n} ${n === 1 ? "guest" : "guests"}`,
+  search: "Search",
+  moreFilters: (on: number) => (on > 0 ? `More filters (${on} on)` : "More filters"),
+  advancedFilters: "Advanced Filters",
+  clearAll: "Clear all",
+  closeFilters: "Close filters",
+  price: "Price per night incl. service fee (SEK)",
+  propertyType: "Property type",
+  allTypes: "All types",
+  amenities: "Amenities",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    where: "Var i Sverige?",
+    dates: "Incheckning / utcheckning",
+    dayMonth: "d MMM",
+    dateFlexibility: "Flexibla datum",
+    flex: (days) => (days === 0 ? "Exakt" : days === 7 ? "± 1 v" : `± ${days} d`),
+    flexNote: (days) => `Vi visar också stugor som är lediga inom ±${days} ${days === 1 ? "dag" : "dagar"}.`,
+    guests: "Gäster",
+    guestCount: (n) => `${n} ${n === 1 ? "gäst" : "gäster"}`,
+    search: "Sök",
+    moreFilters: (on) => (on > 0 ? `Fler filter (${on} valda)` : "Fler filter"),
+    advancedFilters: "Fler filter",
+    clearAll: "Rensa allt",
+    closeFilters: "Stäng filter",
+    price: "Pris per natt inkl. serviceavgift (SEK)",
+    propertyType: "Typ av boende",
+    allTypes: "Alla typer",
+    amenities: "Bekvämligheter",
+  },
+  de: {
+    where: "Wo in Schweden?",
+    dates: "Check-in / Check-out",
+    dayMonth: "d. MMM",
+    dateFlexibility: "Flexible Reisedaten",
+    flex: (days) => (days === 0 ? "Genau" : days === 7 ? "± 1 Wo." : `± ${days} T.`),
+    flexNote: (days) => `Wir zeigen auch Ferienhäuser, die innerhalb von ±${days} ${days === 1 ? "Tag" : "Tagen"} frei sind.`,
+    guests: "Gäste",
+    guestCount: (n) => `${n} ${n === 1 ? "Gast" : "Gäste"}`,
+    search: "Suchen",
+    moreFilters: (on) => (on > 0 ? `Weitere Filter (${on} aktiv)` : "Weitere Filter"),
+    advancedFilters: "Weitere Filter",
+    clearAll: "Alle zurücksetzen",
+    closeFilters: "Filter schließen",
+    price: "Preis pro Nacht inkl. Servicegebühr (SEK)",
+    propertyType: "Art der Unterkunft",
+    allTypes: "Alle Arten",
+    amenities: "Ausstattung",
+  },
+};
 
 export interface SearchFilters {
   /** The place last searched for (applied on Search, not while typing) */
@@ -57,6 +122,8 @@ interface PropertySearchProps {
   onSearch?: () => void;
   /** One control per row, for the phone drawer */
   stacked?: boolean;
+  /** Amenity (as in availableAmenities) → its name in the page's language, where the listings have one */
+  amenityLabels?: Record<string, string>;
 }
 
 const PropertySearch = ({
@@ -67,7 +134,12 @@ const PropertySearch = ({
   initialFilters,
   onSearch,
   stacked = false,
+  amenityLabels = {},
 }: PropertySearchProps) => {
+  const t = useCopy(COPY);
+  const lang = useLang();
+  const locale = useLocale();
+  const dateLocale = useDateFnsLocale();
   const [showFilters, setShowFilters] = useState(false);
   const [isGeocodingLocation, setIsGeocodingLocation] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>(() => ({
@@ -157,8 +229,8 @@ const PropertySearch = ({
           <div className="flex-[2] relative">
             <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Where in Sweden?"
-              aria-label="Where in Sweden?"
+              placeholder={t.where}
+              aria-label={t.where}
               value={locationInput}
               onChange={(e) => setLocationInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -184,13 +256,13 @@ const PropertySearch = ({
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
-                      {format(dateRange.from, "dd MMM")} - {format(dateRange.to, "dd MMM")}
+                      {format(dateRange.from, t.dayMonth, { locale: dateLocale })} - {format(dateRange.to, t.dayMonth, { locale: dateLocale })}
                     </>
                   ) : (
-                    format(dateRange.from, "dd MMM")
+                    format(dateRange.from, t.dayMonth, { locale: dateLocale })
                   )
                 ) : (
-                  <span>Check-in / Check-out</span>
+                  <span>{t.dates}</span>
                 )}
               </Button>
             </PopoverTrigger>
@@ -201,10 +273,12 @@ const PropertySearch = ({
                 onSelect={handleDateRangeChange}
                 disabled={(date) => date < new Date()}
                 numberOfMonths={stacked ? 1 : 2}
+                // English keeps the calendar's default (weeks start on Sunday)
+                locale={lang === "en" ? undefined : dateLocale}
                 className={cn("p-3 pointer-events-auto")}
               />
               <div className="border-t p-3 space-y-2">
-                <div className="text-xs font-medium">Date flexibility</div>
+                <div className="text-xs font-medium">{t.dateFlexibility}</div>
                 <div className="flex flex-wrap gap-2">
                   {[0,1,2,3,7].map((d) => (
                     <Button
@@ -213,13 +287,13 @@ const PropertySearch = ({
                       size="sm"
                       onClick={() => updateFilters({ dateFlexibility: d })}
                     >
-                      {d === 0 ? 'Exact' : d === 7 ? '± 1w' : `± ${d}d`}
+                      {t.flex(d)}
                     </Button>
                   ))}
                 </div>
                 {filters.dateFlexibility > 0 && (
                   <div className="text-xs text-muted-foreground">
-                    We’ll also consider availability within ±{filters.dateFlexibility} days.
+                    {t.flexNote(filters.dateFlexibility)}
                   </div>
                 )}
               </div>
@@ -233,12 +307,12 @@ const PropertySearch = ({
           >
             <SelectTrigger className="flex-1">
               <Users className="mr-1 h-4 w-4" />
-              <SelectValue placeholder="Guests" />
+              <SelectValue placeholder={t.guests} />
             </SelectTrigger>
             <SelectContent>
               {Array.from({ length: maxGuests }, (_, i) => i + 1).map((num) => (
                 <SelectItem key={num} value={num.toString()}>
-                  {num} {num === 1 ? "guest" : "guests"}
+                  {t.guestCount(num)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -257,14 +331,14 @@ const PropertySearch = ({
               ) : (
                 <Search className="h-4 w-4 mr-1" />
               )}
-              Search
+              {t.search}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className="relative"
-              aria-label={activeFiltersCount > 0 ? `More filters (${activeFiltersCount} on)` : "More filters"}
+              aria-label={t.moreFilters(activeFiltersCount)}
               aria-expanded={showFilters}
             >
               <SlidersHorizontal className="h-4 w-4" />
@@ -282,12 +356,12 @@ const PropertySearch = ({
       {showFilters && (
         <Card className="mt-3 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold">Advanced Filters</h3>
+            <h3 className="text-lg font-semibold">{t.advancedFilters}</h3>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear all
+                {t.clearAll}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)} aria-label="Close filters">
+              <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)} aria-label={t.closeFilters}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -296,7 +370,7 @@ const PropertySearch = ({
           <div className="space-y-6">
             {/* Price Range */}
             <div>
-              <label className="text-sm font-semibold mb-3 block">Price per night incl. service fee (SEK)</label>
+              <label className="text-sm font-semibold mb-3 block">{t.price}</label>
               <Slider
                 value={filters.priceRange}
                 onValueChange={(value) => updateFilters({ priceRange: value as [number, number] })}
@@ -306,8 +380,8 @@ const PropertySearch = ({
                 className="mb-3"
               />
               <div className="flex justify-between text-sm font-medium">
-                <span className="text-primary">{filters.priceRange[0].toLocaleString()} kr</span>
-                <span className="text-primary">{filters.priceRange[1] === PRICE_FILTER_MAX ? `${PRICE_FILTER_MAX.toLocaleString()}+ kr` : `${filters.priceRange[1].toLocaleString()} kr`}</span>
+                <span className="text-primary">{filters.priceRange[0].toLocaleString(locale)} kr</span>
+                <span className="text-primary">{filters.priceRange[1] === PRICE_FILTER_MAX ? `${PRICE_FILTER_MAX.toLocaleString(locale)}+ kr` : `${filters.priceRange[1].toLocaleString(locale)} kr`}</span>
               </div>
             </div>
 
@@ -315,19 +389,19 @@ const PropertySearch = ({
             {availableTypes.length > 0 && (
               <div className={cn("grid grid-cols-1 gap-6", !stacked && "md:grid-cols-2")}>
                 <div>
-                  <label className="text-sm font-semibold mb-3 block">Property type</label>
+                  <label className="text-sm font-semibold mb-3 block">{t.propertyType}</label>
                   <Select
                     value={filters.propertyType}
                     onValueChange={(value) => updateFilters({ propertyType: value })}
                   >
                     <SelectTrigger className="h-11">
-                      <SelectValue placeholder="All types" />
+                      <SelectValue placeholder={t.allTypes} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
+                      <SelectItem value="all">{t.allTypes}</SelectItem>
                       {availableTypes.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type}
+                          {propertyTypeName(type, lang)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -339,19 +413,24 @@ const PropertySearch = ({
             {/* Amenities */}
             {availableAmenities.length > 0 && (
               <div>
-                <label className="text-sm font-semibold mb-3 block">Amenities</label>
+                <label className="text-sm font-semibold mb-3 block">{t.amenities}</label>
                 <div className="flex flex-wrap gap-2">
-                  {availableAmenities.slice(0, 12).map((amenity) => (
-                    <Button
-                      key={amenity}
-                      variant={filters.amenities.includes(amenity) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => toggleAmenity(amenity)}
-                      className="capitalize"
-                    >
-                      {amenity}
-                    </Button>
-                  ))}
+                  {availableAmenities.slice(0, 12).map((amenity) => {
+                    // The filter matches the host's own name; the button shows the translation.
+                    // English capitalises each word as before; Swedish and German don't use title case
+                    const label = amenityLabels[amenity] ?? amenity;
+                    return (
+                      <Button
+                        key={amenity}
+                        variant={filters.amenities.includes(amenity) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleAmenity(amenity)}
+                        className={lang === "en" ? "capitalize" : undefined}
+                      >
+                        {lang === "en" ? label : label.charAt(0).toUpperCase() + label.slice(1)}
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
             )}

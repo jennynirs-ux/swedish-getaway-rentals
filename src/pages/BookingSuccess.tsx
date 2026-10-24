@@ -1,10 +1,124 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { type ReactNode, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Link } from "@/i18n/router";
+import { type Copy, useCopy } from "@/i18n";
 import { CheckCircle, Home, Calendar, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { COMPANY } from "@/content/company";
+
+const en = {
+  processingTitle: "Processing your booking...",
+  processingText: "Please wait while we confirm your payment. This can take up to half a minute.",
+  titles: {
+    confirmed: "Booking Confirmed!",
+    datesTaken: "These dates were just booked",
+    refunded: "Your payment has been refunded",
+    unconfirmed: "We're confirming your booking",
+  },
+  thankYou: "Thank you for your booking! Your payment has been processed and your reservation is now confirmed.",
+  whatNext: "What happens next:",
+  confirmationEmail: "You will receive a confirmation email shortly",
+  checkInDetails: "We will contact you with check-in details before your arrival",
+  questions: (email: ReactNode): ReactNode => <>Questions? Email us at {email}</>,
+  datesTaken: (email: ReactNode): ReactNode => (
+    <>
+      Someone else booked these dates while you were paying, so your booking could not be completed. We have refunded
+      everything you paid, including the service fee, and sent you an email. The refund usually shows on your card within
+      5–10 business days. Sorry about that – please pick other dates or email {email}.
+    </>
+  ),
+  refunded: (email: ReactNode): ReactNode => (
+    <>
+      Your booking could not be completed, so you have no booking for these dates. We have refunded everything you paid,
+      including the service fee. The refund usually shows on your card within 5–10 business days. If you'd like to book
+      again or have questions, email {email}.
+    </>
+  ),
+  unconfirmed: (email: ReactNode): ReactNode => (
+    <>
+      You'll receive a confirmation email within a few minutes. If it doesn't arrive, email {email} and we'll sort it out.
+    </>
+  ),
+  home: "Home",
+  myBookings: "My Bookings",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    processingTitle: "Vi behandlar din bokning…",
+    processingText: "Vänta medan vi bekräftar din betalning. Det kan ta upp till en halv minut.",
+    titles: {
+      confirmed: "Bokningen är bekräftad!",
+      datesTaken: "Datumen blev precis bokade",
+      refunded: "Din betalning har betalats tillbaka",
+      unconfirmed: "Vi bekräftar din bokning",
+    },
+    thankYou: "Tack för din bokning! Betalningen är klar och din bokning är nu bekräftad.",
+    whatNext: "Det här händer nu:",
+    confirmationEmail: "Du får snart en bokningsbekräftelse via e-post",
+    checkInDetails: "Före ankomsten hör vi av oss med information om incheckningen",
+    questions: (email) => <>Frågor? Mejla oss på {email}</>,
+    datesTaken: (email) => (
+      <>
+        Någon annan bokade de här datumen medan du betalade, så din bokning kunde inte slutföras. Vi har betalat tillbaka
+        allt du betalade, även serviceavgiften, och skickat ett mejl till dig. Pengarna syns oftast på ditt kort inom 5–10
+        bankdagar. Förlåt för det – välj gärna andra datum eller mejla {email}.
+      </>
+    ),
+    refunded: (email) => (
+      <>
+        Din bokning kunde inte slutföras, så du har ingen bokning för de här datumen. Vi har betalat tillbaka allt du
+        betalade, även serviceavgiften. Pengarna syns oftast på ditt kort inom 5–10 bankdagar. Vill du boka igen eller har
+        du frågor? Mejla {email}.
+      </>
+    ),
+    unconfirmed: (email) => (
+      <>Du får en bokningsbekräftelse via e-post inom några minuter. Om den inte kommer, mejla {email} så löser vi det.</>
+    ),
+    home: "Startsidan",
+    myBookings: "Mina bokningar",
+  },
+  de: {
+    processingTitle: "Deine Buchung wird bearbeitet…",
+    processingText: "Bitte warte kurz, während wir deine Zahlung bestätigen. Das kann bis zu einer halben Minute dauern.",
+    titles: {
+      confirmed: "Buchung bestätigt!",
+      datesTaken: "Dieser Zeitraum wurde gerade gebucht",
+      refunded: "Deine Zahlung wurde erstattet",
+      unconfirmed: "Wir bestätigen deine Buchung",
+    },
+    thankYou: "Danke für deine Buchung! Deine Zahlung ist eingegangen und deine Buchung ist jetzt bestätigt.",
+    whatNext: "So geht es weiter:",
+    confirmationEmail: "Du bekommst in Kürze eine Buchungsbestätigung per E-Mail",
+    checkInDetails: "Vor deiner Anreise melden wir uns mit den Infos zum Check-in",
+    questions: (email) => <>Fragen? Schreib uns an {email}</>,
+    datesTaken: (email) => (
+      <>
+        Jemand anderes hat diesen Zeitraum gebucht, während du bezahlt hast, deshalb konnte deine Buchung nicht
+        abgeschlossen werden. Wir haben dir alles erstattet, was du bezahlt hast, auch die Servicegebühr, und dir eine
+        E-Mail geschickt. Die Erstattung ist meist innerhalb von 5–10 Werktagen auf deiner Karte zu sehen. Das tut uns
+        leid – wähle gern einen anderen Zeitraum oder schreib an {email}.
+      </>
+    ),
+    refunded: (email) => (
+      <>
+        Deine Buchung konnte nicht abgeschlossen werden, du hast also keine Buchung für diesen Zeitraum. Wir haben dir
+        alles erstattet, was du bezahlt hast, auch die Servicegebühr. Die Erstattung ist meist innerhalb von 5–10
+        Werktagen auf deiner Karte zu sehen. Wenn du noch einmal buchen möchtest oder Fragen hast, schreib an {email}.
+      </>
+    ),
+    unconfirmed: (email) => (
+      <>
+        Du bekommst innerhalb weniger Minuten eine Buchungsbestätigung per E-Mail. Falls sie nicht ankommt, schreib an{" "}
+        {email}, dann kümmern wir uns darum.
+      </>
+    ),
+    home: "Startseite",
+    myBookings: "Meine Buchungen",
+  },
+};
 
 // handle-payment-success answers success:false with message 'processing' while
 // the Stripe webhook is saving the same booking (the usual race when the guest
@@ -29,6 +143,7 @@ const supportLink = (
 );
 
 const BookingSuccess = () => {
+  const t = useCopy(COPY);
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [outcome, setOutcome] = useState<Outcome>(sessionId ? "checking" : "unconfirmed");
@@ -77,8 +192,8 @@ const BookingSuccess = () => {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center" role="status">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold mb-2">Processing your booking...</h3>
-            <p className="text-muted-foreground">Please wait while we confirm your payment. This can take up to half a minute.</p>
+            <h3 className="text-lg font-semibold mb-2">{t.processingTitle}</h3>
+            <p className="text-muted-foreground">{t.processingText}</p>
           </CardContent>
         </Card>
       </div>
@@ -86,12 +201,7 @@ const BookingSuccess = () => {
   }
 
   const success = outcome === "confirmed";
-  const title = {
-    confirmed: "Booking Confirmed!",
-    datesTaken: "These dates were just booked",
-    refunded: "Your payment has been refunded",
-    unconfirmed: "We're confirming your booking",
-  }[outcome];
+  const title = t.titles[outcome];
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,50 +219,38 @@ const BookingSuccess = () => {
               {outcome === "confirmed" ? (
                 <div className="space-y-4">
                   <p className="text-lg text-muted-foreground">
-                    Thank you for your booking! Your payment has been processed and your reservation is now confirmed.
+                    {t.thankYou}
                   </p>
 
                   <div className="bg-primary/5 p-4 rounded-lg">
-                    <h4 className="font-semibold text-primary mb-2">What happens next:</h4>
+                    <h4 className="font-semibold text-primary mb-2">{t.whatNext}</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• You will receive a confirmation email shortly</li>
-                      <li>• We will contact you with check-in details before your arrival</li>
-                      <li>• Questions? Email us at {supportLink}</li>
+                      <li>• {t.confirmationEmail}</li>
+                      <li>• {t.checkInDetails}</li>
+                      <li>• {t.questions(supportLink)}</li>
                     </ul>
                   </div>
                 </div>
               ) : outcome === "datesTaken" ? (
-                <p className="text-lg text-muted-foreground">
-                  Someone else booked these dates while you were paying, so your booking could not be completed. We
-                  have refunded everything you paid, including the service fee, and sent you an email. The refund
-                  usually shows on your card within 5–10 business days. Sorry about that – please pick other dates or
-                  email {supportLink}.
-                </p>
+                <p className="text-lg text-muted-foreground">{t.datesTaken(supportLink)}</p>
               ) : outcome === "refunded" ? (
-                <p className="text-lg text-muted-foreground">
-                  Your booking could not be completed, so you have no booking for these dates. We have refunded
-                  everything you paid, including the service fee. The refund usually shows on your card within 5–10
-                  business days. If you'd like to book again or have questions, email {supportLink}.
-                </p>
+                <p className="text-lg text-muted-foreground">{t.refunded(supportLink)}</p>
               ) : (
-                <p className="text-lg text-muted-foreground">
-                  You'll receive a confirmation email within a few minutes. If it doesn't arrive, email {supportLink}{" "}
-                  and we'll sort it out.
-                </p>
+                <p className="text-lg text-muted-foreground">{t.unconfirmed(supportLink)}</p>
               )}
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link to="/" className="flex-1">
                   <Button variant="outline" className="w-full">
                     <Home className="w-4 h-4 mr-2" />
-                    Home
+                    {t.home}
                   </Button>
                 </Link>
 
                 <Link to="/profile" className="flex-1">
                   <Button className="w-full">
                     <Calendar className="w-4 h-4 mr-2" />
-                    My Bookings
+                    {t.myBookings}
                   </Button>
                 </Link>
               </div>

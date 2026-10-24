@@ -5,6 +5,38 @@ import { Badge } from "@/components/ui/badge";
 import { Percent, Tag, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { type Copy, useCopy, useLang, useLocale } from "@/i18n";
+
+const en = {
+  applied: (amount: string) => `Coupon applied! You saved ${amount} SEK`,
+  removed: "Coupon removed",
+  appliedCode: (code: string) => `Coupon Applied: ${code}`,
+  label: "Coupon Code",
+  placeholder: "Enter coupon code",
+  applying: "Applying...",
+  apply: "Apply",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    applied: (amount) => `Rabattkoden är tillagd! Du sparar ${amount} SEK`,
+    removed: "Rabattkoden är borttagen",
+    appliedCode: (code) => `Rabattkod tillagd: ${code}`,
+    label: "Rabattkod",
+    placeholder: "Ange rabattkod",
+    applying: "Lägger till…",
+    apply: "Använd",
+  },
+  de: {
+    applied: (amount) => `Gutscheincode eingelöst! Du sparst ${amount} SEK`,
+    removed: "Gutscheincode entfernt",
+    appliedCode: (code) => `Gutscheincode eingelöst: ${code}`,
+    label: "Gutscheincode",
+    placeholder: "Gutscheincode eingeben",
+    applying: "Wird eingelöst…",
+    apply: "Einlösen",
+  },
+};
 
 interface CouponInputProps {
   propertyId?: string;
@@ -25,8 +57,15 @@ const CouponInput = ({
   onCouponRemoved, 
   appliedCoupon 
 }: CouponInputProps) => {
+  const t = useCopy(COPY);
+  const lang = useLang();
+  const pageLocale = useLocale();
+  // English pages keep the Swedish number style they always had (as the shop does)
+  const locale = lang === "en" ? "sv-SE" : pageLocale;
   const [couponCode, setCouponCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const formatAmount = (ore: number) =>
+    (ore / 100).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -51,7 +90,7 @@ const CouponInput = ({
       }
 
       onCouponApplied(result.coupon_id, result.discount_amount, couponCode.toUpperCase());
-      toast.success(`Coupon applied! You saved ${(result.discount_amount / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SEK`);
+      toast.success(t.applied(formatAmount(result.discount_amount)));
       setCouponCode("");
     } catch (error: any) {
       toast.error(error.message);
@@ -62,7 +101,7 @@ const CouponInput = ({
 
   const handleRemoveCoupon = () => {
     onCouponRemoved();
-    toast.success("Coupon removed");
+    toast.success(t.removed);
   };
 
   if (appliedCoupon) {
@@ -71,10 +110,10 @@ const CouponInput = ({
         <div className="flex items-center gap-2">
           <Tag className="h-4 w-4 text-green-600" />
           <span className="text-sm font-medium text-green-800">
-            Coupon Applied: {appliedCoupon.code}
+            {t.appliedCode(appliedCoupon.code)}
           </span>
           <Badge variant="secondary" className="bg-green-100 text-green-800">
-            -{(appliedCoupon.discountAmount / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SEK
+            -{formatAmount(appliedCoupon.discountAmount)} SEK
           </Badge>
         </div>
         <Button
@@ -92,14 +131,14 @@ const CouponInput = ({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Coupon Code</label>
+      <label className="text-sm font-medium">{t.label}</label>
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={couponCode}
             onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-            placeholder="Enter coupon code"
+            placeholder={t.placeholder}
             className="pl-10"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -115,7 +154,7 @@ const CouponInput = ({
           onClick={handleApplyCoupon}
           disabled={loading || !couponCode.trim()}
         >
-          {loading ? "Applying..." : "Apply"}
+          {loading ? t.applying : t.apply}
         </Button>
       </div>
     </div>

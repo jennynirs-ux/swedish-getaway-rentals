@@ -30,6 +30,24 @@ const STATIC_ROUTES = [
   "/host-terms",
 ];
 
+// Guest pages exist in English (no prefix), Swedish (/sv) and German (/de);
+// see src/i18n. These have one language each (or, /become-host and
+// /bli-vard, a twin of their own)
+const LANG_PREFIXES = { en: "", sv: "/sv", de: "/de" };
+const SINGLE_LANGUAGE = new Set(["/pricing-guide", "/become-host", "/bli-vard", "/host-terms"]);
+const HOST_PAGE_TWINS = { en: "/become-host", sv: "/bli-vard" };
+const inLang = (route, lang) => (LANG_PREFIXES[lang] && route === "/" ? LANG_PREFIXES[lang] : `${LANG_PREFIXES[lang]}${route}`);
+
+/** Each route in every language it has, with its alternates (hreflang) */
+function withLanguages(routes) {
+  return routes.flatMap(({ route, lastmod }) => {
+    if (route === HOST_PAGE_TWINS.en || route === HOST_PAGE_TWINS.sv) return [{ route, lastmod, alternates: HOST_PAGE_TWINS }];
+    if (SINGLE_LANGUAGE.has(route)) return [{ route, lastmod }];
+    const alternates = Object.fromEntries(Object.keys(LANG_PREFIXES).map((lang) => [lang, inLang(route, lang)]));
+    return Object.values(alternates).map((r) => ({ route: r, lastmod, alternates }));
+  });
+}
+
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
   "/usr/bin/google-chrome",
@@ -181,12 +199,20 @@ const feesText = (p) => {
 
 async function writeSitemap(routes) {
   const today = new Date().toISOString().slice(0, 10);
+  // The same page in the other languages, as the pages' own hreflang links
+  // (x-default: the English one)
+  const links = (alternates) =>
+    alternates
+      ? Object.entries({ ...alternates, "x-default": alternates.en })
+          .map(([lang, href]) => `\n    <xhtml:link rel="alternate" hreflang="${lang}" href="${SITE_URL}${href}"/>`)
+          .join("")
+      : "";
   const urls = routes
-    .map(({ route, lastmod }) => `  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <lastmod>${lastmod ?? today}</lastmod>\n  </url>`)
+    .map(({ route, lastmod, alternates }) => `  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <lastmod>${lastmod ?? today}</lastmod>${links(alternates)}\n  </url>`)
     .join("\n");
   await writeFile(
     path.join(DIST, "sitemap.xml"),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls}\n</urlset>\n`,
   );
 }
 
@@ -197,6 +223,8 @@ async function writeRedirects(properties) {
   const lines = ["/book-now /cabins 301", "/gallery / 301", "/amenities / 301"].concat(properties
     .filter((p) => p.slug)
     .flatMap((p) => [
+      // Only English: links by id are older than the Swedish and German pages
+      // (and Cloudflare allows 100 rules with a splat)
       `/property/${p.id} /property/${p.slug} 301`,
       `/property/${p.id}/* /property/${p.slug}/:splat 301`,
     ]));
@@ -277,11 +305,11 @@ async function main() {
   if (!chromePath) throw new Error("Chrome not found - set CHROME_PATH");
 
   const [properties, products] = await Promise.all([fetchProperties(), fetchProducts()]);
-  const routes = [
+  const routes = withLanguages([
     ...STATIC_ROUTES.map((route) => ({ route })),
     ...properties.map((p) => ({ route: `/property/${p.slug || p.id}`, lastmod: p.updated_at?.slice(0, 10) })),
     ...products.map((p) => ({ route: `/product/${p.id}`, lastmod: p.updated_at?.slice(0, 10) })),
-  ];
+  ]);
 
   const server = await preview({ preview: { port: PORT, strictPort: true }, logLevel: "warn" });
   const browser = await puppeteer.launch({

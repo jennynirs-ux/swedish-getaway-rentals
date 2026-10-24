@@ -25,6 +25,193 @@ import {
   serviceFeeAmount,
   stayDiscountAmount,
 } from "../../supabase/functions/_shared/booking-price";
+import { format } from "date-fns";
+import { type Copy, localizedPath, useCopy, useLang, useLocale } from "@/i18n";
+import { DATE_FNS_LOCALES } from "@/i18n/dates";
+import { translatedName, useListingTranslation } from "@/i18n/listingTexts";
+
+const nightsEn = (n: number) => `${n} night${n !== 1 ? 's' : ''}`;
+const nightsSv = (n: number) => `${n} ${n === 1 ? 'natt' : 'nätter'}`;
+const nightsDe = (n: number) => `${n} ${n === 1 ? 'Nacht' : 'Nächte'}`;
+
+const en = {
+  // Checked before the form is sent (the payment function checks again, in English)
+  nameMin: "Name must be at least 2 characters",
+  nameMax: "Name must be less than 100 characters",
+  nameLetters: "Please write your name in letters (spaces, hyphens, dots and apostrophes are fine)",
+  emailInvalid: "Invalid email address",
+  emailCharacters: "Please use an email address with only letters, digits and . _ % + -",
+  emailMax: "Email must be less than 255 characters",
+  phoneInvalid: "Please enter a phone number with 7 to 15 digits, e.g. +46 70 123 45 67",
+  guestsMin: "At least 1 guest required",
+  guestsMax: (max: number) => `Maximum ${max} guests allowed`,
+  requestsMax: (max: number) => `Special requests can be at most ${max} characters`,
+  acceptHouseRules: "You must accept the house rules to proceed",
+  confirmToProceed: "Please confirm to proceed",
+  checkInPast: "Check-in date cannot be in the past",
+  checkOutBeforeCheckIn: "Check-out must be after check-in date",
+
+  title: "Complete Your Booking",
+  guestsLabel: (max: number) => `Number of guests (max ${max})`,
+  /** fee: "400 SEK" */
+  extraGuestNote: (covered: number, fee: string, perNight: boolean) =>
+    `The nightly price covers ${covered} guest${covered !== 1 ? 's' : ''}; each extra guest adds ${fee}${perNight ? ' per night' : ''}.`,
+  cleaningNote: (fee: string) => `A cleaning fee of ${fee} is added per stay.`,
+  included: (names: string) => `Included: ${names}.`,
+  extras: "Extras",
+  checkIn: "Check-in:",
+  checkOut: "Check-out:",
+  numberOfNights: "Number of nights:",
+  date: (d: Date) => d.toDateString(),
+  /** price: "1 200 SEK" */
+  nightsTimesPrice: (nights: number, price: string) => `${nightsEn(nights)} × ${price}`,
+  cleaningFee: "Cleaning fee",
+  /** nights: null when the fee is per stay */
+  extraGuestFee: (guests: number, nights: number | null) =>
+    `Extra guest fee (${guests} guest${guests !== 1 ? 's' : ''}${nights !== null ? ` × ${nightsEn(nights)}` : ''})`,
+  stayDiscount: (type: "weekly" | "monthly", pct: number) =>
+    `${type === 'monthly' ? 'Monthly' : 'Weekly'} discount (${pct}% off the nightly price)`,
+  couponDiscount: (code: string) => `Coupon discount (${code})`,
+  serviceFee: (rate: number) => `Service fee (${rate}%)`,
+  total: "Total:",
+  yourName: "Your name",
+  email: "Email",
+  phone: "Phone (optional)",
+  specialRequests: "Special requests",
+  houseRules: "House rules",
+  agreeToHouseRules: (link: React.ReactNode): React.ReactNode => <>I have read and agree to the{" "}{link}</>,
+  houseRulesLink: "House Rules",
+  guidebookAfterBooking: "You'll receive a link to the full guest guidebook after booking",
+  ageAndPresence: (age: number, eventsAllowed: boolean) =>
+    `I am ${age} or older and will be staying at the property myself.${eventsAllowed ? "" : " There will be no parties or events."}`,
+  quietStays: "This place is for quiet stays.",
+  refundNote:
+    "Refunds are a share of the price of the stay; the service fee is not refunded if you cancel. If the host or we cancel, you get everything back, including the service fee.",
+  acceptTerms: (terms: React.ReactNode, privacy: React.ReactNode): React.ReactNode => (
+    <>By booking you accept our{" "}{terms}{" "}and{" "}{privacy}.</>
+  ),
+  bookingTerms: "booking terms",
+  privacyPolicy: "privacy policy",
+  processing: "Processing...",
+  submit: (total: string) => `Complete Your Booking • ${total}`,
+  notCompleted:
+    "Your booking was not completed and you have not been charged. Your details are still filled in, so you can change your dates or details and try again.",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    nameMin: "Namnet måste ha minst 2 tecken",
+    nameMax: "Namnet måste vara kortare än 100 tecken",
+    nameLetters: "Skriv ditt namn med bokstäver (mellanslag, bindestreck, punkter och apostrofer går bra)",
+    emailInvalid: "Ogiltig e-postadress",
+    emailCharacters: "Använd en e-postadress med bara bokstäver, siffror och . _ % + -",
+    emailMax: "E-postadressen måste vara kortare än 255 tecken",
+    phoneInvalid: "Ange ett telefonnummer med 7 till 15 siffror, t.ex. +46 70 123 45 67",
+    guestsMin: "Minst 1 gäst",
+    guestsMax: (max) => `Högst ${max} gäster`,
+    requestsMax: (max) => `Önskemålen får vara högst ${max} tecken`,
+    acceptHouseRules: "Du behöver godkänna husreglerna för att gå vidare",
+    confirmToProceed: "Bekräfta för att gå vidare",
+    checkInPast: "Incheckningsdatumet har redan passerat",
+    checkOutBeforeCheckIn: "Utcheckningen måste vara efter incheckningen",
+
+    title: "Slutför din bokning",
+    guestsLabel: (max) => `Antal gäster (högst ${max})`,
+    extraGuestNote: (covered, fee, perNight) =>
+      `Priset per natt gäller för ${covered} ${covered === 1 ? 'gäst' : 'gäster'}. Varje extra gäst kostar ${fee}${perNight ? ' per natt' : ''}.`,
+    cleaningNote: (fee) => `En städavgift på ${fee} tillkommer per vistelse.`,
+    included: (names) => `Ingår: ${names}.`,
+    extras: "Tillval",
+    checkIn: "Incheckning:",
+    checkOut: "Utcheckning:",
+    numberOfNights: "Antal nätter:",
+    date: (d) => format(d, "EEE d MMM yyyy", { locale: DATE_FNS_LOCALES.sv }),
+    nightsTimesPrice: (nights, price) => `${nightsSv(nights)} × ${price}`,
+    cleaningFee: "Städavgift",
+    extraGuestFee: (guests, nights) =>
+      `Avgift för extra gäst (${guests} ${guests === 1 ? 'gäst' : 'gäster'}${nights !== null ? ` × ${nightsSv(nights)}` : ''})`,
+    stayDiscount: (type, pct) => `${type === 'monthly' ? 'Månadsrabatt' : 'Veckorabatt'} (${pct} % på priset per natt)`,
+    couponDiscount: (code) => `Rabattkod (${code})`,
+    serviceFee: (rate) => `Serviceavgift (${rate} %)`,
+    total: "Totalt:",
+    yourName: "Ditt namn",
+    email: "E-post",
+    phone: "Telefon (valfritt)",
+    specialRequests: "Särskilda önskemål",
+    houseRules: "Husregler",
+    agreeToHouseRules: (link) => <>Jag har läst och godkänner{" "}{link}</>,
+    houseRulesLink: "husreglerna",
+    guidebookAfterBooking: "Du får en länk till hela gästguiden efter bokningen",
+    ageAndPresence: (age, eventsAllowed) =>
+      `Jag är ${age} år eller äldre och bor själv på boendet.${eventsAllowed ? "" : " Det blir inga fester eller evenemang."}`,
+    quietStays: "Det här är ett boende för lugna vistelser.",
+    refundNote:
+      "Återbetalningen är en andel av priset för vistelsen, och serviceavgiften betalas inte tillbaka om du avbokar. Om värden eller vi avbokar får du tillbaka allt, även serviceavgiften.",
+    acceptTerms: (terms, privacy) => <>Genom att boka godkänner du våra{" "}{terms}{" "}och vår{" "}{privacy}.</>,
+    bookingTerms: "bokningsvillkor",
+    privacyPolicy: "integritetspolicy",
+    processing: "Bearbetar…",
+    submit: (total) => `Slutför din bokning • ${total}`,
+    notCompleted:
+      "Bokningen blev inte klar och du har inte debiterats. Dina uppgifter finns kvar, så du kan ändra datum eller uppgifter och försöka igen.",
+  },
+  de: {
+    nameMin: "Der Name muss mindestens 2 Zeichen lang sein",
+    nameMax: "Der Name muss kürzer als 100 Zeichen sein",
+    nameLetters: "Bitte schreib deinen Namen in Buchstaben (Leerzeichen, Bindestriche, Punkte und Apostrophe sind okay)",
+    emailInvalid: "Ungültige E-Mail-Adresse",
+    emailCharacters: "Bitte verwende eine E-Mail-Adresse nur mit Buchstaben, Ziffern und . _ % + -",
+    emailMax: "Die E-Mail-Adresse muss kürzer als 255 Zeichen sein",
+    phoneInvalid: "Bitte gib eine Telefonnummer mit 7 bis 15 Ziffern ein, z. B. +46 70 123 45 67",
+    guestsMin: "Mindestens 1 Gast",
+    guestsMax: (max) => `Höchstens ${max} Gäste`,
+    requestsMax: (max) => `Besondere Wünsche dürfen höchstens ${max} Zeichen lang sein`,
+    acceptHouseRules: "Bitte akzeptiere die Hausregeln, um fortzufahren",
+    confirmToProceed: "Bitte bestätige, um fortzufahren",
+    checkInPast: "Das Check-in-Datum liegt in der Vergangenheit",
+    checkOutBeforeCheckIn: "Der Check-out muss nach dem Check-in liegen",
+
+    title: "Buchung abschließen",
+    guestsLabel: (max) => `Anzahl der Gäste (max. ${max})`,
+    extraGuestNote: (covered, fee, perNight) =>
+      `Der Preis pro Nacht gilt für ${covered} ${covered === 1 ? 'Gast' : 'Gäste'}. Jeder weitere Gast kostet ${fee}${perNight ? ' pro Nacht' : ''} zusätzlich.`,
+    cleaningNote: (fee) => `Pro Aufenthalt kommt eine Endreinigung von ${fee} hinzu.`,
+    included: (names) => `Inklusive: ${names}.`,
+    extras: "Extras",
+    checkIn: "Check-in:",
+    checkOut: "Check-out:",
+    numberOfNights: "Anzahl der Nächte:",
+    date: (d) => format(d, "EEE, d. MMM yyyy", { locale: DATE_FNS_LOCALES.de }),
+    nightsTimesPrice: (nights, price) => `${nightsDe(nights)} × ${price}`,
+    cleaningFee: "Endreinigung",
+    extraGuestFee: (guests, nights) =>
+      `Aufpreis pro zusätzlichem Gast (${guests} ${guests === 1 ? 'Gast' : 'Gäste'}${nights !== null ? ` × ${nightsDe(nights)}` : ''})`,
+    stayDiscount: (type, pct) => `${type === 'monthly' ? 'Monatsrabatt' : 'Wochenrabatt'} (${pct} % auf den Preis pro Nacht)`,
+    couponDiscount: (code) => `Gutscheincode (${code})`,
+    serviceFee: (rate) => `Servicegebühr (${rate} %)`,
+    total: "Gesamt:",
+    yourName: "Dein Name",
+    email: "E-Mail",
+    phone: "Telefon (optional)",
+    specialRequests: "Besondere Wünsche",
+    houseRules: "Hausregeln",
+    agreeToHouseRules: (link) => <>Ich habe die{" "}{link}{" "}gelesen und akzeptiere sie</>,
+    houseRulesLink: "Hausregeln",
+    guidebookAfterBooking: "Nach der Buchung bekommst du einen Link zur vollständigen Gästeinfo",
+    ageAndPresence: (age, eventsAllowed) =>
+      `Ich bin ${age} Jahre oder älter und übernachte selbst in der Unterkunft.${eventsAllowed ? "" : " Es finden keine Partys oder Veranstaltungen statt."}`,
+    quietStays: "Diese Unterkunft ist für ruhige Aufenthalte gedacht.",
+    refundNote:
+      "Erstattet wird ein Anteil am Preis des Aufenthalts; die Servicegebühr wird nicht erstattet, wenn du stornierst. Storniert der Gastgeber oder wir, bekommst du alles zurück, auch die Servicegebühr.",
+    acceptTerms: (terms, privacy) => <>Mit der Buchung akzeptierst du unsere{" "}{terms}{" "}und unsere{" "}{privacy}.</>,
+    bookingTerms: "Buchungsbedingungen",
+    privacyPolicy: "Datenschutzerklärung",
+    processing: "Wird verarbeitet…",
+    submit: (total) => `Buchung abschließen • ${total}`,
+    notCompleted:
+      "Deine Buchung wurde nicht abgeschlossen und dir wurde nichts berechnet. Deine Angaben sind noch ausgefüllt, du kannst also Reisedaten oder Angaben ändern und es noch einmal versuchen.",
+  },
+};
 
 interface BookingFormProps {
   propertyId: string;
@@ -48,6 +235,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
   maxGuests,
   onOpenGuidebook
 }) => {
+  const t = useCopy(COPY);
+  const lang = useLang();
+  const locale = useLocale();
+  // Amounts in öre, as "1 200 SEK" in the page's number style
+  const money = (ore: number) => `${(ore / 100).toLocaleString(locale)} ${currency}`;
+  // Extras' names are the host's: shown translated, sent by id
+  const translation = useListingTranslation(propertyId);
+  const extraName = (extra: { id: string; name: string }) => translatedName(translation, "extra:" + extra.id, extra.name);
   const { createBooking, loading } = useBooking();
   const { calculatePrice, rules, getAvailableServices, getIncludedExtras } = usePricingRules(propertyId);
   // Extras the host offers: included in the price, or added by the guest
@@ -121,22 +316,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // Input validation schema
   const bookingSchema = z.object({
     guest_name: z.string()
-      .min(2, "Name must be at least 2 characters")
-      .max(100, "Name must be less than 100 characters")
-      .refine(isValidGuestName, "Please write your name in letters (spaces, hyphens, dots and apostrophes are fine)"),
+      .min(2, t.nameMin)
+      .max(100, t.nameMax)
+      .refine(isValidGuestName, t.nameLetters),
     guest_email: z.string()
-      .email("Invalid email address")
+      .email(t.emailInvalid)
       // Same rule as the bookings table and the payment function
-      .regex(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, "Please use an email address with only letters, digits and . _ % + -")
-      .max(255, "Email must be less than 255 characters"),
+      .regex(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, t.emailCharacters)
+      .max(255, t.emailMax),
     guest_phone: z.string()
       .optional()
-      .refine((val) => !val || isValidGuestPhone(val), "Please enter a phone number with 7 to 15 digits, e.g. +46 70 123 45 67"),
+      .refine((val) => !val || isValidGuestPhone(val), t.phoneInvalid),
     number_of_guests: z.number()
-      .min(1, "At least 1 guest required")
-      .max(maxGuests, `Maximum ${maxGuests} guests allowed`),
+      .min(1, t.guestsMin)
+      .max(maxGuests, t.guestsMax(maxGuests)),
     special_requests: z.string()
-      .max(SPECIAL_REQUESTS_MAX, `Special requests can be at most ${SPECIAL_REQUESTS_MAX} characters`)
+      .max(SPECIAL_REQUESTS_MAX, t.requestsMax(SPECIAL_REQUESTS_MAX))
       .optional()
   });
 
@@ -186,7 +381,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const toDateString = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   // Minimum stay (checked again by the payment function)
-  const stayError = checkIn && checkOut ? stayRuleError(toDateString(checkIn), toDateString(checkOut), stayRules) : null;
+  const stayError = checkIn && checkOut ? stayRuleError(toDateString(checkIn), toDateString(checkOut), stayRules, lang) : null;
 
   const priceCalculation = calculateTotalAmount();
   const subtotalBeforeDiscount = priceCalculation?.total || 0;
@@ -242,12 +437,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
     if (stayError) return;
 
     if (!houseRulesAccepted) {
-      setValidationErrors({ houseRules: "You must accept the house rules to proceed" });
+      setValidationErrors({ houseRules: t.acceptHouseRules });
       return;
     }
 
     if (!partyRulesAccepted) {
-      setValidationErrors({ partyRules: "Please confirm to proceed" });
+      setValidationErrors({ partyRules: t.confirmToProceed });
       return;
     }
 
@@ -258,11 +453,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (checkIn < today) {
-      setValidationErrors({ checkIn: "Check-in date cannot be in the past" });
+      setValidationErrors({ checkIn: t.checkInPast });
       return;
     }
     if (checkOut <= checkIn) {
-      setValidationErrors({ checkOut: "Check-out must be after check-in date" });
+      setValidationErrors({ checkOut: t.checkOutBeforeCheckIn });
       return;
     }
   
@@ -321,7 +516,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarDays className="h-5 w-5" />
-          Complete Your Booking
+          {t.title}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -341,13 +536,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
         {/* Gästinfo */}
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           <div className="space-y-2">
-            <Label htmlFor="number_of_guests">Number of guests (max {maxGuests})</Label>
+            <Label htmlFor="number_of_guests">{t.guestsLabel(maxGuests)}</Label>
             {/* Fees are shown before the guest count is chosen, not only in the total */}
             {rules.filter((r) => r.rule_type === 'extra_guest' || r.rule_type === 'cleaning_fee').map((r) => (
               <p key={r.id} className="text-sm text-muted-foreground">
                 {r.rule_type === 'extra_guest'
-                  ? `The nightly price covers ${Math.max(1, r.guests_included ?? 1)} guest${Math.max(1, r.guests_included ?? 1) !== 1 ? 's' : ''}; each extra guest adds ${(r.price / 100).toLocaleString()} ${currency}${r.is_per_night ? ' per night' : ''}.`
-                  : `A cleaning fee of ${(r.price / 100).toLocaleString()} ${currency} is added per stay.`}
+                  ? t.extraGuestNote(Math.max(1, r.guests_included ?? 1), money(r.price), r.is_per_night)
+                  : t.cleaningNote(money(r.price))}
               </p>
             ))}
             <Input
@@ -362,13 +557,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
             />
             {/* The Terms promise linen and the like only when the listing says so: the host's included extras */}
             {includedExtras.length > 0 && (
-              <p className="text-sm text-muted-foreground">Included: {includedExtras.map((e) => e.name).join(', ')}.</p>
+              <p className="text-sm text-muted-foreground">{t.included(includedExtras.map(extraName).join(', '))}</p>
             )}
           </div>
 
           {optionalExtras.length > 0 && (
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Extras</legend>
+              <legend className="text-sm font-medium">{t.extras}</legend>
               {optionalExtras.map((extra) => (
                 <div key={extra.id} className="flex items-start gap-2">
                   <Checkbox
@@ -380,7 +575,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     }}
                   />
                   <Label htmlFor={`extra-${extra.id}`} className="text-sm font-normal leading-snug">
-                    {extra.name}: {(extra.price / 100).toLocaleString()} {currency} {extraServiceUnit(extra)}
+                    {extraName(extra)}: {money(extra.price)} {extraServiceUnit(extra, lang)}
                   </Label>
                 </div>
               ))}
@@ -391,15 +586,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {checkIn && checkOut && priceCalculation && (
             <div className="p-4 bg-accent rounded-lg space-y-3">
               <div className="flex justify-between">
-                <span>Check-in:</span>
-                <span className="font-medium">{checkIn.toDateString()}</span>
+                <span>{t.checkIn}</span>
+                <span className="font-medium">{t.date(checkIn)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Check-out:</span>
-                <span className="font-medium">{checkOut.toDateString()}</span>
+                <span>{t.checkOut}</span>
+                <span className="font-medium">{t.date(checkOut)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Number of nights:</span>
+                <span>{t.numberOfNights}</span>
                 <span className="font-medium">{nights}</span>
               </div>
               {stayError && (
@@ -409,21 +604,21 @@ const BookingForm: React.FC<BookingFormProps> = ({
               {/* Price Breakdown */}
               <div className="border-t pt-3 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>{nights} night{nights !== 1 ? 's' : ''} × {pricePerNight.toLocaleString()} {currency}</span>
-                  <span>{(priceCalculation.breakdown.accommodation / 100).toLocaleString()} {currency}</span>
+                  <span>{t.nightsTimesPrice(nights, `${pricePerNight.toLocaleString(locale)} ${currency}`)}</span>
+                  <span>{money(priceCalculation.breakdown.accommodation)}</span>
                 </div>
                 
                 {priceCalculation.cleaningFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Cleaning fee</span>
-                    <span>{(priceCalculation.cleaningFee / 100).toLocaleString()} {currency}</span>
+                    <span>{t.cleaningFee}</span>
+                    <span>{money(priceCalculation.cleaningFee)}</span>
                   </div>
                 )}
                 
                 {priceCalculation.extraGuestFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Extra guest fee ({extraGuests} guest{extraGuests !== 1 ? 's' : ''}{extraGuestRule?.is_per_night !== false ? ` × ${nights} night${nights !== 1 ? 's' : ''}` : ''})</span>
-                    <span>{(priceCalculation.extraGuestFee / 100).toLocaleString()} {currency}</span>
+                    <span>{t.extraGuestFee(extraGuests, extraGuestRule?.is_per_night !== false ? nights : null)}</span>
+                    <span>{money(priceCalculation.extraGuestFee)}</span>
                   </div>
                 )}
                 
@@ -431,8 +626,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   .filter((extra) => selectedExtras.includes(extra.id))
                   .map((extra) => (
                     <div key={extra.id} className="flex justify-between text-sm">
-                      <span>{extra.name}</span>
-                      <span>{(extraServiceFee(extra, formData.number_of_guests, nights) / 100).toLocaleString()} {currency}</span>
+                      <span>{extraName(extra)}</span>
+                      <span>{money(extraServiceFee(extra, formData.number_of_guests, nights))}</span>
                     </div>
                   ))}
                 
@@ -441,30 +636,30 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   <div className="flex justify-between text-sm text-green-600">
                     <span className="flex items-center gap-1">
                       <Tag className="h-3 w-3" />
-                      {applicableDiscount.type === 'monthly' ? 'Monthly' : 'Weekly'} discount ({applicableDiscount.percentage}% off the nightly price)
+                      {t.stayDiscount(applicableDiscount.type, applicableDiscount.percentage)}
                     </span>
-                    <span>-{(stayDiscount / 100).toLocaleString()} {currency}</span>
+                    <span>-{money(stayDiscount)}</span>
                   </div>
                 )}
                 
                 {appliedCoupon && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Coupon discount ({appliedCoupon.code})</span>
-                    <span>-{(couponDiscount / 100).toLocaleString()} {currency}</span>
+                    <span>{t.couponDiscount(appliedCoupon.code)}</span>
+                    <span>-{money(couponDiscount)}</span>
                   </div>
                 )}
 
                 {serviceFee > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>Service fee ({feeRate ?? 10}%)</span>
-                    <span>{(serviceFee / 100).toLocaleString()} {currency}</span>
+                    <span>{t.serviceFee(feeRate ?? 10)}</span>
+                    <span>{money(serviceFee)}</span>
                   </div>
                 )}
               </div>
               
               <div className="flex justify-between text-lg font-bold border-t pt-3">
-                <span>Total:</span>
-                <span>{(totalAmount / 100).toLocaleString()} {currency}</span>
+                <span>{t.total}</span>
+                <span>{money(totalAmount)}</span>
               </div>
             </div>
           )}
@@ -487,7 +682,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="guest_name">Your name</Label>
+            <Label htmlFor="guest_name">{t.yourName}</Label>
             <Input
               id="guest_name"
               name="guest_name"
@@ -504,7 +699,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="guest_email">Email</Label>
+            <Label htmlFor="guest_email">{t.email}</Label>
             <Input
               id="guest_email"
               name="guest_email"
@@ -522,7 +717,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="guest_phone">Phone (optional)</Label>
+            <Label htmlFor="guest_phone">{t.phone}</Label>
             {/* Not capped at 15: "+46 70 123 45 67" is 16 characters, and the cut-off number still passed */}
             <Input
               id="guest_phone"
@@ -540,7 +735,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="special_requests">Special requests</Label>
+            <Label htmlFor="special_requests">{t.specialRequests}</Label>
             <Textarea
               id="special_requests"
               name="special_requests"
@@ -561,9 +756,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
           {/* The host's house rules, as the payment function checks them */}
           <div className="space-y-1">
-            <p className="text-sm font-medium">House rules</p>
+            <p className="text-sm font-medium">{t.houseRules}</p>
             <ul className="list-disc pl-5 text-sm text-muted-foreground">
-              {houseRuleLines(stayRules).map((line) => <li key={line}>{line}</li>)}
+              {houseRuleLines(stayRules, lang).map((line) => <li key={line}>{line}</li>)}
             </ul>
           </div>
 
@@ -591,21 +786,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 cursor-pointer"
                 >
                   <Shield className="h-4 w-4 text-primary" />
-                  I have read and agree to the{" "}
-                  {onOpenGuidebook ? (
-                    <button
-                      type="button"
-                      onClick={onOpenGuidebook}
-                      className="text-primary underline hover:text-primary/80"
-                    >
-                      House Rules
-                    </button>
-                  ) : (
-                    "House Rules"
+                  {t.agreeToHouseRules(
+                    onOpenGuidebook ? (
+                      <button
+                        type="button"
+                        onClick={onOpenGuidebook}
+                        className="text-primary underline hover:text-primary/80"
+                      >
+                        {t.houseRulesLink}
+                      </button>
+                    ) : (
+                      t.houseRulesLink
+                    )
                   )}
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  You'll receive a link to the full guest guidebook after booking
+                  {t.guidebookAfterBooking}
                 </p>
                 {validationErrors.houseRules && (
                   <p className="text-destructive text-sm">{validationErrors.houseRules}</p>
@@ -634,11 +830,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               />
               <div className="grid gap-1.5 leading-none">
                 <label htmlFor="partyRules" className="text-sm font-medium leading-snug cursor-pointer">
-                  I am {minGuestAge(stayRules)} or older and will be staying at the property myself.
-                  {stayRules.events_allowed ? "" : " There will be no parties or events."}
+                  {t.ageAndPresence(minGuestAge(stayRules), !!stayRules.events_allowed)}
                 </label>
                 {!stayRules.events_allowed && (
-                  <p className="text-sm text-muted-foreground">This place is for quiet stays.</p>
+                  <p className="text-sm text-muted-foreground">{t.quietStays}</p>
                 )}
                 {validationErrors.partyRules && (
                   <p className="text-destructive text-sm">{validationErrors.partyRules}</p>
@@ -652,16 +847,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
           {/* The policy's percentages are of the stay price: the service fee is
               kept when the guest cancels, and refunded when the host or we do (/terms) */}
           <p className="text-xs text-muted-foreground">
-            Refunds are a share of the price of the stay; the service fee is not refunded if you cancel. If the host
-            or we cancel, you get everything back, including the service fee.
+            {t.refundNote}
           </p>
 
           {/* New tab, so the filled-in form stays */}
           <p className="text-xs text-muted-foreground text-center">
-            By booking you accept our{" "}
-            <a href="/terms" target="_blank" rel="noopener" className="underline hover:text-foreground">booking terms</a>{" "}
-            and{" "}
-            <a href="/privacy" target="_blank" rel="noopener" className="underline hover:text-foreground">privacy policy</a>.
+            {t.acceptTerms(
+              <a href={localizedPath("/terms", lang)} target="_blank" rel="noopener" className="underline hover:text-foreground">{t.bookingTerms}</a>,
+              <a href={localizedPath("/privacy", lang)} target="_blank" rel="noopener" className="underline hover:text-foreground">{t.privacyPolicy}</a>
+            )}
           </p>
 
           <Button 
@@ -669,12 +863,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
             className="w-full" 
             disabled={loading || feeRate === null || !rulesLoaded || totalAmount <= 0 || !!stayError || !houseRulesAccepted || !partyRulesAccepted}
           >
-            {loading ? 'Processing...' : `Complete Your Booking • ${(totalAmount / 100).toLocaleString()} ${currency}`}
+            {loading ? t.processing : t.submit(money(totalAmount))}
           </Button>
           {submitFailed && !loading && (
             <p role="alert" className="text-destructive text-sm text-center">
-              Your booking was not completed and you have not been charged. Your details are still filled in, so you
-              can change your dates or details and try again.
+              {t.notCompleted}
             </p>
           )}
         </form>

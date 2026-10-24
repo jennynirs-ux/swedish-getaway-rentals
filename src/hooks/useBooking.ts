@@ -1,6 +1,29 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { type Copy, useCopy, useLang } from "@/i18n";
+
+const en = {
+  sorry: "Sorry",
+  datesTaken: "The selected dates are not available. Please choose different dates.",
+  error: "Error",
+  paymentFailed: "Could not create payment. Please try again.",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    sorry: "Tyvärr",
+    datesTaken: "Datumen du valt är inte lediga. Välj andra datum.",
+    error: "Något gick fel",
+    paymentFailed: "Det gick inte att starta betalningen. Försök igen.",
+  },
+  de: {
+    sorry: "Leider",
+    datesTaken: "Die gewählten Daten sind nicht verfügbar. Bitte wähle andere Daten.",
+    error: "Fehler",
+    paymentFailed: "Die Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.",
+  },
+};
 
 export interface BookingData {
   property_id: string;
@@ -25,6 +48,8 @@ export interface BookingData {
 export const useBooking = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const t = useCopy(COPY);
+  const lang = useLang();
 
   const checkAvailability = async (
     propertyId: string,
@@ -59,8 +84,8 @@ export const useBooking = () => {
 
       if (!isAvailable) {
         toast({
-          title: "Sorry",
-          description: "The selected dates are not available. Please choose different dates.",
+          title: t.sorry,
+          description: t.datesTaken,
           variant: "destructive",
         });
         return { success: false, error: 'Dates not available' };
@@ -83,7 +108,9 @@ export const useBooking = () => {
           extras: bookingData.extras ?? [],
           rulesConfirmed: bookingData.rules_confirmed,
           shownPolicy: bookingData.shown_policy,
-          shownMinAge: bookingData.shown_min_age
+          shownMinAge: bookingData.shown_min_age,
+          // Stripe's page in the guest's language, and back to the site in it
+          lang
         }
       });
 
@@ -100,14 +127,14 @@ export const useBooking = () => {
     } catch (error) {
       console.error('Error creating booking payment:', error);
       // Show the payment function's reason (house rules, dates taken, price changed)
-      let description = "Could not create payment. Please try again.";
+      let description = t.paymentFailed;
       const response = (error as { context?: Response })?.context;
       if (response && typeof response.json === 'function') {
         const body = await response.json().catch(() => null);
         if (typeof body?.error === 'string') description = body.error;
       }
       toast({
-        title: "Error",
+        title: t.error,
         description,
         variant: "destructive",
       });

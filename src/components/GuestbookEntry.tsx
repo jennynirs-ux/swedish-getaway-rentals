@@ -1,6 +1,30 @@
 import { Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { type Copy, useCopy, useLocale } from "@/i18n";
+
+const en = {
+  anonymous: "Anonymous Guest",
+  stayed: (monthYear: string) => `Stayed ${monthYear}`,
+  // The guest's own words, as written
+  quoted: (message: string) => `"${message}"`,
+  imageAlt: "Guest memory",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    anonymous: "Anonym gäst",
+    stayed: (monthYear) => `Bodde här i ${monthYear}`,
+    quoted: (message) => `”${message}”`,
+    imageAlt: "Bild från gästens vistelse",
+  },
+  de: {
+    anonymous: "Anonymer Gast",
+    stayed: (monthYear) => `Zu Gast im ${monthYear}`,
+    quoted: (message) => `„${message}“`,
+    imageAlt: "Foto vom Aufenthalt des Gastes",
+  },
+};
 
 interface GuestbookEntryProps {
   guestName?: string;
@@ -19,6 +43,8 @@ const GuestbookEntry = ({
   stayDate,
   submittedAt 
 }: GuestbookEntryProps) => {
+  const t = useCopy(COPY);
+  const locale = useLocale();
   const initials = guestName
     ?.split(" ")
     .map((n) => n[0])
@@ -26,7 +52,7 @@ const GuestbookEntry = ({
     .toUpperCase()
     .slice(0, 2) || "G";
 
-  const formattedDate = new Date(submittedAt).toLocaleDateString("en-US", {
+  const formattedDate = new Date(submittedAt).toLocaleDateString(locale, {
     month: "long",
     year: "numeric",
   });
@@ -46,10 +72,10 @@ const GuestbookEntry = ({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h4 className="font-semibold text-foreground">
-                  {guestName || "Anonymous Guest"}
+                  {guestName || t.anonymous}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  {stayDate ? `Stayed ${new Date(stayDate).toLocaleDateString("en-US", { month: "long", year: "numeric" })}` : formattedDate}
+                  {stayDate ? t.stayed(new Date(stayDate).toLocaleDateString(locale, { month: "long", year: "numeric" })) : formattedDate}
                 </p>
               </div>
               
@@ -66,14 +92,14 @@ const GuestbookEntry = ({
             </div>
 
             <p className="text-foreground/90 leading-relaxed italic border-l-2 border-primary/20 pl-4">
-              "{message}"
+              {t.quoted(message)}
             </p>
 
             {imageUrl && (
               <div className="mt-4 rounded-lg overflow-hidden max-w-md">
                 <img
                   src={imageUrl}
-                  alt="Guest memory"
+                  alt={t.imageAlt}
                   className="w-full h-auto object-cover rounded-lg shadow-md hover:scale-105 transition-transform duration-300"
                 />
               </div>

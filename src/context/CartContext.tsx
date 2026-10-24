@@ -1,5 +1,21 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { type Copy, langOfPath } from "@/i18n";
+
+const en = {
+  added: "Added to cart",
+  removed: "Removed from cart",
+  cleared: "Cart cleared",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { added: "Tillagd i varukorgen", removed: "Borttagen från varukorgen", cleared: "Varukorgen har tömts" },
+  de: { added: "Zum Warenkorb hinzugefügt", removed: "Aus dem Warenkorb entfernt", cleared: "Warenkorb geleert" },
+};
+
+// The provider sits above the language routes, so the toasts take the
+// language of the page they appear on
+const copy = () => COPY[langOfPath(window.location.pathname)];
 
 export type CartItem = {
   productId: string;
@@ -59,7 +75,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       toast({
-        title: "Added to cart",
+        title: copy().added,
         description: `${item.title} x${item.quantity}`,
       });
 
@@ -95,7 +111,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (item) {
         toast({
-          title: "Removed from cart",
+          title: copy().removed,
           description: item.title,
         });
       }
@@ -106,7 +122,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const clear = () => {
     setItems([]);
-    toast({ title: "Cart cleared" });
+    toast({ title: copy().cleared });
   };
 
   const total = useMemo(

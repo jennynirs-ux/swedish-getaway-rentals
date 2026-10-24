@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, type ReactNode } from "react";
+import { useNavigate } from "@/i18n/router";
 import { Star, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,15 +11,86 @@ import { toast } from "sonner";
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { ImageUpload } from "./admin/ImageUpload";
+import { type Copy, useCopy } from "@/i18n";
 
-const guestbookSchema = z.object({
+const en = {
+  nameTooShort: "Name must be at least 2 characters",
+  nameTooLong: "Name must be less than 100 characters",
+  messageTooShort: "Message must be at least 10 characters",
+  messageTooLong: "Message must be less than 2000 characters",
+  signInFirst: "Please sign in to submit your guestbook entry",
+  thanks: "Thank you for your guestbook entry! It will be published after review.",
+  failed: "Failed to submit guestbook entry",
+  title: "Words from Our Guests",
+  intro: (property: ReactNode) => <>Share your experience at <strong>{property}</strong></>,
+  name: "Your Name *",
+  namePlaceholder: "Enter your name",
+  rating: "Rating (Optional)",
+  message: "Your Message *",
+  messagePlaceholder: "Share your favorite moments, what made your stay special, or simply a kind word...",
+  characters: (n: number) => `${n}/2000 characters`,
+  photo: "Share a Photo (Optional)",
+  photoUpload: "Upload a memory from your stay",
+  submitting: "Submitting...",
+  submit: "Submit Guestbook Entry 🌿",
+  reviewNote: "Your entry will be reviewed and published within 24 hours",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    nameTooShort: "Namnet måste vara minst 2 tecken",
+    nameTooLong: "Namnet får vara högst 100 tecken",
+    messageTooShort: "Meddelandet måste vara minst 10 tecken",
+    messageTooLong: "Meddelandet får vara högst 2000 tecken",
+    signInFirst: "Logga in för att skriva i gästboken",
+    thanks: "Tack för ditt inlägg i gästboken! Det publiceras när det har granskats.",
+    failed: "Det gick inte att skicka ditt inlägg",
+    title: "Ord från våra gäster",
+    intro: (property) => <>Berätta om din vistelse på <strong>{property}</strong></>,
+    name: "Ditt namn *",
+    namePlaceholder: "Skriv ditt namn",
+    rating: "Betyg (valfritt)",
+    message: "Ditt meddelande *",
+    messagePlaceholder: "Berätta om dina favoritstunder, vad som gjorde vistelsen speciell eller skriv bara några vänliga ord…",
+    characters: (n) => `${n}/2000 tecken`,
+    photo: "Dela en bild (valfritt)",
+    photoUpload: "Ladda upp ett minne från vistelsen",
+    submitting: "Skickar…",
+    submit: "Skriv i gästboken 🌿",
+    reviewNote: "Ditt inlägg granskas och publiceras inom 24 timmar",
+  },
+  de: {
+    nameTooShort: "Der Name muss mindestens 2 Zeichen lang sein",
+    nameTooLong: "Der Name darf höchstens 100 Zeichen lang sein",
+    messageTooShort: "Die Nachricht muss mindestens 10 Zeichen lang sein",
+    messageTooLong: "Die Nachricht darf höchstens 2000 Zeichen lang sein",
+    signInFirst: "Bitte melde dich an, um dich ins Gästebuch einzutragen",
+    thanks: "Danke für deinen Gästebucheintrag! Er wird nach einer kurzen Prüfung veröffentlicht.",
+    failed: "Dein Gästebucheintrag konnte nicht gesendet werden",
+    title: "Was unsere Gäste sagen",
+    intro: (property) => <>Teile deine Eindrücke von <strong>{property}</strong></>,
+    name: "Dein Name *",
+    namePlaceholder: "Gib deinen Namen ein",
+    rating: "Bewertung (optional)",
+    message: "Deine Nachricht *",
+    messagePlaceholder: "Erzähl von deinen schönsten Momenten, was deinen Aufenthalt besonders gemacht hat, oder hinterlasse einfach ein paar nette Worte…",
+    characters: (n) => `${n}/2000 Zeichen`,
+    photo: "Foto teilen (optional)",
+    photoUpload: "Lade eine Erinnerung an deinen Aufenthalt hoch",
+    submitting: "Wird gesendet…",
+    submit: "Ins Gästebuch eintragen 🌿",
+    reviewNote: "Dein Eintrag wird geprüft und innerhalb von 24 Stunden veröffentlicht",
+  },
+};
+
+const guestbookSchema = (t: typeof en) => z.object({
   guestName: z.string()
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must be less than 100 characters")
+    .min(2, t.nameTooShort)
+    .max(100, t.nameTooLong)
     .trim(),
   message: z.string()
-    .min(10, "Message must be at least 10 characters")
-    .max(2000, "Message must be less than 2000 characters")
+    .min(10, t.messageTooShort)
+    .max(2000, t.messageTooLong)
     .trim(),
 });
 
@@ -40,6 +111,7 @@ const GuestbookForm = ({
   guestEmail,
   checkInDate 
 }: GuestbookFormProps) => {
+  const t = useCopy(COPY);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(0);
@@ -58,14 +130,14 @@ const GuestbookForm = ({
         message: DOMPurify.sanitize(message.trim()),
       };
 
-      const validatedData = guestbookSchema.parse(sanitizedData);
+      const validatedData = guestbookSchema(t).parse(sanitizedData);
 
       setLoading(true);
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Please sign in to submit your guestbook entry");
+        toast.error(t.signInFirst);
         return;
       }
 
@@ -92,7 +164,7 @@ const GuestbookForm = ({
 
       if (tokenError) console.error("Error marking token as used:", tokenError);
 
-      toast.success("Thank you for your guestbook entry! It will be published after review.");
+      toast.success(t.thanks);
       
       // Redirect to property page after 2 seconds
       setTimeout(() => {
@@ -106,7 +178,7 @@ const GuestbookForm = ({
         });
       } else {
         console.error("Error submitting guestbook entry:", error);
-        toast.error(error.message || "Failed to submit guestbook entry");
+        toast.error(error.message || t.failed);
       }
     } finally {
       setLoading(false);
@@ -119,21 +191,21 @@ const GuestbookForm = ({
         <Card className="border-border/40 shadow-xl">
           <CardHeader className="text-center space-y-2 pb-8">
             <div className="text-4xl mb-2">🌿</div>
-            <CardTitle className="text-3xl font-bold">Words from Our Guests</CardTitle>
+            <CardTitle className="text-3xl font-bold">{t.title}</CardTitle>
             <CardDescription className="text-base">
-              Share your experience at <strong>{propertyTitle}</strong>
+              {t.intro(propertyTitle)}
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="guestName">Your Name *</Label>
+                <Label htmlFor="guestName">{t.name}</Label>
                 <Input
                   id="guestName"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="Enter your name"
+                  placeholder={t.namePlaceholder}
                   maxLength={100}
                   required
                   className="border-border/50 focus:border-primary"
@@ -141,7 +213,7 @@ const GuestbookForm = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Rating (Optional)</Label>
+                <Label>{t.rating}</Label>
                 <div className="flex gap-2 p-3 bg-secondary/20 rounded-lg w-fit">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <button
@@ -165,29 +237,29 @@ const GuestbookForm = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="message">Your Message *</Label>
+                <Label htmlFor="message">{t.message}</Label>
                 <Textarea
                   id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Share your favorite moments, what made your stay special, or simply a kind word..."
+                  placeholder={t.messagePlaceholder}
                   rows={6}
                   maxLength={2000}
                   required
                   className="border-border/50 focus:border-primary resize-none"
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {message.length}/2000 characters
+                  {t.characters(message.length)}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Share a Photo (Optional)</Label>
+                <Label>{t.photo}</Label>
                 <ImageUpload
                   value={imageUrl}
                   onChange={setImageUrl}
                   onRemove={() => setImageUrl("")}
-                  label="Upload a memory from your stay"
+                  label={t.photoUpload}
                 />
               </div>
 
@@ -201,15 +273,15 @@ const GuestbookForm = ({
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Submitting...
+                      {t.submitting}
                     </>
                   ) : (
-                    "Submit Guestbook Entry 🌿"
+                    t.submit
                   )}
                 </Button>
                 
                 <p className="text-sm text-muted-foreground text-center">
-                  Your entry will be reviewed and published within 24 hours
+                  {t.reviewNote}
                 </p>
               </div>
             </form>

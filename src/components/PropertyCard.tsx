@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/i18n/router";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,80 @@ import { propertyPath } from "@/lib/propertySeo";
 import { PROPERTY_CONTENT } from "@/content/propertyContent";
 import { withServiceFee } from "@/lib/constants";
 import { isNewListing } from "@/lib/homeListings";
+import { type Copy, type Lang, localizedPath, useCopy, useLang, useLocale } from "@/i18n";
+
+const en = {
+  property: "Property",
+  isNew: "New",
+  sweden: "Sweden",
+  inSweden: (town: string) => `${town}, Sweden`,
+  reviews: (n: number, onAirbnb: boolean) => `${n} reviews${onAirbnb ? " on Airbnb" : ""}`,
+  guests: (n: number) => `${n} guests`,
+  bedrooms: (n: number) => `${n} ${n === 1 ? "bedroom" : "bedrooms"}`,
+  bathrooms: (n: number) => `${n} ${n === 1 ? "bathroom" : "bathrooms"}`,
+  moreAmenities: (n: number) => `+${n} amenities`,
+  perNight: "/night incl. service fee",
+  checkAvailability: "Check availability",
+  favoriteAdded: "Added to favorites",
+  favoriteRemoved: "Removed from favorites",
+  favoriteAddedText: (title: string) => `${title} added to your favorites`,
+  favoriteRemovedText: (title: string) => `${title} removed from your favorites`,
+  linkCopied: "Link copied",
+  linkCopiedText: "Link has been copied to clipboard",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    property: "Boende",
+    isNew: "Ny",
+    sweden: "Sverige",
+    inSweden: (town) => `${town}, Sverige`,
+    reviews: (n, onAirbnb) => `${n} ${n === 1 ? "omdöme" : "omdömen"}${onAirbnb ? " på Airbnb" : ""}`,
+    guests: (n) => `${n} ${n === 1 ? "gäst" : "gäster"}`,
+    bedrooms: (n) => `${n} sovrum`,
+    // Half bathrooms (a toilet without a shower): "1,5"
+    bathrooms: (n) => `${String(n).replace(".", ",")} badrum`,
+    moreAmenities: (n) => `+${n} bekvämligheter`,
+    perNight: "/natt inkl. serviceavgift",
+    checkAvailability: "Se lediga datum",
+    favoriteAdded: "Sparad i favoriter",
+    favoriteRemoved: "Borttagen från favoriter",
+    favoriteAddedText: (title) => `${title} har sparats i dina favoriter`,
+    favoriteRemovedText: (title) => `${title} har tagits bort från dina favoriter`,
+    linkCopied: "Länken har kopierats",
+    linkCopiedText: "Länken finns nu i urklipp",
+  },
+  de: {
+    property: "Unterkunft",
+    isNew: "Neu",
+    sweden: "Schweden",
+    inSweden: (town) => `${town}, Schweden`,
+    reviews: (n, onAirbnb) => `${n} ${n === 1 ? "Bewertung" : "Bewertungen"}${onAirbnb ? " auf Airbnb" : ""}`,
+    guests: (n) => `${n} ${n === 1 ? "Gast" : "Gäste"}`,
+    bedrooms: (n) => `${n} Schlafzimmer`,
+    bathrooms: (n) => `${String(n).replace(".", ",")} ${n === 1 ? "Bad" : "Bäder"}`,
+    moreAmenities: (n) => `+${n} Ausstattungsmerkmale`,
+    perNight: "/Nacht inkl. Servicegebühr",
+    checkAvailability: "Verfügbarkeit prüfen",
+    favoriteAdded: "Zu Favoriten hinzugefügt",
+    favoriteRemoved: "Aus Favoriten entfernt",
+    favoriteAddedText: (title) => `${title} ist jetzt in deinen Favoriten`,
+    favoriteRemovedText: (title) => `${title} wurde aus deinen Favoriten entfernt`,
+    linkCopied: "Link kopiert",
+    linkCopiedText: "Der Link ist in der Zwischenablage",
+  },
+};
+
+// Hosts pick the type from a fixed English list (HostBasicTab); older listings may differ in case
+const PROPERTY_TYPE_NAMES: Copy<Record<string, string>> = {
+  en: {},
+  sv: { cabin: "Stuga", cottage: "Torp", house: "Hus", villa: "Villa", apartment: "Lägenhet", studio: "Studio", chalet: "Fjällstuga", loft: "Loft" },
+  de: { cabin: "Ferienhaus", cottage: "Landhaus", house: "Haus", villa: "Villa", apartment: "Ferienwohnung", studio: "Studio", chalet: "Chalet", loft: "Loft" },
+};
+
+/** A listing's property_type ("Cabin") in a language; types outside the list stay as the host wrote them */
+export const propertyTypeName = (type: string, lang: Lang): string =>
+  PROPERTY_TYPE_NAMES[lang][type.trim().toLowerCase()] ?? type;
 
 export interface PropertyCardData {
   slug?: string | null;
@@ -87,6 +161,9 @@ const PropertyCard = memo(({
   size = "default" 
 }: PropertyCardProps) => {
   const { toast } = useToast();
+  const t = useCopy(COPY);
+  const lang = useLang();
+  const locale = useLocale();
   const [selectedAmenity, setSelectedAmenity] = useState<any>(null);
   const [isAmenityDialogOpen, setIsAmenityDialogOpen] = useState(false);
 
@@ -169,25 +246,27 @@ const PropertyCard = memo(({
     e.stopPropagation();
     onFavoriteToggle?.(safeProperty.id);
     toast({
-      title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: `${safeProperty.title} ${isFavorite ? "removed from" : "added to"} your favorites`,
+      title: isFavorite ? t.favoriteRemoved : t.favoriteAdded,
+      description: isFavorite ? t.favoriteRemovedText(safeProperty.title) : t.favoriteAddedText(safeProperty.title),
     });
   };
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // The page in the language the guest is reading
+    const url = window.location.origin + localizedPath(getPropertyRoute(safeProperty), lang);
     if (navigator.share) {
       navigator.share({
         title: safeProperty.title,
         text: safeProperty.description,
-        url: window.location.origin + getPropertyRoute(safeProperty),
+        url,
       });
     } else {
-      navigator.clipboard.writeText(window.location.origin + getPropertyRoute(safeProperty));
+      navigator.clipboard.writeText(url);
       toast({
-        title: "Link copied",
-        description: "Link has been copied to clipboard",
+        title: t.linkCopied,
+        description: t.linkCopiedText,
       });
     }
   };
@@ -243,9 +322,9 @@ const PropertyCard = memo(({
           {/* Property Type Badge, and "New" so a listing without reviews yet doesn't look neglected */}
           <div className="absolute bottom-4 left-4 flex gap-2">
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
-              {safeProperty.property_type || "Property"}
+              {safeProperty.property_type ? propertyTypeName(safeProperty.property_type, lang) : t.property}
             </Badge>
-            {isNewListing(safeProperty) && <Badge>New</Badge>}
+            {isNewListing(safeProperty) && <Badge>{t.isNew}</Badge>}
           </div>
         </div>
 
@@ -262,18 +341,20 @@ const PropertyCard = memo(({
               {safeProperty.review_rating && safeProperty.review_count ? (
                 <div className="flex items-center gap-1 text-sm mt-1">
                   <Star className="w-4 h-4 fill-current text-amber-500" />
-                  <span className="font-medium">{Number(safeProperty.review_rating).toFixed(2)}</span>
+                  <span className="font-medium">
+                    {Number(safeProperty.review_rating).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                   {/* Only the owners' cabins carry their Airbnb ratings over */}
                   <span className="text-muted-foreground">
-                    · {safeProperty.review_count} reviews{nickname ? " on Airbnb" : ""}
+                    · {t.reviews(safeProperty.review_count, !!nickname)}
                   </span>
                 </div>
               ) : null}
               <div className="flex items-center text-muted-foreground text-sm mt-1">
                 <MapPin className="w-4 h-4 mr-1" />
                 {safeProperty.city 
-                  ? `${safeProperty.city.charAt(0).toUpperCase() + safeProperty.city.slice(1)}, Sweden`
-                  : (safeProperty.location || "Sweden")}
+                  ? t.inSweden(safeProperty.city.charAt(0).toUpperCase() + safeProperty.city.slice(1))
+                  : (safeProperty.location || t.sweden)}
               </div>
             </div>
           </div>
@@ -293,17 +374,17 @@ const PropertyCard = memo(({
           <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
             <div className="flex items-center">
               <Users className="w-4 h-4 mr-1" />
-              {safeProperty.max_guests} guests
+              {t.guests(safeProperty.max_guests)}
             </div>
             <div className="flex items-center">
               <Bed className="w-4 h-4 mr-1" />
-              {safeProperty.bedrooms} {safeProperty.bedrooms === 1 ? "bedroom" : "bedrooms"}
+              {t.bedrooms(safeProperty.bedrooms)}
             </div>
             {/* Lakehouse has 0: a dry toilet and an outdoor shower, no bathroom */}
             {safeProperty.bathrooms > 0 && (
               <div className="flex items-center">
                 <Bath className="w-4 h-4 mr-1" />
-                {safeProperty.bathrooms} {safeProperty.bathrooms === 1 ? "bathroom" : "bathrooms"}
+                {t.bathrooms(safeProperty.bathrooms)}
               </div>
             )}
           </div>
@@ -321,7 +402,7 @@ const PropertyCard = memo(({
               ))}
               {safeProperty.amenities.length > 0 && (
                 <div className="text-xs text-muted-foreground font-medium px-2 py-1">
-                  +{safeProperty.amenities.length} amenities
+                  {t.moreAmenities(safeProperty.amenities.length)}
                 </div>
               )}
             </div>
@@ -332,12 +413,12 @@ const PropertyCard = memo(({
             <div>
               {/* Label under the amount: beside it, the price broke mid-number next to the button on phones */}
               <span className="text-2xl font-bold text-foreground whitespace-nowrap">
-                {Math.round(withServiceFee(safeProperty.price_per_night || 0, safeProperty.service_fee_rate)).toLocaleString()} {safeProperty.currency}
+                {Math.round(withServiceFee(safeProperty.price_per_night || 0, safeProperty.service_fee_rate)).toLocaleString(locale)} {safeProperty.currency}
               </span>
-              <span className="block text-muted-foreground text-sm">/night incl. service fee</span>
+              <span className="block text-muted-foreground text-sm">{t.perNight}</span>
             </div>
             <Button className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-              Check availability
+              {t.checkAvailability}
             </Button>
           </div>
         </CardContent>

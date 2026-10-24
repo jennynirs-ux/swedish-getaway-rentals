@@ -1,12 +1,55 @@
 import { MapPin } from "lucide-react";
 import CompanyLine from "@/components/CompanyLine";
 import { Property } from "@/hooks/useProperties";
+import { type Copy, localizedPath, useCopy, useLang } from "@/i18n";
+
+const en = {
+  quickLinks: "Quick Links",
+  contact: "Contact",
+  email: (address: string) => `Email: ${address}`,
+  phone: (number: string) => `Phone: ${number}`,
+  // The links' names in footer_quick_links, as guests see them
+  links: {} as Record<string, string>,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    quickLinks: "Snabblänkar",
+    contact: "Kontakt",
+    email: (address) => `E-post: ${address}`,
+    phone: (number) => `Telefon: ${number}`,
+    links: {
+      "First time in Sweden?": "Första gången i Sverige?",
+      "First time in Sweden": "Första gången i Sverige",
+      Contact: "Kontakt",
+      "Photo Gallery": "Bildgalleri",
+      Amenities: "Bekvämligheter",
+      "Book Now": "Boka nu",
+    },
+  },
+  de: {
+    quickLinks: "Schnellzugriff",
+    contact: "Kontakt",
+    email: (address) => `E-Mail: ${address}`,
+    phone: (number) => `Telefon: ${number}`,
+    links: {
+      "First time in Sweden?": "Zum ersten Mal in Schweden?",
+      "First time in Sweden": "Zum ersten Mal in Schweden",
+      Contact: "Kontakt",
+      "Photo Gallery": "Fotogalerie",
+      Amenities: "Ausstattung",
+      "Book Now": "Jetzt buchen",
+    },
+  },
+};
 
 interface PropertyFooterProps {
   property: Property;
 }
 
 const PropertyFooter = ({ property }: PropertyFooterProps) => {
+  const t = useCopy(COPY);
+  const lang = useLang();
   // The host's own tagline only (the column has no default); blank shows nothing
   const tagline = property.tagline_line1?.trim();
   return (
@@ -26,8 +69,9 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+              <h4 className="text-lg font-semibold mb-4">{t.quickLinks}</h4>
               <ul className="space-y-2">
+                {/* The names are keys as well as labels: linkMap finds where each goes */}
                 {(property.footer_quick_links || ['The Nordic Collection', 'First time in Sweden?', 'Contact']).map((link, index) => {
                   const linkMap: Record<string, string> = {
                     'The Nordic Collection': '/shop',
@@ -41,10 +85,10 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
                   return (
                     <li key={index}>
                       <a 
-                        href={linkMap[link] || '#'} 
+                        href={localizedPath(linkMap[link] || '#', lang)} 
                         className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
                       >
-                        {link}
+                        {t.links[link] ?? link}
                       </a>
                     </li>
                   );
@@ -54,13 +98,13 @@ const PropertyFooter = ({ property }: PropertyFooterProps) => {
 
             {/* Contact */}
             <div>
-              <h4 className="text-lg font-semibold mb-4">Contact</h4>
+              <h4 className="text-lg font-semibold mb-4">{t.contact}</h4>
               <div className="space-y-2 text-primary-foreground/80">
                 {property.get_in_touch_info?.contact_email && (
-                  <p>Email: {property.get_in_touch_info.contact_email}</p>
+                  <p>{t.email(property.get_in_touch_info.contact_email)}</p>
                 )}
                 {property.get_in_touch_info?.contact_phone && (
-                  <p>Phone: {property.get_in_touch_info.contact_phone}</p>
+                  <p>{t.phone(property.get_in_touch_info.contact_phone)}</p>
                 )}
               </div>
             </div>

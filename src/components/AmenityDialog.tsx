@@ -2,6 +2,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { LucideIcon } from "lucide-react";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = { included: "Included Features" };
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { included: "Det här ingår" },
+  de: { included: "Das ist inklusive" },
+};
 
 interface AmenityDialogProps {
   amenity: {
@@ -17,6 +25,7 @@ interface AmenityDialogProps {
 }
 
 export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) => {
+  const t = useCopy(COPY);
   if (!amenity) return null;
 
   const IconComponent = amenity.icon;
@@ -53,7 +62,7 @@ export const AmenityDialog = ({ amenity, isOpen, onClose }: AmenityDialogProps) 
           {/* Features list */}
           {amenity.features && amenity.features.length > 0 && (
             <div className="mb-4 sm:mb-6">
-              <h4 className="text-base sm:text-lg font-semibold text-foreground mb-2 sm:mb-3">Included Features</h4>
+              <h4 className="text-base sm:text-lg font-semibold text-foreground mb-2 sm:mb-3">{t.included}</h4>
               <ul className="space-y-2">
                 {amenity.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-2 sm:gap-3 text-muted-foreground text-sm sm:text-base">

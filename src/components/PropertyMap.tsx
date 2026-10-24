@@ -1,6 +1,17 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 // react-leaflet imports moved to lazy-loaded inner component
 import ErrorBoundary from '@/components/common/ErrorBoundary';
+import { type Copy, useCopy } from '@/i18n';
+
+const en = {
+  notAvailable: 'Location not available.',
+  credit: 'Map data © OpenStreetMap contributors',
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { notAvailable: 'Läget är inte tillgängligt.', credit: 'Kartdata © OpenStreetMap-bidragsgivare' },
+  de: { notAvailable: 'Lage nicht verfügbar.', credit: 'Kartendaten © OpenStreetMap-Mitwirkende' },
+};
 
 interface PropertyMapProps {
   latitude: number;
@@ -13,6 +24,7 @@ interface PropertyMapProps {
 const PropertyLeaflet = lazy(() => import('./maps/LeafletPropertyMapBasic'));
 
 function PropertyMap({ latitude, longitude, propertyTitle, className = '' }: PropertyMapProps) {
+  const t = useCopy(COPY);
   const [mounted, setMounted] = useState(false);
   const isValid = Number.isFinite(latitude) && Number.isFinite(longitude);
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
@@ -27,7 +39,7 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '' }: Pro
   if (!isValid) {
     return (
       <div className={`relative ${className}`}>
-        <div className="p-3 text-sm text-muted-foreground">Location not available.</div>
+        <div className="p-3 text-sm text-muted-foreground">{t.notAvailable}</div>
       </div>
     );
   }
@@ -50,7 +62,7 @@ function PropertyMap({ latitude, longitude, propertyTitle, className = '' }: Pro
         </Suspense>
       </ErrorBoundary>
       <div className="absolute bottom-2 right-2 bg-background/80 px-2 py-1 rounded text-xs z-10">
-        Map data © OpenStreetMap contributors
+        {t.credit}
       </div>
     </div>
   );

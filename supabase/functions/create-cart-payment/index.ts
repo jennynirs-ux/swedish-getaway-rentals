@@ -22,7 +22,10 @@ serve(async (req) => {
   }
 
   try {
-    const { items, customerEmail, couponId, couponCode, discountAmount, shippingCountry: requestedCountry } = await req.json();
+    const { items, customerEmail, couponId, couponCode, discountAmount, shippingCountry: requestedCountry, lang } = await req.json();
+    // The shopper's language (src/i18n): Stripe's page in it, and back to the site in it
+    const guestLang = lang === "sv" || lang === "de" ? lang : "en";
+    const langPrefix = guestLang === "en" ? "" : `/${guestLang}`;
     // The customer picks the country in the cart; checkout is locked to it so
     // the shipping charged matches the address
     const shippingCountry = typeof requestedCountry === 'string' && SHIP_COUNTRIES[requestedCountry] ? requestedCountry : 'SE';
@@ -215,8 +218,10 @@ serve(async (req) => {
       mode: 'payment',
       shipping_address_collection: { allowed_countries: [shippingCountry] },
       phone_number_collection: { enabled: true },
-      success_url: `${siteUrl}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/cart`,
+      success_url: `${siteUrl}${langPrefix}/order-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}${langPrefix}/cart`,
+      // English pages leave Stripe on "auto" (the browser's language), as before
+      locale: guestLang === "en" ? "auto" : guestLang,
       metadata: {
         type: 'cart',
         // Stripe caps metadata values at 500 characters: items_0, items_1, ...

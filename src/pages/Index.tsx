@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, memo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useCallback, memo, useEffect, type ReactNode } from "react";
+import { Link } from "@/i18n/router";
 import { usePageMeta, SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/hooks/usePageMeta";
 import { propertyPath } from "@/lib/propertySeo";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,167 @@ import {
 
 import forestHeroBg from "@/assets/forest-hero-light.webp";
 import forestHeroBgSmall from "@/assets/forest-hero-light-800.webp";
-import { addDays, subDays, differenceInCalendarDays, format } from "date-fns";
+import { addDays, subDays, differenceInCalendarDays, format, isValid, parse, type Locale } from "date-fns";
+import { type Copy, type Lang, localizedPath, useCopy, useLang } from "@/i18n";
+import { useDateFnsLocale } from "@/i18n/dates";
+import { translateListing, useListingTranslations } from "@/i18n/listingTexts";
+import { listingTexts } from "../../supabase/functions/_shared/listing-text";
+
+const en = {
+  metaTitle: "Holiday cabins in Sweden – book direct",
+  metaDescription: SITE_DESCRIPTION,
+  orgDescription:
+    "Nordic Getaways is a Swedish booking site for holiday cabins. Guests book and pay on the site and deal directly with each cabin's host. Run by Mojjo AB.",
+  listName: "Holiday cabins in Sweden",
+  heroAlt: "Sunlit Swedish forest",
+  heading: "Holiday cabins in Sweden, booked directly with the host",
+  matches: (n: number) => (n === 1 ? "1 cabin matches your search" : `${n} cabins match your search`),
+  pricesIncludeFee: "Nightly prices include the service fee.",
+  clearSearch: "Clear search",
+  noMatches: "No cabins match your search",
+  sectionTitle: "Cabins to rent in Sweden",
+  countLine: (cabins: number, hosts: number) => `${cabins} cabins from ${hosts} hosts. `,
+  nothingFound: "Nothing found",
+  tryOther: "Try other dates, fewer guests or a different place.",
+  browseAll: (n: number) => `Browse all ${n} cabins`,
+  moreOnTheWay: "More cabins are on the way as new hosts join. Have a cabin or holiday home yourself?",
+  listIt: "List it on Nordic Getaways",
+  aboutTitle: "About Nordic Getaways",
+  about: (villa: ReactNode, lakehouse: ReactNode, email: ReactNode) => (
+    <>
+      Nordic Getaways is a Swedish booking site for holiday cabins, run by Jenny and Jon Nirs through their company{" "}
+      {COMPANY.name}. We started with our own two lakeside cabins, {villa} and {lakehouse}, which we also host on
+      Airbnb as Superhosts, and we have now opened the site to hosts all over Sweden. Each cabin is run by its own
+      host, so questions about your stay go to them through the chat on your booking. For payments, problems with a
+      booking or the shop, email {email}.
+    </>
+  ),
+  footerTagline: "Holiday cabins in Sweden, booked directly with the host.",
+  explore: "Explore",
+  allCabins: "All cabins",
+  areaGuide: (name: string) => `Area guide: ${name}`,
+  firstTime: "First time in Sweden?",
+  shopName: "The Nordic Collection",
+  forGuests: "For guests",
+  myBookings: "My bookings",
+  signIn: "Sign in / Register",
+  contact: "Contact",
+  bookingTerms: "Booking terms",
+  privacy: "Privacy policy",
+  forHosts: "For hosts",
+  becomeHost: "Become a host",
+  pricingGuide: "Pricing guide",
+  foundingOffer: (pct: number, deadline: string) => `Founding-host offer: ${pct}% until ${deadline}`,
+  /** date-fns pattern for the offer's last day */
+  longDate: "d MMMM yyyy",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    metaTitle: "Stugor att hyra i Sverige – boka direkt",
+    metaDescription:
+      "Hyr en stuga eller ett fritidshus i Sverige direkt av värden. Alla kostnader syns innan du betalar, säker kortbetalning och tydliga avbokningsregler.",
+    orgDescription:
+      "Nordic Getaways är en svensk bokningssajt för stugor och fritidshus. Gästerna bokar och betalar på sajten och har direktkontakt med värden för varje stuga. Drivs av Mojjo AB.",
+    listName: "Stugor att hyra i Sverige",
+    heroAlt: "Solig svensk skog",
+    heading: "Stugor i Sverige som du bokar direkt hos värden",
+    matches: (n) => (n === 1 ? "1 stuga matchar din sökning" : `${n} stugor matchar din sökning`),
+    pricesIncludeFee: "Priserna per natt inkluderar serviceavgiften.",
+    clearSearch: "Rensa sökningen",
+    noMatches: "Inga stugor matchar din sökning",
+    sectionTitle: "Stugor att hyra i Sverige",
+    countLine: (cabins, hosts) => `${cabins} stugor från ${hosts} värdar. `,
+    nothingFound: "Inga träffar",
+    tryOther: "Prova andra datum, färre gäster eller en annan plats.",
+    browseAll: (n) => `Visa alla ${n} stugor`,
+    moreOnTheWay: "Fler stugor tillkommer när nya värdar ansluter. Har du själv en stuga eller ett fritidshus?",
+    listIt: "Hyr ut på Nordic Getaways",
+    aboutTitle: "Om Nordic Getaways",
+    about: (villa, lakehouse, email) => (
+      <>
+        Nordic Getaways är en svensk bokningssajt för stugor och fritidshus som drivs av Jenny och Jon Nirs genom
+        deras företag {COMPANY.name}. Vi började med våra egna två stugor vid sjön, {villa} och {lakehouse}. Dem hyr
+        vi också ut på Airbnb, där vi är Superhosts, och nu har vi öppnat sajten för värdar i hela Sverige. Varje
+        stuga sköts av sin egen värd, så frågor om din vistelse ställer du till dem i chatten i din bokning. Gäller
+        det betalningar, problem med en bokning eller butiken mejlar du {email}.
+      </>
+    ),
+    footerTagline: "Stugor i Sverige som du bokar direkt hos värden.",
+    explore: "Utforska",
+    allCabins: "Alla stugor",
+    areaGuide: (name) => `Områdesguide: ${name}`,
+    firstTime: "Första gången i Sverige?",
+    shopName: "The Nordic Collection",
+    forGuests: "För gäster",
+    myBookings: "Mina bokningar",
+    signIn: "Logga in / Skapa konto",
+    contact: "Kontakt",
+    bookingTerms: "Bokningsvillkor",
+    privacy: "Integritetspolicy",
+    forHosts: "För värdar",
+    becomeHost: "Bli värd",
+    pricingGuide: "Prisguide",
+    foundingOffer: (pct, deadline) => `Erbjudande för nya värdar: ${pct} % till och med ${deadline}`,
+    longDate: "d MMMM yyyy",
+  },
+  de: {
+    metaTitle: "Ferienhäuser in Schweden – direkt buchen",
+    metaDescription:
+      "Miete ein Ferienhaus oder eine Stuga in Schweden direkt beim Gastgeber. Alle Kosten vor der Zahlung sichtbar, sichere Kartenzahlung und klare Stornierungsbedingungen.",
+    orgDescription:
+      "Nordic Getaways ist eine schwedische Buchungsplattform für Ferienhäuser. Gäste buchen und bezahlen auf der Website und haben direkten Kontakt zum Gastgeber des jeweiligen Ferienhauses. Betrieben von Mojjo AB.",
+    listName: "Ferienhäuser in Schweden",
+    heroAlt: "Sonniger schwedischer Wald",
+    heading: "Ferienhäuser in Schweden – direkt beim Gastgeber buchen",
+    matches: (n) => (n === 1 ? "1 Ferienhaus passt zu deiner Suche" : `${n} Ferienhäuser passen zu deiner Suche`),
+    pricesIncludeFee: "Die Preise pro Nacht enthalten die Servicegebühr.",
+    clearSearch: "Suche zurücksetzen",
+    noMatches: "Keine Ferienhäuser passen zu deiner Suche",
+    sectionTitle: "Ferienhäuser in Schweden mieten",
+    countLine: (cabins, hosts) => `${cabins} Ferienhäuser von ${hosts} Gastgebern. `,
+    nothingFound: "Nichts gefunden",
+    tryOther: "Probier andere Reisedaten, weniger Gäste oder einen anderen Ort.",
+    browseAll: (n) => `Alle ${n} Ferienhäuser ansehen`,
+    moreOnTheWay: "Weitere Ferienhäuser kommen dazu, sobald neue Gastgeber mitmachen. Du hast selbst ein Ferienhaus?",
+    listIt: "Biete es auf Nordic Getaways an",
+    aboutTitle: "Über Nordic Getaways",
+    about: (villa, lakehouse, email) => (
+      <>
+        Nordic Getaways ist eine schwedische Buchungsplattform für Ferienhäuser, betrieben von Jenny und Jon Nirs
+        über ihr Unternehmen {COMPANY.name}. Angefangen haben wir mit unseren eigenen zwei Ferienhäusern am See,{" "}
+        {villa} und {lakehouse}, die wir auch auf Airbnb als Superhosts vermieten. Inzwischen steht die Plattform
+        Gastgebern in ganz Schweden offen. Jedes Ferienhaus wird von seinem eigenen Gastgeber betreut. Fragen zu
+        deinem Aufenthalt stellst du ihm deshalb direkt im Chat deiner Buchung. Bei Fragen zu Zahlungen, Problemen
+        mit einer Buchung oder zum Shop schreib an {email}.
+      </>
+    ),
+    footerTagline: "Ferienhäuser in Schweden – direkt beim Gastgeber buchen.",
+    explore: "Entdecken",
+    allCabins: "Alle Ferienhäuser",
+    areaGuide: (name) => `Reiseführer: ${name}`,
+    firstTime: "Zum ersten Mal in Schweden?",
+    shopName: "The Nordic Collection",
+    forGuests: "Für Gäste",
+    myBookings: "Meine Buchungen",
+    signIn: "Anmelden / Registrieren",
+    contact: "Kontakt",
+    bookingTerms: "AGB",
+    privacy: "Datenschutzerklärung",
+    forHosts: "Für Gastgeber",
+    becomeHost: "Gastgeber werden",
+    pricingGuide: "Preisratgeber",
+    foundingOffer: (pct, deadline) => `Angebot für neue Gastgeber: ${pct} % bis zum ${deadline}`,
+    longDate: "d. MMMM yyyy",
+  },
+};
+
+// FOUNDING_HOST_DEADLINE is written in English ("31 December 2026")
+const offerDeadline = (lang: Lang, pattern: string, locale: Locale) => {
+  if (lang === "en") return FOUNDING_HOST_DEADLINE;
+  const date = parse(FOUNDING_HOST_DEADLINE, "d MMMM yyyy", new Date());
+  return isValid(date) ? format(date, pattern, { locale }) : FOUNDING_HOST_DEADLINE;
+};
 
 const MemoizedPropertyCard = memo(PropertyCard);
 
@@ -68,6 +228,9 @@ const availabilityKey = (checkIn: Date, checkOut: Date, flex: number, propertyId
 const ownCabinPath = (slug: string) => propertyPath({ id: slug, slug });
 
 const HomePage = memo(() => {
+  const t = useCopy(COPY);
+  const lang = useLang();
+  const dateLocale = useDateFnsLocale();
   /** Hämta properties från supabase */
   const propertiesQueryFn = useCallback(async () => {
     const { data, error } = await supabase
@@ -120,9 +283,13 @@ const HomePage = memo(() => {
   });
   const properties = useMemo(() => data ?? [], [data]);
 
+  // What hosts wrote (titles, descriptions, featured amenities), in the page's language: one query for the list
+  const translations = useListingTranslations(properties.map((p) => p.id));
+  const localize = (p: (typeof properties)[number]) => translateListing(p, translations[p.id], listingTexts(p));
+
   usePageMeta({
-    title: "Holiday cabins in Sweden – book direct",
-    description: SITE_DESCRIPTION,
+    title: t.metaTitle,
+    description: t.metaDescription,
     path: "/",
     ready: !loading,
     jsonLd: [
@@ -142,8 +309,7 @@ const HomePage = memo(() => {
         },
         url: SITE_URL,
         logo: `${SITE_URL}/logo-512.png`,
-        description:
-          "Nordic Getaways is a Swedish booking site for holiday cabins. Guests book and pay on the site and deal directly with each cabin's host. Run by Mojjo AB.",
+        description: t.orgDescription,
         areaServed: { "@type": "Country", name: "Sweden" },
         founder: [
           { "@type": "Person", name: "Jenny Nirs" },
@@ -160,21 +326,21 @@ const HomePage = memo(() => {
         "@type": "WebSite",
         name: SITE_NAME,
         url: SITE_URL,
-        description: SITE_DESCRIPTION,
-        inLanguage: "en",
+        description: t.metaDescription,
+        inLanguage: lang,
         publisher: { "@id": `${SITE_URL}/#organization` },
         // No SearchAction: Google retired the sitelinks search box in 2024
       },
       {
         "@context": "https://schema.org",
         "@type": "ItemList",
-        name: "Holiday cabins in Sweden",
+        name: t.listName,
         numberOfItems: properties.length,
         itemListElement: properties.map((p, i) => ({
           "@type": "ListItem",
           position: i + 1,
-          url: `${SITE_URL}${propertyPath(p)}`,
-          name: p.title,
+          url: `${SITE_URL}${localizedPath(propertyPath(p), lang)}`,
+          name: localize(p).title,
         })),
       },
     ],
@@ -323,22 +489,25 @@ const HomePage = memo(() => {
   const cabinCount = properties.length;
   const showCountLine = cabinCount >= COUNT_LINE_MIN_CABINS && hostCount >= COUNT_LINE_MIN_HOSTS;
 
-  const renderCard = (p: (typeof properties)[number]) => (
-    <MemoizedPropertyCard
-      key={p.id}
-      property={{
-        ...p,
-        hero_image_url: p.hero_image_url || "/placeholder.svg",
-        description: p.description || "",
-        currency: p.currency || "SEK",
-        amenities: Array.isArray(p.amenities) ? p.amenities : [],
-        featured_amenities: (Array.isArray(p.featured_amenities)
-          ? p.featured_amenities
-          : []) as PropertyCardData["featured_amenities"],
-        special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
-      }}
-    />
-  );
+  const renderCard = (listing: (typeof properties)[number]) => {
+    const p = localize(listing);
+    return (
+      <MemoizedPropertyCard
+        key={p.id}
+        property={{
+          ...p,
+          hero_image_url: p.hero_image_url || "/placeholder.svg",
+          description: p.description || "",
+          currency: p.currency || "SEK",
+          amenities: Array.isArray(p.amenities) ? p.amenities : [],
+          featured_amenities: (Array.isArray(p.featured_amenities)
+            ? p.featured_amenities
+            : []) as PropertyCardData["featured_amenities"],
+          special_amenities: Array.isArray(p.special_amenities) ? p.special_amenities : [],
+        }}
+      />
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -353,7 +522,7 @@ const HomePage = memo(() => {
             src={forestHeroBg}
             srcSet={`${forestHeroBgSmall} 800w, ${forestHeroBg} 1600w`}
             sizes="100vw"
-            alt="Sunlit Swedish forest"
+            alt={t.heroAlt}
             className="w-full h-full object-cover"
             priority={true}
             loading="eager"
@@ -364,10 +533,16 @@ const HomePage = memo(() => {
         <div className="relative z-10 px-4 max-w-4xl mx-auto w-full">
           <p className="text-sm uppercase tracking-wide text-white/80 mb-3">Nordic Getaways</p>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 md:mb-10">
-            Holiday cabins in Sweden, booked directly with the host
+            {t.heading}
           </h1>
 
-          <HeroSearch properties={properties} filters={filters} onFiltersChange={setFilters} resetKey={resetKey} />
+          <HeroSearch
+            properties={properties}
+            filters={filters}
+            onFiltersChange={setFilters}
+            resetKey={resetKey}
+            translations={translations}
+          />
         </div>
       </header>
 
@@ -380,12 +555,12 @@ const HomePage = memo(() => {
                 <>
                   {/* Focused after a search from the phone drawer (HeroSearch) */}
                   <h2 id="cabins-heading" tabIndex={-1} className="text-3xl font-bold text-foreground focus:outline-none">
-                    {matches.length === 1 ? "1 cabin matches your search" : `${matches.length} cabins match your search`}
+                    {t.matches(matches.length)}
                   </h2>
                   <p className="text-muted-foreground mt-2">
-                    Nightly prices include the service fee.{" "}
+                    {t.pricesIncludeFee}{" "}
                     <Button variant="link" className="h-auto p-0" onClick={clearSearch}>
-                      Clear search
+                      {t.clearSearch}
                     </Button>
                   </p>
                 </>
@@ -393,11 +568,11 @@ const HomePage = memo(() => {
                 <>
                   <h2 id="cabins-heading" tabIndex={-1} className="text-3xl font-bold text-foreground focus:outline-none">
                     {/* Focus lands here after a search: say the result, not the section name */}
-                    {searchActive && !waitingForAvailability ? "No cabins match your search" : "Cabins to rent in Sweden"}
+                    {searchActive && !waitingForAvailability ? t.noMatches : t.sectionTitle}
                   </h2>
                   <p className="text-muted-foreground mt-2">
-                    {showCountLine && `${cabinCount} cabins from ${hostCount} hosts. `}
-                    Nightly prices include the service fee.
+                    {showCountLine && t.countLine(cabinCount, hostCount)}
+                    {t.pricesIncludeFee}
                   </p>
                 </>
               )}
@@ -428,10 +603,10 @@ const HomePage = memo(() => {
                 <div className="text-center py-16">
                   <div className="max-w-md mx-auto">
                     <Grid3X3 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-xl font-semibold text-foreground mb-2">Nothing found</p>
-                    <p className="text-muted-foreground mb-6">Try other dates, fewer guests or a different place.</p>
+                    <p className="text-xl font-semibold text-foreground mb-2">{t.nothingFound}</p>
+                    <p className="text-muted-foreground mb-6">{t.tryOther}</p>
                     <Button variant="outline" onClick={clearSearch}>
-                      Clear search
+                      {t.clearSearch}
                     </Button>
                   </div>
                 </div>
@@ -442,15 +617,15 @@ const HomePage = memo(() => {
                 {cabinCount > HOME_CABIN_LIMIT && (
                   <div className="text-center mt-10">
                     <Button asChild variant="outline" size="lg">
-                      <Link to="/cabins">Browse all {cabinCount} cabins</Link>
+                      <Link to="/cabins">{t.browseAll(cabinCount)}</Link>
                     </Button>
                   </div>
                 )}
                 {cabinCount < COUNT_LINE_MIN_CABINS && (
                   <p className="text-center text-muted-foreground mt-10 max-w-2xl mx-auto">
-                    More cabins are on the way as new hosts join. Have a cabin or holiday home yourself?{" "}
+                    {t.moreOnTheWay}{" "}
                     <Link to="/become-host" className="text-primary hover:underline">
-                      List it on Nordic Getaways <span aria-hidden="true">→</span>
+                      {t.listIt} <span aria-hidden="true">→</span>
                     </Link>
                   </p>
                 )}
@@ -469,17 +644,14 @@ const HomePage = memo(() => {
         {/* Who runs the site */}
         <section className="py-16">
           <div className="container mx-auto px-4 max-w-3xl text-center">
-            <h2 className="text-3xl font-bold text-foreground mb-4">About Nordic Getaways</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-4">{t.aboutTitle}</h2>
             {/* When the first other host's cabin goes live: "…and now hosts all over Sweden list their homes here too." */}
             <p className="text-lg text-muted-foreground">
-              Nordic Getaways is a Swedish booking site for holiday cabins, run by Jenny and Jon Nirs through their
-              company {COMPANY.name}. We started with our own two lakeside cabins,{" "}
-              <Link to={ownCabinPath("lakefront-retreat")} className="underline">Villa Häcken</Link> and{" "}
-              <Link to={ownCabinPath("lakehouse-getaway")} className="underline">Lakehouse Getaway</Link>, which we
-              also host on Airbnb as Superhosts, and we have now opened the site to hosts all over Sweden. Each cabin
-              is run by its own host, so questions about your stay go to them through the chat on your booking. For
-              payments, problems with a booking or the shop, email{" "}
-              <a className="underline" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
+              {t.about(
+                <Link to={ownCabinPath("lakefront-retreat")} className="underline">Villa Häcken</Link>,
+                <Link to={ownCabinPath("lakehouse-getaway")} className="underline">Lakehouse Getaway</Link>,
+                <a className="underline" href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>,
+              )}
             </p>
           </div>
         </section>
@@ -493,43 +665,43 @@ const HomePage = memo(() => {
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h3 className="text-xl font-semibold text-foreground mb-4">Nordic Getaways</h3>
-              <p className="text-muted-foreground">Holiday cabins in Sweden, booked directly with the host.</p>
+              <p className="text-muted-foreground">{t.footerTagline}</p>
             </div>
 
             <div>
-              <h4 className="font-semibold text-foreground mb-4">Explore</h4>
+              <h4 className="font-semibold text-foreground mb-4">{t.explore}</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/cabins" className="hover:text-foreground">All cabins</Link></li>
+                <li><Link to="/cabins" className="hover:text-foreground">{t.allCabins}</Link></li>
                 {AREAS.map((area) => (
                   <li key={area.path}>
-                    <Link to={area.path} className="hover:text-foreground">Area guide: {area.name}</Link>
+                    <Link to={area.path} className="hover:text-foreground">{t.areaGuide(area.name)}</Link>
                   </li>
                 ))}
-                <li><Link to="/first-time-in-sweden" className="hover:text-foreground">First time in Sweden?</Link></li>
-                <li><Link to="/shop" className="hover:text-foreground">The Nordic Collection</Link></li>
+                <li><Link to="/first-time-in-sweden" className="hover:text-foreground">{t.firstTime}</Link></li>
+                <li><Link to="/shop" className="hover:text-foreground">{t.shopName}</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-foreground mb-4">For guests</h4>
+              <h4 className="font-semibold text-foreground mb-4">{t.forGuests}</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/profile" className="hover:text-foreground">My bookings</Link></li>
-                <li><Link to="/auth" className="hover:text-foreground">Sign in / Register</Link></li>
-                <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
-                <li><Link to="/terms" className="hover:text-foreground">Booking terms</Link></li>
-                <li><Link to="/privacy" className="hover:text-foreground">Privacy policy</Link></li>
+                <li><Link to="/profile" className="hover:text-foreground">{t.myBookings}</Link></li>
+                <li><Link to="/auth" className="hover:text-foreground">{t.signIn}</Link></li>
+                <li><Link to="/contact" className="hover:text-foreground">{t.contact}</Link></li>
+                <li><Link to="/terms" className="hover:text-foreground">{t.bookingTerms}</Link></li>
+                <li><Link to="/privacy" className="hover:text-foreground">{t.privacy}</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-foreground mb-4">For hosts</h4>
+              <h4 className="font-semibold text-foreground mb-4">{t.forHosts}</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link to="/become-host" className="hover:text-foreground">Become a host</Link></li>
-                <li><Link to="/pricing-guide" className="hover:text-foreground">Pricing guide</Link></li>
+                <li><Link to="/become-host" className="hover:text-foreground">{t.becomeHost}</Link></li>
+                <li><Link to="/pricing-guide" className="hover:text-foreground">{t.pricingGuide}</Link></li>
                 {foundingHostOfferOpen() && (
                   <li>
                     <Link to="/become-host" className="hover:text-foreground">
-                      Founding-host offer: {FOUNDING_HOST_FEE_PCT}% until {FOUNDING_HOST_DEADLINE}
+                      {t.foundingOffer(FOUNDING_HOST_FEE_PCT, offerDeadline(lang, t.longDate, dateLocale))}
                     </Link>
                   </li>
                 )}

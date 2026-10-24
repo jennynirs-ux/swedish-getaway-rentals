@@ -52,7 +52,8 @@ export function LangLayout({ lang }: { lang: Lang }) {
   return (
     <LangProvider value={lang}>
       <Outlet />
-      {suggest && (
+      {/* The same layout stays mounted when the language changes; a choice in the menu settles it too */}
+      {suggest && suggest !== lang && !savedLang() && (
         <div
           lang={suggest}
           role="region"

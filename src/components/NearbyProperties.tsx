@@ -1,8 +1,22 @@
 import { memo, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/i18n/router';
 import { MapPin } from 'lucide-react';
 import { calculateDistance, type Coordinates } from '@/lib/distance';
 import LazyImage from './LazyImage';
+import { type Copy, useCopy } from '@/i18n';
+import { translateListing, useListingTranslations } from '@/i18n/listingTexts';
+import { listingTexts } from '../../supabase/functions/_shared/listing-text';
+
+const en = {
+  title: "Nearby Properties",
+  nextDoor: "Next door",
+  away: (km: number) => `${km} km away`,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { title: "Stugor i närheten", nextDoor: "Alldeles intill", away: (km) => `${km} km bort` },
+  de: { title: "Ferienhäuser in der Nähe", nextDoor: "Gleich nebenan", away: (km) => `${km} km entfernt` },
+};
 
 interface Property {
   id: string;
@@ -20,6 +34,7 @@ interface NearbyPropertiesProps {
 }
 
 const NearbyProperties = memo(({ currentPropertyId, currentCoordinates, allProperties }: NearbyPropertiesProps) => {
+  const t = useCopy(COPY);
   const nearbyProperties = useMemo(() => {
     const MAX_DISTANCE_KM = 25;
     const MAX_RESULTS = 3;
@@ -41,17 +56,21 @@ const NearbyProperties = memo(({ currentPropertyId, currentCoordinates, allPrope
     return propertiesWithDistance;
   }, [currentPropertyId, currentCoordinates, allProperties]);
 
+  // Titles in the page's language: one query for the cabins shown
+  const translations = useListingTranslations(nearbyProperties.map((p) => p.id));
+
   if (nearbyProperties.length === 0) return null;
+  const shown = nearbyProperties.map((p) => translateListing(p, translations[p.id], listingTexts(p)));
 
   return (
     <section className="py-12 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold text-foreground mb-6">
-            Nearby Properties
+            {t.title}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {nearbyProperties.map(property => (
+            {shown.map(property => (
               <Link
                 key={property.id}
                 to={`/property/${property.id}`}
@@ -72,7 +91,7 @@ const NearbyProperties = memo(({ currentPropertyId, currentCoordinates, allPrope
                     </h3>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {property.distance < 1 ? "Next door" : `${Math.round(property.distance)} km away`}
+                      {property.distance < 1 ? t.nextDoor : t.away(Math.round(property.distance))}
                     </p>
                   </div>
                 </div>

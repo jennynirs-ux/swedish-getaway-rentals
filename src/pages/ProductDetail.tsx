@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { Link } from "@/i18n/router";
 import { ArrowLeft, ShoppingCart, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +14,84 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import { buildProductJsonLd, productDescription, productPath, SHOP_BRAND } from "@/lib/productSeo";
 import type { ShippingSettings } from "../../supabase/functions/_shared/shop-shipping";
 import { listedPrice } from "../../supabase/functions/_shared/shop-variants";
+import { type Copy, LOCALES, useCopy, useLang } from "@/i18n";
+
+const en = {
+  error: "Error",
+  loadFailed: "Failed to load product details.",
+  added: "Added to cart",
+  addFailed: "Failed to add to cart.",
+  metaDefault: `Nordic designs from ${SHOP_BRAND}, printed to order.`,
+  // Same as productDescription's fallback (src/lib/productSeo.ts)
+  printedToOrder: (title: string) => `${title} from ${SHOP_BRAND}, printed to order.`,
+  notFound: "Product Not Found",
+  backToShop: "Back to Shop",
+  back: "Back",
+  imageAlt: (title: string, n: number) => `${title} view ${n}`,
+  from: "From ",
+  inStock: "In Stock",
+  description: "Description",
+  options: "Options",
+  selectOption: "Select an option",
+  quantity: "Quantity",
+  processing: "Processing...",
+  addToCart: "Add to Cart",
+  selectToContinue: "Please select an option to continue",
+  freeShipping: (amount: string) => `Free shipping in Sweden on orders from ${amount}`,
+  quality: "High-quality printing and materials",
+  sustainable: "Sustainable production process",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    error: "Något gick fel",
+    loadFailed: "Det gick inte att ladda produkten.",
+    added: "Tillagd i varukorgen",
+    addFailed: "Det gick inte att lägga till i varukorgen.",
+    metaDefault: `Nordisk design från ${SHOP_BRAND}, tryckt på beställning.`,
+    printedToOrder: (title) => `${title} från ${SHOP_BRAND}, tryckt på beställning.`,
+    notFound: "Produkten hittades inte",
+    backToShop: "Tillbaka till butiken",
+    back: "Tillbaka",
+    imageAlt: (title, n) => `${title}, bild ${n}`,
+    from: "Från ",
+    inStock: "I lager",
+    description: "Beskrivning",
+    options: "Alternativ",
+    selectOption: "Välj ett alternativ",
+    quantity: "Antal",
+    processing: "Bearbetar…",
+    addToCart: "Lägg i varukorgen",
+    selectToContinue: "Välj ett alternativ för att fortsätta",
+    freeShipping: (amount) => `Fri frakt inom Sverige när du handlar för minst ${amount}`,
+    quality: "Tryck och material av hög kvalitet",
+    sustainable: "Hållbar tillverkning",
+  },
+  de: {
+    error: "Fehler",
+    loadFailed: "Die Produktdetails konnten nicht geladen werden.",
+    added: "Zum Warenkorb hinzugefügt",
+    addFailed: "Der Artikel konnte nicht in den Warenkorb gelegt werden.",
+    metaDefault: `Nordische Designs von ${SHOP_BRAND}, auf Bestellung gedruckt.`,
+    printedToOrder: (title) => `${title} von ${SHOP_BRAND}, auf Bestellung gedruckt.`,
+    notFound: "Produkt nicht gefunden",
+    backToShop: "Zurück zum Shop",
+    back: "Zurück",
+    imageAlt: (title, n) => `${title}, Ansicht ${n}`,
+    from: "Ab ",
+    inStock: "Auf Lager",
+    description: "Beschreibung",
+    options: "Optionen",
+    selectOption: "Option auswählen",
+    quantity: "Menge",
+    processing: "Wird verarbeitet…",
+    addToCart: "In den Warenkorb",
+    selectToContinue: "Bitte wähle eine Option, um fortzufahren",
+    freeShipping: (amount) => `Kostenloser Versand innerhalb Schwedens ab ${amount} Bestellwert`,
+    quality: "Hochwertiger Druck und hochwertige Materialien",
+    sustainable: "Nachhaltige Herstellung",
+  },
+};
 
 interface ShopProduct {
   id: string;
@@ -41,6 +120,8 @@ interface ShopProduct {
 }
 
 const ProductDetail = () => {
+  const t = useCopy(COPY);
+  const lang = useLang();
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<ShopProduct | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,8 +166,8 @@ const ProductDetail = () => {
     } catch (error) {
       console.error('Error fetching product:', error);
       toast({
-        title: "Error",
-        description: "Failed to load product details.",
+        title: t.error,
+        description: t.loadFailed,
         variant: "destructive",
       });
     } finally {
@@ -116,8 +197,9 @@ const ProductDetail = () => {
     return { title, description, price, from, allImages: allImages.filter(Boolean) };
   };
 
+  // English keeps the Swedish price style it has always had ("249,00 kr")
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
+    return new Intl.NumberFormat(lang === 'en' ? 'sv-SE' : LOCALES[lang], {
       style: 'currency',
       currency: currency,
     }).format(price / 100);
@@ -157,12 +239,12 @@ const ProductDetail = () => {
         variantId: selectedVariant, 
         variantName: product.printful_data?.variants?.find((v: any) => v.id?.toString() === selectedVariant)?.name || null 
       });
-      toast({ title: 'Added to cart', description: title });
+      toast({ title: t.added, description: title });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast({
-        title: "Error",
-        description: "Failed to add to cart.",
+        title: t.error,
+        description: t.addFailed,
         variant: "destructive",
       });
     } finally {
@@ -183,18 +265,25 @@ const ProductDetail = () => {
   };
 
   const seo = product ? getDisplayData(product) : null;
+  // The product's own description (from Printful, in English) when it has one,
+  // otherwise productDescription's fallback in the page's language
+  const ownDescription = seo && productDescription({ title: seo.title, description: seo.description });
+  const metaDescription = seo
+    ? ownDescription === en.printedToOrder(seo.title) ? t.printedToOrder(seo.title) : ownDescription
+    : t.metaDefault;
   usePageMeta({
     title: seo ? `${seo.title} – ${SHOP_BRAND}` : SHOP_BRAND,
-    description: seo
-      ? productDescription({ title: seo.title, description: seo.description })
-      : `Nordic designs from ${SHOP_BRAND}, printed to order.`,
+    description: metaDescription,
     path: productPath(id ?? ""),
     image: seo?.allImages[0],
     jsonLd: product && seo
-      ? buildProductJsonLd(
-          { id: product.id, title: seo.title, description: seo.description, price: seo.price, currency: product.currency, images: seo.allImages },
-          shipping,
-        )
+      ? {
+          ...buildProductJsonLd(
+            { id: product.id, title: seo.title, description: seo.description, price: seo.price, currency: product.currency, images: seo.allImages },
+            shipping,
+          ),
+          description: metaDescription,
+        }
       : undefined,
     ready: !loading && shippingLoaded,
   });
@@ -218,11 +307,11 @@ const ProductDetail = () => {
         <MainNavigation />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-4">{t.notFound}</h1>
             <Link to="/shop">
               <Button variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Shop
+                {t.backToShop}
               </Button>
             </Link>
           </div>
@@ -247,8 +336,8 @@ const ProductDetail = () => {
               className="text-foreground border-border bg-background/80 hover:bg-background/90 backdrop-blur-sm transition-all"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Back to Shop</span>
-              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline">{t.backToShop}</span>
+              <span className="sm:hidden">{t.back}</span>
             </Button>
           </Link>
         </div>
@@ -305,7 +394,7 @@ const ProductDetail = () => {
                   >
                     <img
                       src={image}
-                      alt={`${title} view ${index + 1}`}
+                      alt={t.imageAlt(title, index + 1)}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -319,17 +408,17 @@ const ProductDetail = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
               <div className="text-3xl font-bold text-primary mb-4">
-                {from && !selectedVariant && <span className="text-lg font-normal text-muted-foreground">From </span>}
+                {from && !selectedVariant && <span className="text-lg font-normal text-muted-foreground">{t.from}</span>}
                 {formatPrice(currentPrice, product.currency)}
               </div>
               <Badge variant="secondary" className="mb-4">
-                In Stock
+                {t.inStock}
               </Badge>
             </div>
 
             {description && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{t.description}</h3>
                 <p className="text-muted-foreground leading-relaxed">{description}</p>
               </div>
             )}
@@ -337,10 +426,10 @@ const ProductDetail = () => {
             {/* Variant Selection */}
             {variants.length > 1 && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Options</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{t.options}</h3>
                 <Select value={selectedVariant || ''} onValueChange={setSelectedVariant}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an option" />
+                    <SelectValue placeholder={t.selectOption} />
                   </SelectTrigger>
                   <SelectContent>
                     {variants.map((variant) => (
@@ -355,7 +444,7 @@ const ProductDetail = () => {
 
             {/* Quantity Selection */}
             <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Quantity</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t.quantity}</h3>
               <Select value={quantity.toString()} onValueChange={(value) => setQuantity(parseInt(value))}>
                 <SelectTrigger className="w-24">
                   <SelectValue />
@@ -382,12 +471,12 @@ const ProductDetail = () => {
                   {purchasing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      {t.processing}
                     </>
                   ) : (
                     <>
                       <ShoppingCart className="w-5 h-5 mr-2" />
-                      Add to Cart
+                      {t.addToCart}
                       {(variants.length <= 1 || selectedVariant) && ` - ${formatPrice(currentPrice * quantity, product.currency)}`}
                     </>
                   )}
@@ -395,7 +484,7 @@ const ProductDetail = () => {
                 
                 {variants.length > 1 && !selectedVariant && (
                   <p className="text-sm text-muted-foreground mt-2 text-center">
-                    Please select an option to continue
+                    {t.selectToContinue}
                   </p>
                 )}
               </CardContent>
@@ -406,16 +495,16 @@ const ProductDetail = () => {
               {shipping?.free_shipping_threshold ? (
                 <div className="flex items-center">
                   <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-                  Free shipping in Sweden on orders from {formatPrice(shipping.free_shipping_threshold, "SEK")}
+                  {t.freeShipping(formatPrice(shipping.free_shipping_threshold, "SEK"))}
                 </div>
               ) : null}
               <div className="flex items-center">
                 <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-                High-quality printing and materials
+                {t.quality}
               </div>
               <div className="flex items-center">
                 <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-                Sustainable production process
+                {t.sustainable}
               </div>
             </div>
           </div>

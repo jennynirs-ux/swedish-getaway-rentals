@@ -216,3 +216,6 @@ export const nextPayoutId = <B extends BookingPayout & { id: string }>(
   }
   return next?.id ?? null;
 };
+
+/** Hosts write in their own language; translate-content translates published listings for guests */
+export const TRANSLATION_HINT = "Skriv på ditt eget språk. Gästerna ser annonsen på engelska, svenska eller tyska, översatt automatiskt.";

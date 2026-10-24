@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/i18n/router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, Loader2, Search } from "lucide-react";
@@ -12,6 +12,72 @@ import ShopFilters, { ShopFilters as ShopFiltersType } from "@/components/ShopFi
 import forestHeroBg from "@/assets/forest-hero-bg.jpg";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { listedPrice } from "../../supabase/functions/_shared/shop-variants";
+import { type Copy, LOCALES, useCopy, useLang } from "@/i18n";
+
+const en = {
+  metaTitle: "Shop",
+  metaDescription: "Nordic Getaways shop: Scandinavian-inspired products and souvenirs.",
+  error: "Error",
+  loadFailed: "Failed to load products. Please try again.",
+  added: "Added to cart",
+  addFailed: "Failed to add to cart.",
+  loading: "Loading products...",
+  heroAlt: "Nordic forest background",
+  intro: "Discover unique Nordic-inspired products that bring the beauty of Scandinavia to your home.",
+  searchPlaceholder: "Search products...",
+  noProducts: "No products found",
+  tryOther: "Try adjusting your search terms or filters",
+  noProductsSync: "No products found. Click Sync with Printful to import your products.",
+  searchResults: (n: number) => `Search Results (${n})`,
+  allProducts: (n: number) => `All Products (${n})`,
+  from: "From ",
+  choose: "Choose",
+  add: "Add",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    metaTitle: "Butik",
+    metaDescription: "Butiken hos Nordic Getaways: skandinaviskt inspirerade produkter och souvenirer.",
+    error: "Något gick fel",
+    loadFailed: "Det gick inte att ladda produkterna. Försök igen.",
+    added: "Tillagd i varukorgen",
+    addFailed: "Det gick inte att lägga till i varukorgen.",
+    loading: "Laddar produkter…",
+    heroAlt: "Nordisk skog",
+    intro: "Upptäck unika produkter med nordisk inspiration som tar med Skandinaviens skönhet hem till dig.",
+    searchPlaceholder: "Sök produkter…",
+    noProducts: "Inga produkter hittades",
+    tryOther: "Prova att ändra din sökning eller dina filter",
+    // The admin button is in English
+    noProductsSync: 'Inga produkter hittades. Klicka på "Sync with Printful" för att importera dina produkter.',
+    searchResults: (n) => `Sökresultat (${n})`,
+    allProducts: (n) => `Alla produkter (${n})`,
+    from: "Från ",
+    choose: "Välj",
+    add: "Köp",
+  },
+  de: {
+    metaTitle: "Shop",
+    metaDescription: "Der Shop von Nordic Getaways: skandinavisch inspirierte Produkte und Souvenirs.",
+    error: "Fehler",
+    loadFailed: "Die Produkte konnten nicht geladen werden. Bitte versuche es erneut.",
+    added: "Zum Warenkorb hinzugefügt",
+    addFailed: "Der Artikel konnte nicht in den Warenkorb gelegt werden.",
+    loading: "Produkte werden geladen…",
+    heroAlt: "Nordischer Wald",
+    intro: "Entdecke einzigartige, nordisch inspirierte Produkte, die die Schönheit Skandinaviens zu dir nach Hause bringen.",
+    searchPlaceholder: "Produkte suchen…",
+    noProducts: "Keine Produkte gefunden",
+    tryOther: "Versuche es mit anderen Suchbegriffen oder Filtern",
+    noProductsSync: 'Keine Produkte gefunden. Klicke auf "Sync with Printful", um deine Produkte zu importieren.',
+    searchResults: (n) => `Suchergebnisse (${n})`,
+    allProducts: (n) => `Alle Produkte (${n})`,
+    from: "Ab ",
+    choose: "Auswählen",
+    add: "Kaufen",
+  },
+};
 
 interface ShopProduct {
   id: string;
@@ -38,9 +104,11 @@ interface ShopProduct {
 }
 
 const Shop = () => {
+  const t = useCopy(COPY);
+  const lang = useLang();
   usePageMeta({
-    title: "Shop",
-    description: "Nordic Getaways shop: Scandinavian-inspired products and souvenirs.",
+    title: t.metaTitle,
+    description: t.metaDescription,
     path: "/shop",
   });
 
@@ -72,6 +140,8 @@ const Shop = () => {
 
   useEffect(() => {
     fetchProducts();
+    // Once per visit; fetchProducts only reads the copy for its error toast
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Extract filter options from products
@@ -168,8 +238,8 @@ const Shop = () => {
     } catch (error) {
       console.error("Error fetching products:", error);
       toast({
-        title: "Error",
-        description: "Failed to load products. Please try again.",
+        title: t.error,
+        description: t.loadFailed,
         variant: "destructive",
       });
     } finally {
@@ -189,12 +259,12 @@ const Shop = () => {
         quantity: 1,
         image: imageUrl,
       });
-      toast({ title: "Added to cart", description: title });
+      toast({ title: t.added, description: title });
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast({
-        title: "Error",
-        description: "Failed to add to cart.",
+        title: t.error,
+        description: t.addFailed,
         variant: "destructive",
       });
     } finally {
@@ -202,8 +272,9 @@ const Shop = () => {
     }
   };
 
+  // English keeps the Swedish price style it has always had ("249,00 kr")
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat("sv-SE", {
+    return new Intl.NumberFormat(lang === "en" ? "sv-SE" : LOCALES[lang], {
       style: "currency",
       currency: currency,
     }).format(price / 100);
@@ -217,7 +288,7 @@ const Shop = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-20">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading products...</p>
+            <p className="mt-4 text-muted-foreground">{t.loading}</p>
           </div>
         </div>
       </div>
@@ -234,7 +305,7 @@ const Shop = () => {
         <div className="absolute inset-0">
           <img
             src={forestHeroBg}
-            alt="Nordic forest background"
+            alt={t.heroAlt}
             className="w-full h-full object-cover"
           />
         </div>
@@ -245,8 +316,7 @@ const Shop = () => {
             The Nordic Collection
           </h1>
           <p className="text-2xl !text-white max-w-3xl mx-auto">
-            Discover unique Nordic-inspired products that bring the beauty of
-            Scandinavia to your home.
+            {t.intro}
           </p>
       
           {/* Search Bar */}
@@ -254,7 +324,7 @@ const Shop = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 !text-white w-4 h-4" />
             <Input
               type="text"
-              placeholder="Search products..."
+              placeholder={t.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-black/40 !text-white placeholder:!text-white"
@@ -285,12 +355,12 @@ const Shop = () => {
                 <div className="text-center py-20">
                   <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    {searchTerm ? "No products found" : "No products found"}
+                    {t.noProducts}
                   </h3>
                   <p className="text-muted-foreground">
                     {searchTerm
-                      ? "Try adjusting your search terms or filters"
-                      : "No products found. Click Sync with Printful to import your products."}
+                      ? t.tryOther
+                      : t.noProductsSync}
                   </p>
                 </div>
               ) : (
@@ -298,8 +368,8 @@ const Shop = () => {
                   <div className="flex items-center justify-between mb-8">
                     <h2 className="text-2xl font-bold text-foreground">
                       {searchTerm
-                        ? `Search Results (${filteredAndSortedProducts.length})`
-                        : `All Products (${filteredAndSortedProducts.length})`}
+                        ? t.searchResults(filteredAndSortedProducts.length)
+                        : t.allProducts(filteredAndSortedProducts.length)}
                     </h2>
                   </div>
 
@@ -339,13 +409,13 @@ const Shop = () => {
 
                         <div className="flex items-center justify-between">
                           <div className="text-base font-bold text-primary">
-                            {from && <span className="text-xs font-normal text-muted-foreground">From </span>}
+                            {from && <span className="text-xs font-normal text-muted-foreground">{t.from}</span>}
                             {formatPrice(price, product.currency)}
                           </div>
 
                           {hasOptions ? (
                             <Button asChild size="sm" className="text-xs px-2">
-                              <Link to={`/product/${product.id}`}>Choose</Link>
+                              <Link to={`/product/${product.id}`}>{t.choose}</Link>
                             </Button>
                           ) : (
                             <Button
@@ -359,7 +429,7 @@ const Shop = () => {
                               ) : (
                                 <ShoppingCart className="w-3 h-3 mr-1" />
                               )}
-                              Add
+                              {t.add}
                             </Button>
                           )}
                         </div>

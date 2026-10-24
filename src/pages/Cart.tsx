@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, type ReactNode } from 'react';
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +11,108 @@ import { toast } from '@/hooks/use-toast';
 import MainNavigation from '@/components/MainNavigation';
 import CouponInput from '@/components/CouponInput';
 import { SHIP_COUNTRIES, regionFor, shippingCost as shippingFor } from '../../supabase/functions/_shared/shop-shipping';
+import { type Copy, LOCALES, localizedPath, useCopy, useLang } from '@/i18n';
+
+const en = {
+  cartUpdated: 'Cart updated',
+  unavailableRemoved: (n: number) => `${n} unavailable item(s) removed from your cart`,
+  error: 'Error',
+  checkoutFailed: 'Failed to start checkout',
+  heading: 'Shopping Cart',
+  empty: 'Your cart is empty.',
+  items: 'Items',
+  product: 'Product',
+  price: 'Price',
+  qty: 'Qty',
+  total: 'Total',
+  selectVariant: 'Select variant',
+  required: 'Required',
+  summary: 'Summary',
+  subtotal: 'Subtotal',
+  shipTo: 'Ship to',
+  shipToLabel: 'Ship to country',
+  shipping: 'Shipping',
+  free: 'Free',
+  addForFreeShipping: (amount: string) => `Add ${amount} more for free shipping`,
+  discount: (code: string) => `Discount (${code})`,
+  selectAllVariants: 'Please select all required variants before checkout',
+  processing: 'Processing...',
+  checkout: 'Checkout',
+  terms: 'terms',
+  privacy: 'privacy policy',
+  consent: (terms: ReactNode, privacy: ReactNode) => <>By checking out you accept our {terms} and {privacy}.</>,
+  clearCart: 'Clear Cart',
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    cartUpdated: 'Varukorgen har uppdaterats',
+    unavailableRemoved: (n) => `${n} ${n === 1 ? 'vara' : 'varor'} som inte längre finns har tagits bort ur din varukorg`,
+    error: 'Något gick fel',
+    checkoutFailed: 'Det gick inte att gå vidare till kassan',
+    heading: 'Varukorg',
+    empty: 'Din varukorg är tom.',
+    items: 'Varor',
+    product: 'Produkt',
+    price: 'Pris',
+    qty: 'Antal',
+    total: 'Totalt',
+    selectVariant: 'Välj variant',
+    required: 'Måste väljas',
+    summary: 'Sammanfattning',
+    subtotal: 'Delsumma',
+    shipTo: 'Leverera till',
+    shipToLabel: 'Land att leverera till',
+    shipping: 'Frakt',
+    free: 'Gratis',
+    addForFreeShipping: (amount) => `Handla för ${amount} till så får du fri frakt`,
+    discount: (code) => `Rabatt (${code})`,
+    selectAllVariants: 'Välj alla varianter som behövs innan du går till kassan',
+    processing: 'Bearbetar…',
+    checkout: 'Till kassan',
+    terms: 'villkor',
+    privacy: 'integritetspolicy',
+    consent: (terms, privacy) => <>Genom att gå till kassan godkänner du våra {terms} och vår {privacy}.</>,
+    clearCart: 'Töm varukorgen',
+  },
+  de: {
+    cartUpdated: 'Warenkorb aktualisiert',
+    unavailableRemoved: (n) =>
+      n === 1
+        ? '1 nicht mehr verfügbarer Artikel wurde aus deinem Warenkorb entfernt'
+        : `${n} nicht mehr verfügbare Artikel wurden aus deinem Warenkorb entfernt`,
+    error: 'Fehler',
+    checkoutFailed: 'Der Bezahlvorgang konnte nicht gestartet werden',
+    heading: 'Warenkorb',
+    empty: 'Dein Warenkorb ist leer.',
+    items: 'Artikel',
+    product: 'Produkt',
+    price: 'Preis',
+    qty: 'Menge',
+    total: 'Gesamt',
+    selectVariant: 'Variante wählen',
+    required: 'Erforderlich',
+    summary: 'Übersicht',
+    subtotal: 'Zwischensumme',
+    shipTo: 'Lieferung nach',
+    shipToLabel: 'Lieferland',
+    shipping: 'Versand',
+    free: 'Kostenlos',
+    addForFreeShipping: (amount) => `Noch ${amount} bis zum kostenlosen Versand`,
+    discount: (code) => `Rabatt (${code})`,
+    selectAllVariants: 'Bitte wähle alle erforderlichen Varianten, bevor du zur Kasse gehst',
+    processing: 'Wird verarbeitet…',
+    checkout: 'Zur Kasse',
+    terms: 'AGB',
+    privacy: 'Datenschutzerklärung',
+    consent: (terms, privacy) => <>Wenn du zur Kasse gehst, akzeptierst du unsere {terms} und unsere {privacy}.</>,
+    clearCart: 'Warenkorb leeren',
+  },
+};
 
 const CartPage = () => {
+  const t = useCopy(COPY);
+  const lang = useLang();
   const { items, total, updateQuantity, removeItem, clear, addItem } = useCart();
   const [checkingOut, setCheckingOut] = useState(false);
   const [shippingCost, setShippingCost] = useState(0);
@@ -22,7 +122,18 @@ const CartPage = () => {
   const [productVariants, setProductVariants] = useState<Map<string, any[]>>(new Map());
   const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; code: string; discountAmount: number } | undefined>();
 
-  const formatPrice = (price: number, currency: string) => new Intl.NumberFormat('sv-SE', { style: 'currency', currency }).format(price / 100);
+  // English keeps the Swedish price style it has always had ("249,00 kr")
+  const formatPrice = (price: number, currency: string) =>
+    new Intl.NumberFormat(lang === 'en' ? 'sv-SE' : LOCALES[lang], { style: 'currency', currency }).format(price / 100);
+
+  // Country names in the page's language; the codes are what checkout gets
+  const regionNames = useMemo(() => {
+    try {
+      return new Intl.DisplayNames([LOCALES[lang]], { type: 'region' });
+    } catch {
+      return null;
+    }
+  }, [lang]);
 
   const currency = items[0]?.currency || 'SEK';
 
@@ -77,8 +188,8 @@ const CartPage = () => {
           removeItem(item.productId, item.variantId || null);
         });
         toast({
-          title: 'Cart updated',
-          description: `${invalidItems.length} unavailable item(s) removed from your cart`,
+          title: t.cartUpdated,
+          description: t.unavailableRemoved(invalidItems.length),
           variant: 'destructive',
         });
       }
@@ -156,17 +267,19 @@ const CartPage = () => {
         shippingCountry,
         couponId: appliedCoupon?.id,
         couponCode: appliedCoupon?.code,
-        discountAmount: appliedCoupon?.discountAmount
+        discountAmount: appliedCoupon?.discountAmount,
+        // Stripe's page in the shopper's language, and back to this one
+        lang
       };
       const { data, error } = await supabase.functions.invoke('create-cart-payment', { body: payload });
       if (error) throw error;
       if (data.url) {
-        // Same tab: a new window gets blocked, and Stripe returns to /order-success
+        // Same tab: a new window gets blocked, and Stripe returns to /order-success in the page's language
         window.location.href = data.url;
       }
     } catch (error) {
       console.error('Error creating cart payment:', error);
-      toast({ title: 'Error', description: 'Failed to start checkout', variant: 'destructive' });
+      toast({ title: t.error, description: t.checkoutFailed, variant: 'destructive' });
     } finally {
       setCheckingOut(false);
     }
@@ -176,26 +289,26 @@ const CartPage = () => {
     <div className="min-h-screen bg-background">
       <MainNavigation showBackButton />
       <div className="container mx-auto px-4 py-24">
-        <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold mb-6">{t.heading}</h1>
 
         {items.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">Your cart is empty.</CardContent>
+            <CardContent className="p-6 text-center text-muted-foreground">{t.empty}</CardContent>
           </Card>
         ) : (
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>Items</CardTitle>
+                <CardTitle>{t.items}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Qty</TableHead>
-                      <TableHead>Total</TableHead>
+                      <TableHead>{t.product}</TableHead>
+                      <TableHead>{t.price}</TableHead>
+                      <TableHead>{t.qty}</TableHead>
+                      <TableHead>{t.total}</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -219,7 +332,7 @@ const CartPage = () => {
                                       onValueChange={(value) => handleVariantChange(i.productId, i.variantId || null, value)}
                                     >
                                       <SelectTrigger className={`w-[180px] ${needsVariantSelection ? 'border-destructive' : ''}`}>
-                                        <SelectValue placeholder="Select variant" />
+                                        <SelectValue placeholder={t.selectVariant} />
                                       </SelectTrigger>
                                       <SelectContent>
                                         {variants.map((variant: any) => (
@@ -232,7 +345,7 @@ const CartPage = () => {
                                     {needsVariantSelection && (
                                       <div className="flex items-center gap-1 mt-1 text-xs text-destructive">
                                         <AlertCircle className="h-3 w-3" />
-                                        <span>Required</span>
+                                        <span>{t.required}</span>
                                       </div>
                                     )}
                                   </div>
@@ -266,23 +379,23 @@ const CartPage = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Summary</CardTitle>
+                <CardTitle>{t.summary}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span>Subtotal</span>
+                  <span>{t.subtotal}</span>
                   <span className="font-semibold">{formatPrice(total, currency)}</span>
                 </div>
                 
                 <div className="flex items-center justify-between gap-2">
-                  <span>Ship to</span>
+                  <span>{t.shipTo}</span>
                   <Select value={shippingCountry} onValueChange={setShippingCountry}>
-                    <SelectTrigger className="w-44" aria-label="Ship to country">
+                    <SelectTrigger className="w-44" aria-label={t.shipToLabel}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(SHIP_COUNTRIES).map(([code, name]) => (
-                        <SelectItem key={code} value={code}>{name}</SelectItem>
+                        <SelectItem key={code} value={code}>{regionNames?.of(code) ?? name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -291,29 +404,29 @@ const CartPage = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4" />
-                    <span>Shipping</span>
+                    <span>{t.shipping}</span>
                   </div>
                   <span className="font-semibold">
-                    {shippingCost === 0 ? 'Free' : formatPrice(shippingCost, currency)}
+                    {shippingCost === 0 ? t.free : formatPrice(shippingCost, currency)}
                   </span>
                 </div>
 
                 {regionFor(shippingCountry) === 'Sweden' && shippingSettings?.free_shipping_threshold && total < shippingSettings.free_shipping_threshold && (
                   <div className="text-sm text-muted-foreground">
-                    Add {formatPrice(shippingSettings.free_shipping_threshold - total, currency)} more for free shipping
+                    {t.addForFreeShipping(formatPrice(shippingSettings.free_shipping_threshold - total, currency))}
                   </div>
                 )}
 
                 {appliedCoupon && (
                   <div className="flex items-center justify-between text-green-600">
-                    <span>Discount ({appliedCoupon.code})</span>
+                    <span>{t.discount(appliedCoupon.code)}</span>
                     <span className="font-semibold">-{formatPrice(appliedCoupon.discountAmount, currency)}</span>
                   </div>
                 )}
 
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between text-lg font-bold">
-                    <span>Total</span>
+                    <span>{t.total}</span>
                     <span>{formatPrice(totalWithShipping, currency)}</span>
                   </div>
                 </div>
@@ -328,20 +441,20 @@ const CartPage = () => {
                 {hasIncompleteVariants && (
                   <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <span>Please select all required variants before checkout</span>
+                    <span>{t.selectAllVariants}</span>
                   </div>
                 )}
 
                 <Button className="w-full" disabled={checkingOut || hasIncompleteVariants} onClick={checkout}>
-                  {checkingOut ? 'Processing...' : 'Checkout'}
+                  {checkingOut ? t.processing : t.checkout}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  By checking out you accept our{" "}
-                  <a href="/terms" target="_blank" rel="noopener" className="underline hover:text-foreground">terms</a>{" "}
-                  and{" "}
-                  <a href="/privacy" target="_blank" rel="noopener" className="underline hover:text-foreground">privacy policy</a>.
+                  {t.consent(
+                    <a href={localizedPath('/terms', lang)} target="_blank" rel="noopener" className="underline hover:text-foreground">{t.terms}</a>,
+                    <a href={localizedPath('/privacy', lang)} target="_blank" rel="noopener" className="underline hover:text-foreground">{t.privacy}</a>,
+                  )}
                 </p>
-                <Button variant="outline" className="w-full" onClick={clear}>Clear Cart</Button>
+                <Button variant="outline" className="w-full" onClick={clear}>{t.clearCart}</Button>
               </CardContent>
             </Card>
           </div>

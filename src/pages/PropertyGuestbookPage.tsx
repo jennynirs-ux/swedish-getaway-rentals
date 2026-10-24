@@ -1,12 +1,55 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate } from "@/i18n/router";
 import { supabase } from "@/integrations/supabase/client";
 import GuestbookForm from "@/components/GuestbookForm";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = {
+  metaTitle: (title: string) => `${title} – guestbook`,
+  metaTitleFallback: "Guestbook",
+  invalidLink: "Invalid guestbook link",
+  invalidOrExpired: "Invalid or expired guestbook invitation",
+  expired: "This guestbook invitation has expired",
+  alreadyUsed: "This guestbook invitation has already been used",
+  wrongProperty: "Invalid property for this guestbook invitation",
+  propertyNotFound: "Property not found",
+  validationFailed: "Failed to validate guestbook invitation",
+  validating: "Validating your invitation...",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    metaTitle: (title) => `${title} – gästbok`,
+    metaTitleFallback: "Gästbok",
+    invalidLink: "Länken till gästboken fungerar inte",
+    invalidOrExpired: "Inbjudan till gästboken är ogiltig eller har gått ut",
+    expired: "Inbjudan till gästboken har gått ut",
+    alreadyUsed: "Inbjudan till gästboken har redan använts",
+    wrongProperty: "Inbjudan till gästboken gäller inte det här boendet",
+    propertyNotFound: "Boendet hittades inte",
+    validationFailed: "Det gick inte att kontrollera inbjudan till gästboken",
+    validating: "Kontrollerar din inbjudan…",
+  },
+  de: {
+    metaTitle: (title) => `${title} – Gästebuch`,
+    metaTitleFallback: "Gästebuch",
+    invalidLink: "Ungültiger Link zum Gästebuch",
+    invalidOrExpired: "Die Einladung zum Gästebuch ist ungültig oder abgelaufen",
+    expired: "Diese Einladung zum Gästebuch ist abgelaufen",
+    alreadyUsed: "Diese Einladung zum Gästebuch wurde bereits verwendet",
+    wrongProperty: "Diese Einladung zum Gästebuch gilt nicht für diese Unterkunft",
+    propertyNotFound: "Unterkunft nicht gefunden",
+    validationFailed: "Die Einladung zum Gästebuch konnte nicht geprüft werden",
+    validating: "Deine Einladung wird geprüft…",
+  },
+};
 
 const PropertyGuestbookPage = () => {
+  const t = useCopy(COPY);
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -19,7 +62,7 @@ const PropertyGuestbookPage = () => {
 
   // Reached only from an emailed invitation link, so kept out of search results
   usePageMeta({
-    title: propertyData ? `${propertyData.title} – guestbook` : "Guestbook",
+    title: propertyData ? t.metaTitle(propertyData.title) : t.metaTitleFallback,
     noindex: true,
     ready: !loading,
   });
@@ -30,7 +73,7 @@ const PropertyGuestbookPage = () => {
 
   const validateToken = async () => {
     if (!token || !id) {
-      toast.error("Invalid guestbook link");
+      toast.error(t.invalidLink);
       navigate(`/property/${id}`);
       return;
     }
@@ -54,21 +97,21 @@ const PropertyGuestbookPage = () => {
         .single();
 
       if (tokenError || !tokenData) {
-        toast.error("Invalid or expired guestbook invitation");
+        toast.error(t.invalidOrExpired);
         navigate(`/property/${id}`);
         return;
       }
 
       // Check if token is expired
       if (new Date(tokenData.expires_at) < new Date()) {
-        toast.error("This guestbook invitation has expired");
+        toast.error(t.expired);
         navigate(`/property/${id}`);
         return;
       }
 
       // Check if token was already used
       if (tokenData.used_at) {
-        toast.error("This guestbook invitation has already been used");
+        toast.error(t.alreadyUsed);
         navigate(`/property/${id}`);
         return;
       }
@@ -77,7 +120,7 @@ const PropertyGuestbookPage = () => {
       
       // Validate property ID matches
       if (booking.property_id !== id) {
-        toast.error("Invalid property for this guestbook invitation");
+        toast.error(t.wrongProperty);
         navigate(`/property/${id}`);
         return;
       }
@@ -90,7 +133,7 @@ const PropertyGuestbookPage = () => {
         .single();
 
       if (propertyError || !property) {
-        toast.error("Property not found");
+        toast.error(t.propertyNotFound);
         navigate("/");
         return;
       }
@@ -100,7 +143,7 @@ const PropertyGuestbookPage = () => {
       setValidToken(true);
     } catch (error) {
       console.error("Error validating token:", error);
-      toast.error("Failed to validate guestbook invitation");
+      toast.error(t.validationFailed);
       navigate(`/property/${id}`);
     } finally {
       setLoading(false);
@@ -112,7 +155,7 @@ const PropertyGuestbookPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-secondary/10">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Validating your invitation...</p>
+          <p className="text-muted-foreground">{t.validating}</p>
         </div>
       </div>
     );

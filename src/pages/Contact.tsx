@@ -10,6 +10,91 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { type Copy, useCopy, useLang } from "@/i18n";
+
+const en = {
+  metaTitle: "Contact us",
+  metaDescription:
+    "Questions about a booking, a cabin or listing your holiday home on Nordic Getaways? Email support@mojjo.se or use the form.",
+  // The heading and intro on Swedish and German pages; the English page shows
+  // platform_settings.contact_content, which is written in English
+  title: "Contact Nordic Getaways",
+  description: "Get in touch with us for bookings, questions, or to become a host.",
+  getInTouch: "Get in Touch",
+  email: "Email",
+  phone: "Phone",
+  company: "Company",
+  orgNo: "org. no.",
+  country: COMPANY.country as string,
+  businessHours: "Business Hours",
+  sendUsMessage: "Send us a Message",
+  nameLabel: "Name *",
+  emailLabel: "Email *",
+  phoneLabel: "Phone",
+  subjectLabel: "Subject",
+  messageLabel: "Message *",
+  sending: "Sending...",
+  send: "Send Message",
+  sentTitle: "Message sent!",
+  sentDescription: "We'll get back to you as soon as possible.",
+  errorTitle: "Error",
+  errorDescription: "Failed to send message. Please try again.",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    metaTitle: "Kontakta oss",
+    metaDescription:
+      "Frågor om en bokning, en stuga eller om att hyra ut ditt fritidshus på Nordic Getaways? Mejla support@mojjo.se eller använd formuläret.",
+    title: "Kontakta Nordic Getaways",
+    description: "Hör av dig till oss om bokningar, frågor eller om du vill bli värd.",
+    getInTouch: "Kontaktuppgifter",
+    email: "E-post",
+    phone: "Telefon",
+    company: "Företag",
+    orgNo: "org.nr",
+    country: "Sverige",
+    businessHours: "Öppettider",
+    sendUsMessage: "Skicka ett meddelande",
+    nameLabel: "Namn *",
+    emailLabel: "E-post *",
+    phoneLabel: "Telefon",
+    subjectLabel: "Ämne",
+    messageLabel: "Meddelande *",
+    sending: "Skickar…",
+    send: "Skicka meddelande",
+    sentTitle: "Meddelandet är skickat!",
+    sentDescription: "Vi återkommer så snart vi kan.",
+    errorTitle: "Något gick fel",
+    errorDescription: "Meddelandet kunde inte skickas. Försök igen.",
+  },
+  de: {
+    metaTitle: "Kontakt",
+    metaDescription:
+      "Fragen zu einer Buchung, einem Ferienhaus oder dazu, wie du dein Ferienhaus auf Nordic Getaways anbietest? Schreib an support@mojjo.se oder nutze das Formular.",
+    title: "Kontakt zu Nordic Getaways",
+    description: "Schreib uns zu Buchungen, bei Fragen oder wenn du Gastgeber werden möchtest.",
+    getInTouch: "So erreichst du uns",
+    email: "E-Mail",
+    phone: "Telefon",
+    company: "Unternehmen",
+    orgNo: "Org.-Nr.",
+    country: "Schweden",
+    businessHours: "Geschäftszeiten",
+    sendUsMessage: "Schreib uns eine Nachricht",
+    nameLabel: "Name *",
+    emailLabel: "E-Mail *",
+    phoneLabel: "Telefon",
+    subjectLabel: "Betreff",
+    messageLabel: "Nachricht *",
+    sending: "Wird gesendet…",
+    send: "Nachricht senden",
+    sentTitle: "Nachricht gesendet!",
+    sentDescription: "Wir melden uns so schnell wie möglich bei dir.",
+    errorTitle: "Fehler",
+    errorDescription: "Die Nachricht konnte nicht gesendet werden. Bitte versuch es noch einmal.",
+  },
+};
 
 interface ContactContent {
   title: string;
@@ -21,17 +106,19 @@ interface ContactContent {
 }
 
 const Contact = () => {
+  const t = useCopy(COPY);
+  const lang = useLang();
   usePageMeta({
-    title: "Contact us",
-    description: "Questions about a booking, a cabin or listing your holiday home on Nordic Getaways? Email support@mojjo.se or use the form.",
+    title: t.metaTitle,
+    description: t.metaDescription,
     path: "/contact",
   });
 
   const [content, setContent] = useState<ContactContent>({
     // Shown until platform_settings.contact_content loads (and in the
     // prerendered page), so keep these real
-    title: "Contact Nordic Getaways",
-    description: "Get in touch with us for bookings, questions, or to become a host.",
+    title: en.title,
+    description: en.description,
     email: "support@mojjo.se",
     phone: "",
     address: "Sweden",
@@ -103,8 +190,8 @@ const Contact = () => {
       if (emailError) throw emailError;
 
       toast({
-        title: "Message sent!",
-        description: "We'll get back to you as soon as possible."
+        title: t.sentTitle,
+        description: t.sentDescription
       });
 
       setFormData({
@@ -117,8 +204,8 @@ const Contact = () => {
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: t.errorTitle,
+        description: t.errorDescription,
         variant: "destructive"
       });
     } finally {
@@ -137,21 +224,21 @@ const Contact = () => {
       <div className="container mx-auto px-4 py-24">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">{content.title}</h1>
-            <p className="text-lg text-muted-foreground">{content.description}</p>
+            <h1 className="text-4xl font-bold mb-4">{lang === "en" ? content.title : t.title}</h1>
+            <p className="text-lg text-muted-foreground">{lang === "en" ? content.description : t.description}</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Contact Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Get in Touch</CardTitle>
+                <CardTitle>{t.getInTouch}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-primary" />
                   <div>
-                    <p className="font-medium">Email</p>
+                    <p className="font-medium">{t.email}</p>
                     <a className="text-muted-foreground hover:underline" href={`mailto:${content.email}`}>{content.email}</a>
                   </div>
                 </div>
@@ -160,7 +247,7 @@ const Contact = () => {
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="font-medium">Phone</p>
+                      <p className="font-medium">{t.phone}</p>
                       <p className="text-muted-foreground">{content.phone}</p>
                     </div>
                   </div>
@@ -170,18 +257,18 @@ const Contact = () => {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="font-medium">Company</p>
+                    <p className="font-medium">{t.company}</p>
                     <p className="text-muted-foreground">
-                      {COMPANY.name}, org. no. {COMPANY.orgNumber}
+                      {COMPANY.name}, {t.orgNo} {COMPANY.orgNumber}
                       <br />
-                      {COMPANY.street}, {COMPANY.postcode} {COMPANY.city}, {COMPANY.country}
+                      {COMPANY.street}, {COMPANY.postcode} {COMPANY.city}, {t.country}
                     </p>
                   </div>
                 </div>
                 
                 {content.hours && (
                   <div className="pt-4 border-t">
-                    <p className="font-medium mb-2">Business Hours</p>
+                    <p className="font-medium mb-2">{t.businessHours}</p>
                     <p className="text-muted-foreground">{content.hours}</p>
                   </div>
                 )}
@@ -191,13 +278,13 @@ const Contact = () => {
             {/* Contact Form */}
             <Card>
               <CardHeader>
-                <CardTitle>Send us a Message</CardTitle>
+                <CardTitle>{t.sendUsMessage}</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="name">Name *</Label>
+                      <Label htmlFor="name">{t.nameLabel}</Label>
                       <Input
                         id="name"
                         value={formData.name}
@@ -206,7 +293,7 @@ const Contact = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email">{t.emailLabel}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -219,7 +306,7 @@ const Contact = () => {
                   
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="phone">{t.phoneLabel}</Label>
                       <Input
                         id="phone"
                         value={formData.phone}
@@ -227,7 +314,7 @@ const Contact = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="subject">Subject</Label>
+                      <Label htmlFor="subject">{t.subjectLabel}</Label>
                       <Input
                         id="subject"
                         value={formData.subject}
@@ -237,7 +324,7 @@ const Contact = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="message">Message *</Label>
+                    <Label htmlFor="message">{t.messageLabel}</Label>
                     <Textarea
                       id="message"
                       rows={5}
@@ -248,7 +335,7 @@ const Contact = () => {
                   </div>
                   
                   <Button type="submit" disabled={submitting} className="w-full">
-                    {submitting ? 'Sending...' : 'Send Message'}
+                    {submitting ? t.sending : t.send}
                   </Button>
                 </form>
               </CardContent>

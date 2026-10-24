@@ -7,6 +7,17 @@ import {
   Tv, Dumbbell, PawPrint, Snowflake, LucideIcon 
 } from "lucide-react";
 import { AmenityDialog } from "@/components/AmenityDialog";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = {
+  heading: (title: string) => `What Makes ${title} Special`,
+  viewGuide: "View Complete Guest Guide",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { heading: (title) => `Det speciella med ${title}`, viewGuide: "Visa hela gästguiden" },
+  de: { heading: (title) => `Das Besondere an ${title}`, viewGuide: "Ganze Gästeinfo ansehen" },
+};
 
 interface PropertySpecialHighlightsProps {
   property: Property;
@@ -23,6 +34,7 @@ interface AmenityData {
 }
 
 const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHighlightsProps) => {
+  const t = useCopy(COPY);
   const [selectedAmenity, setSelectedAmenity] = useState<{
     icon: LucideIcon;
     title: string;
@@ -79,7 +91,7 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
         <div className="max-w-6xl mx-auto">
           {/* Titel */}
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-white">
-            What Makes {property.title} Special
+            {t.heading(property.title)}
           </h2>
 
           {/* Ikoner på rad */}
@@ -110,7 +122,7 @@ const PropertySpecialHighlights = ({ property, onViewGuide }: PropertySpecialHig
               className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90"
             >
               <BookOpen className="h-5 w-5 mr-2" />
-              View Complete Guest Guide
+              {t.viewGuide}
             </Button>
           </div>
         </div>

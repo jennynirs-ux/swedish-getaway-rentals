@@ -1,9 +1,32 @@
 import { memo, Suspense, lazy } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/i18n/router';
 import { MapPin, Navigation } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AREAS } from '@/content/areas';
+import { type Copy, useCopy } from '@/i18n';
+
+const en = {
+  heading: 'Location',
+  noLocation: 'Location information not available',
+  areaGuide: 'How to get here and what to do nearby →',
+  directions: 'Get directions',
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    heading: 'Läge',
+    noLocation: 'Information om läget saknas',
+    areaGuide: 'Så tar du dig hit och vad du kan göra i närheten →',
+    directions: 'Vägbeskrivning',
+  },
+  de: {
+    heading: 'Lage',
+    noLocation: 'Keine Angaben zur Lage verfügbar',
+    areaGuide: 'Anreise und Ausflugstipps für die Umgebung →',
+    directions: 'Route anzeigen',
+  },
+};
 
 const PropertyMap = lazy(() => import('./PropertyMap'));
 
@@ -19,6 +42,7 @@ interface PropertyLocationProps {
 }
 
 const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, gettingHere, city }: PropertyLocationProps) => {
+  const t = useCopy(COPY);
   // Without a city, the town is the first part of the public location ("Lerum, Sweden")
   const town = (city ?? location?.split(',')[0])?.trim().toLowerCase();
   const area = AREAS.find((a) => a.city === town);
@@ -30,11 +54,11 @@ const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, g
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
               <MapPin className="w-6 h-6" />
-              Location
+              {t.heading}
             </h2>
             <div className="bg-card rounded-lg p-8 text-center border border-border">
               <p className="text-muted-foreground">
-                {location || 'Location information not available'}
+                {location || t.noLocation}
               </p>
             </div>
           </div>
@@ -49,7 +73,7 @@ const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, g
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
             <MapPin className="w-6 h-6" />
-            Location
+            {t.heading}
           </h2>
           
           <div className="bg-card rounded-lg overflow-hidden border border-border">
@@ -74,7 +98,7 @@ const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, g
                       ))}
                       {area && (
                         <Link to={area.path} className="inline-block font-medium text-primary hover:underline">
-                          How to get here and what to do nearby →
+                          {t.areaGuide}
                         </Link>
                       )}
                     </div>
@@ -91,7 +115,7 @@ const PropertyLocation = memo(({ latitude, longitude, propertyTitle, location, g
                   }}
                 >
                   <MapPin className="w-4 h-4" />
-                  Get directions
+                  {t.directions}
                 </Button>
               </div>
             )}

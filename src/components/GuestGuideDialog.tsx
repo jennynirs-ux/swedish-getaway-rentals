@@ -41,8 +41,336 @@ import {
 } from "lucide-react";
 import { Property } from "@/hooks/useProperties";
 import { houseRuleLines } from "@/lib/stayRules";
+import { type Copy, type Lang, localizedPath, useLang } from "@/i18n";
+import { SHOW_ORIGINAL, translatedFromText } from "@/i18n/listingTexts";
 
 const LeafletPropertyMapBasic = lazy(() => import("@/components/maps/LeafletPropertyMapBasic"));
+
+type WasteCategory = { title: string; description: (string | { not: string })[]; tip: string };
+
+const en = {
+  // The guide's sections, by id; a host's own title replaces these
+  sections: {
+    home: "Welcome Home",
+    directions: "Directions",
+    stop: "Stop on the way",
+    checkin: "Check-in",
+    wifi: "Wi-Fi",
+    kitchen: "Kitchen",
+    howthingswork: "How things work",
+    waste: "Waste & Recycling",
+    places: "Places to visit",
+    customs: "Swedish customs",
+    rules: "House Rules",
+    checkout: "Check-out",
+    ratings: "Star Ratings",
+    hoststory: "Host Story",
+  },
+  customs: ["No shoes indoors", "Fika tradition", "Alcohol only at Systembolaget"],
+  shareTitle: (title: string) => `${title} - Guest Guide`,
+  linkCopied: "Link copied!",
+  linkCopiedText: "Guest guide link copied.",
+  pdfSubtitle: "Guest Guidebook",
+  pdfFileName: (title: string) => `${title}-guidebook.pdf`,
+  pdfSaved: "PDF Downloaded",
+  pdfSavedText: "Guidebook saved successfully!",
+  loadingMap: "Loading map...",
+  locations: "Locations:",
+  wasteIntro: "Recycling saves raw materials and energy – every item you sort makes a difference!",
+  // In the order of WASTE_ICONS
+  wasteCategories: [
+    {
+      title: "Food Waste",
+      description: [
+        "Fruit and vegetable scraps, tea bags, coffee grounds, eggshells, meat bones, small amounts of kitchen paper.",
+        { not: "Plastic, snus, cigarettes, flowers or candles." },
+      ],
+      tip: "Food waste becomes biogas and biofertilizer.",
+    },
+    {
+      title: "Plastic Packaging",
+      description: [
+        "Plastic bags, bottles, refill packs, tubes, trays, crisp bags, styrofoam.",
+        { not: "Plastic toys and furniture → bulky waste." },
+      ],
+      tip: "Recycled plastic becomes bags and recycling containers.",
+    },
+    {
+      title: "Metal Packaging",
+      description: [
+        "Cans, empty spray cans, tubes, caps, lids, empty paint tins.",
+        { not: "Tins with paint/glue → hazardous waste." },
+        { not: "Scrap metal like pans → bulky waste." },
+      ],
+      tip: "Recycled metal can become wheel rims or sheet metal.",
+    },
+    {
+      title: "Newspapers & Paper",
+      description: [
+        "Daily/weekly papers, magazines, flyers, brochures.",
+        { not: "Envelopes & bound books → residual waste." },
+      ],
+      tip: "Old newspapers become kitchen rolls or new paper.",
+    },
+    {
+      title: "Paper Packaging",
+      description: [
+        "Milk/juice cartons, cardboard boxes, shoeboxes. Flatten/fold.",
+        { not: "Envelopes & bound books → residual waste." },
+      ],
+      tip: "Paper packaging usually becomes new packaging.",
+    },
+    {
+      title: "Glass Packaging",
+      description: [
+        "Clear/colored bottles & jars. Remove caps/corks.",
+        { not: "Porcelain, ceramics & bulbs → bulky/hazardous waste." },
+        { not: "Deposit bottles → return to store." },
+      ],
+      tip: "Glass becomes new bottles and jars.",
+    },
+    {
+      title: "Residual Waste",
+      description: [
+        "Diapers, envelopes, dishcloths, snus, toothbrushes, hair.",
+        { not: "No recyclable, hazardous or electrical waste." },
+      ],
+      tip: "Residual waste is used for electricity and heat.",
+    },
+    {
+      title: "Deposit Bottles & Cans (Pant)",
+      description: [
+        "Return bottles and cans with the Pant logo at stores for a refund instead of recycling.",
+      ],
+      tip: "Pant saves resources and gives you money back.",
+    },
+  ] as WasteCategory[],
+  ratingsIntro:
+    "Your review matters! Please let us know of any problem during your stay and we will do our best to fix it. We strive for a 5 star experience!",
+  // From 5 stars down to 1
+  ratings: [
+    "Perfection doesn’t exist, but we were happy!",
+    "A few issues, but we still enjoyed our stay.",
+    "Major issues, most likely won’t return.",
+    "Close the house down!",
+    "Burn it!",
+  ],
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    sections: {
+      home: "Välkommen hem",
+      directions: "Hitta hit",
+      stop: "Stopp på vägen",
+      checkin: "Incheckning",
+      wifi: "Wifi",
+      kitchen: "Kök",
+      howthingswork: "Så fungerar det",
+      waste: "Sopor och återvinning",
+      places: "Utflyktsmål",
+      customs: "Svenska seder och bruk",
+      rules: "Husregler",
+      checkout: "Utcheckning",
+      ratings: "Stjärnbetyg",
+      hoststory: "Om värden",
+    },
+    customs: ["Inga skor inomhus", "Fika", "Alkohol säljs bara på Systembolaget"],
+    shareTitle: (title) => `${title} – gästguide`,
+    linkCopied: "Länken är kopierad!",
+    linkCopiedText: "Länken till gästguiden är kopierad.",
+    pdfSubtitle: "Gästguide",
+    pdfFileName: (title) => `${title}-gästguide.pdf`,
+    pdfSaved: "PDF:en är nedladdad",
+    pdfSavedText: "Gästguiden är sparad!",
+    loadingMap: "Laddar karta…",
+    locations: "Platser:",
+    wasteIntro: "Återvinning sparar råvaror och energi – allt du sorterar gör skillnad!",
+    wasteCategories: [
+      {
+        title: "Matavfall",
+        description: [
+          "Frukt- och grönsaksrester, tepåsar, kaffesump, äggskal, köttben och lite hushållspapper.",
+          { not: "Plast, snus, cigaretter, blommor eller ljus." },
+        ],
+        tip: "Matavfallet blir biogas och biogödsel.",
+      },
+      {
+        title: "Plastförpackningar",
+        description: [
+          "Plastpåsar, flaskor, refillpaket, tuber, tråg, chipspåsar och frigolit.",
+          { not: "Leksaker och möbler av plast → grovavfall." },
+        ],
+        tip: "Återvunnen plast blir nya påsar och återvinningskärl.",
+      },
+      {
+        title: "Metallförpackningar",
+        description: [
+          "Burkar, tomma sprayburkar, tuber, kapsyler, lock och tomma färgburkar.",
+          { not: "Burkar med färg- eller limrester → farligt avfall." },
+          { not: "Skrot som stekpannor → grovavfall." },
+        ],
+        tip: "Återvunnen metall kan bli fälgar eller plåt.",
+      },
+      {
+        title: "Tidningar och papper",
+        description: [
+          "Dags- och veckotidningar, tidskrifter, reklamblad och broschyrer.",
+          { not: "Kuvert och inbundna böcker → restavfall." },
+        ],
+        tip: "Gamla tidningar blir hushållspapper eller nytt papper.",
+      },
+      {
+        title: "Pappersförpackningar",
+        description: [
+          "Mjölk- och juicepaket, kartonger och skokartonger. Platta till eller vik ihop dem.",
+          { not: "Kuvert och inbundna böcker → restavfall." },
+        ],
+        tip: "Pappersförpackningar blir oftast nya förpackningar.",
+      },
+      {
+        title: "Glasförpackningar",
+        description: [
+          "Ofärgade och färgade flaskor och burkar. Ta bort kapsyler och korkar.",
+          { not: "Porslin, keramik och glödlampor → grovavfall eller farligt avfall." },
+          { not: "Pantflaskor → lämna dem i butiken." },
+        ],
+        tip: "Glaset blir nya flaskor och burkar.",
+      },
+      {
+        title: "Restavfall",
+        description: [
+          "Blöjor, kuvert, disktrasor, snus, tandborstar och hår.",
+          { not: "Inget som kan återvinnas, inget farligt avfall och inget elavfall." },
+        ],
+        tip: "Restavfallet blir el och värme.",
+      },
+      {
+        title: "Pantflaskor och pantburkar",
+        description: [
+          "Lämna flaskor och burkar med pantmärket i butiken i stället för i återvinningen, så får du pengar tillbaka.",
+        ],
+        tip: "Panten sparar resurser och ger dig pengar tillbaka.",
+      },
+    ],
+    ratingsIntro:
+      "Ditt omdöme betyder mycket! Säg till om något inte fungerar under vistelsen, så gör vi vårt bästa för att fixa det. Vi siktar på fem stjärnor!",
+    ratings: [
+      "Perfektion finns inte, men vi var nöjda!",
+      "Några problem, men vi trivdes ändå.",
+      "Stora problem, vi kommer nog inte tillbaka.",
+      "Stäng huset!",
+      "Bränn ner det!",
+    ],
+  },
+  de: {
+    sections: {
+      home: "Willkommen",
+      directions: "Anfahrt",
+      stop: "Zwischenstopps",
+      checkin: "Check-in",
+      wifi: "WLAN",
+      kitchen: "Küche",
+      howthingswork: "So funktioniert's",
+      waste: "Müll & Recycling",
+      places: "Ausflugsziele",
+      customs: "Schwedische Bräuche",
+      rules: "Hausregeln",
+      checkout: "Check-out",
+      ratings: "Sternebewertung",
+      hoststory: "Über den Gastgeber",
+    },
+    customs: ["Keine Schuhe im Haus", "Fika-Tradition", "Alkohol gibt es nur im Systembolaget"],
+    shareTitle: (title) => `${title} – Gästeinfo`,
+    linkCopied: "Link kopiert!",
+    linkCopiedText: "Der Link zur Gästeinfo wurde kopiert.",
+    pdfSubtitle: "Gästeinfo",
+    pdfFileName: (title) => `${title}-Gästeinfo.pdf`,
+    pdfSaved: "PDF heruntergeladen",
+    pdfSavedText: "Die Gästeinfo wurde gespeichert!",
+    loadingMap: "Karte wird geladen…",
+    locations: "Orte:",
+    wasteIntro: "Recycling spart Rohstoffe und Energie – jedes Teil, das du trennst, macht einen Unterschied!",
+    wasteCategories: [
+      {
+        title: "Bioabfall",
+        description: [
+          "Obst- und Gemüsereste, Teebeutel, Kaffeesatz, Eierschalen, Fleischknochen und etwas Küchenpapier.",
+          { not: "Plastik, Snus, Zigaretten, Blumen oder Kerzen." },
+        ],
+        tip: "Aus Bioabfall werden Biogas und Biodünger.",
+      },
+      {
+        title: "Plastikverpackungen",
+        description: [
+          "Plastiktüten, Flaschen, Nachfüllpacks, Tuben, Schalen, Chipstüten und Styropor.",
+          { not: "Spielzeug und Möbel aus Plastik → Sperrmüll." },
+        ],
+        tip: "Aus recyceltem Plastik werden Tüten und Sammelbehälter.",
+      },
+      {
+        title: "Metallverpackungen",
+        description: [
+          "Dosen, leere Spraydosen, Tuben, Kronkorken, Deckel und leere Farbdosen.",
+          { not: "Dosen mit Farb- oder Kleberresten → Sondermüll." },
+          { not: "Altmetall wie Pfannen → Sperrmüll." },
+        ],
+        tip: "Aus recyceltem Metall werden Felgen oder Bleche.",
+      },
+      {
+        title: "Zeitungen & Papier",
+        description: [
+          "Tages- und Wochenzeitungen, Zeitschriften, Prospekte und Broschüren.",
+          { not: "Briefumschläge & gebundene Bücher → Restmüll." },
+        ],
+        tip: "Aus alten Zeitungen werden Küchenrollen oder neues Papier.",
+      },
+      {
+        title: "Papierverpackungen",
+        description: [
+          "Milch- und Saftkartons, Pappkartons und Schuhkartons. Bitte flach zusammenfalten.",
+          { not: "Briefumschläge & gebundene Bücher → Restmüll." },
+        ],
+        tip: "Aus Papierverpackungen werden meist neue Verpackungen.",
+      },
+      {
+        title: "Glasverpackungen",
+        description: [
+          "Flaschen & Gläser aus Weiß- und Buntglas. Deckel und Korken entfernen.",
+          { not: "Porzellan, Keramik & Glühbirnen → Sperrmüll bzw. Sondermüll." },
+          { not: "Pfandflaschen → zurück in den Laden." },
+        ],
+        tip: "Aus Glas werden neue Flaschen und Gläser.",
+      },
+      {
+        title: "Restmüll",
+        description: [
+          "Windeln, Briefumschläge, Spültücher, Snus, Zahnbürsten und Haare.",
+          { not: "Keine Wertstoffe, kein Sondermüll und kein Elektroschrott." },
+        ],
+        tip: "Aus Restmüll werden Strom und Wärme.",
+      },
+      {
+        title: "Pfandflaschen & -dosen (Pant)",
+        description: [
+          "Gib Flaschen und Dosen mit dem Pant-Logo im Laden zurück, statt sie zu recyceln – so bekommst du das Pfand zurück.",
+        ],
+        tip: "Pant schont Ressourcen und du bekommst Geld zurück.",
+      },
+    ],
+    ratingsIntro:
+      "Deine Bewertung ist uns wichtig! Sag uns bitte Bescheid, wenn während deines Aufenthalts etwas nicht stimmt – wir tun unser Bestes, um es zu beheben. Unser Ziel sind fünf Sterne!",
+    ratings: [
+      "Perfekt gibt es nicht, aber wir waren glücklich!",
+      "Ein paar Probleme, aber uns hat es trotzdem gefallen.",
+      "Große Probleme, wir kommen wohl nicht wieder.",
+      "Macht das Haus dicht!",
+      "Abfackeln!",
+    ],
+  },
+};
+
+const WASTE_ICONS = [Apple, Trash2, Cog, Newspaper, Package, Wine, Skull, Recycle];
 
 type SectionType = "text" | "list" | "checkbox" | "custom";
 type BlockType = "text" | "list" | "checkbox" | "map";
@@ -83,11 +411,22 @@ interface GuideSection {
   blocks?: GuidebookBlock[];
 }
 
+/** "Translated from Swedish · Show original", when the host's guide is shown translated */
+interface GuideTranslationToggle {
+  /** The language the host wrote the guide in */
+  from: Lang | "other";
+  /** Whether the host's own words are shown */
+  showingOriginal: boolean;
+  onToggle: () => void;
+}
+
 interface GuestGuideDialogProps {
   isOpen: boolean;
   onClose: () => void;
   property: Property;
   initialSectionId?: string;
+  /** Inside the dialog, since the open dialog covers the page behind it */
+  translationToggle?: GuideTranslationToggle;
 }
 
 // Shown even when the host hasn't written them: true for any stay in Sweden
@@ -114,27 +453,29 @@ const isFilledBlock = (block: GuidebookBlock) =>
   (block.type === "map" && placedPins(block.mapPins).length > 0);
 const pinName = (pin: GuidePin) => pin.label?.trim() || pin.address || "";
 
-const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: GuestGuideDialogProps) => {
+const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId, translationToggle }: GuestGuideDialogProps) => {
   const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
+  const lang = useLang();
+  const t = COPY[lang];
 
   // Order, titles and icons only: the text is the host's. Only the customs hold
   // for every stay in Sweden (they used to carry the original Lerum cabins' facts)
   const defaultSections: GuideSection[] = [
-    { id: "home", title: "Welcome Home", icon: Home, type: "text" },
-    { id: "directions", title: "Directions", icon: MapPin, type: "list" },
-    { id: "stop", title: "Stop on the way", icon: Coffee, type: "list" },
-    { id: "checkin", title: "Check-in", icon: Key, type: "list" },
-    { id: "wifi", title: "Wi-Fi", icon: Wifi, type: "list" },
-    { id: "kitchen", title: "Kitchen", icon: Utensils, type: "list" },
-    { id: "howthingswork", title: "How things work", icon: Cog, type: "checkbox" },
-    { id: "waste", title: "Waste & Recycling", icon: Recycle, type: "custom" },
-    { id: "places", title: "Places to visit", icon: Landmark, type: "list" },
-    { id: "customs", title: "Swedish customs", icon: BookOpen, type: "list", items: ["No shoes indoors", "Fika tradition", "Alcohol only at Systembolaget"] },
-    { id: "rules", title: "House Rules", icon: Shield, type: "custom" },
-    { id: "checkout", title: "Check-out", icon: LogOut, type: "checkbox" },
-    { id: "ratings", title: "Star Ratings", icon: Star, type: "custom" },
-    { id: "hoststory", title: "Host Story", icon: Heart, type: "text" },
+    { id: "home", title: t.sections.home, icon: Home, type: "text" },
+    { id: "directions", title: t.sections.directions, icon: MapPin, type: "list" },
+    { id: "stop", title: t.sections.stop, icon: Coffee, type: "list" },
+    { id: "checkin", title: t.sections.checkin, icon: Key, type: "list" },
+    { id: "wifi", title: t.sections.wifi, icon: Wifi, type: "list" },
+    { id: "kitchen", title: t.sections.kitchen, icon: Utensils, type: "list" },
+    { id: "howthingswork", title: t.sections.howthingswork, icon: Cog, type: "checkbox" },
+    { id: "waste", title: t.sections.waste, icon: Recycle, type: "custom" },
+    { id: "places", title: t.sections.places, icon: Landmark, type: "list" },
+    { id: "customs", title: t.sections.customs, icon: BookOpen, type: "list", items: t.customs },
+    { id: "rules", title: t.sections.rules, icon: Shield, type: "custom" },
+    { id: "checkout", title: t.sections.checkout, icon: LogOut, type: "checkbox" },
+    { id: "ratings", title: t.sections.ratings, icon: Star, type: "custom" },
+    { id: "hoststory", title: t.sections.hoststory, icon: Heart, type: "text" },
   ];
 
   const customSections = (property.guidebook_sections as any[]) || [];
@@ -163,9 +504,12 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
       // House rules always: the host sets them for the listing (Rules tab)
       return GENERAL_SECTION_IDS.includes(section.id) || section.id === "rules" ? [section] : [];
     });
-  }, [customSections]);
+  }, [customSections, t]);
 
-  // Set initial section when dialog opens
+  // Set initial section when dialog opens. Keyed on the section ids, not the
+  // sections: the translated and the original listing have the same ones, so
+  // "Show original" (or the translation arriving) keeps the guest where they are
+  const sectionIds = allSections.map((s) => s.id).join("\n");
   useEffect(() => {
     if (isOpen && initialSectionId) {
       const index = allSections.findIndex((s) => s.id === initialSectionId);
@@ -175,22 +519,24 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     } else if (isOpen) {
       setActiveIndex(0);
     }
-  }, [isOpen, initialSectionId, allSections]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialSectionId, sectionIds]);
 
   const getIndexById = (id: string) => allSections.findIndex((s) => s.id === id);
 
   const shareGuide = async () => {
-    const guideUrl = `${window.location.origin}/property/${property.id}/guide`;
+    // The guide in the page's language ("/sv/property/…/guide")
+    const guideUrl = `${window.location.origin}${localizedPath(`/property/${property.id}/guide`, lang)}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${property.title} - Guest Guide`, url: guideUrl });
+        await navigator.share({ title: t.shareTitle(property.title), url: guideUrl });
       } else {
         await navigator.clipboard.writeText(guideUrl);
-        toast({ title: "Link copied!", description: "Guest guide link copied." });
+        toast({ title: t.linkCopied, description: t.linkCopiedText });
       }
     } catch {
       await navigator.clipboard.writeText(guideUrl);
-      toast({ title: "Link copied!", description: "Guest guide link copied." });
+      toast({ title: t.linkCopied, description: t.linkCopiedText });
     }
   };
 
@@ -205,7 +551,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     pdf.text(property.title, 20, yPosition);
     yPosition += 10;
     pdf.setFontSize(12);
-    pdf.text("Guest Guidebook", 20, yPosition);
+    pdf.text(t.pdfSubtitle, 20, yPosition);
     yPosition += 20;
 
     const keepOnPage = () => {
@@ -272,8 +618,8 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
       if (section.items) printItems(section.items, "•");
     });
 
-    pdf.save(`${property.title}-guidebook.pdf`);
-    toast({ title: "PDF Downloaded", description: "Guidebook saved successfully!" });
+    pdf.save(t.pdfFileName(property.title));
+    toast({ title: t.pdfSaved, description: t.pdfSavedText });
   };
 
   const renderPinMap = (pins: GuidePin[]) => {
@@ -283,7 +629,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
         <div className="h-[400px] rounded-lg overflow-hidden border">
           <Suspense fallback={
             <div className="h-full bg-muted flex items-center justify-center">
-              <p className="text-muted-foreground">Loading map...</p>
+              <p className="text-muted-foreground">{t.loadingMap}</p>
             </div>
           }>
             <LeafletPropertyMapBasic
@@ -295,7 +641,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
           </Suspense>
         </div>
         <div className="mt-4 space-y-2">
-          <h4 className="font-medium text-sm">Locations:</h4>
+          <h4 className="font-medium text-sm">{t.locations}</h4>
           <ul className="space-y-1">
             {pins.map((pin, idx) => (
               <li key={idx} className="flex items-start gap-2 text-sm">
@@ -321,7 +667,7 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
       return (
         <div className="space-y-6">
           <ul className="space-y-2">
-            {houseRuleLines(property).map((line) => (
+            {houseRuleLines(property, lang).map((line) => (
               <li key={line} className="flex items-start gap-2">
                 <CheckSquare className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
                 <span className="text-muted-foreground">{line}</span>
@@ -374,86 +720,12 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
 
     // Fallback to old format for backwards compatibility
     if (section.id === "waste") {
-      const wasteCategories = [
-        {
-          icon: Apple,
-          title: "Food Waste",
-          description: [
-            "Fruit and vegetable scraps, tea bags, coffee grounds, eggshells, meat bones, small amounts of kitchen paper.",
-            { not: "Plastic, snus, cigarettes, flowers or candles." }
-          ],
-          tip: "Food waste becomes biogas and biofertilizer."
-        },
-        {
-          icon: Trash2,
-          title: "Plastic Packaging",
-          description: [
-            "Plastic bags, bottles, refill packs, tubes, trays, crisp bags, styrofoam.",
-            { not: "Plastic toys and furniture → bulky waste." }
-          ],
-          tip: "Recycled plastic becomes bags and recycling containers."
-        },
-        {
-          icon: Cog,
-          title: "Metal Packaging",
-          description: [
-            "Cans, empty spray cans, tubes, caps, lids, empty paint tins.",
-            { not: "Tins with paint/glue → hazardous waste." },
-            { not: "Scrap metal like pans → bulky waste." }
-          ],
-          tip: "Recycled metal can become wheel rims or sheet metal."
-        },
-        {
-          icon: Newspaper,
-          title: "Newspapers & Paper",
-          description: [
-            "Daily/weekly papers, magazines, flyers, brochures.",
-            { not: "Envelopes & bound books → residual waste." }
-          ],
-          tip: "Old newspapers become kitchen rolls or new paper."
-        },
-        {
-          icon: Package,
-          title: "Paper Packaging",
-          description: [
-            "Milk/juice cartons, cardboard boxes, shoeboxes. Flatten/fold.",
-            { not: "Envelopes & bound books → residual waste." }
-          ],
-          tip: "Paper packaging usually becomes new packaging."
-        },
-        {
-          icon: Wine,
-          title: "Glass Packaging",
-          description: [
-            "Clear/colored bottles & jars. Remove caps/corks.",
-            { not: "Porcelain, ceramics & bulbs → bulky/hazardous waste." },
-            { not: "Deposit bottles → return to store." }
-          ],
-          tip: "Glass becomes new bottles and jars."
-        },
-        {
-          icon: Skull,
-          title: "Residual Waste",
-          description: [
-            "Diapers, envelopes, dishcloths, snus, toothbrushes, hair.",
-            { not: "No recyclable, hazardous or electrical waste." }
-          ],
-          tip: "Residual waste is used for electricity and heat."
-        },
-        {
-          icon: Recycle,
-          title: "Deposit Bottles & Cans (Pant)",
-          description: [
-            "Return bottles and cans with the Pant logo at stores for a refund instead of recycling."
-          ],
-          tip: "Pant saves resources and gives you money back."
-        },
-      ];
+      const wasteCategories = t.wasteCategories.map((cat, i) => ({ ...cat, icon: WASTE_ICONS[i] }));
 
       return (
         <div className="grid gap-6">
           <p className="text-muted-foreground">
-            Recycling saves raw materials and energy – every item you sort makes a difference!
+            {t.wasteIntro}
           </p>
 
           {wasteCategories.map((cat, index) => {
@@ -491,17 +763,11 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
     }
 
     if (section.id === "ratings") {
-      const ratingInfo = [
-        { stars: 5, text: "Perfection doesn’t exist, but we were happy!" },
-        { stars: 4, text: "A few issues, but we still enjoyed our stay." },
-        { stars: 3, text: "Major issues, most likely won’t return." },
-        { stars: 2, text: "Close the house down!" },
-        { stars: 1, text: "Burn it!" },
-      ];
+      const ratingInfo = t.ratings.map((text, i) => ({ stars: 5 - i, text }));
       return (
         <div className="space-y-6">
           <p className="text-muted-foreground">
-            Your review matters! Please let us know of any problem during your stay and we will do our best to fix it. We strive for a 5 star experience!
+            {t.ratingsIntro}
           </p>
           {ratingInfo.map((rating, index) => (
             <div key={index} className="flex items-start gap-3">
@@ -574,6 +840,18 @@ const GuestGuideDialog = ({ isOpen, onClose, property, initialSectionId }: Guest
                   <Button variant="outline" size="icon" onClick={exportToPDF}><Download className="h-4 w-4" /></Button>
                 </div>
               </div>
+              {translationToggle && (
+                <p className="text-xs text-muted-foreground">
+                  {!translationToggle.showingOriginal && <>{translatedFromText(lang, translationToggle.from)} · </>}
+                  <button
+                    type="button"
+                    onClick={translationToggle.onToggle}
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    {translationToggle.showingOriginal ? SHOW_ORIGINAL[lang].translation : SHOW_ORIGINAL[lang].original}
+                  </button>
+                </p>
+              )}
             </DialogHeader>
 
             <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">

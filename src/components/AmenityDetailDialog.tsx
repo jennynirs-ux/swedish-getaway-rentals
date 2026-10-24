@@ -5,6 +5,14 @@ import {
   Dumbbell, PawPrint, Snowflake, Droplets, HeartHandshake, Cigarette, Sun, Wind 
 } from "lucide-react";
 import LazyImage from "./LazyImage";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = { features: "Features" };
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { features: "Detaljer" },
+  de: { features: "Details" },
+};
 
 interface AmenityDetailDialogProps {
   open: boolean;
@@ -50,6 +58,7 @@ const getAmenityIcon = (iconName: string) => {
 };
 
 export const AmenityDetailDialog = ({ open, onOpenChange, amenity }: AmenityDetailDialogProps) => {
+  const t = useCopy(COPY);
   if (!amenity) return null;
 
   const IconComponent = getAmenityIcon(amenity.icon || amenity.title);
@@ -96,7 +105,7 @@ export const AmenityDetailDialog = ({ open, onOpenChange, amenity }: AmenityDeta
           {/* Features */}
           {amenity.features && amenity.features.length > 0 && (
             <div>
-              <h4 className="font-semibold text-lg mb-3">Features</h4>
+              <h4 className="font-semibold text-lg mb-3">{t.features}</h4>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {amenity.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-2">

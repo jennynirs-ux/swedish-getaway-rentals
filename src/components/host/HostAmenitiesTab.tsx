@@ -33,6 +33,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AMENITY_CATEGORIES, AMENITY_LABELS_SV, CATEGORY_LABELS_SV } from "@/content/amenities";
 
 const ICON_OPTIONS = [
   { value: "Flame", label: "Eld", icon: Flame },
@@ -60,102 +61,6 @@ interface HostAmenitiesTabProps {
   propertyId: string;
   onUpdate?: () => void;
 }
-
-const AMENITY_CATEGORIES = {
-  Kitchen: [
-    "Coffee Maker", "Dishwasher", "Microwave", "Oven", "Refrigerator", 
-    "Stove", "Toaster", "Dining Table", "Kitchenware", "Espresso Machine"
-  ],
-  Bedroom: [
-    "Queen Bed", "King Bed", "Single Bed", "Extra Beds", "Linens Provided", 
-    "Wardrobe", "Hangers", "Bedside Lamps", "Blackout Curtains"
-  ],
-  "Living Room": [
-    "TV", "Sofa", "Fireplace", "Board Games", "Books", "Sound System",
-    "Streaming Services", "Coffee Table"
-  ],
-  Bathroom: [
-    "Hair Dryer", "Towels Provided", "Shower", "Bathtub", "Hot Tub",
-    "Sauna", "Toiletries", "Washer", "Dryer"
-  ],
-  Outside: [
-    "Garden", "BBQ Grill", "Outdoor Furniture", "Lake Access", "Beach Access",
-    "Parking", "Balcony", "Terrace", "Fire Pit", "Boat Dock"
-  ],
-  General: [
-    "WiFi", "Heating", "Air Conditioning", "Workspace", "Iron",
-    "Pet Friendly", "Family Friendly", "First Aid Kit", "Fire Extinguisher"
-  ]
-};
-
-// The amenities are saved in English (guests see them on the listing);
-// the host editor shows them in Swedish
-const CATEGORY_LABELS_SV: Record<string, string> = {
-  Kitchen: "Kök",
-  Bedroom: "Sovrum",
-  "Living Room": "Vardagsrum",
-  Bathroom: "Badrum",
-  Outside: "Utomhus",
-  General: "Allmänt",
-};
-
-const AMENITY_LABELS_SV: Record<string, string> = {
-  "Coffee Maker": "Kaffebryggare",
-  Dishwasher: "Diskmaskin",
-  Microwave: "Mikrovågsugn",
-  Oven: "Ugn",
-  Refrigerator: "Kylskåp",
-  Stove: "Spis",
-  Toaster: "Brödrost",
-  "Dining Table": "Matbord",
-  Kitchenware: "Köksutrustning",
-  "Espresso Machine": "Espressomaskin",
-  "Queen Bed": "Stor dubbelsäng",
-  "King Bed": "Extra stor dubbelsäng",
-  "Single Bed": "Enkelsäng",
-  "Extra Beds": "Extrasängar",
-  "Linens Provided": "Sängkläder ingår",
-  Wardrobe: "Garderob",
-  Hangers: "Galgar",
-  "Bedside Lamps": "Sänglampor",
-  "Blackout Curtains": "Mörkläggningsgardiner",
-  TV: "TV",
-  Sofa: "Soffa",
-  Fireplace: "Öppen spis",
-  "Board Games": "Sällskapsspel",
-  Books: "Böcker",
-  "Sound System": "Ljudanläggning",
-  "Streaming Services": "Streamingtjänster",
-  "Coffee Table": "Soffbord",
-  "Hair Dryer": "Hårtork",
-  "Towels Provided": "Handdukar ingår",
-  Shower: "Dusch",
-  Bathtub: "Badkar",
-  "Hot Tub": "Badtunna/bubbelpool",
-  Sauna: "Bastu",
-  Toiletries: "Hygienartiklar",
-  Washer: "Tvättmaskin",
-  Dryer: "Torktumlare",
-  Garden: "Trädgård",
-  "BBQ Grill": "Grill",
-  "Outdoor Furniture": "Utemöbler",
-  "Lake Access": "Tillgång till sjö",
-  "Beach Access": "Tillgång till strand",
-  Parking: "Parkering",
-  Balcony: "Balkong",
-  Terrace: "Terrass",
-  "Fire Pit": "Eldplats",
-  "Boat Dock": "Brygga",
-  WiFi: "Wifi",
-  Heating: "Värme",
-  "Air Conditioning": "Luftkonditionering",
-  Workspace: "Arbetsplats",
-  Iron: "Strykjärn",
-  "Pet Friendly": "Husdjur välkomna",
-  "Family Friendly": "Barnvänligt",
-  "First Aid Kit": "Förbandslåda",
-  "Fire Extinguisher": "Brandsläckare",
-};
 
 export const HostAmenitiesTab = ({ propertyId, onUpdate }: HostAmenitiesTabProps) => {
   const [saving, setSaving] = useState(false);

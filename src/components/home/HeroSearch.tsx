@@ -1,10 +1,50 @@
 import { useMemo, useRef, useState } from "react";
-import { format, isSameMonth } from "date-fns";
+import { format, isSameMonth, type Locale } from "date-fns";
 import { Search } from "lucide-react";
 import PropertySearch, { type SearchFilters } from "@/components/PropertySearch";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { type Copy, useCopy, useLang } from "@/i18n";
+import { amenityLabel } from "@/content/amenities";
+import { useDateFnsLocale } from "@/i18n/dates";
+import { type ListingTranslation, translatedName } from "@/i18n/listingTexts";
+
+const en = {
+  anyDates: "Any dates",
+  /** date-fns patterns: a day alone, and a day with its month */
+  day: "d",
+  dayMonth: "d MMM",
+  guests: (n: number) => `${n} ${n === 1 ? "guest" : "guests"}`,
+  where: "Where in Sweden?",
+  browse: "Browse the cabins",
+  findCabin: "Find a cabin",
+  searchBy: "Search by place, dates and guests",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    anyDates: "När som helst",
+    day: "d",
+    dayMonth: "d MMM",
+    guests: (n) => `${n} ${n === 1 ? "gäst" : "gäster"}`,
+    where: "Var i Sverige?",
+    browse: "Se stugorna",
+    findCabin: "Hitta en stuga",
+    searchBy: "Sök på plats, datum och antal gäster",
+  },
+  de: {
+    anyDates: "Jederzeit",
+    day: "d.",
+    dayMonth: "d. MMM",
+    guests: (n) => `${n} ${n === 1 ? "Gast" : "Gäste"}`,
+    where: "Wo in Schweden?",
+    browse: "Ferienhäuser ansehen",
+    findCabin: "Ferienhaus finden",
+    searchBy: "Nach Ort, Reisedaten und Gästen suchen",
+  },
+};
 
 interface SearchableProperty {
+  id?: string;
   amenities?: unknown;
   property_type?: string | null;
   max_guests?: number | null;
@@ -17,14 +57,17 @@ interface HeroSearchProps {
   onFiltersChange: (filters: SearchFilters) => void;
   /** Bumped by "Clear search" to start the search bar over */
   resetKey: number;
+  /** The listings' translations (useListingTranslations), for the amenity names */
+  translations?: Record<string, ListingTranslation>;
 }
 
-const datesLabel = (from?: Date, to?: Date) => {
-  if (!from) return "Any dates";
-  if (!to) return format(from, "d MMM");
+const datesLabel = (t: typeof en, locale: Locale, from?: Date, to?: Date) => {
+  const f = (date: Date, pattern: string) => format(date, pattern, { locale });
+  if (!from) return t.anyDates;
+  if (!to) return f(from, t.dayMonth);
   return isSameMonth(from, to)
-    ? `${format(from, "d")}–${format(to, "d MMM")}`
-    : `${format(from, "d MMM")} – ${format(to, "d MMM")}`;
+    ? `${f(from, t.day)}–${f(to, t.dayMonth)}`
+    : `${f(from, t.dayMonth)} – ${f(to, t.dayMonth)}`;
 };
 
 const scrollToCabins = () => document.getElementById("cabins")?.scrollIntoView({ behavior: "smooth" });
@@ -35,7 +78,10 @@ const focusCabinsHeading = () => document.getElementById("cabins-heading")?.focu
  * The search bar on desktop. On phones the full bar filled the whole first
  * screen, so there it is a pill that opens the same search in a drawer.
  */
-const HeroSearch = ({ properties, filters, onFiltersChange, resetKey }: HeroSearchProps) => {
+const HeroSearch = ({ properties, filters, onFiltersChange, resetKey, translations }: HeroSearchProps) => {
+  const t = useCopy(COPY);
+  const lang = useLang();
+  const dateLocale = useDateFnsLocale();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const closingForResults = useRef(false);
 
@@ -58,6 +104,22 @@ const HeroSearch = ({ properties, filters, onFiltersChange, resetKey }: HeroSear
     return Array.from(all).sort();
   }, [properties]);
 
+  // The filter keeps the hosts' own (lower-case) names; the buttons show them translated
+  const amenityLabels = useMemo(() => {
+    const labels: Record<string, string> = {};
+    if (lang === "en" && !translations) return labels;
+    properties.forEach(({ id, amenities }) => {
+      if (!id || !Array.isArray(amenities)) return;
+      amenities.forEach((a) => {
+        if (typeof a !== "string" || !a) return;
+        const key = a.toLowerCase();
+        const label = amenityLabel(a, lang) ?? translatedName(translations?.[id], `amenity:${a}`, a);
+        if (!(key in labels) && label !== a) labels[key] = label;
+      });
+    });
+    return labels;
+  }, [properties, translations, lang]);
+
   // Hosts type these, so "cabin" and "Cabin" count as one
   const availableTypes = useMemo(() => {
     const byKey = new Map<string, string>();
@@ -71,9 +133,9 @@ const HeroSearch = ({ properties, filters, onFiltersChange, resetKey }: HeroSear
   const maxGuests = useMemo(() => Math.max(8, ...properties.map((p) => p.max_guests ?? 0)), [properties]);
 
   const guests = filters?.guests ?? 2;
-  const summary = `${datesLabel(filters?.checkIn, filters?.checkOut)} · ${guests} ${guests === 1 ? "guest" : "guests"}`;
+  const summary = `${datesLabel(t, dateLocale, filters?.checkIn, filters?.checkOut)} · ${t.guests(guests)}`;
 
-  const searchProps = { onFiltersChange, availableAmenities, availableTypes, maxGuests, initialFilters: filters };
+  const searchProps = { onFiltersChange, availableAmenities, availableTypes, maxGuests, initialFilters: filters, amenityLabels };
 
   return (
     <>
@@ -91,14 +153,14 @@ const HeroSearch = ({ properties, filters, onFiltersChange, resetKey }: HeroSear
         >
           <Search className="h-5 w-5 shrink-0 text-foreground" aria-hidden="true" />
           <span className="min-w-0">
-            <span className="block truncate font-semibold text-foreground">{filters?.location || "Where in Sweden?"}</span>
+            <span className="block truncate font-semibold text-foreground">{filters?.location || t.where}</span>
             {/* Keeps the two lines apart in the button's accessible name */}
             <span className="sr-only">, </span>
             <span className="block truncate text-sm text-muted-foreground">{summary}</span>
           </span>
         </button>
         <a href="#cabins" className="mt-4 inline-block text-white/90 underline underline-offset-4">
-          Browse the cabins <span aria-hidden="true">↓</span>
+          {t.browse} <span aria-hidden="true">↓</span>
         </a>
 
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} shouldScaleBackground={false}>
@@ -115,8 +177,8 @@ const HeroSearch = ({ properties, filters, onFiltersChange, resetKey }: HeroSear
             }}
           >
             <DrawerHeader>
-              <DrawerTitle>Find a cabin</DrawerTitle>
-              <DrawerDescription className="sr-only">Search by place, dates and guests</DrawerDescription>
+              <DrawerTitle>{t.findCabin}</DrawerTitle>
+              <DrawerDescription className="sr-only">{t.searchBy}</DrawerDescription>
             </DrawerHeader>
             <div className="overflow-y-auto px-4 pb-6">
               {/* Mounts on each open, so it starts from the search already applied */}

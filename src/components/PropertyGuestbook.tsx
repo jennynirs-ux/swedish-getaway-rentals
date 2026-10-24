@@ -3,6 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import GuestbookEntry from "./GuestbookEntry";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = {
+  heading: "Words from Our Guests 🌿",
+  shared: (n: number) => `${n} ${n === 1 ? "guest" : "guests"} shared their experience`,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    heading: "Ord från våra gäster 🌿",
+    shared: (n) => `${n} ${n === 1 ? "gäst" : "gäster"} har berättat om sin vistelse`,
+  },
+  de: {
+    heading: "Was unsere Gäste sagen 🌿",
+    shared: (n) => (n === 1 ? "1 Gast erzählt von seinem Aufenthalt" : `${n} Gäste erzählen von ihrem Aufenthalt`),
+  },
+};
 
 interface GuestbookEntryData {
   id: string;
@@ -19,6 +36,7 @@ interface PropertyGuestbookProps {
 }
 
 const PropertyGuestbook = ({ propertyId }: PropertyGuestbookProps) => {
+  const t = useCopy(COPY);
   const [entries, setEntries] = useState<GuestbookEntryData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,10 +76,10 @@ const PropertyGuestbook = ({ propertyId }: PropertyGuestbookProps) => {
     <section className="container mx-auto px-4 py-16 space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
-          Words from Our Guests 🌿
+          {t.heading}
         </h2>
         <p className="text-muted-foreground">
-          {entries.length} {entries.length === 1 ? "guest" : "guests"} shared {entries.length === 1 ? "their" : "their"} experience
+          {t.shared(entries.length)}
         </p>
       </div>
 

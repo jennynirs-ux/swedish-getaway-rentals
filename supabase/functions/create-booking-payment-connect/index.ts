@@ -67,6 +67,9 @@ serve(async (req) => {
       couponId,
       rulesConfirmed
     } = requestData;
+    // The guest's language (src/i18n): Stripe's page in it, back to the site in
+    // it, and the house rules error in it (the other errors are in English)
+    const guestLang = requestData.lang === "sv" || requestData.lang === "de" ? requestData.lang : "en";
     
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -173,9 +176,13 @@ serve(async (req) => {
     
     // The listing's house rules: its minimum stay, and the guest confirms the
     // minimum age (and no parties, unless the host allows them)
-    const houseRuleError = stayRuleError(checkInDate, checkOutDate, property) ?? (rulesConfirmed === true
+    const houseRuleError = stayRuleError(checkInDate, checkOutDate, property, guestLang) ?? (rulesConfirmed === true
       ? null
-      : `Please confirm the house rules (the person booking is ${minGuestAge(property)} or older${property.events_allowed ? "" : ", no parties or events"}) and try again.`);
+      : {
+          en: `Please confirm the house rules (the person booking is ${minGuestAge(property)} or older${property.events_allowed ? "" : ", no parties or events"}) and try again.`,
+          sv: `Bekräfta husreglerna (den som bokar är ${minGuestAge(property)} år eller äldre${property.events_allowed ? "" : ", inga fester eller evenemang"}) och försök igen.`,
+          de: `Bitte bestätige die Hausregeln (die buchende Person ist mindestens ${minGuestAge(property)} Jahre alt${property.events_allowed ? "" : ", keine Partys oder Veranstaltungen"}) und versuche es erneut.`,
+        }[guestLang as "en" | "sv" | "de"]);
     if (houseRuleError) {
       logStep("House rules not met", { checkInDate, checkOutDate, rulesConfirmed });
       return badRequest(houseRuleError);
@@ -582,6 +589,7 @@ serve(async (req) => {
 
     // Stripe checkout session config
     const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, '') || Deno.env.get("SITE_URL") || "https://nordic-getaways.com";
+    const langPrefix = guestLang === "en" ? "" : `/${guestLang}`;
     const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : guestEmail,
@@ -589,8 +597,10 @@ serve(async (req) => {
       mode: "payment",
       // Stripe's default is 24 h; keep the window for a clash short (minimum 30 min)
       expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
-      success_url: `${origin}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/property/${propertyId}`,
+      success_url: `${origin}${langPrefix}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}${langPrefix}/property/${propertyId}`,
+      // English pages leave Stripe on "auto" (the browser's language), as before
+      locale: guestLang === "en" ? "auto" : guestLang,
       metadata: stripeMetadata({
         type: "booking",
         propertyId,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROPERTY_CONTENT } from "@/content/propertyContent";
+import { PROPERTY_CONTENT, PROPERTY_CONTENT_BY_LANG, propertyContentFor } from "@/content/propertyContent";
 import {
   META_DESCRIPTION_MAX,
   buildPropertyJsonLd,
@@ -129,6 +129,43 @@ describe("propertyMetaDescription", () => {
       const text = propertyMetaDescription({ ...villaHacken, slug, review_count: 251 }, PROPERTY_CONTENT[slug]);
       expect(text.length).toBeLessThanOrEqual(META_DESCRIPTION_MAX);
       expect(text).toContain("Airbnb rating");
+    }
+  });
+});
+
+describe("in Swedish and German", () => {
+  it.each(["sv", "de"] as const)("stays within the limit for both owner cabins (%s)", (lang) => {
+    for (const slug of Object.keys(PROPERTY_CONTENT)) {
+      const text = propertyMetaDescription({ ...villaHacken, slug, review_count: 251 }, propertyContentFor(slug, lang), lang);
+      expect(text.length).toBeLessThanOrEqual(META_DESCRIPTION_MAX);
+      expect(text).toContain("Airbnb");
+    }
+  });
+
+  it("writes prices and ratings the Swedish way", () => {
+    const text = propertyMetaDescription(villaHacken, propertyContentFor("lakefront-retreat", "sv"), "sv");
+    expect(text.startsWith("Villa Häcken i Lerum, Sweden. Plats för 8, 3 sovrum, från 8 800 SEK/natt")).toBe(true);
+    expect(text).toContain("Airbnb-betyg 4,98/5 från 51 gäster.");
+  });
+
+  it("gives the page's own address, with one @id for every language", () => {
+    const rental = buildPropertyJsonLd(villaHacken, propertyContentFor("lakefront-retreat", "de"), "de")[0] as Record<string, unknown>;
+    expect(rental.url).toBe("https://nordic-getaways.com/de/property/lakefront-retreat");
+    expect(rental["@id"]).toBe("https://nordic-getaways.com/property/lakefront-retreat");
+  });
+
+  it("has the same cabins, lists and guest quotes in every language", () => {
+    for (const lang of ["sv", "de"] as const) {
+      expect(Object.keys(PROPERTY_CONTENT_BY_LANG[lang])).toEqual(Object.keys(PROPERTY_CONTENT));
+      for (const [slug, english] of Object.entries(PROPERTY_CONTENT)) {
+        const content = PROPERTY_CONTENT_BY_LANG[lang][slug];
+        expect(content.nickname).toBe(english.nickname);
+        for (const key of ["intro", "highlights", "goodToKnow", "faq", "gettingHere"] as const) {
+          expect(content[key]).toHaveLength(english[key].length);
+        }
+        // Real guests' words stay as written
+        expect(content.quotes.map((q) => [q.text, q.name])).toEqual(english.quotes.map((q) => [q.text, q.name]));
+      }
     }
   });
 });

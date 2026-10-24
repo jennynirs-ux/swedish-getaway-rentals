@@ -4,12 +4,24 @@ import LazyImage from "@/components/LazyImage";
 import { Property } from "@/hooks/useProperties";
 import { memo } from 'react';
 import { PROPERTY_CONTENT } from "@/content/propertyContent";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = {
+  upToGuests: (n: number) => `Up to ${n} guests`,
+  bookStay: "Book Your Stay",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { upToGuests: (n) => `Upp till ${n} ${n === 1 ? "gäst" : "gäster"}`, bookStay: "Boka din vistelse" },
+  de: { upToGuests: (n) => `Bis zu ${n} ${n === 1 ? "Gast" : "Gäste"}`, bookStay: "Aufenthalt buchen" },
+};
 
 interface PropertyHeroProps {
   property: Property;
 }
 
 const PropertyHero = memo(({ property }: PropertyHeroProps) => {
+  const t = useCopy(COPY);
   const nickname = property.slug ? PROPERTY_CONTENT[property.slug]?.nickname : undefined;
   // The host's own words only: these columns have no defaults, and an empty
   // (or blank) one shows nothing rather than made-up marketing text
@@ -61,7 +73,7 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              <span>Up to {property.max_guests} guests</span>
+              <span>{t.upToGuests(property.max_guests)}</span>
             </div>
             {availability && (
               <div className="flex items-center gap-2">
@@ -78,7 +90,7 @@ const PropertyHero = memo(({ property }: PropertyHeroProps) => {
               className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90"
               onClick={scrollToBooking}
             >
-              Book Your Stay
+              {t.bookStay}
             </Button>
           </div>
         </div>

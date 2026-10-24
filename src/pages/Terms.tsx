@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/i18n/router";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import LegalPage from "@/components/LegalPage";
+import { type Copy, useCopy } from "@/i18n";
 import { COMPANY, COMPANY_ADDRESS, TERMS_UPDATED } from "@/content/company";
 import { ADULT_AGE } from "@/lib/stayRules";
 import { FOUNDING_HOST_FEE_PCT, PLATFORM_SERVICE_FEE_RATE } from "@/lib/constants";
@@ -15,10 +16,38 @@ const POLICIES = POLICY_KEYS.map((key) => CANCELLATION_POLICIES[key]);
 const EXAMPLE_STAY = 10000;
 const sek = (amount: number) => `${amount.toLocaleString("en-GB")} SEK`;
 
+// The page's heading and chrome. The terms themselves are in English only for
+// now, and the English version is the binding one (LegalPage marks the body
+// as English and shows the notice)
+const en = {
+  title: "Booking terms",
+  description: "Booking terms for Nordic Getaways: payment, house rules, cancellation and refunds, and shop orders.",
+  lead: "These terms apply when you book a stay or buy from the shop on nordic-getaways.com.",
+  notice: null as string | null,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    title: "Bokningsvillkor",
+    description:
+      "Bokningsvillkor för Nordic Getaways: betalning, husregler, avbokning och återbetalning samt beställningar i butiken.",
+    lead: "Villkoren gäller när du bokar en vistelse eller handlar i butiken på nordic-getaways.com.",
+    notice: "Villkoren finns än så länge bara på engelska. Den engelska versionen gäller.",
+  },
+  de: {
+    title: "Buchungsbedingungen",
+    description:
+      "Buchungsbedingungen von Nordic Getaways: Zahlung, Hausregeln, Stornierung und Rückerstattung sowie Bestellungen im Shop.",
+    lead: "Diese Bedingungen gelten, wenn du auf nordic-getaways.com einen Aufenthalt buchst oder im Shop einkaufst.",
+    notice: "Die Bedingungen gibt es vorerst nur auf Englisch. Es gilt die englische Fassung.",
+  },
+};
+
 const Terms = () => {
+  const t = useCopy(COPY);
   usePageMeta({
-    title: "Booking terms",
-    description: "Booking terms for Nordic Getaways: payment, house rules, cancellation and refunds, and shop orders.",
+    title: t.title,
+    description: t.description,
     path: "/terms",
   });
 
@@ -26,11 +55,7 @@ const Terms = () => {
   const exampleFee = (EXAMPLE_STAY * fee) / 100;
 
   return (
-    <LegalPage
-      title="Booking terms"
-      lead="These terms apply when you book a stay or buy from the shop on nordic-getaways.com."
-      updated={TERMS_UPDATED}
-    >
+    <LegalPage title={t.title} lead={t.lead} updated={TERMS_UPDATED} notice={t.notice}>
       <section>
         <h2>Who we are</h2>
         <p>

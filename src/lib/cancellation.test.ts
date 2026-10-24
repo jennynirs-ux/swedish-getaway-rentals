@@ -5,8 +5,12 @@ import {
   daysBeforeArrival,
   policyFor,
   policySummary,
+  policyText,
+  POLICY_FOOTER,
   POLICY_KEYS,
   refundPercentage,
+  tierLabel,
+  tierRefund,
 } from "../../supabase/functions/_shared/cancellation";
 
 // The owners' cabins, and every booking made before hosts chose a policy
@@ -74,5 +78,58 @@ describe("the other policies", () => {
     expect(policyFor(null).key).toBe("standard");
     expect(policyFor("lenient").key).toBe("standard");
     expect(policyFor("strict").key).toBe("strict");
+  });
+});
+
+describe("the policies in the guest's language", () => {
+  it("is the policy itself in English", () => {
+    for (const key of POLICY_KEYS) {
+      const policy = CANCELLATION_POLICIES[key];
+      expect(policyText(key)).toEqual({
+        name: policy.name,
+        summary: policy.summary,
+        tiers: policy.tiers.map((t) => t.label),
+        footer: POLICY_FOOTER,
+      });
+      expect(policyText(key, "en")).toEqual(policyText(key));
+    }
+  });
+
+  it("has every text, and a label per tier, in Swedish and German", () => {
+    for (const lang of ["sv", "de"] as const) {
+      for (const key of POLICY_KEYS) {
+        const text = policyText(key, lang);
+        expect(text.name.trim(), `${lang} ${key}`).not.toBe("");
+        expect(text.summary.trim(), `${lang} ${key}`).not.toBe("");
+        expect(text.footer).not.toBe(POLICY_FOOTER);
+        expect(text.tiers).toHaveLength(CANCELLATION_POLICIES[key].tiers.length);
+        CANCELLATION_POLICIES[key].tiers.forEach((tier, i) => {
+          expect(tierLabel(tier, lang)).toBe(text.tiers[i]);
+          expect(tierLabel(tier, lang)).not.toBe(tier.label);
+        });
+      }
+    }
+  });
+
+  it("names the policies", () => {
+    expect(POLICY_KEYS.map((key) => policyText(key, "sv").name)).toEqual(["Flexibel", "Måttlig", "Standard", "Strikt"]);
+    expect(POLICY_KEYS.map((key) => policyText(key, "de").name)).toEqual(["Flexibel", "Moderat", "Standard", "Streng"]);
+  });
+
+  it("states each tier's refund", () => {
+    const [first, , last] = policy.tiers;
+    expect(tierRefund(first)).toBe("90% refund");
+    expect(tierRefund(last)).toBe("No refund");
+    expect(tierRefund(first, "sv")).toBe("90 % återbetalning");
+    expect(tierRefund(last, "de")).toBe("Keine Rückerstattung");
+  });
+
+  it("describes the policy in Swedish and German", () => {
+    expect(policySummary(policy, "sv")).toBe(
+      "Mer än 21 dagar före ankomst: 90 % återbetalning; 21–8 dagar före ankomst: 50 % återbetalning; 7 dagar eller mindre före ankomst: ingen återbetalning",
+    );
+    expect(policySummary(CANCELLATION_POLICIES.flexible, "de")).toBe(
+      "1 Tag oder mehr vor Anreise: 100 % Rückerstattung; am Anreisetag: keine Rückerstattung",
+    );
   });
 });

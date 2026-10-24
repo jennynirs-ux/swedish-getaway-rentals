@@ -1,11 +1,75 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Link } from "@/i18n/router";
 import { CheckCircle, Home, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = {
+  processingTitle: "Processing your order...",
+  processingText: "Please wait while we confirm your payment.",
+  confirmed: "Order Confirmed!",
+  confirming: "We're confirming your order",
+  thanks: "Thank you for your purchase! Your payment has been processed and your order is being prepared.",
+  nextTitle: "What happens next:",
+  next: [
+    "You'll receive an order confirmation email shortly",
+    "Your order will be processed and printed",
+    "You'll get tracking information once shipped",
+    "Questions? Contact us at support@mojjo.se",
+  ],
+  pending: (email: ReactNode) => (
+    <>You'll receive an order confirmation email within a few minutes. If it doesn't arrive, email {email} and we'll sort it out.</>
+  ),
+  home: "Home",
+  continueShopping: "Continue Shopping",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    processingTitle: "Vi behandlar din beställning…",
+    processingText: "Vänta en stund medan vi bekräftar din betalning.",
+    confirmed: "Beställningen är bekräftad!",
+    confirming: "Vi bekräftar din beställning",
+    thanks: "Tack för ditt köp! Betalningen har gått igenom och vi förbereder din beställning.",
+    nextTitle: "Det här händer nu:",
+    next: [
+      "Du får snart en orderbekräftelse via e-post",
+      "Din beställning behandlas och trycks",
+      "Du får spårningsinformation när paketet har skickats",
+      "Frågor? Kontakta oss på support@mojjo.se",
+    ],
+    pending: (email) => (
+      <>Du får en orderbekräftelse via e-post inom några minuter. Om den inte kommer, mejla {email} så löser vi det.</>
+    ),
+    home: "Startsidan",
+    continueShopping: "Fortsätt handla",
+  },
+  de: {
+    processingTitle: "Deine Bestellung wird bearbeitet…",
+    processingText: "Bitte warte kurz, während wir deine Zahlung bestätigen.",
+    confirmed: "Bestellung bestätigt!",
+    confirming: "Wir bestätigen deine Bestellung",
+    thanks: "Vielen Dank für deinen Einkauf! Deine Zahlung ist eingegangen und deine Bestellung wird vorbereitet.",
+    nextTitle: "So geht es weiter:",
+    next: [
+      "Du erhältst in Kürze eine Bestellbestätigung per E-Mail",
+      "Deine Bestellung wird bearbeitet und gedruckt",
+      "Sobald sie versandt ist, bekommst du die Sendungsverfolgung",
+      "Fragen? Schreib uns an support@mojjo.se",
+    ],
+    pending: (email) => (
+      <>Du erhältst innerhalb weniger Minuten eine Bestellbestätigung per E-Mail. Falls sie nicht ankommt, schreib an {email}, dann kümmern wir uns darum.</>
+    ),
+    home: "Startseite",
+    continueShopping: "Weiter einkaufen",
+  },
+};
 
 const OrderSuccess = () => {
+  const t = useCopy(COPY);
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [processing, setProcessing] = useState(!!sessionId);
@@ -42,8 +106,8 @@ const OrderSuccess = () => {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold mb-2">Processing your order...</h3>
-            <p className="text-muted-foreground">Please wait while we confirm your payment.</p>
+            <h3 className="text-lg font-semibold mb-2">{t.processingTitle}</h3>
+            <p className="text-muted-foreground">{t.processingText}</p>
           </CardContent>
         </Card>
       </div>
@@ -60,7 +124,7 @@ const OrderSuccess = () => {
                 <CheckCircle className={`w-8 h-8 ${success ? "text-green-600" : "text-muted-foreground"}`} />
               </div>
               <CardTitle className={`text-2xl ${success ? "text-green-600" : ""}`}>
-                {success ? "Order Confirmed!" : "We're confirming your order"}
+                {success ? t.confirmed : t.confirming}
               </CardTitle>
             </CardHeader>
             
@@ -68,23 +132,21 @@ const OrderSuccess = () => {
               {success ? (
                 <div className="space-y-4">
                   <p className="text-lg text-muted-foreground">
-                    Thank you for your purchase! Your payment has been processed and your order is being prepared.
+                    {t.thanks}
                   </p>
                   
                   <div className="bg-primary/5 p-4 rounded-lg">
-                    <h4 className="font-semibold text-primary mb-2">What happens next:</h4>
+                    <h4 className="font-semibold text-primary mb-2">{t.nextTitle}</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• You'll receive an order confirmation email shortly</li>
-                      <li>• Your order will be processed and printed</li>
-                      <li>• You'll get tracking information once shipped</li>
-                      <li>• Questions? Contact us at support@mojjo.se</li>
+                      {t.next.map((step) => (
+                        <li key={step}>• {step}</li>
+                      ))}
                     </ul>
                   </div>
                 </div>
               ) : (
                 <p className="text-lg text-muted-foreground">
-                  You'll receive an order confirmation email within a few minutes. If it doesn't arrive, email{" "}
-                  <a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a> and we'll sort it out.
+                  {t.pending(<a className="underline" href="mailto:support@mojjo.se">support@mojjo.se</a>)}
                 </p>
               )}
 
@@ -92,14 +154,14 @@ const OrderSuccess = () => {
                 <Link to="/" className="flex-1">
                   <Button variant="outline" className="w-full">
                     <Home className="w-4 h-4 mr-2" />
-                    Home
+                    {t.home}
                   </Button>
                 </Link>
                 
                 <Link to="/shop" className="flex-1">
                   <Button className="w-full">
                     <ShoppingBag className="w-4 h-4 mr-2" />
-                    Continue Shopping
+                    {t.continueShopping}
                   </Button>
                 </Link>
               </div>

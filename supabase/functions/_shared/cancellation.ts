@@ -23,14 +23,17 @@ export interface CancellationPolicy {
 
 export type PolicyKey = "flexible" | "moderate" | "standard" | "strict";
 
+/** The guest site's languages (the same as ContentLang in listing-text.ts) */
+type Lang = "en" | "sv" | "de";
+
 export interface NamedPolicy extends CancellationPolicy {
   key: PolicyKey;
   name: string;
   /** One line for hosts and guests, e.g. "Full refund up to 5 days before arrival, then 50%." */
   summary: string;
-  /** Swedish name for the host panel, e.g. "Måttlig" (guests see `name`) */
+  /** Swedish name for the host panel, e.g. "Måttlig" (guests see policyText in their language) */
   nameSv: string;
-  /** Swedish one-line summary for the host panel (guests see `summary`) */
+  /** Swedish one-line summary for the host panel (guests see policyText in their language) */
   summarySv: string;
 }
 
@@ -112,9 +115,123 @@ export function refundPercentage(policy: CancellationPolicy, days: number): numb
   return tier?.refund_percentage ?? 0;
 }
 
+// Guests read the policies in the page's language. English is the policies
+// above (e-mails, the terms and the payment functions use those); Swedish and
+// German follow, tier by tier in the same order.
+
+const FOOTERS: Record<Lang, string> = {
+  en: POLICY_FOOTER,
+  sv: "Dagarna räknas fram till ankomstdagen från den dag avbokningen når oss (svensk tid). Serviceavgiften betalas inte tillbaka när du avbokar. Vi rekommenderar en reseförsäkring för det oförutsedda.",
+  de: "Die Tage bis zur Anreise zählen ab dem Tag, an dem uns deine Stornierung erreicht (schwedische Zeit). Die Servicegebühr wird nicht erstattet, wenn du stornierst. Für Unvorhergesehenes empfehlen wir eine Reiserücktrittsversicherung.",
+};
+
+const TRANSLATED: Record<Exclude<Lang, "en">, Record<PolicyKey, { name: string; summary: string; tiers: string[] }>> = {
+  sv: {
+    flexible: {
+      name: CANCELLATION_POLICIES.flexible.nameSv,
+      summary: CANCELLATION_POLICIES.flexible.summarySv,
+      tiers: ["1 dag eller mer före ankomst", "På ankomstdagen"],
+    },
+    moderate: {
+      name: CANCELLATION_POLICIES.moderate.nameSv,
+      summary: CANCELLATION_POLICIES.moderate.summarySv,
+      tiers: ["5 dagar eller mer före ankomst", "4–1 dagar före ankomst", "På ankomstdagen"],
+    },
+    standard: {
+      name: CANCELLATION_POLICIES.standard.nameSv,
+      summary: "90 % återbetalning mer än 21 dagar före ankomst, 50 % 21–8 dagar före, sedan ingen.",
+      tiers: ["Mer än 21 dagar före ankomst", "21–8 dagar före ankomst", "7 dagar eller mindre före ankomst"],
+    },
+    strict: {
+      name: CANCELLATION_POLICIES.strict.nameSv,
+      summary: "50 % återbetalning fram till 14 dagar före ankomst, sedan ingen.",
+      tiers: ["14 dagar eller mer före ankomst", "13 dagar eller mindre före ankomst"],
+    },
+  },
+  de: {
+    flexible: {
+      name: "Flexibel",
+      summary: "Volle Rückerstattung bis 1 Tag vor Anreise.",
+      tiers: ["1 Tag oder mehr vor Anreise", "Am Anreisetag"],
+    },
+    moderate: {
+      name: "Moderat",
+      summary: "Volle Rückerstattung bis 5 Tage vor Anreise, danach 50 % bis zum Vortag.",
+      tiers: ["5 Tage oder mehr vor Anreise", "4–1 Tage vor Anreise", "Am Anreisetag"],
+    },
+    standard: {
+      name: "Standard",
+      summary: "90 % Rückerstattung bis 22 Tage vor Anreise, 50 % bis 8 Tage vorher, danach keine.",
+      tiers: ["Mehr als 21 Tage vor Anreise", "21–8 Tage vor Anreise", "7 Tage oder weniger vor Anreise"],
+    },
+    strict: {
+      name: "Streng",
+      summary: "50 % Rückerstattung bis 14 Tage vor Anreise, danach keine.",
+      tiers: ["14 Tage oder mehr vor Anreise", "13 Tage oder weniger vor Anreise"],
+    },
+  },
+};
+
+// Tier labels by their English wording, for a policy passed without its key
+const TIER_LABELS: Record<string, Record<Exclude<Lang, "en">, string>> = {};
+for (const key of POLICY_KEYS) {
+  CANCELLATION_POLICIES[key].tiers.forEach((tier, i) => {
+    TIER_LABELS[tier.label] = { sv: TRANSLATED.sv[key].tiers[i], de: TRANSLATED.de[key].tiers[i] };
+  });
+}
+
+export interface PolicyText {
+  name: string;
+  summary: string;
+  /** The tiers' labels, in the order of the policy's tiers */
+  tiers: string[];
+  footer: string;
+}
+
+/** A policy's name, summary, tier labels and footer for guests, in their language */
+export function policyText(key: PolicyKey, lang: Lang = "en"): PolicyText {
+  const policy = CANCELLATION_POLICIES[key];
+  if (lang === "en") {
+    return { name: policy.name, summary: policy.summary, tiers: policy.tiers.map((t) => t.label), footer: POLICY_FOOTER };
+  }
+  const text = TRANSLATED[lang][key];
+  return { name: text.name, summary: text.summary, tiers: [...text.tiers], footer: FOOTERS[lang] };
+}
+
+/** The footer of every policy (POLICY_FOOTER in English) */
+export const policyFooter = (lang: Lang = "en"): string => FOOTERS[lang];
+
+/** One tier's label in a language: "21–8 dagar före ankomst" */
+export const tierLabel = (tier: PolicyTier, lang: Lang = "en"): string =>
+  lang === "en" ? tier.label : TIER_LABELS[tier.label]?.[lang] ?? tier.label;
+
+/** A tier's refund: "90% refund" / "No refund", "90 % återbetalning" / "Ingen återbetalning" */
+export function tierRefund(tier: PolicyTier, lang: Lang = "en"): string {
+  const pct = tier.refund_percentage;
+  switch (lang) {
+    case "sv":
+      return pct > 0 ? `${pct} % återbetalning` : "Ingen återbetalning";
+    case "de":
+      return pct > 0 ? `${pct} % Rückerstattung` : "Keine Rückerstattung";
+    default:
+      return pct > 0 ? `${pct}% refund` : "No refund";
+  }
+}
+
+const lowerFirst = (text: string) => `${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+
 /** "90% refund more than 21 days before arrival; 50% refund 21–8 days …" */
-export function policySummary(policy: CancellationPolicy): string {
+export function policySummary(policy: CancellationPolicy, lang: Lang = "en"): string {
+  if (lang === "en") {
+    return policy.tiers
+      .map((t) => `${t.refund_percentage > 0 ? `${t.refund_percentage}% refund` : "no refund"} ${lowerFirst(t.label)}`)
+      .join("; ");
+  }
+  // "Mer än 21 dagar före ankomst: 90 % återbetalning; 21–8 dagar före ankomst: 50 % återbetalning; …"
   return policy.tiers
-    .map((t) => `${t.refund_percentage > 0 ? `${t.refund_percentage}% refund` : "no refund"} ${t.label.charAt(0).toLowerCase()}${t.label.slice(1)}`)
+    .map((t, i) => {
+      const label = tierLabel(t, lang);
+      return `${i === 0 ? label : lowerFirst(label)}: ${lowerFirst(tierRefund(t, lang))}`;
+    })
     .join("; ");
 }

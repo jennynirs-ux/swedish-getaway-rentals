@@ -2,6 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X, Play, Pause } from "lucide-react";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = {
+  media: (n: number) => `Media ${n}`,
+  position: (n: number, total: number) => `${n} of ${total}`,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: { media: (n) => `Media ${n}`, position: (n, total) => `${n} av ${total}` },
+  de: { media: (n) => `Medium ${n}`, position: (n, total) => `${n} von ${total}` },
+};
 
 interface MediaItem {
   type: "image" | "video";
@@ -24,6 +35,7 @@ export const MediaDialog = ({
   onClose,
   initialIndex = 0,
 }: MediaDialogProps) => {
+  const t = useCopy(COPY);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -162,7 +174,7 @@ export const MediaDialog = ({
                   {item.type === "image" ? (
                     <img
                       src={item.url}
-                      alt={item.alt || `Media ${index + 1}`}
+                      alt={item.alt || t.media(index + 1)}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -177,7 +189,7 @@ export const MediaDialog = ({
 
           {items.length > 1 && (
             <div className="px-3 pb-2 text-center text-[11px] text-white/60">
-              {currentIndex + 1} of {items.length}
+              {t.position(currentIndex + 1, items.length)}
             </div>
           )}
         </div>

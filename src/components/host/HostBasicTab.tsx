@@ -10,6 +10,7 @@ import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Stepper } from "./listingPrices";
+import { TRANSLATION_HINT } from "@/lib/hostDashboard";
 
 interface HostBasicTabProps {
   propertyId: string;
@@ -177,7 +178,7 @@ export const HostBasicTab = ({ propertyId, onUpdate }: HostBasicTabProps) => {
             placeholder="Boendet, omgivningen och vad gästerna kan göra där"
             rows={6}
           />
-          <p className="text-xs text-muted-foreground">Visas i din annons och i sökresultaten.</p>
+          <p className="text-xs text-muted-foreground">Visas i din annons och i sökresultaten. {TRANSLATION_HINT}</p>
         </div>
 
         <div className="space-y-2">

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/i18n/router";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { listedPrice } from "../../../supabase/functions/_shared/shop-variants";
@@ -7,6 +7,39 @@ import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
 import LazyImage from "@/components/LazyImage";
 import { Skeleton } from "@/components/ui/skeleton";
 import bookCover from "@/assets/book-cover.png";
+import { type Copy, useCopy } from "@/i18n";
+
+// The shop's name and the book's title are names, the same in every language
+const en = {
+  title: "The Nordic Collection",
+  visitShop: "Visit the shop",
+  from: "From ",
+  bookAlt: "Cover of the book When the Ocean Changed Everything",
+  holidayRead: "Holiday read",
+  english: "English",
+  swedish: "Swedish",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    title: "The Nordic Collection",
+    visitShop: "Till butiken",
+    from: "Från ",
+    bookAlt: "Omslaget till boken When the Ocean Changed Everything",
+    holidayRead: "Semesterläsning",
+    english: "Engelska",
+    swedish: "Svenska",
+  },
+  de: {
+    title: "The Nordic Collection",
+    visitShop: "Zum Shop",
+    from: "Ab ",
+    bookAlt: "Cover des Buchs When the Ocean Changed Everything",
+    holidayRead: "Urlaubslektüre",
+    english: "Englisch",
+    swedish: "Schwedisch",
+  },
+};
 
 // A small row near the bottom of the home page: three products from the shop
 // and Jenny's book. The cabins come first; this is for guests who scroll on.
@@ -28,6 +61,7 @@ const formatPrice = (price: number, currency: string) =>
   new Intl.NumberFormat("sv-SE", { style: "currency", currency }).format(price / 100);
 
 const ShopStrip = () => {
+  const t = useCopy(COPY);
   const productsQueryFn = useCallback(async () => {
     const { data, error } = await supabase
       .from("shop_products")
@@ -53,9 +87,9 @@ const ShopStrip = () => {
     <section className="py-12 border-t border-border">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex items-baseline justify-between gap-4 mb-6">
-          <h2 className="text-2xl font-bold text-foreground">The Nordic Collection</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t.title}</h2>
           <Link to="/shop" className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-            Visit the shop
+            {t.visitShop}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
@@ -82,7 +116,7 @@ const ShopStrip = () => {
                     <div className="p-3">
                       <h3 className="text-sm font-medium text-foreground line-clamp-2">{title}</h3>
                       <p className="text-sm font-semibold text-primary mt-1">
-                        {from && "From "}
+                        {from && t.from}
                         {formatPrice(price, p.currency)}
                       </p>
                     </div>
@@ -94,12 +128,12 @@ const ShopStrip = () => {
             <div className="aspect-square overflow-hidden bg-muted/40 p-4">
               <LazyImage
                 src={bookCover}
-                alt="Cover of the book When the Ocean Changed Everything"
+                alt={t.bookAlt}
                 className="w-full h-full object-contain"
               />
             </div>
             <div className="p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Holiday read</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t.holidayRead}</p>
               <h3 className="text-sm font-medium text-foreground mt-1">When the Ocean Changed Everything</h3>
               <p className="text-sm mt-2 flex flex-wrap gap-x-3">
                 <a
@@ -108,7 +142,7 @@ const ShopStrip = () => {
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  English
+                  {t.english}
                 </a>
                 <a
                   href="https://bokshop.bod.se/naer-havet-foeraendrade-allt-jenny-nirs-9789180801843"
@@ -116,7 +150,7 @@ const ShopStrip = () => {
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  Swedish
+                  {t.swedish}
                 </a>
               </p>
             </div>

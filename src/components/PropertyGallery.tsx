@@ -3,12 +3,57 @@ import { Property } from '@/hooks/useProperties';
 import LazyImage from "@/components/LazyImage";
 import { ImageDialog } from "@/components/ImageDialog";
 import { MediaDialog } from "@/components/MediaDialog";
+import { type Copy, useCopy } from "@/i18n";
+
+const en = {
+  heading: "Photo Gallery",
+  intro: "Explore our stunning property through these carefully curated images and videos",
+  viewAll: (n: number) => `View All Images (${n})`,
+  videos: "Videos",
+  galleryImage: (n: number) => `Gallery image ${n}`,
+  titledImage: (title: string, n: number) => `${title} gallery image ${n}`,
+  titledVideo: (title: string, n: number) => `${title} video ${n}`,
+  imageTitle: (title: string, n: number) => `${title} - Image ${n}`,
+  imageFrom: (title: string) => `Gallery image from ${title}`,
+  videoTitle: (title: string, n: number) => `${title} - Video ${n}`,
+  videoFrom: (title: string) => `Video from ${title}`,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    heading: "Bildgalleri",
+    intro: "Upptäck boendet i noga utvalda bilder och filmer",
+    viewAll: (n) => `Visa alla bilder (${n})`,
+    videos: "Filmer",
+    galleryImage: (n) => `Galleribild ${n}`,
+    titledImage: (title, n) => `${title}, galleribild ${n}`,
+    titledVideo: (title, n) => `${title}, film ${n}`,
+    imageTitle: (title, n) => `${title} - bild ${n}`,
+    imageFrom: (title) => `Galleribild från ${title}`,
+    videoTitle: (title, n) => `${title} - film ${n}`,
+    videoFrom: (title) => `Film från ${title}`,
+  },
+  de: {
+    heading: "Fotogalerie",
+    intro: "Entdecke die Unterkunft in sorgfältig ausgewählten Fotos und Videos",
+    viewAll: (n) => `Alle Fotos ansehen (${n})`,
+    videos: "Videos",
+    galleryImage: (n) => `Galeriebild ${n}`,
+    titledImage: (title, n) => `${title}, Galeriebild ${n}`,
+    titledVideo: (title, n) => `${title}, Video ${n}`,
+    imageTitle: (title, n) => `${title} - Bild ${n}`,
+    imageFrom: (title) => `Galeriebild von ${title}`,
+    videoTitle: (title, n) => `${title} - Video ${n}`,
+    videoFrom: (title) => `Video von ${title}`,
+  },
+};
 
 interface PropertyGalleryProps {
   property: Property;
 }
 
 const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
+  const t = useCopy(COPY);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
 
@@ -35,15 +80,15 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
       ...(property.gallery_images || []).map((image, index) => ({
         type: 'image' as const,
         url: image,
-        alt: `${property.title} gallery image ${index + 1}`
+        alt: t.titledImage(property.title, index + 1)
       })),
       ...(property.video_urls || []).map((video, index) => ({
         type: 'video' as const,
         url: video,
-        alt: `${property.title} video ${index + 1}`
+        alt: t.titledVideo(property.title, index + 1)
       }))
     ];
-  }, [property.gallery_images, property.video_urls, property.title]);
+  }, [property.gallery_images, property.video_urls, property.title, t]);
 
   if (!mediaItems.length) {
     return null;
@@ -53,9 +98,9 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
     <section id="gallery-section" className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Photo Gallery</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-4">{t.heading}</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Explore our stunning property through these carefully curated images and videos
+            {t.intro}
           </p>
         </div>
 
@@ -68,7 +113,7 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
                   onClick={() => handleImageClick(0)}
                   className="text-primary hover:text-primary/80 transition-colors font-medium ml-auto"
                 >
-                  View All Images ({property.gallery_images.length})
+                  {t.viewAll(property.gallery_images.length)}
                 </button>
               )}
             </div>
@@ -81,7 +126,7 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
                       <LazyImage
                         sizes="(max-width: 768px) 50vw, 420px"
                         src={image}
-                        alt={metadata?.alt || `Gallery image ${index + 1}`}
+                        alt={metadata?.alt || t.galleryImage(index + 1)}
                         className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-end p-4">
@@ -102,7 +147,7 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
                   <LazyImage
                     sizes="(max-width: 768px) 50vw, 420px"
                     src={property.gallery_images[3]}
-                    alt={property.gallery_metadata?.[3]?.alt || 'Gallery image 4'}
+                    alt={property.gallery_metadata?.[3]?.alt || t.galleryImage(4)}
                     className="w-full h-full object-cover cursor-pointer transition-opacity group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
@@ -128,7 +173,7 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
         {/* Videos Grid */}
         {property.video_urls && property.video_urls.length > 0 && (
           <div>
-            <h3 className="text-xl font-semibold mb-6 text-foreground">Videos</h3>
+            <h3 className="text-xl font-semibold mb-6 text-foreground">{t.videos}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {property.video_urls.map((video, index) => (
                 <div key={`video-${index}`} className="relative group overflow-hidden rounded-lg">
@@ -157,9 +202,9 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
       <ImageDialog
         images={(property.gallery_images || []).map((image, index) => ({
           src: image,
-          alt: `Gallery image ${index + 1}`,
-          title: `${property.title} - Image ${index + 1}`,
-          description: `Gallery image from ${property.title}`
+          alt: t.galleryImage(index + 1),
+          title: t.imageTitle(property.title, index + 1),
+          description: t.imageFrom(property.title)
         }))}
         isOpen={selectedImageIndex !== null}
         onClose={handleCloseImageDialog}
@@ -170,8 +215,8 @@ const PropertyGalleryOptimized = memo(({ property }: PropertyGalleryProps) => {
         media={(property.video_urls || []).map((video, index) => ({
           type: 'video' as const,
           url: video,
-          title: `${property.title} - Video ${index + 1}`,
-          alt: `Video from ${property.title}`
+          title: t.videoTitle(property.title, index + 1),
+          alt: t.videoFrom(property.title)
         }))}
         isOpen={selectedMediaIndex !== null}
         onClose={handleCloseMediaDialog}

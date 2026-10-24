@@ -18,6 +18,8 @@ import { CONTENT_LANGS, type ContentLang, LISTING_SOURCE_COLUMNS, listingTexts, 
 const MODEL = "claude-opus-5-5";
 /** Source characters per request: keeps each answer well inside max_tokens and the function's time */
 const CHUNK_CHARS = 5000;
+/** Longer single texts would not fit one answer; guests see them as the host wrote them */
+const MAX_FIELD_CHARS = 12000;
 const MAX_TOKENS = 16000;
 const PARALLEL_REQUESTS = 3;
 /** Edge functions stop at 400 s; no new request starts after this */
@@ -25,7 +27,7 @@ const TIME_BUDGET_MS = 240_000;
 
 const SYSTEM_PROMPT = `You translate holiday-rental listings for Nordic Getaways, a site where guests book cabins and holiday homes in Sweden directly from their hosts. Hosts write in their own language; guests read the listing in British English, Swedish or German.
 
-For each field, work out which language it is written in, then translate it into each of en (British English), sv (Swedish) and de (German), leaving out the language it is already written in. Use source_lang "other" for any other language and give all three.
+For each field, work out which language it is written in (source_lang; "other" for any language but these three), then give it in en (British English), sv (Swedish) and de (German). For the language it is already written in, give the text unchanged.
 
 - Keep the meaning, tone and level of detail. Add nothing, explain nothing and leave nothing out.
 - Keep line breaks, list markers, emoji, numbers, times, dates, prices, phone numbers, e-mail addresses and URLs exactly as they are.
@@ -48,7 +50,7 @@ const OUTPUT_SCHEMA = {
           sv: { type: "string" },
           de: { type: "string" },
         },
-        required: ["id", "source_lang"],
+        required: ["id", "source_lang", "en", "sv", "de"],
         additionalProperties: false,
       },
     },
@@ -66,9 +68,9 @@ interface Field {
 interface TranslatedField {
   id: string;
   source_lang: ContentLang | "other";
-  en?: string;
-  sv?: string;
-  de?: string;
+  en: string;
+  sv: string;
+  de: string;
 }
 
 class Refused extends Error {}
@@ -105,6 +107,11 @@ async function listingFields(supabase: SupabaseClient, property: Record<string, 
   }
   const texts = listingTexts(property, extras ?? []);
   const stale = Object.entries(texts)
+    .filter(([path, text]) => {
+      if (text.length <= MAX_FIELD_CHARS) return true;
+      console.warn("[TRANSLATE-CONTENT] Too long to translate:", property.id, path, text.length);
+      return false;
+    })
     .map(([path, text]) => ({ path, text, hash: textHash(text) }))
     .filter(({ path, hash }) => {
       const langs = done.get(`${path}\n${hash}`);

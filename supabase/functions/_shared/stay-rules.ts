@@ -15,6 +15,9 @@ export interface StayRules {
   min_guest_age?: number | null;
 }
 
+/** The guest site's languages (the same as ContentLang in listing-text.ts) */
+type Lang = "en" | "sv" | "de";
+
 /** New listings start with these (the database defaults) */
 export const DEFAULT_STAY_RULES = {
   min_nights: 1,
@@ -57,28 +60,63 @@ export function stayNights(checkIn: string, checkOut: string): string[] {
   return nights;
 }
 
-export function stayRuleError(checkIn: string, checkOut: string, rules: StayRules): string | null {
+// What guests read, in the page's language. English is also what the payment
+// function answers and the e-mails say.
+const RULE_TEXT = {
+  en: {
+    minStayError: (min: number) => `The minimum stay is ${min} night${min !== 1 ? "s" : ""}.`,
+    holidayError: (min: number) => `Stays over Valborg, Midsummer and New Year's Eve are at least ${min} nights.`,
+    minStay: (min: number, holidayMin: number | null) =>
+      `Minimum stay ${min} night${min !== 1 ? "s" : ""}${holidayMin ? ` (${holidayMin} over Valborg, Midsummer and New Year's Eve)` : ""}`,
+    pets: (allowed: boolean) => (allowed ? "Pets allowed" : "No pets"),
+    smoking: (allowed: boolean) => (allowed ? "Smoking allowed" : "No smoking"),
+    events: (allowed: boolean) => (allowed ? "Parties and events allowed" : "No parties or events"),
+    age: (age: number) => `The person booking is at least ${age} and stays at the place`,
+  },
+  sv: {
+    minStayError: (min: number) => `Minsta vistelse är ${min} ${min !== 1 ? "nätter" : "natt"}.`,
+    holidayError: (min: number) => `Över valborg, midsommar och nyårsafton är minsta vistelse ${min} nätter.`,
+    minStay: (min: number, holidayMin: number | null) =>
+      `Minsta vistelse ${min} ${min !== 1 ? "nätter" : "natt"}${holidayMin ? ` (${holidayMin} över valborg, midsommar och nyårsafton)` : ""}`,
+    pets: (allowed: boolean) => (allowed ? "Husdjur tillåtna" : "Inga husdjur"),
+    smoking: (allowed: boolean) => (allowed ? "Rökning tillåten" : "Ingen rökning"),
+    events: (allowed: boolean) => (allowed ? "Fester och evenemang tillåtna" : "Inga fester eller evenemang"),
+    age: (age: number) => `Den som bokar är minst ${age} år och bor själv på boendet`,
+  },
+  de: {
+    minStayError: (min: number) => `Der Mindestaufenthalt beträgt ${min} ${min !== 1 ? "Nächte" : "Nacht"}.`,
+    holidayError: (min: number) => `Über Walpurgisnacht, Mittsommer und Silvester beträgt der Mindestaufenthalt ${min} Nächte.`,
+    minStay: (min: number, holidayMin: number | null) =>
+      `Mindestaufenthalt ${min} ${min !== 1 ? "Nächte" : "Nacht"}${holidayMin ? ` (${holidayMin} über Walpurgisnacht, Mittsommer und Silvester)` : ""}`,
+    pets: (allowed: boolean) => (allowed ? "Haustiere erlaubt" : "Keine Haustiere"),
+    smoking: (allowed: boolean) => (allowed ? "Rauchen erlaubt" : "Rauchen nicht erlaubt"),
+    events: (allowed: boolean) => (allowed ? "Partys und Veranstaltungen erlaubt" : "Keine Partys oder Veranstaltungen"),
+    age: (age: number) => `Die buchende Person ist mindestens ${age} Jahre alt und übernachtet selbst in der Unterkunft`,
+  },
+};
+
+export function stayRuleError(checkIn: string, checkOut: string, rules: StayRules, lang: Lang = "en"): string | null {
+  const text = RULE_TEXT[lang];
   const nights = stayNights(checkIn, checkOut);
   const min = minNights(rules);
   if (nights.length < min) {
-    return `The minimum stay is ${min} night${min !== 1 ? "s" : ""}.`;
+    return text.minStayError(min);
   }
   const holidayMin = holidayMinNights(rules);
   if (holidayMin && nights.length < holidayMin && nights.some(isPartyNight)) {
-    return `Stays over Valborg, Midsummer and New Year's Eve are at least ${holidayMin} nights.`;
+    return text.holidayError(holidayMin);
   }
   return null;
 }
 
 /** The listing's rules as short lines for guests: "Minimum stay 2 nights (3 over Valborg, …)", "No pets", … */
-export function houseRuleLines(rules: StayRules): string[] {
-  const min = minNights(rules);
-  const holidayMin = holidayMinNights(rules);
+export function houseRuleLines(rules: StayRules, lang: Lang = "en"): string[] {
+  const text = RULE_TEXT[lang];
   return [
-    `Minimum stay ${min} night${min !== 1 ? "s" : ""}${holidayMin ? ` (${holidayMin} over Valborg, Midsummer and New Year's Eve)` : ""}`,
-    rules.pets_allowed ? "Pets allowed" : "No pets",
-    rules.smoking_allowed ? "Smoking allowed" : "No smoking",
-    rules.events_allowed ? "Parties and events allowed" : "No parties or events",
-    `The person booking is at least ${minGuestAge(rules)} and stays at the place`,
+    text.minStay(minNights(rules), holidayMinNights(rules)),
+    text.pets(!!rules.pets_allowed),
+    text.smoking(!!rules.smoking_allowed),
+    text.events(!!rules.events_allowed),
+    text.age(minGuestAge(rules)),
   ];
 }

@@ -1,6 +1,32 @@
 import { usePageMeta } from "@/hooks/usePageMeta";
 import LegalPage from "@/components/LegalPage";
 import { COMPANY, COMPANY_ADDRESS, PRIVACY_UPDATED } from "@/content/company";
+import { type Copy, useCopy } from "@/i18n";
+
+// The page's heading and chrome. The policy itself is in English only for
+// now, and the English version is the one that applies (LegalPage marks the
+// body as English and shows the notice)
+const en = {
+  title: "Privacy policy",
+  description: `How Nordic Getaways (${COMPANY.name}) handles personal data when you book a stay, shop or contact us, and what rights you have.`,
+  lead: "What personal data Nordic Getaways collects, why, who we share it with and what rights you have.",
+  notice: null as string | null,
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    title: "Integritetspolicy",
+    description: `Så hanterar Nordic Getaways (${COMPANY.name}) personuppgifter när du bokar en vistelse, handlar i butiken eller kontaktar oss, och vilka rättigheter du har.`,
+    lead: "Vilka personuppgifter Nordic Getaways samlar in, varför, vilka vi delar dem med och vilka rättigheter du har.",
+    notice: "Integritetspolicyn finns än så länge bara på engelska. Den engelska versionen gäller.",
+  },
+  de: {
+    title: "Datenschutzerklärung",
+    description: `Wie Nordic Getaways (${COMPANY.name}) personenbezogene Daten verarbeitet, wenn du einen Aufenthalt buchst, im Shop einkaufst oder uns kontaktierst, und welche Rechte du hast.`,
+    lead: "Welche personenbezogenen Daten Nordic Getaways erhebt, warum, an wen wir sie weitergeben und welche Rechte du hast.",
+    notice: "Die Datenschutzerklärung gibt es vorerst nur auf Englisch. Es gilt die englische Fassung.",
+  },
+};
 
 // Keep in line with what the site actually collects and who it shares it
 // with (booking, shop, contact form, accounts, guestbook, providers below).
@@ -61,22 +87,20 @@ const PROVIDERS = [
   ["Stripe", "card payments and refunds, and payouts to hosts"],
   ["Resend", "sending emails"],
   ["Printful", "printing and delivering shop orders"],
+  ["Anthropic", "translating the text hosts write on their listings into English, Swedish and German (no guest data)"],
   ["OpenStreetMap", "map images and the place search; your browser sends them your IP address and any place you search for"],
 ];
 
 const PrivacyPolicy = () => {
+  const t = useCopy(COPY);
   usePageMeta({
-    title: "Privacy policy",
-    description: `How Nordic Getaways (${COMPANY.name}) handles personal data when you book a stay, shop or contact us, and what rights you have.`,
+    title: t.title,
+    description: t.description,
     path: "/privacy",
   });
 
   return (
-    <LegalPage
-      title="Privacy policy"
-      lead="What personal data Nordic Getaways collects, why, who we share it with and what rights you have."
-      updated={PRIVACY_UPDATED}
-    >
+    <LegalPage title={t.title} lead={t.lead} updated={PRIVACY_UPDATED} notice={t.notice}>
       <section>
         <h2>Who is responsible</h2>
         <p>
@@ -128,7 +152,7 @@ const PrivacyPolicy = () => {
       <section>
         <h2>Transfers outside the EU</h2>
         <p>
-          Some providers, such as Cloudflare, Stripe, Resend and Printful, may handle data outside the EU/EEA, mainly
+          Some providers, such as Cloudflare, Stripe, Resend, Printful and Anthropic, may handle data outside the EU/EEA, mainly
           in the US. They do so under safeguards approved by the EU, such as the EU–US Data Privacy Framework or the
           EU standard contractual clauses.
         </p>
@@ -138,7 +162,7 @@ const PrivacyPolicy = () => {
         <h2>Cookies and storage</h2>
         <p>
           We use no advertising or analytics cookies and no tracking scripts. Your browser stores what the site needs
-          to work: your shopping cart, your session if you sign in, and whether you have closed a notice. Cloudflare
+          to work: your shopping cart, your session if you sign in, the language you picked, and whether you have closed a notice. Cloudflare
           may set a cookie that protects the site against bots. These are needed for the site to work, so they do not
           require consent.
         </p>

@@ -4,6 +4,49 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, isSameDay, addDays, eachDayOfInterval } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { type Copy, useCopy } from "@/i18n";
+import { useDateFnsLocale } from "@/i18n/dates";
+
+const en = {
+  dateUnavailable: "Date unavailable",
+  notForCheckIn: "This date is not available for check-in",
+  rangeUnavailable: "Range unavailable",
+  rangeNotBookable: "Some nights in this date range are not available for booking",
+  checkoutOnly: "Checkout only",
+  selected: "Selected",
+  available: "Available",
+  unavailable: "Unavailable",
+  // The month buttons, for screen readers (react-day-picker's own English)
+  previousMonth: "Go to previous month",
+  nextMonth: "Go to next month",
+};
+const COPY: Copy<typeof en> = {
+  en,
+  sv: {
+    dateUnavailable: "Datumet är inte ledigt",
+    notForCheckIn: "Det går inte att checka in det här datumet",
+    rangeUnavailable: "Datumen är inte lediga",
+    rangeNotBookable: "Några nätter mellan datumen går inte att boka",
+    checkoutOnly: "Endast utcheckning",
+    selected: "Valt",
+    available: "Ledigt",
+    unavailable: "Inte ledigt",
+    previousMonth: "Föregående månad",
+    nextMonth: "Nästa månad",
+  },
+  de: {
+    dateUnavailable: "Datum nicht verfügbar",
+    notForCheckIn: "An diesem Datum ist kein Check-in möglich",
+    rangeUnavailable: "Zeitraum nicht verfügbar",
+    rangeNotBookable: "Einige Nächte in diesem Zeitraum sind nicht buchbar",
+    checkoutOnly: "Nur Check-out",
+    selected: "Ausgewählt",
+    available: "Verfügbar",
+    unavailable: "Nicht verfügbar",
+    previousMonth: "Vorheriger Monat",
+    nextMonth: "Nächster Monat",
+  },
+};
 
 interface AvailabilityDate {
   date: string;
@@ -34,6 +77,8 @@ const PropertyCalendarOptimized = memo(({
     checkOut: Date | null;
   }>({ checkIn: null, checkOut: null });
   const { toast } = useToast();
+  const t = useCopy(COPY);
+  const dateLocale = useDateFnsLocale();
 
   useEffect(() => {
     fetchAvailability();
@@ -83,8 +128,8 @@ const PropertyCalendarOptimized = memo(({
       // Start new selection - check if check-in date is available
       if (!isDateAvailable(date)) {
         toast({
-          title: "Date unavailable",
-          description: "This date is not available for check-in",
+          title: t.dateUnavailable,
+          description: t.notForCheckIn,
           variant: "destructive"
         });
         return;
@@ -97,8 +142,8 @@ const PropertyCalendarOptimized = memo(({
         // If selected date is before check-in, make it the new check-in
         if (!isDateAvailable(date)) {
           toast({
-            title: "Date unavailable",
-            description: "This date is not available for check-in",
+            title: t.dateUnavailable,
+            description: t.notForCheckIn,
             variant: "destructive"
           });
           return;
@@ -109,8 +154,8 @@ const PropertyCalendarOptimized = memo(({
         // Validate that all nights in the range are available
         if (!validateDateRange(checkIn, date)) {
           toast({
-            title: "Range unavailable",
-            description: "Some nights in this date range are not available for booking",
+            title: t.rangeUnavailable,
+            description: t.rangeNotBookable,
             variant: "destructive"
           });
           return;
@@ -200,7 +245,7 @@ const PropertyCalendarOptimized = memo(({
               {dayContent}
             </TooltipTrigger>
             <TooltipContent>
-              <p>Checkout only</p>
+              <p>{t.checkoutOnly}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -216,19 +261,19 @@ const PropertyCalendarOptimized = memo(({
         <div className="flex gap-4 text-sm flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-primary"></div>
-            <span>Selected</span>
+            <span>{t.selected}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-primary/20"></div>
-            <span>Available</span>
+            <span>{t.available}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded text-muted-foreground/70 flex items-center justify-center text-xs underline decoration-dotted">5</div>
-            <span>Checkout only</span>
+            <span>{t.checkoutOnly}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded text-muted-foreground/40 flex items-center justify-center text-xs">6</div>
-            <span>Unavailable</span>
+            <span>{t.unavailable}</span>
           </div>
         </div>
       </div>
@@ -238,6 +283,8 @@ const PropertyCalendarOptimized = memo(({
         onSelect={handleDateSelect}
         disabled={(date) => date < new Date()}
         weekStartsOn={1}
+        locale={dateLocale}
+        labels={{ labelPrevious: () => t.previousMonth, labelNext: () => t.nextMonth }}
         className="rounded-md border w-full"
         components={{
           Day: ({ date }) => renderDay(date)

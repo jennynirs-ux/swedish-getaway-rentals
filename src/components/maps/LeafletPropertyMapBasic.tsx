@@ -3,6 +3,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { useCopy } from '@/i18n';
+
+const DIRECTIONS = { en: 'Get directions →', sv: 'Vägbeskrivning →', de: 'Route planen →' };
 
 const DefaultIcon = L.icon({
   iconUrl,
@@ -25,6 +28,8 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
   const markerRef = useRef<L.Marker | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const directionsText = useCopy(DIRECTIONS);
+  const directionsRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -51,7 +56,8 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
     directions.href = googleMapsUrl;
     directions.target = '_blank';
     directions.rel = 'noopener noreferrer';
-    directions.textContent = 'Get directions →';
+    directions.textContent = directionsText;
+    directionsRef.current = directions;
     popup.append(title, directions);
     marker.bindPopup(popup);
     markerRef.current = marker;
@@ -69,6 +75,11 @@ const LeafletPropertyMapBasic: React.FC<Props> = ({ position, propertyTitle, goo
       polylineRef.current = null;
     };
   }, []);
+
+  // The page stays mounted when the guest picks another language
+  useEffect(() => {
+    if (directionsRef.current) directionsRef.current.textContent = directionsText;
+  }, [directionsText]);
 
   // Update position/route when props change
   useEffect(() => {
