@@ -81,7 +81,7 @@ const HostManagement = () => {
   const [newCommissionRate, setNewCommissionRate] = useState("");
   // What each host owes us and is not settled yet (host_charges, öre by host profile)
   const [openCharges, setOpenCharges] = useState<Map<string, number>>(new Map());
-  // DAC7 tax details given (save-host-tax-profile); publishing needs them
+  // DAC7 tax details given (save-host-tax-profile); payouts wait for them
   const [taxDone, setTaxDone] = useState<Map<string, string>>(new Map());
 
   const fetchData = async () => {

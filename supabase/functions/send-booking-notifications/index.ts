@@ -746,11 +746,23 @@ ${copy.team}
         (booking.host_payout_status === 'held' ? payoutDueOn(booking.check_in_date, booking.created_at) : afterStay);
       const payoutDate = longDate(dueOn);
       const beforeStay = booking.host_payout_status !== 'manual' && dueOn < afterStay;
+      // Payouts wait for the host's DAC7 tax details (release-host-payouts
+      // holds them); if they can't be read, the usual date is shown
+      const { data: taxRow, error: taxError } = await supabase
+        .from('host_tax_profiles')
+        .select('dac7_complete')
+        .eq('profile_id', property?.host_id ?? '')
+        .maybeSingle();
+      if (taxError) console.error('Could not read the host tax details for booking:', bookingId, taxError.message);
+      const taxMissing = !taxError && taxRow?.dac7_complete !== true;
+      const taxWait = "EU rules (DAC7) require us to collect a few tax details from every host, and we pay out once yours are filled in under Payouts & tax (Utbetalningar & skatt) in your host dashboard.";
       const payoutHtml = booking.host_payout_status === 'manual'
-        ? `This payment could not be sent to your Stripe account, so we will pay you by hand on ${payoutDate}, the day after check-in. Connect your bank account under Bank Account in your host dashboard so future payouts are automatic.`
-        : beforeStay
-          ? `Paid out to your bank account on ${payoutDate}, before the stay: we pay out at the latest ${MAX_HOLD_DAYS} days after the guest's payment, because Stripe holds money for at most 90 days. If the guest cancels after that, the part of the refund that comes from your share is taken from your next payout.`
-          : `Paid out to your bank account on ${payoutDate}, the day after check-in.`;
+        ? `This payment could not be sent to your Stripe account, so we will pay you by hand on ${payoutDate}, the day after check-in${taxMissing ? ', once your tax details are in' : ''}. Connect your bank account under Bank Account in your host dashboard so future payouts are automatic.${taxMissing ? ` ${taxWait}` : ''}`
+        : taxMissing
+          ? `Paid out to your bank account once your tax details are in, at the earliest on ${payoutDate}. ${taxWait}`
+          : beforeStay
+            ? `Paid out to your bank account on ${payoutDate}, before the stay: we pay out at the latest ${MAX_HOLD_DAYS} days after the guest's payment, because Stripe holds money for at most 90 days. If the guest cancels after that, the part of the refund that comes from your share is taken from your next payout.`
+            : `Paid out to your bank account on ${payoutDate}, the day after check-in.`;
       const cancellationHtml =
         "If the guest cancels, they get the cancellation policy's percentage of your price back, and that amount is taken from your payout for this booking (or from your next payout, if this one has already been paid); the guest service fee is not refunded to them and never comes out of your share. " +
         "If you have to cancel, the guest gets everything back, you receive nothing for the booking and Stripe's card fee for the payment is deducted from a later payout.";
@@ -787,6 +799,7 @@ ${copy.team}
                 <p class="payout">You receive ${formatAmount(hostAmount)} ${currencyHtml}</p>
                 <p class="muted">The guest paid ${formatAmount(booking.total_amount)} ${currencyHtml}${booking.service_fee ? `, including the ${formatAmount(booking.service_fee)} ${currencyHtml} guest service fee to Nordic Getaways` : ''}.</p>
                 <p>${escapeHtml(payoutHtml)}</p>
+                ${taxMissing ? `<p><a href="${escapeHtml(`${baseUrl}/host-dashboard?tab=payouts`)}">Add your tax details</a></p>` : ''}
                 <p class="muted">${escapeHtml(cancellationHtml)}</p>
               </div>
               <div class="info-box">

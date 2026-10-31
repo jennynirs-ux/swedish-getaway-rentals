@@ -13,7 +13,8 @@ import { toast } from "sonner";
 import { HOST_CHECKLIST_KEY } from "./HostOnboardingChecklist";
 
 // The DAC7 step: what Swedish law (lag 2022:1681) makes us collect from every
-// host before their listing goes live. Saved through save-host-tax-profile,
+// host. Needed before the first payout, not to publish: release-host-payouts
+// holds a host's payouts until they are complete. Saved through save-host-tax-profile,
 // which checks the numbers and stores them encrypted; this page only ever sees
 // the masked forms (the database doesn't let the browser read the rest).
 
@@ -195,12 +196,13 @@ export function HostTaxDetails() {
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <CardTitle>Skatteuppgifter</CardTitle>
-          {saved?.dac7_complete ? <Badge variant="secondary">Klart</Badge> : <Badge variant="destructive">Krävs för att publicera</Badge>}
+          {saved?.dac7_complete ? <Badge variant="secondary">Klart</Badge> : <Badge variant="destructive">Behövs innan utbetalning</Badge>}
         </div>
         <CardDescription>
           Enligt EU:s regler (DAC7) måste vi samla in några uppgifter från alla värdar och rapportera dina hyresinkomster
           via Nordic Getaways till Skatteverket en gång per år. Skatteverket kan dela dem med skattemyndigheter i andra
-          EU-länder. Du får en kopia av det vi rapporterar senast 31 januari.
+          EU-länder. Du får en kopia av det vi rapporterar senast 31 januari. Vi behöver uppgifterna innan vi kan betala
+          ut till dig.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">

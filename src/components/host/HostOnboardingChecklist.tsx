@@ -105,7 +105,7 @@ interface ChecklistProperty {
 
 interface ChecklistData {
   termsAccepted: boolean;
-  /** DAC7 tax details saved and complete (publishing needs them) */
+  /** DAC7 tax details saved and complete (payouts need them, publishing doesn't) */
   taxDone: boolean;
   /** The profile's stored flag, used until Stripe's live answer is in */
   storedPayoutReady: boolean;
@@ -289,7 +289,8 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty, onEditProperty, 
     {
       id: "tax",
       label: "Lägg till dina skatteuppgifter",
-      description: "Svensk lag (DAC7) kräver några uppgifter från alla värdar innan en annons publiceras. Sedan fyller vi i ditt namn och din adress hos Stripe åt dig.",
+      description:
+        "Enligt lag (EU:s DAC7-regler) måste vi samla in några uppgifter från alla värdar. Du kan publicera utan dem, men vi betalar ut först när de är ifyllda. Fyller du i dem före Stripe fyller vi i ditt namn och din adress där åt dig.",
       done: data.taxDone,
       actionLabel: "Lägg till skatteuppgifter",
       action: () => onGoToTab("payouts"),
@@ -328,7 +329,11 @@ const HostOnboardingChecklist = ({ onGoToTab, onCreateProperty, onEditProperty, 
             <CardTitle className="text-base">Kom igång som värd</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               {completed} av {total} klara
-              {target && !target.active ? ` för ”${target.title}”` : ""}. Gör klart resten så kan du börja ta emot bokningar.
+              {target && !target.active ? ` för ”${target.title}”` : ""}.{" "}
+              {/* A live listing takes bookings; what it still needs is the tax details, for payouts */}
+              {target?.active && !data.taxDone
+                ? "Lägg till dina skatteuppgifter, så att vi kan betala ut till dig."
+                : "Gör klart resten så kan du börja ta emot bokningar."}
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={dismiss} title="Dölj" aria-label="Dölj checklistan">

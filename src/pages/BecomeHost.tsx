@@ -272,7 +272,7 @@ const copy = (lang: Lang): Copy => {
             <>
               Du deklarerar själv dina hyresinkomster. Enligt lag (EU:s DAC7-regler) rapporterar vi värdarnas
               hyresinkomster via Nordic Getaways till Skatteverket en gång per år, och ber dig om de uppgifter som behövs
-              innan din annons publiceras. Kontrollera alltid aktuella regler hos {skatteverketLink("Skatteverket")}.
+              innan din första utbetalning. Kontrollera alltid aktuella regler hos {skatteverketLink("Skatteverket")}.
             </>
           ),
         },
@@ -464,7 +464,7 @@ const copy = (lang: Lang): Copy => {
           <>
             You’re responsible for declaring your rental income. By law (the EU's DAC7 rules) we report hosts' rental
             income from Nordic Getaways to Skatteverket once a year, and ask you for the details needed before your
-            listing goes live. Always double-check with {skatteverketLink("Skatteverket")} for updated details.
+            first payout. Always double-check with {skatteverketLink("Skatteverket")} for updated details.
           </>
         ),
       },

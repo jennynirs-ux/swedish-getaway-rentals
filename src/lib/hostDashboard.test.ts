@@ -99,6 +99,19 @@ describe("hostPayoutText: where the host's money is, in plain words", () => {
     expect(hostPayoutText({ ...booking, host_payout_status: "platform" }, 1_000_000, today)).toMatch(/^Hanteras av oss/);
     expect(hostPayoutText({ ...booking, host_payout_status: null }, 1_000_000, today)).toBeNull();
   });
+
+  it("tax details missing: never promises a payout date, since nothing is paid until they are in", () => {
+    const waiting = "Ditt pris väntar på dina skatteuppgifter – vi betalar ut när de är ifyllda";
+    expect(hostPayoutText({ ...booking, host_payout_status: "held" }, 1_000_000, today, true)).toBe(waiting);
+    expect(
+      hostPayoutText({ ...booking, host_payout_status: "held", host_payout_due_on: "2026-10-20" }, 1_000_000, today, true),
+    ).toBe(waiting);
+    expect(hostPayoutText({ ...booking, host_payout_status: "held" }, 0, today, true)).toBe("Inget att betala ut för den här bokningen");
+    expect(hostPayoutText({ ...booking, host_payout_status: "manual" }, 1_000_000, today, true)).toBe(
+      "Vi betalar den här bokningen direkt till dig med banköverföring när dina skatteuppgifter är ifyllda",
+    );
+    expect(hostPayoutText({ ...booking, host_payout_status: "paid_out" }, 1_000_000, today, true)).toBe("Utbetalt till din bank");
+  });
 });
 
 describe("open host charges (e.g. the card fee when the host cancelled)", () => {

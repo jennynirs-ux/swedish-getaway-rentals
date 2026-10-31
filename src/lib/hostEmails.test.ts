@@ -132,6 +132,12 @@ describe("host cancellation e-mail (M8)", () => {
     expect(body).not.toContain("card fee");
   });
 
+  it("guest cancels while the host's tax details are missing: what is left waits for them", () => {
+    const body = text(hostCancellationEmail(guestCancels, "Jon", true).html);
+    expect(body).toContain(`You keep 1 000 SEK for this booking, paid out to your bank once your tax details are in (at the earliest on ${longDate("2026-12-21")}`);
+    expect(body).not.toContain(`paid out to your bank on ${longDate("2026-12-21")}`);
+  });
+
   it("host cancels: whole payout taken back and the card fee charged", () => {
     const body = text(hostCancellationEmail(hostCancels, "Jon").html);
     expect(body).toContain("cancelled at your request");

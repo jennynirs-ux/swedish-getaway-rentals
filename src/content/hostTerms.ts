@@ -6,7 +6,9 @@
 // date on the page follows, and the app must compare it with
 // profiles.host_terms_version to ask again.
 
-export const HOST_TERMS_VERSION = "2026-10-22";
+import { HOST_TERMS_VERSION } from "../../supabase/functions/_shared/host-terms";
+
+export { HOST_TERMS_VERSION };
 
 export const HOST_TERMS_PATH = "/host-terms";
 

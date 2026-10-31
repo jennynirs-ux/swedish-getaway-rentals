@@ -52,3 +52,6 @@ verify_jwt = true
 
 [functions.translate-content]
 verify_jwt = true
+
+[functions.send-host-reminders]
+verify_jwt = true

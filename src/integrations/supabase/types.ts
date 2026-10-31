@@ -928,6 +928,72 @@ export type Database = {
           },
         ]
       }
+      host_notices: {
+        Row: {
+          booking_id: string | null
+          details: Json | null
+          id: string
+          kind: string
+          profile_id: string
+          property_id: string | null
+          sent_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          details?: Json | null
+          id?: string
+          kind: string
+          profile_id: string
+          property_id?: string | null
+          sent_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          details?: Json | null
+          id?: string
+          kind?: string
+          profile_id?: string
+          property_id?: string | null
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_notices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_notices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_notices_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_notices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_notices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       host_referrals: {
         Row: {
           completed_at: string | null
@@ -1439,6 +1505,7 @@ export type Database = {
           email_templates: Json | null
           events_allowed: boolean
           featured_amenities: Json | null
+          first_published_at: string | null
           footer_quick_links: Json | null
           gallery_images: string[] | null
           gallery_metadata: Json | null
@@ -1510,6 +1577,7 @@ export type Database = {
           email_templates?: Json | null
           events_allowed?: boolean
           featured_amenities?: Json | null
+          first_published_at?: string | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null
@@ -1581,6 +1649,7 @@ export type Database = {
           email_templates?: Json | null
           events_allowed?: boolean
           featured_amenities?: Json | null
+          first_published_at?: string | null
           footer_quick_links?: Json | null
           gallery_images?: string[] | null
           gallery_metadata?: Json | null

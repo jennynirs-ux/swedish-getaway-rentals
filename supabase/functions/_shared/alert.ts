@@ -29,7 +29,8 @@ export function alertAdmin(subject: string, lines: string[]): Promise<boolean> {
 
 /**
  * alertAdmin once per key (e.g. a Stripe session): Stripe retries a failing
- * webhook for days, and the guest's redirect runs the same code.
+ * webhook for days, and the guest's redirect runs the same code. A failed
+ * e-mail is tried again on the next call with the same key.
  */
 export async function alertAdminOnce(
   supabase: SupabaseClient,
@@ -43,6 +44,14 @@ export async function alertAdminOnce(
     .eq("action", "admin_alert")
     .eq("user_agent", key);
   if (count) return;
-  await supabase.from("security_audit_log").insert({ action: "admin_alert", table_name: "alerts", user_agent: key });
-  await alertAdmin(subject, lines);
+  // Saved before sending, so two runs at once don't both send; taken back if
+  // the e-mail fails, so the next run tries again instead of never telling us
+  const { data: saved } = await supabase
+    .from("security_audit_log")
+    .insert({ action: "admin_alert", table_name: "alerts", user_agent: key })
+    .select("id")
+    .maybeSingle();
+  if (!(await alertAdmin(subject, lines)) && saved?.id) {
+    await supabase.from("security_audit_log").delete().eq("id", saved.id);
+  }
 }

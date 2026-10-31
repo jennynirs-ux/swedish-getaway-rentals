@@ -103,12 +103,14 @@ async function missingConfirmations(supabase: SupabaseClient): Promise<string[]>
 }
 
 const MONEY_COLUMNS =
-  "id, status, created_at, check_in_date, host_amount, total_amount, service_fee, refunded_amount, host_reversed_amount, stripe_payment_intent_id, stripe_transfer_id, host_payout_due_on, properties(title)";
+  "id, status, created_at, check_in_date, host_amount, total_amount, service_fee, refunded_amount, host_reversed_amount, stripe_payment_intent_id, stripe_transfer_id, host_payout_due_on, properties(title, host_id)";
 
 // The money is on the platform account until someone pays the host by hand
 // and sets host_payout_status to paid_out. Only bookings without a Stripe
 // transfer: with one, the host's share is in their own Stripe balance and
 // paying by hand would pay them twice (listed under the refund check instead).
+// Hosts without complete DAC7 tax details are not paid yet (owner decision 31
+// Oct 2026): their bookings are listed on their own until the details are in.
 async function manualPayouts(supabase: SupabaseClient, today: string): Promise<string[]> {
   const { data: bookings, error } = await supabase
     .from("bookings")
@@ -122,12 +124,25 @@ async function manualPayouts(supabase: SupabaseClient, today: string): Promise<s
   // What we still owe: the host's share less what refunds took from it
   const owing = bookings.map((b) => ({ ...b, owed: hostNetAmount(b) }));
   const nothingLeft = owing.filter((b) => b.owed === 0);
-  const toPay = owing.filter((b) => b.owed > 0);
+  const hostOf = (b: { properties?: unknown }) => (b.properties as { host_id?: string | null } | null)?.host_id ?? null;
+  const hostIds = [...new Set(owing.map(hostOf).filter((id): id is string => !!id))];
+  const { data: taxRows, error: taxError } = hostIds.length
+    ? await supabase.from("host_tax_profiles").select("profile_id, dac7_complete").in("profile_id", hostIds)
+    : { data: [], error: null };
+  if (taxError) throw taxError;
+  const taxReady = new Set((taxRows ?? []).filter((t) => t.dac7_complete === true).map((t) => t.profile_id));
+  // Bookings without a host are not affected, as in release-host-payouts
+  const taxMissing = (b: { properties?: unknown }) => !!hostOf(b) && !taxReady.has(hostOf(b)!);
+  const waitingForTax = owing.filter((b) => b.owed > 0 && taxMissing(b));
+  const toPay = owing.filter((b) => b.owed > 0 && !taxMissing(b));
   const soon = addDays(today, MANUAL_PAYOUT_SOON_DAYS);
   const due = toPay.filter((b) => !b.host_payout_due_on || b.host_payout_due_on <= soon);
   const later = toPay.filter((b) => b.host_payout_due_on && b.host_payout_due_on > soon);
 
-  const lines = due.map((b) => {
+  const lines = waitingForTax.map((b) =>
+    `Do not pay yet: the host's tax details (DAC7) are missing. ${titleOf(b)}, check-in ${b.check_in_date}, ${kr(b.owed)} SEK to pay by hand (due ${b.host_payout_due_on ?? "the day after check-in"}) once host_tax_profiles.dac7_complete is true for the host (booking ${ref(b.id)}). Listed here until then.`,
+  );
+  lines.push(...due.map((b) => {
     const when = b.host_payout_due_on
       ? (() => {
           const days = daysPastDue(b.host_payout_due_on, today);
@@ -136,7 +151,7 @@ async function manualPayouts(supabase: SupabaseClient, today: string): Promise<s
       : "no due date";
     const cancelled = b.status === "cancelled" ? " (cancelled: this is what the host keeps)" : "";
     return `Pay host by hand (${when}; due the day after check-in, since the money is in our own account and the 85-day rule is only for shares in a host's Stripe account): ${titleOf(b)}, check-in ${b.check_in_date}, ${kr(b.owed)} SEK${cancelled}, less what they owe in host_charges (card fees, refunds after payout) (booking ${ref(b.id)}). Then set its payout status to paid_out.`;
-  });
+  }));
   if (later.length) {
     lines.push(`${later.length} more host payout(s) to make by hand later; the next is due ${later[0].host_payout_due_on}.`);
   }

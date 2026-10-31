@@ -147,8 +147,9 @@ const HostTerms = () => {
           </li>
           <li>
             We pay your share of a booking out from your Stripe account to your bank the day after check-in, or 85
-            days after the guest paid if that comes first. So for a booking made more than 85 days before check-in,
-            your share is paid out before the stay. It usually reaches your bank within a few working days.
+            days after the guest paid if that comes first (unless your tax details are missing, see "Taxes and
+            reporting to Skatteverket"). So for a booking made more than 85 days before check-in, your share is paid
+            out before the stay. It usually reaches your bank within a few working days.
           </li>
           <li>
             If a guest is refunded before your share of that booking has been paid out, the refund comes out of that
@@ -306,11 +307,12 @@ const HostTerms = () => {
             may share it with tax authorities in other EU countries. We report where the law requires it.
           </li>
           <li>
-            Before your listing goes live you give us these details under "Payouts & tax" in your host dashboard: your
+            Before your first payout you give us these details under "Payouts & tax" in your host dashboard: your
             name, home address, personal identity number (personnummer or samordningsnummer) and date of birth, or for
             a company its full name, organisationsnummer and registered address; any tax numbers from other countries;
             and your VAT number if you have one. For each place you rent out we also need its address and, if it has
-            one, its property designation (fastighetsbeteckning). Keep the details up to date.
+            one, its property designation (fastighetsbeteckning). Keep the details up to date. You can publish before
+            you give the details about you or your company, but we hold your payouts until you have given them.
           </li>
           <li>
             You get a copy of what we report about you by 31 January each year.

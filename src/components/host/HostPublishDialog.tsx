@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, CircleDashed, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HOST_TERMS_VERSION } from "@/content/hostTerms";
 import { payoutState, stripeRequirementLabels } from "@/lib/hostDashboard";
@@ -16,6 +16,8 @@ import { CalendarExportLink } from "./CalendarExportLink";
 // one click, without leaving the listing. Stripe brings the host back to the
 // same listing and this window (?publish=<id>&edit=<id> on the dashboard).
 // The database (prevent_self_publish) checks the same things again on publish.
+// The tax details are shown too but don't block publishing: they are needed
+// before the first payout (release-host-payouts holds payouts until then).
 
 interface Props {
   propertyId: string | null;
@@ -37,6 +39,8 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
   const [openingStripe, setOpeningStripe] = useState(false);
   // "I only rent it here", answered in this window
   const [onlyHere, setOnlyHere] = useState(false);
+  // The tax form, opened when the host chooses to fill it in now
+  const [taxOpen, setTaxOpen] = useState(false);
 
   const { data: listing, refetch } = useQuery({
     queryKey: [READINESS_KEY, propertyId],
@@ -63,7 +67,15 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
   if (!propertyId) return null;
 
   const calendarAnswered = !!listing?.hasCalendarFeed || onlyHere || isOnlyRentedHere(propertyId);
-  const steps: { id: string; title: string; done: boolean; body?: ReactNode }[] = [
+  const taxDone = !!tax?.dac7_complete;
+  const steps: {
+    id: string;
+    title: string;
+    done: boolean;
+    /** Recommended here, not needed to publish */
+    optional?: boolean;
+    body?: ReactNode;
+  }[] = [
     {
       id: "location",
       title: "Plats på kartan och län",
@@ -85,9 +97,23 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
     },
     {
       id: "tax",
-      title: "Skatteuppgifter",
-      done: !!tax?.dac7_complete,
-      body: <HostTaxDetails />,
+      title: taxDone ? "Skatteuppgifter" : "Skatteuppgifter – behövs innan vi kan betala ut",
+      done: taxDone,
+      optional: true,
+      body: taxOpen ? (
+        <HostTaxDetails />
+      ) : (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Du kan publicera utan dem. Enligt lag (EU:s DAC7-regler) måste vi samla in några uppgifter från alla värdar,
+            och vi betalar ut när de är ifyllda.
+            {stripe === "none" && " Fyller du i dem före Stripe fyller vi i ditt namn och din adress där åt dig."}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setTaxOpen(true)}>
+            Fyll i skatteuppgifter
+          </Button>
+        </div>
+      ),
     },
     {
       id: "payouts",
@@ -167,8 +193,12 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
       ),
     },
   ];
-  const allDone = steps.every((s) => s.done);
-  const firstOpen = steps.find((s) => !s.done)?.id;
+  const allDone = steps.every((s) => s.done || s.optional);
+  // One step at a time: the first one still missing is open. A recommended
+  // step opens once the host has reached it, without holding up the next one.
+  const firstOpen = steps.findIndex((s) => !s.done && !s.optional);
+  const isOpen = (index: number) =>
+    !steps[index].done && (steps[index].optional ? firstOpen === -1 || index < firstOpen : index === firstOpen);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,23 +206,28 @@ export function HostPublishDialog({ propertyId, onOpenChange, onPublish, onOpenE
         <DialogHeader>
           <DialogTitle>Publicera {listing?.title ?? "din annons"}</DialogTitle>
           <DialogDescription>
-            {allDone ? "Allt är klart. Gäster kan boka så fort du publicerar." : "Några steg kvar innan gäster kan boka."}
+            {!allDone
+              ? "Några steg kvar innan gäster kan boka."
+              : taxDone
+                ? "Allt är klart. Gäster kan boka så fort du publicerar."
+                : "Allt som behövs för att publicera är klart. Gäster kan boka så fort du publicerar."}
           </DialogDescription>
         </DialogHeader>
 
         <ol className="space-y-3">
-          {steps.map((step) => (
+          {steps.map((step, index) => (
             <li key={step.id} className="rounded-lg border p-3">
               <div className="flex items-center gap-2">
                 {step.done ? (
                   <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+                ) : step.optional ? (
+                  <CircleDashed className="h-5 w-5 shrink-0 text-amber-600" />
                 ) : (
                   <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />
                 )}
                 <span className={`font-medium ${step.done ? "text-muted-foreground" : ""}`}>{step.title}</span>
               </div>
-              {/* One step at a time: the first one still missing is open */}
-              {!step.done && step.id === firstOpen && <div className="mt-3">{step.body}</div>}
+              {isOpen(index) && <div className="mt-3">{step.body}</div>}
             </li>
           ))}
         </ol>

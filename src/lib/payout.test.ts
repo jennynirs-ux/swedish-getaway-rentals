@@ -26,6 +26,8 @@ import {
   shareTakenBack,
   stableUuid,
   stockholmDate,
+  STRIPE_AUTO_PAYOUT_DAYS,
+  stripeAutoPayout,
   type TransferState,
 } from "../../supabase/functions/_shared/payout";
 
@@ -87,6 +89,34 @@ describe("addDays and daysPastDue", () => {
     expect(daysPastDue("2026-10-18", "2026-10-21")).toBe(3);
     expect(daysPastDue("2026-10-21", "2026-10-21")).toBe(0);
     expect(daysPastDue("2026-10-22", "2026-10-21")).toBe(-1);
+  });
+});
+
+describe("stripeAutoPayout: a share held for the host's tax details", () => {
+  it("counts from the guest's payment to Stripe's own payout after 90 days", () => {
+    expect(STRIPE_AUTO_PAYOUT_DAYS).toBe(90);
+    expect(stripeAutoPayout("2026-08-02", "2026-10-21")).toEqual({
+      paidOn: "2026-08-02",
+      daysSincePaid: 80,
+      on: "2026-10-31",
+      daysLeft: 10,
+    });
+  });
+
+  it("is still ahead of the payout job's own limit until day 85", () => {
+    const paid = "2026-01-01";
+    expect(stripeAutoPayout(paid, payoutDueOn("2026-07-10", paid)).daysLeft).toBe(STRIPE_AUTO_PAYOUT_DAYS - MAX_HOLD_DAYS);
+  });
+
+  it("uses the Swedish date of the payment", () => {
+    // 23:30 UTC on 1 August is 01:30 on 2 August in Stockholm
+    expect(stripeAutoPayout("2026-08-01T23:30:00Z", "2026-10-21").paidOn).toBe("2026-08-02");
+    expect(stripeAutoPayout("2026-08-01T23:30:00Z", "2026-10-21").daysSincePaid).toBe(80);
+  });
+
+  it("goes to 0 and below once the 90 days have passed", () => {
+    expect(stripeAutoPayout("2026-08-02", "2026-10-31").daysLeft).toBe(0);
+    expect(stripeAutoPayout("2026-08-02", "2026-11-02").daysLeft).toBe(-2);
   });
 });
 

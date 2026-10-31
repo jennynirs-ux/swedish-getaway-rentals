@@ -444,23 +444,37 @@ async function alertManualPayout(
   metadata: Stripe.Metadata,
   sessionId: string,
 ) {
-  const { data: host } = await supabase
-    .from('profiles')
-    .select('full_name, host_business_name, email')
-    .eq('id', metadata.hostId ?? '')
-    .maybeSingle();
+  const [{ data: host }, { data: tax, error: taxError }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name, host_business_name, email')
+      .eq('id', metadata.hostId ?? '')
+      .maybeSingle(),
+    // Payouts wait for the host's DAC7 tax details (owner decision 31 Oct 2026), by hand too
+    supabase
+      .from('host_tax_profiles')
+      .select('dac7_complete')
+      .eq('profile_id', metadata.hostId ?? '')
+      .maybeSingle(),
+  ]);
+  const taxMissing = tax?.dac7_complete !== true;
   const reasons: Record<string, string> = {
     no_account: "The host has no Stripe payout account connected.",
     transfers_inactive: "The host's Stripe account could not receive transfers at checkout.",
     check_failed: "Stripe could not be reached to check the host's account at checkout.",
   };
   const currency = (metadata.currency || 'SEK').toUpperCase();
-  await alertAdminOnce(supabase, `host-payout-manual:${booking.id}`, 'Pay host by hand', [
+  await alertAdminOnce(supabase, `host-payout-manual:${booking.id}`, taxMissing ? 'Pay host by hand once their tax details are in' : 'Pay host by hand', [
+    ...(taxMissing
+      ? [taxError
+          ? `Do not pay yet: the host's tax details (DAC7) could not be read (${taxError.message}). Check host_tax_profiles.dac7_complete before paying; payouts wait until it is true.`
+          : "Do not pay yet: the host's tax details (DAC7) are missing. Pay only once host_tax_profiles.dac7_complete is true; the daily health check lists this booking separately until then."]
+      : []),
     `${metadata.propertyTitle}, ${metadata.checkInDate} to ${metadata.checkOutDate}, guest ${metadata.guestName}`,
     `Host: ${host?.host_business_name || host?.full_name || metadata.hostId || '-'}${host?.email ? ` <${host.email}>` : ''}`,
     `Host's share: ${kr(hostShareAmount(booking))} ${currency} (the guest paid ${kr(booking.total_amount)} ${currency}; the service fee stays with the platform)`,
     reasons[metadata.hostPayoutReason ?? ''] ?? "The payment was not sent to the host's Stripe account.",
-    `The whole payment is in the platform's Stripe balance. Pay the host by hand on ${booking.host_payout_due_on ?? 'the day after check-in'}, the day after check-in: the money is in our own account, so the 85-day rule for shares waiting in a host's Stripe account does not apply. Deduct what they owe in host_charges (card fees, refunds after payout), then set the booking's payout status to paid_out. It is listed in the daily health check until then.`,
+    `The whole payment is in the platform's Stripe balance. Pay the host by hand on ${booking.host_payout_due_on ?? 'the day after check-in'}, the day after check-in${taxMissing ? ', or later once their tax details are in' : ''}: the money is in our own account, so the 85-day rule for shares waiting in a host's Stripe account does not apply. Deduct what they owe in host_charges (card fees, refunds after payout), then set the booking's payout status to paid_out. It is listed in the daily health check until then.`,
     `Booking: ${booking.id}, Stripe session: ${sessionId}`,
   ]);
 }

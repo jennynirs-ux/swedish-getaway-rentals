@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { alertAdminOnce } from "../_shared/alert.ts";
-import { isAdminOrService } from "../_shared/auth.ts";
-import { stockholmToday } from "../_shared/format.ts";
+import { alertAdminOnce, sendEmail, SUPPORT_EMAIL } from "../_shared/alert.ts";
+import { escapeHtml, isAdminOrService } from "../_shared/auth.ts";
+import { longDate, stockholmToday } from "../_shared/format.ts";
 import { HOST_LOCK_WAIT_MS, hostMoneyLock, type Lock, LOCK_BUSY, takeLock } from "../_shared/lock.ts";
 import {
   bookingPayoutTarget,
@@ -20,6 +20,7 @@ import {
   remainingHostShare,
   shareTakenBack,
   stableUuid,
+  stripeAutoPayout,
 } from "../_shared/payout.ts";
 import {
   CHARGE_CLAIM_PREFIX,
@@ -40,7 +41,7 @@ import {
 // reaches their bank when this job pays it out, on host_payout_due_on: the
 // day after check-in, or 85 days after the guest paid if that comes first, so
 // we always pay before Stripe's 90-day limit and Stripe never pays out held
-// money on its own. Each run:
+// money on its own (unless a host's tax details are missing, see 3). Each run:
 //  0. Payouts made in the last 30 days that failed or were canceled put their
 //     booking back to held (and alert), so it is paid again. Host-charge
 //     settlements interrupted by a crash are finished or released.
@@ -50,6 +51,15 @@ import {
 //     recorded as a host charge) is reconciled again before anything is paid:
 //     reversed from its transfer, or recorded as a host charge.
 //  3. Per host with something due:
+//     Nothing is paid to a host whose DAC7 tax details are not complete
+//     (host_tax_profiles.dac7_complete, read for all hosts at once; owner
+//     decision 31 Oct 2026): their bookings stay held. The first time a due
+//     booking is held this way the host is e-mailed (one e-mail per run for
+//     all such bookings) and it is recorded in host_notices, so it is never
+//     sent again. From 80 days after the guest paid, support is alerted once
+//     per booking, due or not (a stay booked months ahead is only due on day
+//     85), since Stripe pays out held money on its own after 90.
+//     Bookings without a host are not affected. For every other host:
 //     a. Stripe's figures for all their held bookings; any refund Stripe
 //        shows that the database hasn't taken back yet is reconciled.
 //     b. Safety stop: per Stripe account, available + pending must cover what
@@ -87,6 +97,11 @@ import {
 // A payout still waiting for the host's balance this many days after it was
 // due gets an alert
 const WAIT_ALERT_DAYS = 3;
+// A payout held for the host's tax details this many days after the guest
+// paid gets an alert: Stripe pays it out on its own at 90 (STRIPE_AUTO_PAYOUT_DAYS)
+const TAX_HOLD_ALERT_DAYS = 80;
+// Where the host fills in their tax details ("Utbetalningar & skatt")
+const PAYOUTS_TAB_URL = "https://nordic-getaways.com/host-dashboard?tab=payouts";
 // Payouts younger than this are checked for a late failure
 const RECHECK_DAYS = 30;
 // Payouts we didn't make, this far back, are named in the safety stop's alert
@@ -108,7 +123,7 @@ const HOST_CHARGE_COLUMNS = "id, host_profile_id, booking_id, amount, currency, 
 
 type Outcome = "paidOut" | "partial" | "settled" | "nothingLeft" | "waiting" | "blocked";
 type Counts = Record<
-  Outcome | "manual" | "failed" | "payoutsFailed" | "deferredHosts" | "dueDatesMoved" | "reductionsRetried" | "safetyStops" | "claimsRecovered",
+  Outcome | "manual" | "failed" | "payoutsFailed" | "deferredHosts" | "dueDatesMoved" | "reductionsRetried" | "safetyStops" | "claimsRecovered" | "heldForTax",
   number
 >;
 
@@ -150,6 +165,9 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 const sum = (items: { amount: number }[]) => items.reduce((total, item) => total + item.amount, 0);
 const ourPayouts = (payouts: Stripe.Payout[], bookingId: string) => payouts.filter((p) => p.metadata?.booking_id === bookingId);
 const logAlertError = (alertError: unknown) => console.error("[RELEASE-HOST-PAYOUTS] Alert failed:", errorText(alertError));
+/** A name to greet with: the first one set that is not an e-mail address (full_name may hold one) */
+const shownName = (...names: (string | null | undefined)[]) =>
+  names.map((n) => n?.trim()).find((n) => n && !n.includes("@")) ?? null;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -212,6 +230,7 @@ async function runJob(supabase: SupabaseClient): Promise<Response> {
   const counts: Counts = {
     paidOut: 0, partial: 0, settled: 0, nothingLeft: 0, waiting: 0, blocked: 0, manual: 0, failed: 0,
     payoutsFailed: 0, deferredHosts: 0, dueDatesMoved: 0, reductionsRetried: 0, safetyStops: 0, claimsRecovered: 0,
+    heldForTax: 0,
   };
 
   // 0. Payouts that failed after we marked their booking paid out, and
@@ -233,6 +252,7 @@ async function runJob(supabase: SupabaseClient): Promise<Response> {
   }
 
   let held: MoneyBooking[];
+  let taxReady: Set<string>;
   try {
     held = await heldBookings(supabase);
     // 1. Due dates from before the 85-day rule
@@ -240,6 +260,8 @@ async function runJob(supabase: SupabaseClient): Promise<Response> {
     // 2. Refunds not yet fully taken from the host, due or not
     counts.reductionsRetried = await retryPendingReductions(stripe, supabase, held, counts);
     held = await heldBookings(supabase);
+    // Hosts whose tax details are complete: step 3 pays no other host (bookings without one aside)
+    taxReady = await hostsWithTaxDetails(supabase, held);
   } catch (readError) {
     console.error("[RELEASE-HOST-PAYOUTS]", errorText(readError));
     await alertAdminOnce(supabase, `host-payouts-job:${today}`, "Host payout job failed", [
@@ -257,11 +279,26 @@ async function runJob(supabase: SupabaseClient): Promise<Response> {
     byHost.set(hostId, [...(byHost.get(hostId) ?? []), b]);
   }
   const earliestDue = (bookings: MoneyBooking[]) => bookings.filter(isDue).map((b) => effectiveDueOn(b)).sort()[0] ?? "9999";
+  // Hosts without complete tax details: every held booking nearing Stripe's
+  // own payout is alerted, due or not (cheap, no Stripe call)
+  for (const bookings of byHost.values()) {
+    const hostProfileId = bookings[0].properties?.host_id;
+    if (hostProfileId && !taxReady.has(hostProfileId)) await alertTaxHoldNearingStripe(supabase, hostProfileId, bookings, today);
+  }
   const hosts = [...byHost.entries()]
     .filter(([, bookings]) => bookings.some(isDue))
     .sort(([, a], [, b]) => earliestDue(a).localeCompare(earliestDue(b)));
 
   for (const [hostId, bookings] of hosts) {
+    // No complete tax details: nothing paid, no Stripe call (cheap, so done
+    // past the time budget too, which keeps the host's e-mail from being put off)
+    const hostProfileId = bookings[0].properties?.host_id;
+    if (hostProfileId && !taxReady.has(hostProfileId)) {
+      const due = bookings.filter(isDue);
+      counts.heldForTax += due.length;
+      await holdForTaxDetails(supabase, hostProfileId, due, today);
+      continue;
+    }
     if (Date.now() > deadline) {
       counts.deferredHosts++;
       continue;
@@ -333,6 +370,124 @@ async function retryPendingReductions(stripe: Stripe, supabase: SupabaseClient, 
     }
   }
   return retried;
+}
+
+/** The hosts of these bookings whose DAC7 tax details are complete (host_tax_profiles.dac7_complete), in one query */
+async function hostsWithTaxDetails(supabase: SupabaseClient, bookings: MoneyBooking[]): Promise<Set<string>> {
+  const hostIds = [...new Set(bookings.map((b) => b.properties?.host_id).filter((id): id is string => !!id))];
+  if (!hostIds.length) return new Set();
+  const { data, error } = await supabase
+    .from("host_tax_profiles")
+    .select("profile_id, dac7_complete")
+    .in("profile_id", hostIds);
+  if (error) throw new Error(`Could not read the hosts' tax details: ${error.message}`);
+  const rows = (data ?? []) as { profile_id: string; dac7_complete: boolean | null }[];
+  return new Set(rows.filter((t) => t.dac7_complete === true).map((t) => t.profile_id));
+}
+
+/**
+ * 3. A host whose tax details are not complete: support is alerted once per
+ * held booking, due or not, from 80 days after the guest paid. Never throws.
+ */
+async function alertTaxHoldNearingStripe(supabase: SupabaseClient, hostId: string, held: MoneyBooking[], today: string) {
+  for (const b of held) {
+    const stripePays = stripeAutoPayout(b.created_at, today);
+    if (stripePays.daysSincePaid < TAX_HOLD_ALERT_DAYS) continue;
+    const left = stripePays.daysLeft;
+    await alertAdminOnce(supabase, `host-payout-tax-hold:${b.id}`, "Host payout held for tax details: Stripe pays it out on its own soon", [
+      describeBooking(b),
+      `Not paid out: the host (profile ${hostId}) has no complete tax details (DAC7, host_tax_profiles.dac7_complete), and the job pays nothing until they do.`,
+      `The guest paid ${stripePays.daysSincePaid} days ago (${stripePays.paidOn}). Stripe pays out money left in the host's account for 90 days on its own: ${
+        left > 0 ? `${left} day${left === 1 ? "" : "s"} left (${stripePays.on})` : `that was due ${stripePays.on}, so it may already have happened`
+      }.`,
+      left > 0
+        ? "A person must act: get the host to fill in their tax details under Utbetalningar & skatt before then (the job then pays this booking on its first run once it is due), or decide what to do with this payout."
+        : "If Stripe has paid it out on its own, the job's balance check will stop this host's payouts once their tax details are in; mark this booking paid out with Stripe's payout id then (see that alert's steps). Otherwise get the host to fill in their tax details.",
+    ]).catch(logAlertError);
+  }
+}
+
+/**
+ * 3. A host whose tax details are not complete: their due bookings stay held
+ * and nothing is paid; the host is told about bookings held for the first
+ * time. Never throws: the bookings stay held whatever fails here.
+ */
+async function holdForTaxDetails(supabase: SupabaseClient, hostId: string, due: MoneyBooking[], today: string) {
+  try {
+    await tellHostPayoutHeld(supabase, hostId, due);
+  } catch (noticeError) {
+    console.error("[RELEASE-HOST-PAYOUTS] Tax-hold notice for host", hostId, errorText(noticeError));
+    await alertAdminOnce(supabase, `host-tax-hold-notice:${hostId}:${today}`, "Host not told that their payout waits for tax details", [
+      `Host profile ${hostId}: ${due.length} due booking(s) stay held until the host completes their tax details, but telling them failed: ${errorText(noticeError)}`,
+      "The payouts stay held either way. The job tries again tomorrow.",
+    ]).catch(logAlertError);
+  }
+}
+
+/**
+ * E-mails the host once about the due bookings held for their tax details
+ * that they have not been told about yet (one e-mail for all of them), and
+ * records each in host_notices, which keeps it from being sent again.
+ */
+async function tellHostPayoutHeld(supabase: SupabaseClient, hostId: string, due: MoneyBooking[]) {
+  if (!due.length) return;
+  const { data: told, error: toldError } = await supabase
+    .from("host_notices")
+    .select("booking_id")
+    .eq("profile_id", hostId)
+    .eq("kind", "payout_held_tax")
+    .in("booking_id", due.map((b) => b.id));
+  if (toldError) throw new Error(`Reading the host's earlier notices failed: ${toldError.message}`);
+  const toldIds = new Set(((told ?? []) as { booking_id: string | null }[]).map((n) => n.booking_id));
+  const fresh = due.filter((b) => !toldIds.has(b.id)).sort((a, b) => a.check_in_date.localeCompare(b.check_in_date));
+  if (!fresh.length) return;
+
+  const [listings, host] = await Promise.all([
+    // property_id is not among the money columns
+    supabase.from("bookings").select("id, property_id").in("id", fresh.map((b) => b.id)),
+    supabase.from("profiles").select("email, display_name, full_name").eq("id", hostId).maybeSingle(),
+  ]);
+  if (listings.error) throw new Error(`Reading the bookings' property ids failed: ${listings.error.message}`);
+  if (host.error) throw new Error(`Reading the host's profile failed: ${host.error.message}`);
+  const profile = host.data as { email: string | null; display_name: string | null; full_name: string | null } | null;
+  if (!profile?.email) throw new Error("The host's profile has no e-mail address");
+
+  const email = taxHoldEmail(shownName(profile.display_name, profile.full_name), fresh);
+  if (!(await sendEmail(profile.email, email.subject, email.html))) throw new Error("Sending the e-mail failed (see the function's log)");
+  // Recorded once it is sent: a failed send is tried again on the next run
+  // (a failed save may send it twice, never not at all)
+  const propertyOf = new Map(((listings.data ?? []) as { id: string; property_id: string | null }[]).map((r) => [r.id, r.property_id]));
+  const { error: saveError } = await supabase.from("host_notices").insert(
+    fresh.map((b) => ({
+      profile_id: hostId,
+      kind: "payout_held_tax",
+      booking_id: b.id,
+      property_id: propertyOf.get(b.id) ?? null,
+      details: { missing: ["tax"] },
+    })),
+  );
+  if (saveError) throw new Error(`The e-mail was sent, but recording it failed (${saveError.message}), so the next run sends it again`);
+}
+
+/** The host's e-mail (Swedish, like the host panel): these bookings' payouts wait for their tax details */
+function taxHoldEmail(name: string | null, bookings: MoneyBooking[]): { subject: string; html: string } {
+  const one = bookings.length === 1;
+  const items = bookings
+    .map((b) => `<li>${escapeHtml(b.properties?.title || "Ditt boende")}, incheckning ${escapeHtml(longDate(b.check_in_date, "sv"))}</li>`)
+    .join("");
+  return {
+    subject: one ? "Din utbetalning väntar på dina skatteuppgifter" : "Dina utbetalningar väntar på dina skatteuppgifter",
+    html: [
+      `<p>Hej${name ? ` ${escapeHtml(name)}` : ""},</p>`,
+      `<p>Det är dags att betala ut pengarna för ${one ? "den här bokningen" : "de här bokningarna"}:</p>`,
+      `<ul>${items}</ul>`,
+      "<p>Men vi har inte fått dina skatteuppgifter än. Enligt lag (EU:s DAC7-regler) måste vi samla in några uppgifter från alla värdar, och vi betalar ut när de är ifyllda.</p>",
+      "<p>Pengarna ligger kvar och väntar på dig. Du fyller i uppgifterna under Utbetalningar &amp; skatt i värdpanelen – det tar bara några minuter – och när de är klara betalar vi ut automatiskt.</p>",
+      `<p style="margin: 24px 0;"><a href="${PAYOUTS_TAB_URL}" style="background-color: #8b5e3c; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">Fyll i skatteuppgifter</a></p>`,
+      `<p>Frågor? Svara på det här mejlet eller skriv till ${SUPPORT_EMAIL}.</p>`,
+      "<p>Jenny &amp; Jon, Nordic Getaways</p>",
+    ].join("\n"),
+  };
 }
 
 async function releaseHost(
@@ -519,7 +674,7 @@ async function alertSafetyStop(
     "Nothing is paid to this host until the balance covers their held bookings again. No booking is marked paid out automatically.",
     ...entries.map((e, i) => `${describeBooking(e.booking)}: holds ${kr(e.holds)}, already paid out by us ${kr(e.holds - owedByBooking[i])}.`),
     ...(automatic.length
-      ? [`Automatic Stripe payout(s) from this account in the period: ${automatic.map(describePayout).join("; ")}. That should never happen: check that the account's payout schedule is manual.`]
+      ? [`Automatic Stripe payout(s) from this account in the period: ${automatic.map(describePayout).join("; ")}. Expected only when Stripe paid out money held for 90 days (e.g. a booking held for missing tax details: see any "Host payout held for tax details" alert); otherwise check that the account's payout schedule is manual.`]
       : []),
     ...(notOurs.length
       ? [`Payout(s) the payout job did not make (no booking on them), e.g. the host's own payout from their Stripe dashboard: ${notOurs.map(describePayout).join("; ")}.`]

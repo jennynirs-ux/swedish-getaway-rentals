@@ -51,6 +51,7 @@
 //   export function heldBalanceShortfall(held: number[], available: number, pending: number): number
 //   export function stableUuid(text: string): Promise<string>
 //   export const REFUND_RECOVERY_REASON
+//   export const STRIPE_AUTO_PAYOUT_DAYS; export function stripeAutoPayout(paidAt, today): StripeAutoPayout
 
 /** bookings.host_payout_status (CHECK constraint in the database) */
 export type HostPayoutStatus = "held" | "paid_out" | "manual" | "reversed" | "platform";
@@ -126,6 +127,31 @@ export function payoutDueOn(checkInDate: string, paidAt: PaidAt): string {
 /** Whole days since the due date: 0 on the day, negative before it */
 export function daysPastDue(dueOn: string, today: string): number {
   return Math.round((dateToUtcMs(today) - dateToUtcMs(dueOn)) / 86_400_000);
+}
+
+/**
+ * Stripe pays out funds a manual-payout account leaves alone this many days
+ * on its own. MAX_HOLD_DAYS keeps the payout job ahead of it, except while a
+ * host's payouts wait for their tax details (release-host-payouts).
+ */
+export const STRIPE_AUTO_PAYOUT_DAYS = 90;
+
+export interface StripeAutoPayout {
+  /** The Swedish date the guest paid */
+  paidOn: string;
+  /** Whole days since then */
+  daysSincePaid: number;
+  /** When Stripe pays the share out on its own (STRIPE_AUTO_PAYOUT_DAYS after paidOn) */
+  on: string;
+  /** Days until then; 0 or less: it may already have */
+  daysLeft: number;
+}
+
+/** A share held in the host's Stripe account since the guest paid: how long it has waited, and when Stripe pays it out itself */
+export function stripeAutoPayout(paidAt: PaidAt, today: string): StripeAutoPayout {
+  const paidOn = stockholmDate(paidAt);
+  const daysSincePaid = daysPastDue(paidOn, today);
+  return { paidOn, daysSincePaid, on: addDays(paidOn, STRIPE_AUTO_PAYOUT_DAYS), daysLeft: STRIPE_AUTO_PAYOUT_DAYS - daysSincePaid };
 }
 
 const wholeOre = (amount: unknown) => Math.max(0, Math.round(Number(amount) || 0));

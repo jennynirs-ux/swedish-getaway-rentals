@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Wallet, Calendar, CalendarCheck, Plus, HelpCircle, BookOpen, Trash2, Receipt, BarChart3 } from "lucide-react";
+import { Building2, Wallet, Calendar, CalendarCheck, Plus, HelpCircle, BookOpen, Trash2, Receipt, BarChart3, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useHostProperties } from "@/hooks/useHostProperties";
 import { toast } from "sonner";
@@ -27,7 +28,7 @@ import { HOST_PAYOUT_TIMING_SV, chargesTakenFrom, formatDay, formatSek, hostPayo
 import OccupancyTrend from "@/components/analytics/OccupancyTrend";
 import KeyMetrics from "@/components/analytics/KeyMetrics";
 import HostPropertyWizard from "./HostPropertyWizard";
-import { HostTaxDetails } from "./HostTaxDetails";
+import { HostTaxDetails, useHostTaxDetails } from "./HostTaxDetails";
 import HostOnboardingChecklist, { HOST_CHECKLIST_KEY, publishBlocker } from "./HostOnboardingChecklist";
 import { HostPublishDialog } from "./HostPublishDialog";
 import HostPricingSuggestions from "./HostPricingSuggestions";
@@ -193,6 +194,15 @@ const HostDashboard = () => {
   const { data: openCharges = [] } = useHostCharges();
 
   const { properties, refetch: refetchProperties } = useHostProperties();
+  // Live listings take bookings without the tax details, but payouts wait for
+  // them: shown while a listing is live or a booking waits to be paid out
+  // (also after the host unpublished)
+  const { data: tax } = useHostTaxDetails();
+  const taxMissing = tax !== undefined && !tax?.dac7_complete;
+  const payoutsWaitForTax =
+    taxMissing &&
+    (properties.some((p) => !!(p as { active?: boolean }).active) ||
+      bookings.some((b) => (b.host_payout_status === "held" || b.host_payout_status === "manual") && hostNet(b) > 0));
 
   const refreshChecklist = () => queryClient.invalidateQueries({ queryKey: HOST_CHECKLIST_KEY });
 
@@ -335,7 +345,8 @@ const HostDashboard = () => {
   };
 
   // Hosts publish their own listings. The database (prevent_self_publish) decides:
-  // working payouts, a map pin and county, accepted host terms and tax details.
+  // working payouts, a map pin and county and accepted host terms (the tax
+  // details are needed before the first payout, not to publish).
   // (No e-mail to the team from here: send-support-email also answers the host
   // "we received your message". A listing-published notice needs its own function.)
   /** The publish window's "Publish now"; true when the listing went live */
@@ -518,6 +529,26 @@ const HostDashboard = () => {
             publishing={publishing}
           />
 
+          {payoutsWaitForTax && (
+            <Alert className="mb-6 border-2 border-primary/20">
+              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertDescription className="flex flex-col gap-3 text-foreground sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium">Dina utbetalningar väntar på dina skatteuppgifter</p>
+                  <p className="text-sm text-muted-foreground">
+                    Gäster kan boka ditt boende. Enligt lag (EU:s DAC7-regler) måste vi samla in några uppgifter från
+                    alla värdar, och vi betalar ut när de är ifyllda.
+                  </p>
+                </div>
+                {activeTab !== "payouts" && (
+                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setActiveTab("payouts")}>
+                    Lägg till skatteuppgifter
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             {/* Phones: the tab row scrolls on its own instead of widening the page */}
             <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
@@ -654,6 +685,7 @@ const HostDashboard = () => {
                       },
                       net,
                       today,
+                      taxMissing,
                     );
                     // Open charges (a card fee, a refund after payout) come off the next
                     // payout, the last one in part if the payout is smaller (as the payout job does)

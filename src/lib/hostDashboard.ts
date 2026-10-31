@@ -99,7 +99,11 @@ export const payoutStatusPollMs = (status?: PayoutStatus | null): number | false
 // ---------------------------------------------------------------------------
 // Publishing
 
-/** Which rule of the database's publish check (prevent_self_publish) stopped a publish */
+/**
+ * Which rule of the database's publish check (prevent_self_publish) stopped a
+ * publish. "tax" is the old rule: publishing no longer needs the tax details
+ * (migration 20261024114000), but its message is still recognised until then.
+ */
 export type PublishBlocker = "terms" | "bank" | "location" | "tax" | null;
 export const publishBlocker = (message: string): PublishBlocker => {
   if (/host terms/i.test(message)) return "terms";
@@ -141,14 +145,17 @@ export interface BookingPayout {
 
 /**
  * Where the host's money for a booking is, in plain words.
- * netOre: what the host keeps of this booking; today: Swedish date "YYYY-MM-DD".
+ * netOre: what the host keeps of this booking; today: Swedish date "YYYY-MM-DD";
+ * taxMissing: the host's DAC7 tax details are not complete, so nothing is paid
+ * out until they are (release-host-payouts holds it).
  */
-export const hostPayoutText = (b: BookingPayout, netOre: number, today: string): string | null => {
+export const hostPayoutText = (b: BookingPayout, netOre: number, today: string, taxMissing = false): string | null => {
   const cancelled = b.status === "cancelled";
   switch (b.host_payout_status) {
     case "held": {
       if (netOre <= 0) return "Inget att betala ut för den här bokningen";
       const what = cancelled ? "Det du behåller" : "Ditt pris";
+      if (taxMissing) return `${what} väntar på dina skatteuppgifter – vi betalar ut när de är ifyllda`;
       if (!b.host_payout_due_on) return `${what} betalas ut till din bank dagen efter incheckning`;
       if (b.host_payout_due_on < today) return `${what} är på väg till din bank (planerad utbetalning ${formatDay(b.host_payout_due_on)})`;
       return `${what} betalas ut till din bank den ${formatDay(b.host_payout_due_on)}`;
@@ -161,7 +168,9 @@ export const hostPayoutText = (b: BookingPayout, netOre: number, today: string):
     case "manual":
       return cancelled
         ? "Vi gör upp om den här utbetalningen direkt med dig"
-        : "Vi betalar den här bokningen direkt till dig med banköverföring";
+        : taxMissing
+          ? "Vi betalar den här bokningen direkt till dig med banköverföring när dina skatteuppgifter är ifyllda"
+          : "Vi betalar den här bokningen direkt till dig med banköverföring";
     case "platform":
       return "Hanteras av oss (bokad innan utbetalningarna flyttade till ditt Stripe-konto)";
     default:

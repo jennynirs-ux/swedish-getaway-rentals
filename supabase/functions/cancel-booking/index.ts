@@ -452,7 +452,14 @@ serve(async (req) => {
       notes.push(`The cancellation e-mail to the guest (${booking.guest_email}) could not be sent.`);
     }
     if (host?.email) {
-      const hostEmail = hostCancellationEmail(facts, host.name);
+      // Payouts wait for the host's tax details (release-host-payouts); a failed read keeps the usual date
+      const { data: tax, error: taxError } = await supabase
+        .from("host_tax_profiles")
+        .select("dac7_complete")
+        .eq("profile_id", host.id)
+        .maybeSingle();
+      if (taxError) console.error("[CANCEL-BOOKING] Reading the host's tax details failed:", taxError.message);
+      const hostEmail = hostCancellationEmail(facts, host.name, !taxError && tax?.dac7_complete !== true);
       if (!(await sendEmail(host.email, hostEmail.subject, hostEmail.html))) {
         notes.push(`The cancellation e-mail to the host (${host.email}) could not be sent: tell them the dates are free again.`);
       }

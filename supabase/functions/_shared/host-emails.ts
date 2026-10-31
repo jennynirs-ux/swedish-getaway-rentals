@@ -263,7 +263,8 @@ export function guestCancellationEmail(f: CancellationFacts, policySummaryText: 
 }
 
 /** The host's "a booking was cancelled" e-mail (M8): what the guest gets, what leaves their payout, the dates reopen */
-export function hostCancellationEmail(f: CancellationFacts, hostName: string): Email {
+/** taxMissing: the host has no complete tax details, so release-host-payouts holds their payouts until they do */
+export function hostCancellationEmail(f: CancellationFacts, hostName: string, taxMissing = false): Email {
   const lines: string[] = [`<p>Hi ${escapeHtml(hostName || "there")},</p>`];
 
   const by = f.cancelledBy === "guest" ? "by the guest" : f.cancelledBy === "host" ? "at your request" : "by us";
@@ -318,9 +319,13 @@ export function hostCancellationEmail(f: CancellationFacts, hostName: string): E
     if (f.hostRemaining > 0) {
       const when =
         f.payoutBefore === "held" && f.payoutDueOn
-          ? `, paid out to your bank on ${escapeHtml(longDate(f.payoutDueOn))}`
+          ? taxMissing
+            ? `, paid out to your bank once your tax details are in (at the earliest on ${escapeHtml(longDate(f.payoutDueOn))}; add them under Payouts &amp; tax in your host dashboard)`
+            : `, paid out to your bank on ${escapeHtml(longDate(f.payoutDueOn))}`
           : f.payoutBefore === "manual"
-            ? "; we pay it to you by hand, since your Stripe account could not receive it"
+            ? taxMissing
+              ? "; we pay it to you by hand once your tax details are in, since your Stripe account could not receive it"
+              : "; we pay it to you by hand, since your Stripe account could not receive it"
             : "";
       lines.push(`<p>You keep ${amount(f, f.hostRemaining)} for this booking${when}.</p>`);
     } else if (f.payoutBefore !== "none") {
