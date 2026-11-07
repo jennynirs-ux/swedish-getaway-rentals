@@ -1,0 +1,34 @@
+# Nordic Getaways
+
+> Nordic Getaways (nordic-getaways.com) is a Swedish booking site for holiday cabins and holiday homes (stugor). Each cabin is listed and run by its own host; guests book and pay by card on the site and talk to the host directly. Guests pay the host's nightly price plus a service fee – 10% or less (5% on listings from founding hosts in their first 12 months) – and the total is shown before payment. The site is run by Mojjo AB in Lerum, Sweden, founded by Jenny and Jon Nirs, who also host the first two cabins: Villa Häcken and Lakehouse Getaway on lake Stora Härsjön near Gothenburg.
+
+## Rules for every stay booked on the site
+
+- Minimum stay 2 nights; 3 nights over Valborg (30 April), Midsummer Eve and New Year's Eve.
+- The person booking must be at least 25 and stay at the property. No parties or events.
+- Cancellation: 90% refund more than 21 days before arrival, 50% 8–21 days before, none within 7 days.
+- Pets, parking, check-in times and other house rules vary by cabin – see each listing.
+
+## Cabins
+
+- [Peaceful lakefront retreat surrounded by nature](https://nordic-getaways.com/property/lakefront-retreat): Lerum, Sweden. Sleeps 8, 3 bedroom(s), from 9900 SEK/night incl. 10% service fee. The price covers 1 guest; each extra guest adds 750 SEK per night. House rules: minimum stay 2 nights (3 over Valborg, Midsummer and New Year's Eve), no pets, no smoking, no parties or events, the person booking is at least 25. Cancellation policy: Standard (90% refund more than 21 days before arrival, 50% from 21 to 8 days, then none.) Boats and paddle boards included. Parking for 2 cars. Rated 4.98/5 by 51 guests on Airbnb. Villa Häcken: a light-filled lake house on Stora Härsjön with private jetty, sandy beach and hot tub, 30 minutes from Gothenburg. Sleeps 8: three bedrooms plus four beds in the living room. Boats and paddle boards included, outdoor kitchen with pizza oven – ideal for families and friends.
+- [Lakehouse getaway with rowing boat](https://nordic-getaways.com/property/lakehouse-getaway): Lerum, Sweden. Sleeps 4, 1 bedroom(s), from 2310 SEK/night incl. 10% service fee. Cleaning fee 500 SEK per stay. The price covers 1 guest; each extra guest adds 400 SEK per night. Included: Bed linen and towels for every guest. House rules: minimum stay 2 nights (3 over Valborg, Midsummer and New Year's Eve), no pets, no smoking, no parties or events, the person booking is at least 25. Cancellation policy: Standard (90% refund more than 21 days before arrival, 50% from 21 to 8 days, then none.) Rowing boat and paddle boards included. Parking for 1 car. Rated 4.85/5 by 251 guests on Airbnb. A small, characterful cabin right at the water's edge of Stora Härsjön, 30 minutes from Gothenburg. Rowing boat and paddle boards included, hammock, fire pit and forest trails from the door. Simple, back-to-basics living for up to 4 guests – loved by 250+ guests on Airbnb.
+
+## Guides
+
+- [Area guide: Stora Härsjön & Lerum, near Gothenburg](https://nordic-getaways.com/stora-harsjon-lerum): for guests at Villa Häcken and Lakehouse Getaway – 16 km lake hike, swimming, paddling, family activities, restaurants in Lerum and how to get there by car, train and bus.
+- [First time in Sweden](https://nordic-getaways.com/first-time-in-sweden): practical tips on fika, allemansrätten (the right to roam), etiquette, payments and Swedish food.
+
+## For hosts
+
+- [Become a host](https://nordic-getaways.com/become-host): list a cabin or holiday home anywhere in Sweden. Hosts set their own nightly price and keep all of it; guests pay a 10% service fee on top. Hosts publish and manage their own listings, get paid through Stripe and can sync calendars with Airbnb, Booking.com and other sites. Founding-host offer: hosts who sign up by 31 December 2026 get a 5% guest fee for their first 12 months.
+- [Pricing guide for hosts](https://nordic-getaways.com/pricing-guide): how to set nightly prices.
+
+## Shop
+
+- [The Nordic Collection](https://nordic-getaways.com/shop): Nordic-design clothing, bags and home textiles, printed to order by Printful and shipped to the Nordics, much of Europe, the US and Canada.
+
+## Booking
+
+- [Find a cabin](https://nordic-getaways.com/cabins): pick a cabin, check dates and pay securely by card; the full price including the service fee is shown before payment.
+- [Contact](https://nordic-getaways.com/contact): support@mojjo.se for bookings, hosting and the shop.
